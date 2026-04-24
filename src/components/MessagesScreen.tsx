@@ -63,9 +63,9 @@ const MessagesScreen = () => {
         <h2 className="text-white font-bold text-xl">Чаты</h2>
         <button
           onClick={() => setTab("communities")}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-white/70 text-sm font-medium hover:bg-white/15 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#00d4ff] to-[#8b5cf6] text-white text-sm font-medium transition-colors"
         >
-          <Icon name="Users" size={15} className="text-white/70" />
+          <Icon name="Users" size={15} className="text-white" />
           Сообщества
         </button>
       </div>
