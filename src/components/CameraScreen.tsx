@@ -52,14 +52,50 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaInputRef = useRef<HTMLInputElement>(null);
+  const mediaFileRef = useRef<File | null>(null);
   const [uploadedMedia, setUploadedMedia] = useState<{ url: string; type: "image" | "video" } | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [published, setPublished] = useState(false);
 
   const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    mediaFileRef.current = file;
     const url = URL.createObjectURL(file);
     const type = file.type.startsWith("video") ? "video" : "image";
     setUploadedMedia({ url, type });
+    setPublished(false);
+  };
+
+  const handlePublish = async () => {
+    const file = mediaFileRef.current;
+    if (!file) return;
+    setPublishing(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(",")[1];
+        const ext = file.name.split(".").pop() || "mp4";
+        const res = await fetch("https://functions.poehali.dev/78967386-1bfb-4070-9bb3-549cc5c00de6", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ file: base64, type: file.type, ext }),
+        });
+        const data = await res.json();
+        if (data.url) {
+          setPublished(true);
+          setTimeout(() => {
+            setUploadedMedia(null);
+            setPublished(false);
+            onClose();
+          }, 1500);
+        }
+        setPublishing(false);
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      setPublishing(false);
+    }
   };
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -195,9 +231,21 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
               <Icon name="X" size={20} className="text-white" />
             </button>
             <div className="absolute bottom-14 left-0 right-0 flex justify-center z-40">
-              <button className="px-8 py-3 rounded-full bg-white text-black font-bold text-base">
-                Опубликовать
-              </button>
+              {published ? (
+                <div className="flex items-center gap-2 px-8 py-3 rounded-full bg-green-500">
+                  <Icon name="Check" size={18} className="text-white" />
+                  <span className="text-white font-bold text-base">Опубликовано!</span>
+                </div>
+              ) : (
+                <button
+                  onClick={handlePublish}
+                  disabled={publishing}
+                  className="flex items-center gap-2 px-8 py-3 rounded-full bg-white text-black font-bold text-base disabled:opacity-60"
+                >
+                  {publishing && <Icon name="Loader" size={18} className="text-black animate-spin" />}
+                  {publishing ? "Загрузка..." : "Опубликовать"}
+                </button>
+              )}
             </div>
           </div>
         )}
