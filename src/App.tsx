@@ -12,7 +12,7 @@ import AuthScreen from "./components/AuthScreen";
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const { user, loading } = useAuth();
+  const { user, token, loading } = useAuth();
 
   if (loading) {
     return (
@@ -27,7 +27,7 @@ const AppContent = () => {
   if (!user) return <AuthScreen />;
 
   return (
-    <UserMediaProvider userId={user.id}>
+    <UserMediaProvider userId={user.id} token={token}>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />

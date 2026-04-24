@@ -19,7 +19,7 @@ const USER_VIDEOS_URL = "https://functions.poehali.dev/075d6280-020a-48ce-a5e4-6
 
 const UserMediaContext = createContext<UserMediaContextType | null>(null);
 
-export const UserMediaProvider = ({ userId, children }: { userId: string; children: ReactNode }) => {
+export const UserMediaProvider = ({ userId, token, children }: { userId: string; token: string | null; children: ReactNode }) => {
   const [userVideos, setUserVideos] = useState<UserVideo[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -76,7 +76,7 @@ export const UserMediaProvider = ({ userId, children }: { userId: string; childr
     fetch(USER_VIDEOS_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, user_id: userId }),
+      body: JSON.stringify({ id, token, user_id: userId }),
     }).catch(() => {});
   };
 

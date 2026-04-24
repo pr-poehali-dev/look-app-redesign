@@ -31,6 +31,15 @@
       "expectedStatus": 200,
       "expectedBody": {"videos": []},
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Delete media missing id",
+      "method": "POST",
+      "path": "/",
+      "body": {"token": "bad_token"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "id required"},
+      "bodyMatcher": "partial"
     }
   ]
 }

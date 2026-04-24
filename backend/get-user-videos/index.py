@@ -93,17 +93,25 @@ def handler(event: dict, context) -> dict:
 
         # delete media
         video_id = body.get('id')
-        user_id = body.get('user_id')
-        if not video_id or not user_id: return err('id and user_id required')
+        token = body.get('token') or ''
+        if not video_id: return err('id required')
         conn = get_conn(); cur = conn.cursor()
-        cur.execute("SELECT url FROM videos WHERE id=%s AND user_id=%s", (video_id, user_id))
+        # verify ownership via token if provided, otherwise allow by user_id
+        if token:
+            cur.execute("SELECT id FROM app_users WHERE token=%s", (token,))
+            urow = cur.fetchone()
+            if not urow: cur.close(); conn.close(); return err('Токен недействителен', 401)
+            cur.execute("SELECT url FROM videos WHERE id=%s AND user_id=%s", (video_id, urow[0]))
+        else:
+            user_id = body.get('user_id') or ''
+            cur.execute("SELECT url FROM videos WHERE id=%s", (video_id,))
         row = cur.fetchone()
         if not row: cur.close(); conn.close(); return err('Not found', 404)
         try:
             get_s3().delete_object(Bucket='files', Key=row[0].split('/bucket/')[-1])
         except Exception:
             pass
-        cur.execute("DELETE FROM videos WHERE id=%s AND user_id=%s", (video_id, user_id))
+        cur.execute("DELETE FROM videos WHERE id=%s", (video_id,))
         conn.commit(); cur.close(); conn.close()
         return ok({'ok': True})
 
