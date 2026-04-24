@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 
 export interface VideoData {
@@ -243,26 +244,25 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
         </div>
       </div>
 
-      {/* Comments panel */}
-      {showComments && (
+      {showComments && createPortal(
         <div
-          className="absolute inset-0 z-30 flex flex-col justify-end"
-          onClick={() => setShowComments(false)}
+          className="fixed inset-0 z-[9999] flex flex-col justify-end"
+          onPointerDown={() => setShowComments(false)}
         >
           <div
             className="bg-zinc-900 rounded-t-3xl flex flex-col max-h-[70%]"
-            onClick={e => e.stopPropagation()}
+            onPointerDown={e => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/8">
+            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/10">
               <span className="text-white font-bold text-base">{allComments.length} комментариев</span>
-              <button onClick={() => setShowComments(false)}>
+              <button onPointerDown={() => setShowComments(false)}>
                 <Icon name="X" size={20} className="text-white/60" />
               </button>
             </div>
 
             {/* Comments list */}
-            <div className="flex-1 overflow-y-scroll px-4 py-3 flex flex-col gap-4" style={{ scrollbarWidth: "none" }}>
+            <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-4" style={{ scrollbarWidth: "none" }}>
               {allComments.map(c => (
                 <div key={c.id} className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center flex-shrink-0">
@@ -275,7 +275,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
                     </div>
                     <p className="text-white/80 text-sm">{c.text}</p>
                   </div>
-                  <button className="flex-shrink-0 flex flex-col items-center gap-0.5 mt-1">
+                  <button className="flex-shrink-0 mt-1">
                     <Icon name="Heart" size={14} className="text-white/40" />
                   </button>
                 </div>
@@ -283,7 +283,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
             </div>
 
             {/* Input */}
-            <div className="flex items-center gap-3 px-4 py-3 border-t border-white/8 pb-8">
+            <div className="flex items-center gap-3 px-4 py-3 border-t border-white/10 pb-8">
               <div className="flex-1 flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
                 <input
                   value={commentText}
@@ -291,10 +291,8 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
                   placeholder="Написать комментарий..."
                   className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/40"
                   onKeyDown={e => e.key === "Enter" && handleSendComment()}
-                  onClick={e => e.stopPropagation()}
-                  onTouchStart={e => e.stopPropagation()}
-                  onMouseDown={e => e.stopPropagation()}
                   autoComplete="off"
+                  autoFocus
                 />
               </div>
               <button
@@ -306,7 +304,8 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
