@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import SettingsScreen from "./SettingsScreen";
 import { useUserMedia } from "@/context/UserMediaContext";
@@ -250,14 +250,42 @@ const MediaViewer = ({ items, startIndex, onClose, onDelete }: { items: Story[];
   );
 };
 
+const AUTH_URL = "https://functions.poehali.dev/075d6280-020a-48ce-a5e4-64eb3291a01e";
+
 const ProfilePage = () => {
   const [tab, setTab] = useState<"videos" | "posts">("videos");
   const [showSettings, setShowSettings] = useState(false);
   const [showScreen, setShowScreen] = useState<"followers" | "following" | null>(null);
   const { userVideos: stories, removeMedia } = useUserMedia();
-  const { user, logout } = useAuth();
+  const { user, token, logout, updateUser } = useAuth();
   const [viewingStory, setViewingStory] = useState<number | null>(null);
   const [mediaViewer, setMediaViewer] = useState<{ tab: "video" | "image"; index: number } | null>(null);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !token) return;
+    setAvatarLoading(true);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = (reader.result as string).split(",")[1];
+      const ext = file.name.split(".").pop() || "jpg";
+      try {
+        const res = await fetch(AUTH_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "update_avatar", token, file: base64, file_type: file.type, ext }),
+        });
+        const raw = await res.json();
+        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+        if (data.avatar) updateUser({ avatar: data.avatar });
+      } catch { /* ignore */ }
+      setAvatarLoading(false);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
 
   if (showSettings) return <SettingsScreen onBack={() => setShowSettings(false)} />;
   if (showScreen === "followers") return <UserListScreen title="Подписчики" users={FOLLOWERS} onBack={() => setShowScreen(null)} />;
@@ -287,12 +315,22 @@ const ProfilePage = () => {
 
       {/* Avatar + stats */}
       <div className="flex items-center gap-4 px-4 pt-14 pb-4">
-        <div className="w-20 h-20 rounded-full overflow-hidden flex-shrink-0 bg-gradient-to-br from-[#c084fc] to-[#8b5cf6] flex items-center justify-center">
+        <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+        <button
+          onClick={() => avatarInputRef.current?.click()}
+          className="relative w-20 h-20 rounded-full flex-shrink-0 bg-gradient-to-br from-[#c084fc] to-[#8b5cf6] flex items-center justify-center overflow-hidden"
+        >
           {user?.avatar
             ? <img src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
             : <span className="text-white font-black text-3xl">{user?.name?.[0]?.toUpperCase() ?? "?"}</span>
           }
-        </div>
+          <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+            {avatarLoading
+              ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              : <Icon name="Camera" size={20} className="text-white" />
+            }
+          </div>
+        </button>
 
         <div className="flex flex-1 justify-around">
           {[
