@@ -158,11 +158,19 @@ const StoryViewer = ({ stories, startIndex, onClose }: { stories: Story[]; start
   );
 };
 
-const MediaViewer = ({ items, startIndex, onClose }: { items: Story[]; startIndex: number; onClose: () => void }) => {
+const MediaViewer = ({ items, startIndex, onClose, onDelete }: { items: Story[]; startIndex: number; onClose: () => void; onDelete: (id: number) => void }) => {
   const [index, setIndex] = useState(startIndex);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const item = items[index];
   const goNext = () => index < items.length - 1 ? setIndex(i => i + 1) : onClose();
   const goPrev = () => index > 0 ? setIndex(i => i - 1) : null;
+
+  const handleDelete = () => {
+    onDelete(item.id);
+    if (items.length === 1) { onClose(); return; }
+    if (index >= items.length - 1) setIndex(i => i - 1);
+    setConfirmDelete(false);
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
@@ -170,8 +178,24 @@ const MediaViewer = ({ items, startIndex, onClose }: { items: Story[]; startInde
       <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-12 pb-3 bg-gradient-to-b from-black/60 to-transparent z-10">
         <button onClick={onClose} className="p-1"><Icon name="ArrowLeft" size={24} className="text-white" /></button>
         <span className="text-white text-sm font-medium">{index + 1} / {items.length}</span>
-        <div className="w-8" />
+        <button onClick={() => setConfirmDelete(true)} className="p-1"><Icon name="Trash2" size={20} className="text-white" /></button>
       </div>
+
+      {/* Confirm delete */}
+      {confirmDelete && (
+        <div className="absolute inset-0 z-30 bg-black/70 flex items-end justify-center pb-16">
+          <div className="bg-white rounded-2xl mx-4 w-full max-w-sm overflow-hidden">
+            <div className="p-5 text-center">
+              <p className="font-bold text-black text-base">Удалить?</p>
+              <p className="text-gray-500 text-sm mt-1">Это действие нельзя отменить</p>
+            </div>
+            <div className="flex border-t border-gray-100">
+              <button onClick={() => setConfirmDelete(false)} className="flex-1 py-3.5 text-gray-500 font-medium text-sm border-r border-gray-100">Отмена</button>
+              <button onClick={handleDelete} className="flex-1 py-3.5 text-red-500 font-semibold text-sm">Удалить</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Media */}
       <div className="flex-1 flex items-center justify-center">
@@ -254,7 +278,15 @@ const ProfilePage = () => {
         <StoryViewer stories={stories} startIndex={viewingStory} onClose={() => setViewingStory(null)} />
       )}
       {mediaViewer !== null && (
-        <MediaViewer items={mediaViewer.items} startIndex={mediaViewer.index} onClose={() => setMediaViewer(null)} />
+        <MediaViewer
+          items={mediaViewer.items}
+          startIndex={mediaViewer.index}
+          onClose={() => setMediaViewer(null)}
+          onDelete={(id) => {
+            setStories(s => s.filter(x => x.id !== id));
+            setMediaViewer(null);
+          }}
+        />
       )}
 
       {/* Avatar + stats */}
