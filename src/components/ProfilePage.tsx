@@ -288,17 +288,50 @@ const ProfilePage = () => {
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-3 gap-px bg-gray-100">
-        {POSTS_GRID.map((item, i) => (
-          <div key={i} className="relative aspect-square overflow-hidden bg-gray-200">
-            <img src={item.img} alt="" className="w-full h-full object-cover" />
-            <div className="absolute bottom-1.5 right-1.5 flex items-center gap-0.5">
-              <Icon name="Play" size={10} className="text-white drop-shadow" />
-              <span className="text-white text-[10px] font-semibold drop-shadow">{item.views}</span>
+      {tab === "videos" ? (
+        (() => {
+          const videos = stories.filter(s => s.type === "video");
+          return videos.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-gray-400 gap-2">
+              <Icon name="Video" size={40} className="text-gray-200" />
+              <p className="text-sm">Нет загруженных видео</p>
+              <p className="text-xs text-gray-300">Добавь видео через сторис</p>
             </div>
-          </div>
-        ))}
-      </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-px bg-gray-100">
+              {videos.map((item) => (
+                <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200">
+                  <video src={item.url} className="w-full h-full object-cover" muted playsInline />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="bg-black/40 rounded-full p-2">
+                      <Icon name="Play" size={16} className="text-white" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()
+      ) : (
+        (() => {
+          const photos = stories.filter(s => s.type === "image");
+          return photos.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-gray-400 gap-2">
+              <Icon name="Image" size={40} className="text-gray-200" />
+              <p className="text-sm">Нет загруженных фото</p>
+              <p className="text-xs text-gray-300">Добавь фото через сторис</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-px bg-gray-100">
+              {photos.map((item) => (
+                <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200">
+                  <img src={item.url} alt="" className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          );
+        })()
+      )}
 
       <div className="pb-28" />
     </div>
