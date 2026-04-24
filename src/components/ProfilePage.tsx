@@ -158,12 +158,66 @@ const StoryViewer = ({ stories, startIndex, onClose }: { stories: Story[]; start
   );
 };
 
+const MediaViewer = ({ items, startIndex, onClose }: { items: Story[]; startIndex: number; onClose: () => void }) => {
+  const [index, setIndex] = useState(startIndex);
+  const item = items[index];
+  const goNext = () => index < items.length - 1 ? setIndex(i => i + 1) : onClose();
+  const goPrev = () => index > 0 ? setIndex(i => i - 1) : null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black flex flex-col">
+      {/* Header */}
+      <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-12 pb-3 bg-gradient-to-b from-black/60 to-transparent z-10">
+        <button onClick={onClose} className="p-1"><Icon name="ArrowLeft" size={24} className="text-white" /></button>
+        <span className="text-white text-sm font-medium">{index + 1} / {items.length}</span>
+        <div className="w-8" />
+      </div>
+
+      {/* Media */}
+      <div className="flex-1 flex items-center justify-center">
+        {item.type === "video" ? (
+          <video
+            key={item.id}
+            src={item.url}
+            className="w-full h-full object-contain"
+            autoPlay
+            controls
+            playsInline
+          />
+        ) : (
+          <img key={item.id} src={item.url} className="w-full h-full object-contain" alt="" />
+        )}
+      </div>
+
+      {/* Tap zones */}
+      <div className="absolute inset-0 flex z-10 pointer-events-none">
+        <div className="flex-1 pointer-events-auto" onClick={goPrev} />
+        <div className="w-16" />
+        <div className="flex-1 pointer-events-auto" onClick={goNext} />
+      </div>
+
+      {/* Arrows */}
+      {index > 0 && (
+        <button onClick={goPrev} className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 rounded-full p-2">
+          <Icon name="ChevronLeft" size={24} className="text-white" />
+        </button>
+      )}
+      {index < items.length - 1 && (
+        <button onClick={goNext} className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 rounded-full p-2">
+          <Icon name="ChevronRight" size={24} className="text-white" />
+        </button>
+      )}
+    </div>
+  );
+};
+
 const ProfilePage = () => {
   const [tab, setTab] = useState<"videos" | "posts">("videos");
   const [showSettings, setShowSettings] = useState(false);
   const [showScreen, setShowScreen] = useState<"followers" | "following" | null>(null);
   const [stories, setStories] = useState<Story[]>([]);
   const [viewingStory, setViewingStory] = useState<number | null>(null);
+  const [mediaViewer, setMediaViewer] = useState<{ items: Story[]; index: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -198,6 +252,9 @@ const ProfilePage = () => {
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
       {viewingStory !== null && (
         <StoryViewer stories={stories} startIndex={viewingStory} onClose={() => setViewingStory(null)} />
+      )}
+      {mediaViewer !== null && (
+        <MediaViewer items={mediaViewer.items} startIndex={mediaViewer.index} onClose={() => setMediaViewer(null)} />
       )}
 
       {/* Avatar + stats */}
@@ -323,8 +380,8 @@ const ProfilePage = () => {
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-px bg-gray-100">
-              {videos.map((item) => (
-                <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200">
+              {videos.map((item, i) => (
+                <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200 cursor-pointer" onClick={() => setMediaViewer({ items: videos, index: i })}>
                   <video src={item.url} className="w-full h-full object-cover" muted playsInline />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="bg-black/40 rounded-full p-2">
@@ -361,8 +418,8 @@ const ProfilePage = () => {
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-px bg-gray-100">
-              {photos.map((item) => (
-                <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200">
+              {photos.map((item, i) => (
+                <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200 cursor-pointer" onClick={() => setMediaViewer({ items: photos, index: i })}>
                   <img src={item.url} alt="" className="w-full h-full object-cover" />
                 </div>
               ))}
