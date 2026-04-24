@@ -2,19 +2,9 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { Chat } from "./MessagesScreen";
 import CallScreen from "./CallScreen";
+import { useAuth } from "@/context/AuthContext";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
-
-const MY_ID = (() => {
-  let id = localStorage.getItem("chat_user_id");
-  if (!id) { id = "u_" + Math.random().toString(36).slice(2, 10); localStorage.setItem("chat_user_id", id); }
-  return id;
-})();
-const MY_NAME = (() => {
-  let n = localStorage.getItem("chat_user_name");
-  if (!n) { n = "Пользователь"; localStorage.setItem("chat_user_name", n); }
-  return n;
-})();
 
 interface Message {
   id: number;
@@ -31,7 +21,12 @@ interface ChatRoomProps {
 }
 
 const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
-  const chatId = `chat_${Math.min(parseInt(MY_ID.slice(2), 36), chat.id)}_${Math.max(parseInt(MY_ID.slice(2), 36), chat.id)}`;
+  const { user } = useAuth();
+  const MY_ID = user?.id || "anon";
+  const MY_NAME = user?.name || "Пользователь";
+  const chatId = String(chat.id).startsWith("mock_") || String(chat.id).startsWith("chat_")
+    ? String(chat.id)
+    : `chat_${MY_ID}_${chat.id}`;
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [call, setCall] = useState<"audio" | "video" | null>(null);
@@ -51,13 +46,14 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
         `${API}?module=chat&action=messages&chat_id=${chatId}&since_id=${lastIdRef.current}`,
         { headers: { "X-User-Id": MY_ID, "X-User-Name": MY_NAME } }
       );
-      const data = await res.json();
+      const raw = await res.json();
+      const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
       if (data.messages?.length) {
         lastIdRef.current = data.messages[data.messages.length - 1].id;
         setMessages((prev) => [...prev, ...data.messages]);
       }
     } catch (e) { void e; }
-  }, [chatId]);
+  }, [chatId, MY_ID, MY_NAME]);
 
   useEffect(() => {
     fetchMessages();
@@ -78,7 +74,8 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
         headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": MY_NAME },
         body: JSON.stringify({ chat_id: chatId, content, type }),
       });
-      const data = await res.json();
+      const raw = await res.json();
+      const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
       if (data.ok) {
         const now = new Date();
         const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;

@@ -50,6 +50,7 @@ def handler(event: dict, context) -> dict:
             'likes': str(r[7]),
             'comments': str(r[8]),
             'shares': str(r[9]),
+            'avatar': r[1] if r[6] == 'image' else None,
         }
         for r in rows
     ]

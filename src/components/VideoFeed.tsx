@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import VideoCard, { VideoData } from "./VideoCard";
 import { useUserMedia } from "@/context/UserMediaContext";
+import { useAuth } from "@/context/AuthContext";
 
 export const CATEGORIES = [
   { id: "all", label: "Все" },
@@ -268,7 +269,9 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [dbVideos, setDbVideos] = useState<(VideoData & { category: string })[]>([]);
+  const [dbLoaded, setDbLoaded] = useState(false);
   const { userVideos } = useUserMedia();
+  const { user } = useAuth();
 
   const userVideoData: (VideoData & { category: string })[] = userVideos
     .filter(v => v.type === "video")
@@ -276,18 +279,19 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
       id: v.id,
       image: v.url,
       isVideo: true,
-      author: "Я",
-      handle: "alex_user",
+      author: user?.name || "Я",
+      handle: user?.handle || "user",
       description: "Моё видео",
       song: "Оригинальный звук",
       likes: "0",
       comments: "0",
       shares: "0",
       category: "all",
-      avatar: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/014c6ddd-1707-4449-afdd-e9012de11b20.jpg",
+      avatar: user?.avatar || "",
     }));
 
   useEffect(() => {
+    setDbLoaded(false);
     const url = activeCategory && activeCategory !== "all"
       ? `${GET_VIDEOS_URL}?type=video&category=${activeCategory}`
       : `${GET_VIDEOS_URL}?type=video`;
@@ -295,29 +299,29 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
       .then(r => r.json())
       .then(raw => {
         const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
-        if (data.videos && data.videos.length > 0) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setDbVideos(data.videos.map((v: any) => ({
-            id: v.id + 10000,
-            image: v.url,
-            author: v.author || "Автор",
-            handle: v.handle || "user",
-            description: v.description || "",
-            song: "Look — Original Sound",
-            likes: v.likes || "0",
-            comments: v.comments || "0",
-            shares: v.shares || "0",
-            category: v.category || "all",
-            avatar: "",
-          })));
-          setActiveIndex(0);
-          if (containerRef.current) containerRef.current.scrollTop = 0;
-        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setDbVideos((data.videos || []).map((v: any) => ({
+          id: v.id + 10000,
+          image: v.url,
+          isVideo: v.type === 'video',
+          author: v.author || "Автор",
+          handle: v.handle || "user",
+          description: v.description || "",
+          song: "Look — Original Sound",
+          likes: v.likes || "0",
+          comments: v.comments || "0",
+          shares: v.shares || "0",
+          category: v.category || "all",
+          avatar: v.avatar || "",
+        })));
+        setActiveIndex(0);
+        if (containerRef.current) containerRef.current.scrollTop = 0;
       })
-      .catch(e => console.error('VideoFeed fetch error:', e));
+      .catch(e => console.error('VideoFeed fetch error:', e))
+      .finally(() => setDbLoaded(true));
   }, [activeCategory]);
 
-  const allVideos = [...userVideoData, ...dbVideos, ...VIDEOS];
+  const allVideos = [...userVideoData, ...dbVideos, ...(dbLoaded && dbVideos.length > 0 ? [] : VIDEOS)];
   const filtered = activeCategory === "all"
     ? allVideos
     : allVideos.filter((v) => v.category === activeCategory);

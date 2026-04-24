@@ -70,8 +70,82 @@ def handler(event: dict, context) -> dict:
                     return {'statusCode': 200, 'headers': headers,
                             'body': json.dumps({'users': users})}
 
+                elif action == 'list':
+                    cur.execute(
+                        "SELECT c.id, c.type, c.name, c.avatar, "
+                        "m.user_name, m.type, m.content, m.created_at, "
+                        "u.online_at > NOW() - INTERVAL '30 seconds' "
+                        "FROM sa_chats c "
+                        "JOIN sa_chat_members cm ON cm.chat_id = c.id AND cm.user_id = %s "
+                        "LEFT JOIN LATERAL ("
+                        "  SELECT user_name, type, content, created_at FROM sa_messages "
+                        "  WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1"
+                        ") m ON true "
+                        "LEFT JOIN sa_users u ON u.id = ("
+                        "  SELECT user_id FROM sa_chat_members "
+                        "  WHERE chat_id = c.id AND user_id != %s LIMIT 1"
+                        ") "
+                        "ORDER BY COALESCE(m.created_at, c.created_at) DESC",
+                        (user_id, user_id)
+                    )
+                    rows = cur.fetchall()
+                    chats = []
+                    for r in rows:
+                        last_msg = ''
+                        time_str = ''
+                        if r[4]:
+                            if r[5] == 'image':
+                                last_msg = '📷 Фото'
+                            elif r[5] == 'voice':
+                                last_msg = '🎤 Голосовое'
+                            else:
+                                last_msg = r[6] or ''
+                        if r[7]:
+                            import datetime
+                            now = datetime.datetime.now(r[7].tzinfo) if r[7].tzinfo else datetime.datetime.now()
+                            diff = now - r[7]
+                            if diff.total_seconds() < 60:
+                                time_str = 'сейчас'
+                            elif diff.total_seconds() < 3600:
+                                time_str = f"{int(diff.total_seconds()//60)} мин"
+                            elif diff.total_seconds() < 86400:
+                                time_str = f"{int(diff.total_seconds()//3600)} ч"
+                            else:
+                                time_str = 'вчера'
+                        chats.append({
+                            'id': r[0], 'type': r[1], 'name': r[2] or 'Чат',
+                            'avatar': r[3], 'lastMsg': last_msg, 'time': time_str,
+                            'online': bool(r[8])
+                        })
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'chats': chats})}
+
             elif method == 'POST':
                 body = json.loads(event.get('body') or '{}')
+                post_action = body.get('action', 'send')
+
+                if post_action == 'create_chat':
+                    import uuid as _uuid
+                    chat_name = body.get('name', 'Новый чат')
+                    chat_avatar = body.get('avatar')
+                    chat_type = body.get('chat_type', 'personal')
+                    members = body.get('members', [])
+                    new_id = str(_uuid.uuid4())[:12]
+                    cur.execute(
+                        "INSERT INTO sa_chats (id, type, name, avatar) VALUES (%s, %s, %s, %s)",
+                        (new_id, chat_type, chat_name, chat_avatar)
+                    )
+                    all_members = list(set([user_id] + members))
+                    for mid in all_members:
+                        cur.execute(
+                            "INSERT INTO sa_chat_members (chat_id, user_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                            (new_id, mid)
+                        )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'chat_id': new_id, 'ok': True})}
+
                 chat_id = body.get('chat_id')
                 content = body.get('content', '')
                 msg_type = body.get('type', 'text')
@@ -83,6 +157,10 @@ def handler(event: dict, context) -> dict:
                 cur.execute(
                     "INSERT INTO sa_chats (id, type) VALUES (%s, 'personal') ON CONFLICT DO NOTHING",
                     (chat_id,)
+                )
+                cur.execute(
+                    "INSERT INTO sa_chat_members (chat_id, user_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                    (chat_id, user_id)
                 )
                 cur.execute(
                     "INSERT INTO sa_messages (chat_id, user_id, user_name, type, content) "
