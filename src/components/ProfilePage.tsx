@@ -255,7 +255,7 @@ const ProfilePage = () => {
   const [showScreen, setShowScreen] = useState<"followers" | "following" | null>(null);
   const { userVideos: stories, removeMedia } = useUserMedia();
   const [viewingStory, setViewingStory] = useState<number | null>(null);
-  const [mediaViewer, setMediaViewer] = useState<{ items: Story[]; index: number } | null>(null);
+  const [mediaViewer, setMediaViewer] = useState<{ tab: "video" | "image"; index: number } | null>(null);
 
   if (showSettings) return <SettingsScreen onBack={() => setShowSettings(false)} />;
   if (showScreen === "followers") return <UserListScreen title="Подписчики" users={FOLLOWERS} onBack={() => setShowScreen(null)} />;
@@ -266,17 +266,22 @@ const ProfilePage = () => {
       {viewingStory !== null && (
         <StoryViewer stories={stories} startIndex={viewingStory} onClose={() => setViewingStory(null)} />
       )}
-      {mediaViewer !== null && (
-        <MediaViewer
-          items={mediaViewer.items}
-          startIndex={mediaViewer.index}
-          onClose={() => setMediaViewer(null)}
-          onDelete={(id) => {
-            removeMedia(id);
-            setMediaViewer(null);
-          }}
-        />
-      )}
+      {mediaViewer !== null && (() => {
+        const liveItems = stories.filter(s => s.type === mediaViewer.tab);
+        if (liveItems.length === 0) { setMediaViewer(null); return null; }
+        const safeIndex = Math.min(mediaViewer.index, liveItems.length - 1);
+        return (
+          <MediaViewer
+            items={liveItems}
+            startIndex={safeIndex}
+            onClose={() => setMediaViewer(null)}
+            onDelete={(id) => {
+              removeMedia(id);
+              if (liveItems.length <= 1) setMediaViewer(null);
+            }}
+          />
+        );
+      })()}
 
       {/* Avatar + stats */}
       <div className="flex items-center gap-4 px-4 pt-14 pb-4">
@@ -362,7 +367,7 @@ const ProfilePage = () => {
           ) : (
             <div className="grid grid-cols-3 gap-px bg-gray-100">
               {videos.map((item, i) => (
-                <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200 cursor-pointer" onClick={() => setMediaViewer({ items: videos, index: i })}>
+                <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200 cursor-pointer" onClick={() => setMediaViewer({ tab: "video", index: i })}>
                   <video src={item.url} className="w-full h-full object-cover" muted playsInline />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="bg-black/40 rounded-full p-2">
@@ -387,7 +392,7 @@ const ProfilePage = () => {
           ) : (
             <div className="grid grid-cols-3 gap-px bg-gray-100">
               {photos.map((item, i) => (
-                <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200 cursor-pointer" onClick={() => setMediaViewer({ items: photos, index: i })}>
+                <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200 cursor-pointer" onClick={() => setMediaViewer({ tab: "image", index: i })}>
                   <img src={item.url} alt="" className="w-full h-full object-cover" />
                 </div>
               ))}
