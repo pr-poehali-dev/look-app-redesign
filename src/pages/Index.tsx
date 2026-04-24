@@ -2,6 +2,7 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import VideoFeed from "@/components/VideoFeed";
 import PostFeed from "@/components/PostFeed";
+import LiveStream from "@/components/LiveStream";
 
 const TABS = [
   { id: "home", icon: "Home", label: "Главная" },
@@ -14,14 +15,26 @@ const TABS = [
 const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
   const [feedMode, setFeedMode] = useState<"for-you" | "following">("for-you");
+  const [showLive, setShowLive] = useState(false);
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col overflow-hidden" style={{ maxWidth: 480, margin: "0 auto" }}>
 
+      {/* Live Stream overlay */}
+      {showLive && (
+        <div className="absolute inset-0 z-50">
+          <LiveStream onClose={() => setShowLive(false)} />
+        </div>
+      )}
+
       {/* Top Header */}
       <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 pt-10 pb-3 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" style={{ maxWidth: 480, margin: "0 auto" }}>
-        <button className="pointer-events-auto">
-          <Icon name="Tv2" size={22} className="text-white" />
+        <button
+          className="pointer-events-auto flex items-center gap-1.5 bg-[#fe2c55] px-2.5 py-1 rounded-md hover:bg-[#e0264c] active:scale-95 transition-all"
+          onClick={() => setShowLive(true)}
+        >
+          <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+          <span className="text-white text-xs font-bold tracking-wide">LIVE</span>
         </button>
 
         <div className="flex items-center gap-6 pointer-events-auto">
