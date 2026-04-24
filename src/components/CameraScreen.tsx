@@ -48,7 +48,33 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
   const [showMusicPanel, setShowMusicPanel] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<typeof TRACKS[0] | null>(null);
   const [playingId, setPlayingId] = useState<number | null>(null);
+  const [uploadedAudio, setUploadedAudio] = useState<{ name: string; url: string } | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setUploadedAudio({ name: file.name.replace(/\.[^.]+$/, ""), url });
+    setSelectedTrack(null);
+    setPlayingId(null);
+    if (audioRef.current) {
+      audioRef.current.src = url;
+      audioRef.current.loop = true;
+      audioRef.current.play().catch(() => {});
+    }
+    setShowMusicPanel(false);
+  };
+
+  const removeUploadedAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+    }
+    setUploadedAudio(null);
+  };
 
   const startCamera = async (facingMode: "user" | "environment") => {
     if (streamRef.current) {
@@ -108,6 +134,17 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
 
   return (
     <div className="relative w-full h-full bg-black overflow-hidden flex flex-col">
+
+      {/* Hidden audio player */}
+      <audio ref={audioRef} loop />
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="audio/*"
+        className="hidden"
+        onChange={handleAudioUpload}
+      />
 
       {/* Camera preview */}
       <div className="absolute inset-0">
@@ -198,18 +235,18 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
       <div className="relative z-20 flex-1" />
 
       {/* Selected track ticker */}
-      {selectedTrack && !showMusicPanel && (
+      {(selectedTrack || uploadedAudio) && !showMusicPanel && (
         <div className="relative z-20 mx-4 mb-3 flex items-center gap-2 bg-black/50 backdrop-blur-sm border border-white/15 rounded-full px-4 py-2">
           <div
-            className="w-6 h-6 rounded-full flex items-center justify-center animate-spin"
-            style={{ background: selectedTrack.color, animationDuration: "3s" }}
+            className="w-6 h-6 rounded-full flex items-center justify-center animate-spin flex-shrink-0"
+            style={{ background: selectedTrack ? selectedTrack.color : "#fe2c55", animationDuration: "3s" }}
           >
             <Icon name="Music" size={11} className="text-white" />
           </div>
           <span className="text-white text-xs font-medium flex-1 truncate">
-            {selectedTrack.title} — {selectedTrack.artist}
+            {uploadedAudio ? uploadedAudio.name : `${selectedTrack!.title} — ${selectedTrack!.artist}`}
           </span>
-          <button onClick={() => setSelectedTrack(null)}>
+          <button onClick={() => { setSelectedTrack(null); removeUploadedAudio(); }}>
             <Icon name="X" size={14} className="text-white/50" />
           </button>
         </div>
@@ -224,6 +261,25 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
               <Icon name="ChevronDown" size={20} className="text-white/60" />
             </button>
           </div>
+
+          {/* Upload from device */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="mx-3 mb-2 w-[calc(100%-24px)] flex items-center gap-3 bg-white/8 border border-dashed border-white/20 rounded-2xl px-4 py-3 hover:bg-white/12 active:scale-[0.98] transition-all"
+          >
+            <div className="w-9 h-9 rounded-xl bg-[#fe2c55]/20 border border-[#fe2c55]/40 flex items-center justify-center flex-shrink-0">
+              <Icon name="Upload" size={17} className="text-[#fe2c55]" />
+            </div>
+            <div className="text-left">
+              <p className="text-white text-sm font-semibold">Загрузить с устройства</p>
+              <p className="text-white/40 text-xs">MP3, AAC, WAV, M4A</p>
+            </div>
+            {uploadedAudio && (
+              <div className="ml-auto w-5 h-5 rounded-full bg-[#fe2c55] flex items-center justify-center">
+                <Icon name="Check" size={11} className="text-white" />
+              </div>
+            )}
+          </button>
           <div className="flex flex-col max-h-52 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
             {TRACKS.map((track) => {
               const isSelected = selectedTrack?.id === track.id;
