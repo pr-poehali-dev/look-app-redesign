@@ -220,6 +220,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
         accept="image/*,video/*"
         className="hidden"
         onChange={handleMediaUpload}
+        onClick={(e) => e.stopPropagation()}
       />
 
       {/* Camera preview */}
@@ -495,15 +496,15 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
 
         {/* Gallery */}
         <button
-          onClick={() => mediaInputRef.current?.click()}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); mediaInputRef.current?.click(); }}
           className="w-14 h-14 rounded-xl overflow-hidden border-2 border-white/30 active:scale-95 transition-transform relative"
         >
           {uploadedMedia ? (
             uploadedMedia.type === "image"
-              ? <img src={uploadedMedia.url} className="w-full h-full object-cover" alt="gallery" />
-              : <video src={uploadedMedia.url} className="w-full h-full object-cover" muted />
+              ? <img src={uploadedMedia.url} className="w-full h-full object-cover pointer-events-none" alt="gallery" />
+              : <video src={uploadedMedia.url} className="w-full h-full object-cover pointer-events-none" muted playsInline />
           ) : (
-            <div className="w-full h-full bg-white/10 flex flex-col items-center justify-center gap-0.5">
+            <div className="w-full h-full bg-white/10 flex flex-col items-center justify-center gap-0.5 pointer-events-none">
               <Icon name="Image" size={20} className="text-white/60" />
               <span className="text-white/40 text-[9px]">Галерея</span>
             </div>
