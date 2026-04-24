@@ -10,9 +10,9 @@ import MessagesScreen from "@/components/MessagesScreen";
 
 const TABS = [
   { id: "home", icon: "Home", label: "Главная" },
-  { id: "messages", icon: "MessageCircle", label: "Чаты" },
+  { id: "feed", icon: "LayoutList", label: "Лента" },
   { id: "add", icon: "Plus", label: "" },
-  { id: "live", icon: "Radio", label: "Эфиры" },
+  { id: "messages", icon: "MessageCircle", label: "Чаты" },
   { id: "profile", icon: "User", label: "Профиль" },
 ];
 
