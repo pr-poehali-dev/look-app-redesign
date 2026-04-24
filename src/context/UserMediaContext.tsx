@@ -15,7 +15,7 @@ interface UserMediaContextType {
 }
 
 const UPLOAD_URL = "https://functions.poehali.dev/78967386-1bfb-4070-9bb3-549cc5c00de6";
-const GET_USER_VIDEOS_URL = "https://functions.poehali.dev/075d6280-020a-48ce-a5e4-64eb3291a01e";
+const USER_VIDEOS_URL = "https://functions.poehali.dev/075d6280-020a-48ce-a5e4-64eb3291a01e";
 
 const getUserId = () => {
   let id = localStorage.getItem("user_id");
@@ -34,7 +34,7 @@ export const UserMediaProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const userId = getUserId();
-    fetch(`${GET_USER_VIDEOS_URL}?user_id=${userId}`)
+    fetch(`${USER_VIDEOS_URL}?user_id=${userId}`)
       .then(r => r.json())
       .then(raw => {
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
@@ -83,6 +83,12 @@ export const UserMediaProvider = ({ children }: { children: ReactNode }) => {
 
   const removeMedia = (id: number) => {
     setUserVideos(s => s.filter(x => x.id !== id));
+    const userId = getUserId();
+    fetch(USER_VIDEOS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, user_id: userId }),
+    }).catch(() => {});
   };
 
   return (
