@@ -176,7 +176,7 @@ const ProfilePage = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6]" />
         <div className="relative px-5 py-5 flex items-center justify-between">
           <div>
-            <p className="text-white font-bold text-base">Скачай ShortApp</p>
+            <p className="text-white font-bold text-base">Скачай Look</p>
             <p className="text-white/70 text-xs mt-0.5">Смотри и создавай контент</p>
           </div>
           <a
