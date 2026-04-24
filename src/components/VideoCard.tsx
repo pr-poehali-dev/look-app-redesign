@@ -214,18 +214,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
 
         {/* Share */}
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            const url = window.location.href;
-            const text = `${video.description} — @${video.handle}`;
-            if (navigator.share) {
-              navigator.share({ title: `@${video.handle}`, text, url }).catch(() => {});
-            } else {
-              navigator.clipboard.writeText(`${text}\n${url}`)
-                .then(() => alert("Ссылка скопирована!"))
-                .catch(() => alert("Поделиться: " + url));
-            }
-          }}
+          onClick={(e) => { e.stopPropagation(); setShowShare(true); }}
           className="flex flex-col items-center gap-1"
         >
           <div className="w-11 h-11 rounded-full flex items-center justify-center">
@@ -256,6 +245,65 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
           <img src={video.avatar} alt="disc" className="w-full h-full object-cover" />
         </div>
       </div>
+
+      {showShare && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex flex-col justify-end"
+          onClick={() => setShowShare(false)}
+        >
+          <div
+            className="bg-zinc-900 rounded-t-3xl px-4 pt-5 pb-10"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <span className="text-white font-bold text-base">Поделиться</span>
+              <button onClick={() => setShowShare(false)}>
+                <Icon name="X" size={20} className="text-white/60" />
+              </button>
+            </div>
+
+            {/* Share options */}
+            <div className="grid grid-cols-4 gap-4 mb-6">
+              {[
+                { icon: "MessageCircle", label: "Telegram", color: "#229ED9", href: `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`@${video.handle}: ${video.description}`)}` },
+                { icon: "Send", label: "WhatsApp", color: "#25D366", href: `https://wa.me/?text=${encodeURIComponent(`@${video.handle}: ${video.description}\n${window.location.href}`)}` },
+                { icon: "Share2", label: "VK", color: "#0077FF", href: `https://vk.com/share.php?url=${encodeURIComponent(window.location.href)}` },
+                { icon: "Mail", label: "Email", color: "#fe2c55", href: `mailto:?subject=${encodeURIComponent(`@${video.handle}`)}&body=${encodeURIComponent(`${video.description}\n${window.location.href}`)}` },
+              ].map(opt => (
+                <a
+                  key={opt.label}
+                  href={opt.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex flex-col items-center gap-2"
+                  onClick={() => setShowShare(false)}
+                >
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: opt.color + "22", border: `1.5px solid ${opt.color}55` }}>
+                    <Icon name={opt.icon} size={24} style={{ color: opt.color }} />
+                  </div>
+                  <span className="text-white/70 text-xs">{opt.label}</span>
+                </a>
+              ))}
+            </div>
+
+            {/* Copy link */}
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href).catch(() => {});
+                setCopied(true);
+                setTimeout(() => { setCopied(false); setShowShare(false); }, 1500);
+              }}
+              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3"
+            >
+              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                <Icon name={copied ? "Check" : "Link"} size={20} className={copied ? "text-green-400" : "text-white"} />
+              </div>
+              <span className="text-white text-sm font-medium">{copied ? "Скопировано!" : "Скопировать ссылку"}</span>
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {showComments && createPortal(
         <div
