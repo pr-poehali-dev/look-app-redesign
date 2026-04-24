@@ -58,13 +58,8 @@ const MessagesScreen = () => {
 
   return (
     <div className="h-full bg-black flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-14 pb-3">
-        <h2 className="text-white font-bold text-xl">Чаты</h2>
-      </div>
-
       {/* Search */}
-      <div className="px-4 pb-3">
+      <div className="px-4 pt-14 pb-3">
         <div className="flex items-center gap-2 bg-white/8 rounded-full px-4 py-2.5">
           <Icon name="Search" size={16} className="text-white/40" />
           <input
