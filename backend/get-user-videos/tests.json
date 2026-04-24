@@ -1,0 +1,18 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Get user videos",
+      "method": "GET",
+      "path": "/?user_id=anonymous",
+      "expectedStatus": 200,
+      "expectedBody": {"videos": []},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
