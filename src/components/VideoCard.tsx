@@ -212,7 +212,18 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
 
         {/* Share */}
         <button
-          onClick={(e) => { e.stopPropagation(); handleShare(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            const url = window.location.href;
+            const text = `${video.description} — @${video.handle}`;
+            if (navigator.share) {
+              navigator.share({ title: `@${video.handle}`, text, url }).catch(() => {});
+            } else {
+              navigator.clipboard.writeText(`${text}\n${url}`)
+                .then(() => alert("Ссылка скопирована!"))
+                .catch(() => alert("Поделиться: " + url));
+            }
+          }}
           className="flex flex-col items-center gap-1"
         >
           <div className="w-11 h-11 rounded-full flex items-center justify-center">
