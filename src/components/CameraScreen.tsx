@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
+import { useUserMedia } from "@/context/UserMediaContext";
 
 const TRACKS = [
   { id: 1, title: "Roses Remix", artist: "Imanbek", duration: "2:34", color: "#fe2c55" },
@@ -35,6 +36,7 @@ interface CameraScreenProps {
 }
 
 const CameraScreen = ({ onClose }: CameraScreenProps) => {
+  const { addMedia } = useUserMedia();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [facing, setFacing] = useState<"user" | "environment">("environment");
@@ -84,6 +86,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
     const type = file.type.startsWith("video") ? "video" : "image";
     setUploadedMedia({ url, type });
     setPublished(false);
+    addMedia(file);
   };
 
   const handlePublish = async () => {

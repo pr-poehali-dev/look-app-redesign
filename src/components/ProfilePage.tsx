@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import SettingsScreen from "./SettingsScreen";
 import { useUserMedia } from "@/context/UserMediaContext";
@@ -240,24 +240,9 @@ const ProfilePage = () => {
   const [tab, setTab] = useState<"videos" | "posts">("videos");
   const [showSettings, setShowSettings] = useState(false);
   const [showScreen, setShowScreen] = useState<"followers" | "following" | null>(null);
-  const { userVideos: stories, addMedia, removeMedia } = useUserMedia();
+  const { userVideos: stories, removeMedia } = useUserMedia();
   const [viewingStory, setViewingStory] = useState<number | null>(null);
   const [mediaViewer, setMediaViewer] = useState<{ items: Story[]; index: number } | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
-  const photoInputRef = useRef<HTMLInputElement>(null);
-
-  const handleAddStory = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    addMedia(file);
-    e.target.value = "";
-  };
-
-  const handleAddMedia = (e: React.ChangeEvent<HTMLInputElement>) => {
-    Array.from(e.target.files || []).forEach(file => addMedia(file));
-    e.target.value = "";
-  };
 
   if (showSettings) return <SettingsScreen onBack={() => setShowSettings(false)} />;
   if (showScreen === "followers") return <UserListScreen title="Подписчики" users={FOLLOWERS} onBack={() => setShowScreen(null)} />;
@@ -325,36 +310,7 @@ const ProfilePage = () => {
         </button>
       </div>
 
-      {/* Stories row */}
-      <div className="flex gap-3 px-4 pb-4 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-        {/* Add story button */}
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="flex-shrink-0 flex flex-col items-center gap-1"
-        >
-          <div className="w-16 h-16 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
-            <Icon name="Plus" size={22} className="text-gray-400" />
-          </div>
-          <span className="text-[10px] text-gray-500">Добавить</span>
-        </button>
-        <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleAddStory} />
 
-        {/* Stories */}
-        {stories.map((story, i) => (
-          <button key={story.id} onClick={() => setViewingStory(i)} className="flex-shrink-0 flex flex-col items-center gap-1">
-            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#8b5cf6] p-0.5">
-              <div className="w-full h-full rounded-full overflow-hidden bg-gray-200">
-                {story.type === "image" ? (
-                  <img src={story.url} className="w-full h-full object-cover" alt="" />
-                ) : (
-                  <video src={story.url} className="w-full h-full object-cover" muted playsInline />
-                )}
-              </div>
-            </div>
-            <span className="text-[10px] text-gray-500">{story.label}</span>
-          </button>
-        ))}
-      </div>
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200">
@@ -380,10 +336,6 @@ const ProfilePage = () => {
         </button>
       </div>
 
-      {/* Grid */}
-      <input ref={videoInputRef} type="file" accept="video/*" multiple className="hidden" onChange={handleAddMedia} />
-      <input ref={photoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleAddMedia} />
-
       {tab === "videos" ? (
         (() => {
           const videos = stories.filter(s => s.type === "video");
@@ -393,13 +345,6 @@ const ProfilePage = () => {
                 <Icon name="Video" size={28} className="text-gray-300" />
               </div>
               <p className="text-sm text-gray-400">Нет загруженных видео</p>
-              <button
-                onClick={() => videoInputRef.current?.click()}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-semibold"
-              >
-                <Icon name="Plus" size={16} className="text-white" />
-                Загрузить видео
-              </button>
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-px bg-gray-100">
@@ -413,12 +358,6 @@ const ProfilePage = () => {
                   </div>
                 </div>
               ))}
-              <button
-                onClick={() => videoInputRef.current?.click()}
-                className="aspect-square bg-gray-50 flex items-center justify-center border border-dashed border-gray-300"
-              >
-                <Icon name="Plus" size={24} className="text-gray-400" />
-              </button>
             </div>
           );
         })()
@@ -431,13 +370,6 @@ const ProfilePage = () => {
                 <Icon name="Image" size={28} className="text-gray-300" />
               </div>
               <p className="text-sm text-gray-400">Нет загруженных фото</p>
-              <button
-                onClick={() => photoInputRef.current?.click()}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-semibold"
-              >
-                <Icon name="Plus" size={16} className="text-white" />
-                Загрузить фото
-              </button>
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-px bg-gray-100">
@@ -446,12 +378,6 @@ const ProfilePage = () => {
                   <img src={item.url} alt="" className="w-full h-full object-cover" />
                 </div>
               ))}
-              <button
-                onClick={() => photoInputRef.current?.click()}
-                className="aspect-square bg-gray-50 flex items-center justify-center border border-dashed border-gray-300"
-              >
-                <Icon name="Plus" size={24} className="text-gray-400" />
-              </button>
             </div>
           );
         })()
