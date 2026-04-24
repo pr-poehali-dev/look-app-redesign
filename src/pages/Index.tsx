@@ -77,7 +77,7 @@ const Index = () => {
       {/* Top header only for home tab */}
       {activeTab === "feed" && (
         <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 pt-10 pb-3 bg-black border-b border-white/8" style={{ maxWidth: 480, margin: "0 auto" }}>
-          <span className="font-bold text-white text-lg">ShortApp</span>
+          <span className="font-bold text-white text-lg">Look</span>
           <div className="flex items-center gap-4">
             <button><Icon name="Heart" size={22} className="text-white" /></button>
             <button><Icon name="Send" size={22} className="text-white" /></button>

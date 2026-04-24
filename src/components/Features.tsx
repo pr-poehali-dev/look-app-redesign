@@ -12,7 +12,7 @@ const features = [
   {
     icon: "Video",
     title: "Съёмка в приложении",
-    desc: "Записывай видео прямо в ShortApp с фильтрами, музыкой и эффектами в один клик.",
+    desc: "Записывай видео прямо в Look с фильтрами, музыкой и эффектами в один клик.",
     color: "#8b5cf6",
     gradient: "from-[#8b5cf6]/20 to-transparent",
   },
@@ -130,7 +130,7 @@ const Features = () => {
             <span className="gradient-text">для крутого контента</span>
           </h2>
           <p className="font-body text-white/50 text-lg max-w-xl mx-auto">
-            ShortApp объединяет лучшие инструменты для создания и просмотра видео
+            Look объединяет лучшие инструменты для создания и просмотра видео
           </p>
         </div>
 

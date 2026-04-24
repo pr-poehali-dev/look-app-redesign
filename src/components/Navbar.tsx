@@ -29,7 +29,7 @@ const Navbar = () => {
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00d4ff] to-[#8b5cf6] flex items-center justify-center">
             <Icon name="Zap" size={16} className="text-[#080c14]" />
           </div>
-          <span className="font-display text-xl font-bold gradient-text tracking-wide">ShortApp</span>
+          <span className="font-display text-xl font-bold gradient-text tracking-wide">Look</span>
         </div>
 
         <nav className="hidden md:flex items-center gap-8">

@@ -86,7 +86,7 @@ const ProfilePage = () => {
           className="flex items-center gap-1 mt-1 text-[#61d4f0] text-sm"
         >
           <Icon name="Link" size={13} className="text-[#61d4f0]" />
-          ShortApp — скачать приложение
+          Look — скачать приложение
         </a>
       </div>
 

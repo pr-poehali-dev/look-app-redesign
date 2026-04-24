@@ -51,9 +51,7 @@ const Hero = () => {
           </div>
 
           <h1 className="font-display text-5xl md:text-7xl font-bold leading-tight mb-6">
-            <span className="gradient-text">SHORT</span>
-            <br />
-            <span className="text-white">APP</span>
+            <span className="gradient-text">LOOK</span>
           </h1>
 
           <p className="font-body text-lg md:text-xl text-white/60 max-w-xl mb-10 leading-relaxed">
@@ -97,7 +95,7 @@ const Hero = () => {
             <div className="relative w-64 h-[520px] md:w-72 md:h-[580px] rounded-[40px] overflow-hidden border border-white/10 shadow-[0_30px_80px_rgba(0,0,0,0.6)] neon-border">
               <img
                 src="https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/8c5bdcfd-94c7-4f6f-8957-0890e7b683b8.jpg"
-                alt="ShortApp Interface"
+                alt="Look Interface"
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#080c14]/80 via-transparent to-transparent" />

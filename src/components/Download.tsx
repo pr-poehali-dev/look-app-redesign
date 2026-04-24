@@ -41,7 +41,7 @@ const Download = () => {
         </h2>
 
         <p className="font-body text-white/50 text-lg max-w-lg mx-auto mb-14 leading-relaxed">
-          Скачай ShortApp прямо сейчас и присоединяйся к тысячам пользователей, которые уже оценили приложение
+          Скачай Look прямо сейчас и присоединяйся к тысячам пользователей, которые уже оценили приложение
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mb-16">
