@@ -60,15 +60,7 @@ const MessagesScreen = () => {
     <div className="h-full bg-black flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-14 pb-3">
-        <h2 className="text-white font-bold text-xl">Сообщения</h2>
-        <div className="flex items-center gap-3">
-          <button className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center">
-            <Icon name="Video" size={18} className="text-white" />
-          </button>
-          <button className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center">
-            <Icon name="SquarePen" size={18} className="text-white" />
-          </button>
-        </div>
+        <h2 className="text-white font-bold text-xl">Чаты</h2>
       </div>
 
       {/* Search */}
@@ -84,20 +76,7 @@ const MessagesScreen = () => {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex px-4 gap-2 pb-3">
-        {(["chats", "communities"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
-              tab === t ? "bg-white text-black" : "bg-white/10 text-white/60"
-            }`}
-          >
-            {t === "chats" ? "Чаты" : "Сообщества"}
-          </button>
-        ))}
-      </div>
+
 
       {/* Stories row */}
       <div className="flex gap-4 px-4 pb-4 overflow-x-scroll" style={{ scrollbarWidth: "none" }}>
