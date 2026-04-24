@@ -58,8 +58,20 @@ const MessagesScreen = () => {
 
   return (
     <div className="h-full bg-black flex flex-col overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 pt-14 pb-3">
+        <h2 className="text-white font-bold text-xl">Чаты</h2>
+        <button
+          onClick={() => setTab("communities")}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-white/70 text-sm font-medium hover:bg-white/15 transition-colors"
+        >
+          <Icon name="Users" size={15} className="text-white/70" />
+          Сообщества
+        </button>
+      </div>
+
       {/* Search */}
-      <div className="px-4 pt-14 pb-3">
+      <div className="px-4 pb-3">
         <div className="flex items-center gap-2 bg-white/8 rounded-full px-4 py-2.5">
           <Icon name="Search" size={16} className="text-white/40" />
           <input
