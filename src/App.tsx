@@ -27,7 +27,7 @@ const AppContent = () => {
   if (!user) return <AuthScreen />;
 
   return (
-    <UserMediaProvider>
+    <UserMediaProvider userId={user.id}>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />

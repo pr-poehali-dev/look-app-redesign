@@ -17,23 +17,14 @@ interface UserMediaContextType {
 const UPLOAD_URL = "https://functions.poehali.dev/78967386-1bfb-4070-9bb3-549cc5c00de6";
 const USER_VIDEOS_URL = "https://functions.poehali.dev/075d6280-020a-48ce-a5e4-64eb3291a01e";
 
-const getUserId = () => {
-  let id = localStorage.getItem("user_id");
-  if (!id) {
-    id = "user_" + Math.random().toString(36).slice(2, 10);
-    localStorage.setItem("user_id", id);
-  }
-  return id;
-};
-
 const UserMediaContext = createContext<UserMediaContextType | null>(null);
 
-export const UserMediaProvider = ({ children }: { children: ReactNode }) => {
+export const UserMediaProvider = ({ userId, children }: { userId: string; children: ReactNode }) => {
   const [userVideos, setUserVideos] = useState<UserVideo[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const userId = getUserId();
+    setLoading(true);
     fetch(`${USER_VIDEOS_URL}?user_id=${userId}`)
       .then(r => r.json())
       .then(raw => {
@@ -42,10 +33,9 @@ export const UserMediaProvider = ({ children }: { children: ReactNode }) => {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [userId]);
 
   const addMedia = async (file: File) => {
-    const userId = getUserId();
     const type = file.type.startsWith("video") ? "video" : "image";
     const ext = file.name.split(".").pop() || (type === "video" ? "mp4" : "jpg");
     const now = new Date();
@@ -83,7 +73,6 @@ export const UserMediaProvider = ({ children }: { children: ReactNode }) => {
 
   const removeMedia = (id: number) => {
     setUserVideos(s => s.filter(x => x.id !== id));
-    const userId = getUserId();
     fetch(USER_VIDEOS_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
