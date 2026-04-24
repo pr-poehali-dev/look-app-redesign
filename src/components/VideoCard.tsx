@@ -289,6 +289,10 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
                   placeholder="Написать комментарий..."
                   className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/40"
                   onKeyDown={e => e.key === "Enter" && handleSendComment()}
+                  onClick={e => e.stopPropagation()}
+                  onTouchStart={e => e.stopPropagation()}
+                  onMouseDown={e => e.stopPropagation()}
+                  autoComplete="off"
                 />
               </div>
               <button
