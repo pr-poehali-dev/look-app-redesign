@@ -275,7 +275,8 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
     .map(v => ({
       id: v.id,
       image: v.url,
-      author: "Алекс",
+      isVideo: true,
+      author: "Я",
       handle: "alex_user",
       description: "Моё видео",
       song: "Оригинальный звук",

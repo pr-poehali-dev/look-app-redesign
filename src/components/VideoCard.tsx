@@ -12,6 +12,7 @@ export interface VideoData {
   comments: string;
   shares: string;
   avatar: string;
+  isVideo?: boolean;
 }
 
 interface VideoCardProps {
@@ -45,7 +46,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
     setTimeout(() => setShowPauseIcon(false), 800);
   };
 
-  const isVideo = video.image.includes('.mp4');
+  const isVideo = video.isVideo ?? (video.image.includes('.mp4') || video.image.includes('.mov') || video.image.includes('.webm'));
 
   return (
     <div className="relative w-full h-full flex-shrink-0 snap-start overflow-hidden bg-black">
