@@ -289,6 +289,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
             shares: v.shares || "0",
             avatar: v.url,
             category: v.category,
+            isVideo: v.type === "video",
           })));
         }
       })
