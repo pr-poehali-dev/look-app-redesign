@@ -261,47 +261,13 @@ interface VideoFeedProps {
   activeCategory?: string;
 }
 
-const GET_VIDEOS_URL = "https://functions.poehali.dev/f58115ec-de09-405d-a2db-08fe1cd958e1";
-
 const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [dbVideos, setDbVideos] = useState<(VideoData & { category: string })[]>([]);
 
-  useEffect(() => {
-    const url = activeCategory && activeCategory !== "all"
-      ? `${GET_VIDEOS_URL}?type=video&category=${activeCategory}`
-      : `${GET_VIDEOS_URL}?type=video`;
-    fetch(url)
-      .then(r => r.json())
-      .then(raw => {
-        const data = typeof raw === 'string' ? JSON.parse(raw) : (raw.body ? (typeof raw.body === 'string' ? JSON.parse(raw.body) : raw.body) : raw);
-        if (data.videos && data.videos.length > 0) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setDbVideos(data.videos.map((v: any) => ({
-            id: v.id + 1000,
-            image: v.url,
-            author: v.author,
-            handle: v.handle,
-            description: v.description || "",
-            song: "Look — Original Sound",
-            likes: v.likes || "0",
-            comments: v.comments || "0",
-            shares: v.shares || "0",
-            avatar: v.url,
-            category: v.category,
-            isVideo: v.type === "video",
-          })));
-        }
-      })
-      .catch(() => {});
-  }, [activeCategory]);
-
-  const staticFiltered = activeCategory === "all"
+  const filtered = activeCategory === "all"
     ? VIDEOS
     : VIDEOS.filter((v) => v.category === activeCategory);
-
-  const allVideos = [...dbVideos, ...staticFiltered];
 
   useEffect(() => {
     setActiveIndex(0);
@@ -327,7 +293,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
       className="w-full h-full overflow-y-scroll snap-y snap-mandatory scrollbar-none"
       style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
     >
-      {allVideos.length > 0 ? allVideos.map((video, i) => (
+      {filtered.length > 0 ? filtered.map((video, i) => (
         <div key={video.id} className="w-full snap-start" style={{ height: "100%" }}>
           <VideoCard video={video} isActive={activeIndex === i} />
         </div>

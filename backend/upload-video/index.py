@@ -3,10 +3,9 @@ import os
 import base64
 import uuid
 import boto3
-import psycopg2
 
 def handler(event: dict, context) -> dict:
-    """Загрузка видео/фото в S3 и сохранение в БД"""
+    """Загрузка видео или фото в S3 хранилище"""
     if event.get('httpMethod') == 'OPTIONS':
         return {
             'statusCode': 200,
@@ -23,10 +22,6 @@ def handler(event: dict, context) -> dict:
     file_data = body.get('file')
     file_type = body.get('type', 'video/mp4')
     ext = body.get('ext', 'mp4')
-    category = body.get('category', 'humor')
-    description = body.get('description', '')
-    author = body.get('author', 'Пользователь')
-    handle = body.get('handle', 'user')
 
     if not file_data:
         return {
@@ -36,9 +31,7 @@ def handler(event: dict, context) -> dict:
         }
 
     file_bytes = base64.b64decode(file_data)
-    media_type = 'video' if file_type.startswith('video') else 'image'
-    folder = 'videos' if media_type == 'video' else 'photos'
-    file_name = f"{folder}/{uuid.uuid4()}.{ext}"
+    file_name = f"videos/{uuid.uuid4()}.{ext}"
 
     s3 = boto3.client(
         's3',
@@ -56,19 +49,8 @@ def handler(event: dict, context) -> dict:
 
     cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{file_name}"
 
-    conn = psycopg2.connect(os.environ['DATABASE_URL'])
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO videos (url, author, handle, description, category, type) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
-        (cdn_url, author, handle, description, category, media_type)
-    )
-    video_id = cur.fetchone()[0]
-    conn.commit()
-    cur.close()
-    conn.close()
-
     return {
         'statusCode': 200,
         'headers': {'Access-Control-Allow-Origin': '*'},
-        'body': json.dumps({'url': cdn_url, 'id': video_id, 'type': media_type})
+        'body': json.dumps({'url': cdn_url})
     }
