@@ -103,13 +103,13 @@ const CommunitiesScreen = ({ onBack }: Props) => {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Название сообщества..."
-            className="bg-white/8 rounded-xl px-3 py-2.5 text-white text-sm outline-none placeholder-white/30"
+            className="bg-zinc-800 rounded-xl px-3 py-2.5 text-white text-sm outline-none placeholder-zinc-500 border border-white/10"
           />
           <input
             value={newDesc}
             onChange={(e) => setNewDesc(e.target.value)}
             placeholder="Описание (необязательно)..."
-            className="bg-white/8 rounded-xl px-3 py-2.5 text-white text-sm outline-none placeholder-white/30"
+            className="bg-zinc-800 rounded-xl px-3 py-2.5 text-white text-sm outline-none placeholder-zinc-500 border border-white/10"
           />
           <div className="flex gap-2">
             {(["open", "closed"] as const).map((t) => (
