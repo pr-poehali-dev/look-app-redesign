@@ -106,6 +106,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
           {!showComments && (
             <div
               className="absolute inset-0 z-10 cursor-pointer"
+              style={{ right: '70px' }}
               onClick={handleVideoClick}
             />
           )}
@@ -160,7 +161,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
       </div>
 
       {/* Right side actions */}
-      <div className="absolute right-3 bottom-24 flex flex-col items-center gap-5 z-20">
+      <div className="absolute right-3 bottom-24 flex flex-col items-center gap-5 z-30">
         {/* Avatar */}
         <div className="relative mb-2">
           <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white">
@@ -189,6 +190,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
         {/* Comment */}
         <button
           onClick={(e) => { e.stopPropagation(); setShowComments(true); }}
+          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowComments(true); }}
           className="flex flex-col items-center gap-1"
         >
           <div className="w-11 h-11 rounded-full flex items-center justify-center">
@@ -215,6 +217,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
         {/* Share */}
         <button
           onClick={(e) => { e.stopPropagation(); setShowShare(true); }}
+          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowShare(true); }}
           className="flex flex-col items-center gap-1"
         >
           <div className="w-11 h-11 rounded-full flex items-center justify-center">
