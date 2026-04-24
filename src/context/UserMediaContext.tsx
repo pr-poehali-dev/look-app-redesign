@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export interface UserVideo {
   id: number;
@@ -13,17 +13,44 @@ interface UserMediaContextType {
   removeMedia: (id: number) => void;
 }
 
+const STORAGE_KEY = "user_media_v1";
+
+const loadFromStorage = (): UserVideo[] => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveToStorage = (videos: UserVideo[]) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(videos));
+  } catch {
+    // localStorage может быть переполнен — молча игнорируем
+  }
+};
+
 const UserMediaContext = createContext<UserMediaContextType | null>(null);
 
 export const UserMediaProvider = ({ children }: { children: ReactNode }) => {
-  const [userVideos, setUserVideos] = useState<UserVideo[]>([]);
+  const [userVideos, setUserVideos] = useState<UserVideo[]>(loadFromStorage);
+
+  useEffect(() => {
+    saveToStorage(userVideos);
+  }, [userVideos]);
 
   const addMedia = (file: File) => {
-    const url = URL.createObjectURL(file);
-    const type = file.type.startsWith("video") ? "video" : "image";
-    const now = new Date();
-    const label = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
-    setUserVideos(s => [{ id: Date.now() + Math.random(), url, type, label }, ...s]);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const url = reader.result as string; // base64 data URL
+      const type = file.type.startsWith("video") ? "video" : "image";
+      const now = new Date();
+      const label = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
+      setUserVideos(s => [{ id: Date.now() + Math.random(), url, type, label }, ...s]);
+    };
+    reader.readAsDataURL(file);
   };
 
   const removeMedia = (id: number) => {
