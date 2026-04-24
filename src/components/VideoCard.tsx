@@ -118,6 +118,23 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
           <span className="text-white text-xs font-semibold">Поделиться</span>
         </button>
 
+        {/* Download */}
+        <button
+          onClick={() => {
+            const a = document.createElement("a");
+            a.href = video.image;
+            a.download = `look_${video.id}.jpg`;
+            a.target = "_blank";
+            a.click();
+          }}
+          className="flex flex-col items-center gap-1"
+        >
+          <div className="w-11 h-11 rounded-full flex items-center justify-center">
+            <Icon name="Download" size={24} className="text-white" />
+          </div>
+          <span className="text-white text-xs font-semibold">Скачать</span>
+        </button>
+
         {/* Spinning disc */}
         <div className="w-10 h-10 rounded-full border-4 border-white/30 overflow-hidden animate-spin" style={{ animationDuration: "3s" }}>
           <img src={video.avatar} alt="disc" className="w-full h-full object-cover" />
