@@ -2,6 +2,7 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import SettingsScreen from "./SettingsScreen";
 import { useUserMedia } from "@/context/UserMediaContext";
+import { useAuth } from "@/context/AuthContext";
 
 const AVATAR = "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/014c6ddd-1707-4449-afdd-e9012de11b20.jpg";
 
@@ -254,6 +255,7 @@ const ProfilePage = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showScreen, setShowScreen] = useState<"followers" | "following" | null>(null);
   const { userVideos: stories, removeMedia } = useUserMedia();
+  const { user, logout } = useAuth();
   const [viewingStory, setViewingStory] = useState<number | null>(null);
   const [mediaViewer, setMediaViewer] = useState<{ tab: "video" | "image"; index: number } | null>(null);
 
@@ -286,7 +288,10 @@ const ProfilePage = () => {
       {/* Avatar + stats */}
       <div className="flex items-center gap-4 px-4 pt-14 pb-4">
         <div className="w-20 h-20 rounded-full overflow-hidden flex-shrink-0 bg-gradient-to-br from-[#c084fc] to-[#8b5cf6] flex items-center justify-center">
-          <img src={AVATAR} alt="avatar" className="w-full h-full object-cover" />
+          {user?.avatar
+            ? <img src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
+            : <span className="text-white font-black text-3xl">{user?.name?.[0]?.toUpperCase() ?? "?"}</span>
+          }
         </div>
 
         <div className="flex flex-1 justify-around">
@@ -311,8 +316,8 @@ const ProfilePage = () => {
 
       {/* Name & bio */}
       <div className="px-4 pb-4">
-        <p className="text-black font-bold text-lg leading-tight">Алекс</p>
-        <p className="text-gray-500 text-sm mt-0.5">Алекс</p>
+        <p className="text-black font-bold text-lg leading-tight">{user?.name ?? ""}</p>
+        <p className="text-gray-500 text-sm mt-0.5">@{user?.handle ?? ""}</p>
       </div>
 
       {/* Action buttons */}
@@ -325,6 +330,9 @@ const ProfilePage = () => {
         </button>
         <button className="w-12 py-2.5 rounded-xl bg-gray-100 flex items-center justify-center">
           <Icon name="Share2" size={18} className="text-black" />
+        </button>
+        <button onClick={logout} className="w-12 py-2.5 rounded-xl bg-gray-100 flex items-center justify-center">
+          <Icon name="LogOut" size={18} className="text-red-500" />
         </button>
       </div>
 

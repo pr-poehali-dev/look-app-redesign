@@ -7,9 +7,27 @@
       "expectedStatus": 200
     },
     {
-      "name": "Get user videos",
+      "name": "Register missing fields",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "register"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "Заполни все поля"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Login wrong credentials",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "login", "email": "no@no.no", "password": "wrong"},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "Неверный email или пароль"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get user videos empty",
       "method": "GET",
-      "path": "/?user_id=anonymous",
+      "path": "/?user_id=nonexistent_user",
       "expectedStatus": 200,
       "expectedBody": {"videos": []},
       "bodyMatcher": "partial"
