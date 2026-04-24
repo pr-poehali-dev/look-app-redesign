@@ -23,30 +23,53 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [following, setFollowing] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [showPauseIcon, setShowPauseIcon] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     if (!videoRef.current) return;
-    if (isActive) {
+    if (isActive && !paused) {
       videoRef.current.play().catch(() => {});
     } else {
       videoRef.current.pause();
     }
-  }, [isActive]);
+  }, [isActive, paused]);
+
+  const handleVideoClick = () => {
+    if (!videoRef.current) return;
+    const next = !paused;
+    setPaused(next);
+    setShowPauseIcon(true);
+    setTimeout(() => setShowPauseIcon(false), 800);
+  };
 
   const isVideo = video.image.includes('.mp4');
 
   return (
     <div className="relative w-full h-full flex-shrink-0 snap-start overflow-hidden bg-black">
       {isVideo ? (
-        <video
-          ref={videoRef}
-          src={video.image}
-          className="absolute inset-0 w-full h-full object-cover"
-          loop
-          muted
-          playsInline
-        />
+        <>
+          <video
+            ref={videoRef}
+            src={video.image}
+            className="absolute inset-0 w-full h-full object-cover"
+            loop
+            muted
+            playsInline
+          />
+          <div
+            className="absolute inset-0 z-10 cursor-pointer"
+            onClick={handleVideoClick}
+          />
+          {showPauseIcon && (
+            <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+              <div className="bg-black/40 rounded-full p-5 backdrop-blur-sm">
+                <Icon name={paused ? "Play" : "Pause"} size={40} className="text-white" />
+              </div>
+            </div>
+          )}
+        </>
       ) : (
         <img
           src={video.image}
@@ -54,7 +77,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
           className="absolute inset-0 w-full h-full object-cover"
         />
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
 
       {/* Bottom left info */}
       <div className="absolute bottom-20 left-4 right-16 z-10">
