@@ -41,14 +41,6 @@ const Index = () => {
 
       {/* Top Header */}
       <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 pt-10 pb-3 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" style={{ maxWidth: 480, margin: "0 auto" }}>
-        <button
-          className="pointer-events-auto flex items-center gap-1.5 bg-[#fe2c55] px-2.5 py-1 rounded-md hover:bg-[#e0264c] active:scale-95 transition-all"
-          onClick={() => setShowLive(true)}
-        >
-          <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-          <span className="text-white text-xs font-bold tracking-wide">LIVE</span>
-        </button>
-
         <div className="flex items-center gap-6 pointer-events-auto">
           <button
             onClick={() => setFeedMode("following")}
@@ -56,17 +48,6 @@ const Index = () => {
           >
             Подписки
           </button>
-          <div className="flex flex-col items-center">
-            <button
-              onClick={() => setFeedMode("for-you")}
-              className={`text-base font-semibold transition-all ${feedMode === "for-you" ? "text-white" : "text-white/50"}`}
-            >
-              Для тебя
-            </button>
-            {feedMode === "for-you" && (
-              <div className="mt-0.5 w-5 h-0.5 rounded-full bg-white" />
-            )}
-          </div>
         </div>
 
         <button className="pointer-events-auto">
