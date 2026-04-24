@@ -51,6 +51,16 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
   const [uploadedAudio, setUploadedAudio] = useState<{ name: string; url: string } | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedMedia, setUploadedMedia] = useState<{ url: string; type: "image" | "video" } | null>(null);
+
+  const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const type = file.type.startsWith("video") ? "video" : "image";
+    setUploadedMedia({ url, type });
+  };
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,13 +147,21 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
 
       {/* Hidden audio player */}
       <audio ref={audioRef} loop />
-      {/* Hidden file input */}
+      {/* Hidden file input for audio */}
       <input
         ref={fileInputRef}
         type="file"
         accept="audio/*"
         className="hidden"
         onChange={handleAudioUpload}
+      />
+      {/* Hidden file input for media */}
+      <input
+        ref={mediaInputRef}
+        type="file"
+        accept="image/*,video/*"
+        className="hidden"
+        onChange={handleMediaUpload}
       />
 
       {/* Camera preview */}
@@ -161,6 +179,28 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 -z-10" />
+
+        {/* Uploaded media preview */}
+        {uploadedMedia && (
+          <div className="absolute inset-0 z-30 bg-black">
+            {uploadedMedia.type === "image" ? (
+              <img src={uploadedMedia.url} className="w-full h-full object-contain" alt="preview" />
+            ) : (
+              <video src={uploadedMedia.url} className="w-full h-full object-contain" autoPlay loop playsInline />
+            )}
+            <button
+              onClick={() => setUploadedMedia(null)}
+              className="absolute top-14 left-5 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center z-40"
+            >
+              <Icon name="X" size={20} className="text-white" />
+            </button>
+            <div className="absolute bottom-14 left-0 right-0 flex justify-center z-40">
+              <button className="px-8 py-3 rounded-full bg-white text-black font-bold text-base">
+                Опубликовать
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Shutter flash */}
         {shutterFlash && (
@@ -344,12 +384,20 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
       <div className="relative z-20 flex items-center justify-between px-8 pb-14">
 
         {/* Gallery */}
-        <button className="w-14 h-14 rounded-xl overflow-hidden border-2 border-white/30 active:scale-95 transition-transform">
-          <img
-            src="https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/0730a864-0860-4c86-8845-835a8c4a720e.jpg"
-            className="w-full h-full object-cover"
-            alt="gallery"
-          />
+        <button
+          onClick={() => mediaInputRef.current?.click()}
+          className="w-14 h-14 rounded-xl overflow-hidden border-2 border-white/30 active:scale-95 transition-transform relative"
+        >
+          {uploadedMedia ? (
+            uploadedMedia.type === "image"
+              ? <img src={uploadedMedia.url} className="w-full h-full object-cover" alt="gallery" />
+              : <video src={uploadedMedia.url} className="w-full h-full object-cover" muted />
+          ) : (
+            <div className="w-full h-full bg-white/10 flex flex-col items-center justify-center gap-0.5">
+              <Icon name="Image" size={20} className="text-white/60" />
+              <span className="text-white/40 text-[9px]">Галерея</span>
+            </div>
+          )}
         </button>
 
         {/* Shutter button */}
