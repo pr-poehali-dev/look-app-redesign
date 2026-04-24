@@ -37,6 +37,8 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
   const [showPauseIcon, setShowPauseIcon] = useState(false);
   const [muted, setMuted] = useState(true);
   const [showComments, setShowComments] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [extraComments, setExtraComments] = useState<typeof MOCK_COMMENTS>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
