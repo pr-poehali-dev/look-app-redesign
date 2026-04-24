@@ -100,10 +100,12 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
             muted={muted}
             playsInline
           />
-          <div
-            className="absolute inset-0 z-10 cursor-pointer"
-            onClick={handleVideoClick}
-          />
+          {!showComments && (
+            <div
+              className="absolute inset-0 z-10 cursor-pointer"
+              onClick={handleVideoClick}
+            />
+          )}
           {showPauseIcon && (
             <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
               <div className="bg-black/40 rounded-full p-5 backdrop-blur-sm">
