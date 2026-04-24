@@ -1,7 +1,19 @@
 import { useRef, useState, useEffect } from "react";
 import VideoCard, { VideoData } from "./VideoCard";
 
-const VIDEOS: VideoData[] = [
+export const CATEGORIES = [
+  { id: "all", label: "Все" },
+  { id: "music", label: "Музыка" },
+  { id: "sport", label: "Спорт" },
+  { id: "humor", label: "Юмор" },
+  { id: "travel", label: "Путешествия" },
+  { id: "food", label: "Еда" },
+  { id: "style", label: "Стиль" },
+  { id: "gaming", label: "Игры" },
+  { id: "nature", label: "Природа" },
+];
+
+const VIDEOS: (VideoData & { category: string })[] = [
   {
     id: 1,
     image: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/d5398fcc-427a-4d1c-963f-7e6f079a7ba6.jpg",
@@ -13,6 +25,7 @@ const VIDEOS: VideoData[] = [
     comments: "3.2K",
     shares: "18K",
     avatar: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/d5398fcc-427a-4d1c-963f-7e6f079a7ba6.jpg",
+    category: "music",
   },
   {
     id: 2,
@@ -25,6 +38,7 @@ const VIDEOS: VideoData[] = [
     comments: "12K",
     shares: "54K",
     avatar: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/5c280ad4-5edb-4bea-9ce4-5b7795d36707.jpg",
+    category: "sport",
   },
   {
     id: 3,
@@ -37,6 +51,7 @@ const VIDEOS: VideoData[] = [
     comments: "4.1K",
     shares: "9.3K",
     avatar: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/0730a864-0860-4c86-8845-835a8c4a720e.jpg",
+    category: "food",
   },
   {
     id: 4,
@@ -49,6 +64,7 @@ const VIDEOS: VideoData[] = [
     comments: "28K",
     shares: "103K",
     avatar: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/85269bc0-d690-47bb-b96f-3b41f8103627.jpg",
+    category: "humor",
   },
   {
     id: 5,
@@ -61,16 +77,29 @@ const VIDEOS: VideoData[] = [
     comments: "7.8K",
     shares: "31K",
     avatar: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/c8b8bf7c-7db9-4624-b5fd-0c96115cd5aa.jpg",
+    category: "travel",
   },
 ];
 
 interface VideoFeedProps {
   activeTab: string;
+  activeCategory?: string;
 }
 
-const VideoFeed = ({ activeTab }: VideoFeedProps) => {
+const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+
+  const filtered = activeCategory === "all"
+    ? VIDEOS
+    : VIDEOS.filter((v) => v.category === activeCategory);
+
+  useEffect(() => {
+    setActiveIndex(0);
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
+  }, [activeCategory]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -89,11 +118,15 @@ const VideoFeed = ({ activeTab }: VideoFeedProps) => {
       className="w-full h-full overflow-y-scroll snap-y snap-mandatory scrollbar-none"
       style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
     >
-      {VIDEOS.map((video, i) => (
+      {filtered.length > 0 ? filtered.map((video, i) => (
         <div key={video.id} className="w-full snap-start" style={{ height: "100%" }}>
           <VideoCard video={video} isActive={activeIndex === i} />
         </div>
-      ))}
+      )) : (
+        <div className="w-full flex items-center justify-center" style={{ height: "100%" }}>
+          <p className="text-white/40 text-sm">Видео не найдено</p>
+        </div>
+      )}
     </div>
   );
 };

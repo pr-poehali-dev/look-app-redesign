@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
-import VideoFeed from "@/components/VideoFeed";
+import VideoFeed, { CATEGORIES } from "@/components/VideoFeed";
 import PostFeed from "@/components/PostFeed";
 import LiveStream from "@/components/LiveStream";
 import LiveList from "@/components/LiveList";
@@ -19,6 +19,7 @@ const TABS = [
 const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
   const [feedMode, setFeedMode] = useState<"for-you" | "following">("for-you");
+  const [activeCategory, setActiveCategory] = useState("all");
   const [showLive, setShowLive] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
 
@@ -40,19 +41,39 @@ const Index = () => {
       )}
 
       {/* Top Header */}
-      <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 pt-10 pb-3 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" style={{ maxWidth: 480, margin: "0 auto" }}>
-        <div className="flex items-center gap-6 pointer-events-auto">
-          <button
-            onClick={() => setFeedMode("following")}
-            className={`text-base font-semibold transition-all ${feedMode === "following" ? "text-white" : "text-white/50"}`}
-          >
-            Подписки
+      <div className="absolute top-0 left-0 right-0 z-30 pointer-events-none" style={{ maxWidth: 480, margin: "0 auto" }}>
+        <div className="flex items-center justify-between px-4 pt-10 pb-2 bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
+          <div className="flex items-center gap-6 pointer-events-auto">
+            <button
+              onClick={() => setFeedMode("following")}
+              className={`text-base font-semibold transition-all ${feedMode === "following" ? "text-white" : "text-white/50"}`}
+            >
+              Подписки
+            </button>
+          </div>
+          <button className="pointer-events-auto">
+            <Icon name="Search" size={22} className="text-white" />
           </button>
         </div>
-
-        <button className="pointer-events-auto">
-          <Icon name="Search" size={22} className="text-white" />
-        </button>
+        {activeTab === "home" && (
+          <div className="pointer-events-auto overflow-x-scroll scrollbar-none px-4 pb-2" style={{ scrollbarWidth: "none" }}>
+            <div className="flex gap-2 w-max">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                    activeCategory === cat.id
+                      ? "bg-white text-black"
+                      : "bg-white/10 text-white/70 hover:bg-white/20"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Top header only for home tab */}
@@ -68,7 +89,7 @@ const Index = () => {
 
       {/* Content */}
       <div className={`flex-1 relative overflow-hidden ${activeTab === "feed" ? "pt-[72px]" : ""}`}>
-        {activeTab === "home" && <VideoFeed activeTab={activeTab} />}
+        {activeTab === "home" && <VideoFeed activeTab={activeTab} activeCategory={activeCategory} />}
 
         {activeTab === "feed" && <PostFeed />}
 
