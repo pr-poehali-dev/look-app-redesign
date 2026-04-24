@@ -6,10 +6,11 @@ import LiveStream from "@/components/LiveStream";
 import LiveList from "@/components/LiveList";
 import ProfilePage from "@/components/ProfilePage";
 import CameraScreen from "@/components/CameraScreen";
+import MessagesScreen from "@/components/MessagesScreen";
 
 const TABS = [
   { id: "home", icon: "Home", label: "Главная" },
-  { id: "feed", icon: "LayoutGrid", label: "Лента" },
+  { id: "messages", icon: "MessageCircle", label: "Чаты" },
   { id: "add", icon: "Plus", label: "" },
   { id: "live", icon: "Radio", label: "Эфиры" },
   { id: "profile", icon: "User", label: "Профиль" },
@@ -91,14 +92,7 @@ const Index = () => {
         {activeTab === "feed" && <PostFeed />}
 
         {activeTab === "live" && <LiveList />}
-
-        {activeTab === "search" && (
-          <div className="h-full flex flex-col items-center justify-center bg-black gap-4">
-            <Icon name="Search" size={48} className="text-white/20" />
-            <p className="text-white/40 text-base">Поиск видео и авторов</p>
-          </div>
-        )}
-
+        {activeTab === "messages" && <MessagesScreen />}
         {activeTab === "profile" && <ProfilePage />}
       </div>
 
