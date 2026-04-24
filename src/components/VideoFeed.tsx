@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import VideoCard, { VideoData } from "./VideoCard";
+import { useUserMedia } from "@/context/UserMediaContext";
 
 export const CATEGORIES = [
   { id: "all", label: "Все" },
@@ -267,6 +268,23 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [dbVideos, setDbVideos] = useState<(VideoData & { category: string })[]>([]);
+  const { userVideos } = useUserMedia();
+
+  const userVideoData: (VideoData & { category: string })[] = userVideos
+    .filter(v => v.type === "video")
+    .map(v => ({
+      id: v.id,
+      image: v.url,
+      author: "Алекс",
+      handle: "alex_user",
+      description: "Моё видео",
+      song: "Оригинальный звук",
+      likes: "0",
+      comments: "0",
+      shares: "0",
+      category: "all",
+      avatar: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/014c6ddd-1707-4449-afdd-e9012de11b20.jpg",
+    }));
 
   useEffect(() => {
     const url = activeCategory && activeCategory !== "all"
@@ -298,7 +316,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
       .catch(e => console.error('VideoFeed fetch error:', e));
   }, [activeCategory]);
 
-  const allVideos = [...dbVideos, ...VIDEOS];
+  const allVideos = [...userVideoData, ...dbVideos, ...VIDEOS];
   const filtered = activeCategory === "all"
     ? allVideos
     : allVideos.filter((v) => v.category === activeCategory);

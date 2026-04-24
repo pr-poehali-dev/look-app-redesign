@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import SettingsScreen from "./SettingsScreen";
+import { useUserMedia } from "@/context/UserMediaContext";
 
 const AVATAR = "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/014c6ddd-1707-4449-afdd-e9012de11b20.jpg";
 
@@ -239,7 +240,7 @@ const ProfilePage = () => {
   const [tab, setTab] = useState<"videos" | "posts">("videos");
   const [showSettings, setShowSettings] = useState(false);
   const [showScreen, setShowScreen] = useState<"followers" | "following" | null>(null);
-  const [stories, setStories] = useState<Story[]>([]);
+  const { userVideos: stories, addMedia, removeMedia } = useUserMedia();
   const [viewingStory, setViewingStory] = useState<number | null>(null);
   const [mediaViewer, setMediaViewer] = useState<{ items: Story[]; index: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -249,22 +250,12 @@ const ProfilePage = () => {
   const handleAddStory = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    const type = file.type.startsWith("video") ? "video" : "image";
-    const now = new Date();
-    const label = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
-    setStories(s => [...s, { id: Date.now(), url, type, label }]);
+    addMedia(file);
     e.target.value = "";
   };
 
-  const handleAddMedia = (e: React.ChangeEvent<HTMLInputElement>, mediaType: "video" | "image") => {
-    const files = Array.from(e.target.files || []);
-    files.forEach(file => {
-      const url = URL.createObjectURL(file);
-      const now = new Date();
-      const label = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
-      setStories(s => [...s, { id: Date.now() + Math.random(), url, type: mediaType, label }]);
-    });
+  const handleAddMedia = (e: React.ChangeEvent<HTMLInputElement>) => {
+    Array.from(e.target.files || []).forEach(file => addMedia(file));
     e.target.value = "";
   };
 
@@ -283,7 +274,7 @@ const ProfilePage = () => {
           startIndex={mediaViewer.index}
           onClose={() => setMediaViewer(null)}
           onDelete={(id) => {
-            setStories(s => s.filter(x => x.id !== id));
+            removeMedia(id);
             setMediaViewer(null);
           }}
         />
@@ -390,8 +381,8 @@ const ProfilePage = () => {
       </div>
 
       {/* Grid */}
-      <input ref={videoInputRef} type="file" accept="video/*" multiple className="hidden" onChange={e => handleAddMedia(e, "video")} />
-      <input ref={photoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={e => handleAddMedia(e, "image")} />
+      <input ref={videoInputRef} type="file" accept="video/*" multiple className="hidden" onChange={handleAddMedia} />
+      <input ref={photoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleAddMedia} />
 
       {tab === "videos" ? (
         (() => {
