@@ -274,7 +274,8 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
       : `${GET_VIDEOS_URL}?type=video`;
     fetch(url)
       .then(r => r.json())
-      .then(data => {
+      .then(raw => {
+        const data = typeof raw === 'string' ? JSON.parse(raw) : (raw.body ? (typeof raw.body === 'string' ? JSON.parse(raw.body) : raw.body) : raw);
         if (data.videos && data.videos.length > 0) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           setDbVideos(data.videos.map((v: any) => ({
