@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import SettingsScreen from "./SettingsScreen";
 
@@ -58,10 +58,124 @@ const POSTS_GRID = [
   { img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/5b90e1a9-665b-4e6c-9184-2edf68db2e91.jpg", views: 145 },
 ];
 
+interface Story {
+  id: number;
+  url: string;
+  type: "image" | "video";
+  label: string;
+}
+
+const StoryViewer = ({ stories, startIndex, onClose }: { stories: Story[]; startIndex: number; onClose: () => void }) => {
+  const [index, setIndex] = useState(startIndex);
+  const [progress, setProgress] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const story = stories[index];
+  const DURATION = story.type === "video" ? 15000 : 5000;
+
+  const goNext = () => {
+    if (index < stories.length - 1) { setIndex(i => i + 1); setProgress(0); }
+    else onClose();
+  };
+  const goPrev = () => {
+    if (index > 0) { setIndex(i => i - 1); setProgress(0); }
+  };
+
+  useState(() => {
+    setProgress(0);
+  });
+
+  // progress bar
+  useRef(() => {});
+  const startProgress = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setProgress(0);
+    const step = 100 / (DURATION / 50);
+    timerRef.current = setInterval(() => {
+      setProgress(p => {
+        if (p + step >= 100) { clearInterval(timerRef.current!); goNext(); return 100; }
+        return p + step;
+      });
+    }, 50);
+  };
+
+  // reset on index change
+  const mounted = useRef(false);
+  if (!mounted.current) { mounted.current = true; }
+
+  useRef(() => { return () => { if (timerRef.current) clearInterval(timerRef.current); }; });
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black flex flex-col" onClick={e => e.stopPropagation()}>
+      {/* Progress bars */}
+      <div className="absolute top-0 left-0 right-0 flex gap-1 px-2 pt-12 z-10">
+        {stories.map((_, i) => (
+          <div key={i} className="flex-1 h-0.5 bg-white/30 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-white rounded-full transition-none"
+              style={{ width: i < index ? "100%" : i === index ? `${progress}%` : "0%" }}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Header */}
+      <div className="absolute top-14 left-4 right-4 flex items-center gap-3 z-10">
+        <img src={AVATAR} className="w-8 h-8 rounded-full object-cover border-2 border-white" alt="" />
+        <span className="text-white font-semibold text-sm flex-1">{story.label}</span>
+        <button onClick={onClose} className="p-1"><Icon name="X" size={22} className="text-white" /></button>
+      </div>
+
+      {/* Media */}
+      {story.type === "video" ? (
+        <video
+          ref={videoRef}
+          key={story.id}
+          src={story.url}
+          className="w-full h-full object-cover"
+          autoPlay
+          muted={false}
+          playsInline
+          onPlay={startProgress}
+          onLoadedData={() => videoRef.current?.play()}
+        />
+      ) : (
+        <img
+          key={story.id}
+          src={story.url}
+          className="w-full h-full object-cover"
+          onLoad={startProgress}
+          alt=""
+        />
+      )}
+
+      {/* Tap zones */}
+      <div className="absolute inset-0 flex z-10">
+        <div className="flex-1" onClick={goPrev} />
+        <div className="flex-1" onClick={goNext} />
+      </div>
+    </div>
+  );
+};
+
 const ProfilePage = () => {
   const [tab, setTab] = useState<"videos" | "posts">("videos");
   const [showSettings, setShowSettings] = useState(false);
   const [showScreen, setShowScreen] = useState<"followers" | "following" | null>(null);
+  const [stories, setStories] = useState<Story[]>([]);
+  const [viewingStory, setViewingStory] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAddStory = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const type = file.type.startsWith("video") ? "video" : "image";
+    const now = new Date();
+    const label = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
+    setStories(s => [...s, { id: Date.now(), url, type, label }]);
+    e.target.value = "";
+  };
 
   if (showSettings) return <SettingsScreen onBack={() => setShowSettings(false)} />;
   if (showScreen === "followers") return <UserListScreen title="Подписчики" users={FOLLOWERS} onBack={() => setShowScreen(null)} />;
@@ -69,6 +183,9 @@ const ProfilePage = () => {
 
   return (
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
+      {viewingStory !== null && (
+        <StoryViewer stories={stories} startIndex={viewingStory} onClose={() => setViewingStory(null)} />
+      )}
 
       {/* Avatar + stats */}
       <div className="flex items-center gap-4 px-4 pt-14 pb-4">
@@ -113,6 +230,37 @@ const ProfilePage = () => {
         <button className="w-12 py-2.5 rounded-xl bg-gray-100 flex items-center justify-center">
           <Icon name="Share2" size={18} className="text-black" />
         </button>
+      </div>
+
+      {/* Stories row */}
+      <div className="flex gap-3 px-4 pb-4 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+        {/* Add story button */}
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="flex-shrink-0 flex flex-col items-center gap-1"
+        >
+          <div className="w-16 h-16 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
+            <Icon name="Plus" size={22} className="text-gray-400" />
+          </div>
+          <span className="text-[10px] text-gray-500">Добавить</span>
+        </button>
+        <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleAddStory} />
+
+        {/* Stories */}
+        {stories.map((story, i) => (
+          <button key={story.id} onClick={() => setViewingStory(i)} className="flex-shrink-0 flex flex-col items-center gap-1">
+            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#8b5cf6] p-0.5">
+              <div className="w-full h-full rounded-full overflow-hidden bg-gray-200">
+                {story.type === "image" ? (
+                  <img src={story.url} className="w-full h-full object-cover" alt="" />
+                ) : (
+                  <video src={story.url} className="w-full h-full object-cover" muted playsInline />
+                )}
+              </div>
+            </div>
+            <span className="text-[10px] text-gray-500">{story.label}</span>
+          </button>
+        ))}
       </div>
 
       {/* Tabs */}
