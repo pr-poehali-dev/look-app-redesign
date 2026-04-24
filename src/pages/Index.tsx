@@ -4,6 +4,7 @@ import VideoFeed from "@/components/VideoFeed";
 import PostFeed from "@/components/PostFeed";
 import LiveStream from "@/components/LiveStream";
 import LiveList from "@/components/LiveList";
+import ProfilePage from "@/components/ProfilePage";
 
 const TABS = [
   { id: "home", icon: "Home", label: "Главная" },
@@ -89,22 +90,7 @@ const Index = () => {
           </div>
         )}
 
-        {activeTab === "profile" && (
-          <div className="h-full flex flex-col items-center justify-center bg-black gap-4">
-            <div className="w-24 h-24 rounded-full bg-white/10 flex items-center justify-center">
-              <Icon name="User" size={40} className="text-white/40" />
-            </div>
-            <p className="text-white font-bold text-xl">@username</p>
-            <a
-              href="https://www.rustore.ru/catalog/app/ru.aleksey.shortapp"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 px-8 py-3 rounded-full bg-[#fe2c55] text-white font-bold text-sm hover:bg-[#e0264c] transition-colors"
-            >
-              Скачать ShortApp
-            </a>
-          </div>
-        )}
+        {activeTab === "profile" && <ProfilePage />}
       </div>
 
       {/* Bottom Tab Bar */}
