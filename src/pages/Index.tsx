@@ -42,15 +42,7 @@ const Index = () => {
 
       {/* Top Header */}
       <div className="absolute top-0 left-0 right-0 z-30 pointer-events-none" style={{ maxWidth: 480, margin: "0 auto" }}>
-        <div className="flex items-center justify-between px-4 pt-10 pb-2 bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
-          <div className="flex items-center gap-6 pointer-events-auto">
-            <button
-              onClick={() => setFeedMode("following")}
-              className={`text-base font-semibold transition-all ${feedMode === "following" ? "text-white" : "text-white/50"}`}
-            >
-              Подписки
-            </button>
-          </div>
+        <div className="flex items-center justify-end px-4 pt-10 pb-2 bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
           <button className="pointer-events-auto">
             <Icon name="Search" size={22} className="text-white" />
           </button>
