@@ -261,13 +261,44 @@ interface VideoFeedProps {
   activeCategory?: string;
 }
 
+const GET_VIDEOS_URL = "https://functions.poehali.dev/f58115ec-de09-405d-a2db-08fe1cd958e1";
+
 const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [dbVideos, setDbVideos] = useState<(VideoData & { category: string })[]>([]);
 
+  useEffect(() => {
+    const url = activeCategory && activeCategory !== "all"
+      ? `${GET_VIDEOS_URL}?type=video&category=${activeCategory}`
+      : `${GET_VIDEOS_URL}?type=video`;
+    fetch(url)
+      .then(r => r.json())
+      .then(raw => {
+        const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
+        if (data.videos && data.videos.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          setDbVideos(data.videos.map((v: any) => ({
+            id: v.id + 10000,
+            image: v.url,
+            author: v.author || "Автор",
+            handle: v.handle || "user",
+            description: v.description || "",
+            song: "Look — Original Sound",
+            likes: v.likes || "0",
+            comments: v.comments || "0",
+            shares: v.shares || "0",
+            category: v.category || "all",
+          })));
+        }
+      })
+      .catch(() => {});
+  }, [activeCategory]);
+
+  const allVideos = [...dbVideos, ...VIDEOS];
   const filtered = activeCategory === "all"
-    ? VIDEOS
-    : VIDEOS.filter((v) => v.category === activeCategory);
+    ? allVideos
+    : allVideos.filter((v) => v.category === activeCategory);
 
   useEffect(() => {
     setActiveIndex(0);

@@ -26,11 +26,22 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
 
   return (
     <div className="relative w-full h-full flex-shrink-0 snap-start overflow-hidden bg-black">
-      <img
-        src={video.image}
-        alt={video.description}
-        className="absolute inset-0 w-full h-full object-cover"
-      />
+      {video.image.endsWith('.mp4') || video.image.includes('.mp4') ? (
+        <video
+          src={video.image}
+          className="absolute inset-0 w-full h-full object-cover"
+          autoPlay={isActive}
+          loop
+          muted
+          playsInline
+        />
+      ) : (
+        <img
+          src={video.image}
+          alt={video.description}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
 
       {/* Bottom left info */}
