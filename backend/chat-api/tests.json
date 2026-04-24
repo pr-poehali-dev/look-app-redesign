@@ -22,7 +22,7 @@
       "method": "GET",
       "path": "/?module=chat&action=online",
       "expectedStatus": 200,
-      "expectedBody": {"users": []},
+      "expectedBody": {"users": [{"id": "anon"}]},
       "bodyMatcher": "partial"
     },
     {
