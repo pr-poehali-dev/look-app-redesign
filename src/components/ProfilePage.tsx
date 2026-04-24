@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
+import SettingsScreen from "./SettingsScreen";
 
 const AVATAR = "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/014c6ddd-1707-4449-afdd-e9012de11b20.jpg";
 
@@ -17,6 +18,9 @@ const POSTS_GRID = [
 
 const ProfilePage = () => {
   const [tab, setTab] = useState<"videos" | "posts">("videos");
+  const [showSettings, setShowSettings] = useState(false);
+
+  if (showSettings) return <SettingsScreen onBack={() => setShowSettings(false)} />;
 
   return (
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
@@ -52,7 +56,10 @@ const ProfilePage = () => {
 
       {/* Action buttons */}
       <div className="flex gap-2 px-4 pb-4">
-        <button className="flex-1 py-2.5 rounded-xl bg-gray-100 text-black font-semibold text-sm">
+        <button
+          onClick={() => setShowSettings(true)}
+          className="flex-1 py-2.5 rounded-xl bg-gray-100 text-black font-semibold text-sm"
+        >
           Настройки
         </button>
         <button className="flex-1 py-2.5 rounded-xl bg-gray-100 text-black font-semibold text-sm">
