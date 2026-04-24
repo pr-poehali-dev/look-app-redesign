@@ -91,6 +91,20 @@ def handler(event: dict, context) -> dict:
             conn.commit(); cur.close(); conn.close()
             return ok({'avatar': avatar_url})
 
+        # cleanup orphan videos (no matching user)
+        if action == 'cleanup_orphans':
+            conn = get_conn(); cur = conn.cursor()
+            cur.execute("SELECT id, url FROM videos WHERE user_id NOT IN (SELECT id FROM app_users)")
+            rows = cur.fetchall()
+            for row in rows:
+                try:
+                    get_s3().delete_object(Bucket='files', Key=row[1].split('/bucket/')[-1])
+                except Exception:
+                    pass
+                cur.execute("DELETE FROM videos WHERE id=%s", (row[0],))
+            conn.commit(); cur.close(); conn.close()
+            return ok({'deleted': len(rows)})
+
         # delete media
         video_id = body.get('id')
         token = body.get('token') or ''
