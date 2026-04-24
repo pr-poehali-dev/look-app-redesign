@@ -1,10 +1,11 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import VideoFeed from "@/components/VideoFeed";
+import PostFeed from "@/components/PostFeed";
 
 const TABS = [
   { id: "home", icon: "Home", label: "Главная" },
-  { id: "search", icon: "Search", label: "Поиск" },
+  { id: "feed", icon: "LayoutGrid", label: "Лента" },
   { id: "add", icon: "Plus", label: "" },
   { id: "inbox", icon: "Bell", label: "Уведомления" },
   { id: "profile", icon: "User", label: "Профиль" },
@@ -48,9 +49,22 @@ const Index = () => {
         </button>
       </div>
 
-      {/* Video Feed */}
-      <div className="flex-1 relative overflow-hidden">
+      {/* Top header only for home tab */}
+      {activeTab === "feed" && (
+        <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 pt-10 pb-3 bg-black border-b border-white/8" style={{ maxWidth: 480, margin: "0 auto" }}>
+          <span className="font-bold text-white text-lg">ShortApp</span>
+          <div className="flex items-center gap-4">
+            <button><Icon name="Heart" size={22} className="text-white" /></button>
+            <button><Icon name="Send" size={22} className="text-white" /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Content */}
+      <div className={`flex-1 relative overflow-hidden ${activeTab === "feed" ? "pt-[72px]" : ""}`}>
         {activeTab === "home" && <VideoFeed activeTab={activeTab} />}
+
+        {activeTab === "feed" && <PostFeed />}
 
         {activeTab === "search" && (
           <div className="h-full flex flex-col items-center justify-center bg-black gap-4">
