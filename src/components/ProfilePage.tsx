@@ -32,7 +32,7 @@ const ProfilePage = () => {
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-14 pb-2">
         <div className="flex items-center gap-2">
-          <span className="text-white font-bold text-lg">shortapp_user</span>
+          <span className="text-white font-bold text-lg">Look</span>
           <Icon name="BadgeCheck" size={16} className="text-[#61d4f0]" />
         </div>
         <div className="flex items-center gap-3">
