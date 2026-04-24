@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 
 export interface VideoData {
@@ -23,14 +23,26 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [following, setFollowing] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (!videoRef.current) return;
+    if (isActive) {
+      videoRef.current.play().catch(() => {});
+    } else {
+      videoRef.current.pause();
+    }
+  }, [isActive]);
+
+  const isVideo = video.image.includes('.mp4');
 
   return (
     <div className="relative w-full h-full flex-shrink-0 snap-start overflow-hidden bg-black">
-      {video.image.endsWith('.mp4') || video.image.includes('.mp4') ? (
+      {isVideo ? (
         <video
+          ref={videoRef}
           src={video.image}
           className="absolute inset-0 w-full h-full object-cover"
-          autoPlay={isActive}
           loop
           muted
           playsInline

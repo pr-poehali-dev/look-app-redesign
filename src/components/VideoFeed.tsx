@@ -289,10 +289,13 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
             comments: v.comments || "0",
             shares: v.shares || "0",
             category: v.category || "all",
+            avatar: "",
           })));
+          setActiveIndex(0);
+          if (containerRef.current) containerRef.current.scrollTop = 0;
         }
       })
-      .catch(() => {});
+      .catch(e => console.error('VideoFeed fetch error:', e));
   }, [activeCategory]);
 
   const allVideos = [...dbVideos, ...VIDEOS];
