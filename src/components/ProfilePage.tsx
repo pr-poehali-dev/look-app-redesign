@@ -165,6 +165,8 @@ const ProfilePage = () => {
   const [stories, setStories] = useState<Story[]>([]);
   const [viewingStory, setViewingStory] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddStory = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -174,6 +176,17 @@ const ProfilePage = () => {
     const now = new Date();
     const label = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
     setStories(s => [...s, { id: Date.now(), url, type, label }]);
+    e.target.value = "";
+  };
+
+  const handleAddMedia = (e: React.ChangeEvent<HTMLInputElement>, mediaType: "video" | "image") => {
+    const files = Array.from(e.target.files || []);
+    files.forEach(file => {
+      const url = URL.createObjectURL(file);
+      const now = new Date();
+      const label = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
+      setStories(s => [...s, { id: Date.now() + Math.random(), url, type: mediaType, label }]);
+    });
     e.target.value = "";
   };
 
@@ -288,14 +301,25 @@ const ProfilePage = () => {
       </div>
 
       {/* Grid */}
+      <input ref={videoInputRef} type="file" accept="video/*" multiple className="hidden" onChange={e => handleAddMedia(e, "video")} />
+      <input ref={photoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={e => handleAddMedia(e, "image")} />
+
       {tab === "videos" ? (
         (() => {
           const videos = stories.filter(s => s.type === "video");
           return videos.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-gray-400 gap-2">
-              <Icon name="Video" size={40} className="text-gray-200" />
-              <p className="text-sm">Нет загруженных видео</p>
-              <p className="text-xs text-gray-300">Добавь видео через сторис</p>
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                <Icon name="Video" size={28} className="text-gray-300" />
+              </div>
+              <p className="text-sm text-gray-400">Нет загруженных видео</p>
+              <button
+                onClick={() => videoInputRef.current?.click()}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-semibold"
+              >
+                <Icon name="Plus" size={16} className="text-white" />
+                Загрузить видео
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-px bg-gray-100">
@@ -309,6 +333,12 @@ const ProfilePage = () => {
                   </div>
                 </div>
               ))}
+              <button
+                onClick={() => videoInputRef.current?.click()}
+                className="aspect-square bg-gray-50 flex items-center justify-center border border-dashed border-gray-300"
+              >
+                <Icon name="Plus" size={24} className="text-gray-400" />
+              </button>
             </div>
           );
         })()
@@ -316,10 +346,18 @@ const ProfilePage = () => {
         (() => {
           const photos = stories.filter(s => s.type === "image");
           return photos.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-gray-400 gap-2">
-              <Icon name="Image" size={40} className="text-gray-200" />
-              <p className="text-sm">Нет загруженных фото</p>
-              <p className="text-xs text-gray-300">Добавь фото через сторис</p>
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                <Icon name="Image" size={28} className="text-gray-300" />
+              </div>
+              <p className="text-sm text-gray-400">Нет загруженных фото</p>
+              <button
+                onClick={() => photoInputRef.current?.click()}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-semibold"
+              >
+                <Icon name="Plus" size={16} className="text-white" />
+                Загрузить фото
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-px bg-gray-100">
@@ -328,6 +366,12 @@ const ProfilePage = () => {
                   <img src={item.url} alt="" className="w-full h-full object-cover" />
                 </div>
               ))}
+              <button
+                onClick={() => photoInputRef.current?.click()}
+                className="aspect-square bg-gray-50 flex items-center justify-center border border-dashed border-gray-300"
+              >
+                <Icon name="Plus" size={24} className="text-gray-400" />
+              </button>
             </div>
           );
         })()
