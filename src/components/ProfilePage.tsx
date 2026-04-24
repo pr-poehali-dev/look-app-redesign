@@ -162,15 +162,20 @@ const StoryViewer = ({ stories, startIndex, onClose }: { stories: Story[]; start
 const MediaViewer = ({ items, startIndex, onClose, onDelete }: { items: Story[]; startIndex: number; onClose: () => void; onDelete: (id: number) => void }) => {
   const [index, setIndex] = useState(startIndex);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleted, setDeleted] = useState(false);
   const item = items[index];
   const goNext = () => index < items.length - 1 ? setIndex(i => i + 1) : onClose();
   const goPrev = () => index > 0 ? setIndex(i => i - 1) : null;
 
   const handleDelete = () => {
     onDelete(item.id);
-    if (items.length === 1) { onClose(); return; }
-    if (index >= items.length - 1) setIndex(i => i - 1);
     setConfirmDelete(false);
+    setDeleted(true);
+    setTimeout(() => {
+      if (items.length === 1) { onClose(); return; }
+      if (index >= items.length - 1) setIndex(i => i - 1);
+      setDeleted(false);
+    }, 1200);
   };
 
   return (
@@ -195,6 +200,14 @@ const MediaViewer = ({ items, startIndex, onClose, onDelete }: { items: Story[];
               <button onClick={handleDelete} className="flex-1 py-3.5 text-red-500 font-semibold text-sm">Удалить</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {deleted && (
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-40 bg-white/90 backdrop-blur-sm rounded-2xl px-5 py-3 flex items-center gap-2 shadow-lg">
+          <Icon name="Trash2" size={16} className="text-red-500" />
+          <span className="text-black text-sm font-medium">Удалено</span>
         </div>
       )}
 
