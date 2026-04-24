@@ -5,6 +5,7 @@ import PostFeed from "@/components/PostFeed";
 import LiveStream from "@/components/LiveStream";
 import LiveList from "@/components/LiveList";
 import ProfilePage from "@/components/ProfilePage";
+import CameraScreen from "@/components/CameraScreen";
 
 const TABS = [
   { id: "home", icon: "Home", label: "Главная" },
@@ -18,6 +19,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
   const [feedMode, setFeedMode] = useState<"for-you" | "following">("for-you");
   const [showLive, setShowLive] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col overflow-hidden" style={{ maxWidth: 480, margin: "0 auto" }}>
@@ -26,6 +28,13 @@ const Index = () => {
       {showLive && (
         <div className="absolute inset-0 z-50">
           <LiveStream onClose={() => setShowLive(false)} />
+        </div>
+      )}
+
+      {/* Camera overlay */}
+      {showCamera && (
+        <div className="absolute inset-0 z-50">
+          <CameraScreen onClose={() => setShowCamera(false)} />
         </div>
       )}
 
@@ -99,7 +108,7 @@ const Index = () => {
           {TABS.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => tab.id === "add" ? setShowCamera(true) : setActiveTab(tab.id)}
               className="flex flex-col items-center gap-1 min-w-[52px]"
             >
               {tab.id === "add" ? (

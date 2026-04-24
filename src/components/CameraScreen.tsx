@@ -1,8 +1,23 @@
-import { useEffect, useRef, useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 
-const DURATIONS = [15, 30, 60];
-const EFFECTS = ["Нет", "Красота", "Фильтр", "Блур", "Вспышка"];
+const FILTERS = [
+  { id: "none", label: "Обычный" },
+  { id: "warm", label: "Тепло" },
+  { id: "cold", label: "Холод" },
+  { id: "bw", label: "Ч/Б" },
+  { id: "vivid", label: "Яркий" },
+];
+
+const FILTER_STYLES: Record<string, string> = {
+  none: "none",
+  warm: "sepia(0.4) saturate(1.4) brightness(1.05)",
+  cold: "hue-rotate(30deg) saturate(1.2) brightness(1.05)",
+  bw: "grayscale(1) contrast(1.1)",
+  vivid: "saturate(2) contrast(1.1)",
+};
+
+const MODES = ["Фото", "Видео", "Прямой эфир"];
 
 interface CameraScreenProps {
   onClose: () => void;
@@ -10,293 +25,222 @@ interface CameraScreenProps {
 
 const CameraScreen = ({ onClose }: CameraScreenProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const [facing, setFacing] = useState<"user" | "environment">("environment");
+  const [filter, setFilter] = useState("none");
+  const [mode, setMode] = useState("Видео");
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const [flash, setFlash] = useState(false);
+  const [shutterFlash, setShutterFlash] = useState(false);
+  const [flipping, setFlipping] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
-  const [recording, setRecording] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const [maxDuration, setMaxDuration] = useState(15);
-  const [flash, setFlash] = useState(false);
-  const [effect, setEffect] = useState("Нет");
-  const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
-  const [cameraError, setCameraError] = useState(false);
-  const [showEffects, setShowEffects] = useState(false);
-
-  const startCamera = async (facing: "user" | "environment") => {
+  const startCamera = async (facingMode: "user" | "environment") => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+    }
     try {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((t) => t.stop());
-      }
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: facing },
+        video: { facingMode },
         audio: true,
       });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
-      setCameraError(false);
     } catch {
-      setCameraError(true);
+      // camera not available — demo mode
     }
   };
 
   useEffect(() => {
-    startCamera(facingMode);
+    startCamera(facing);
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
 
-  const flipCamera = async () => {
-    const next = facingMode === "user" ? "environment" : "user";
-    setFacingMode(next);
-    await startCamera(next);
+  const flipCamera = () => {
+    setFlipping(true);
+    setTimeout(() => {
+      const next = facing === "user" ? "environment" : "user";
+      setFacing(next);
+      startCamera(next);
+      setFlipping(false);
+    }, 200);
   };
 
-  const startRecording = () => {
-    if (!streamRef.current) return;
-    chunksRef.current = [];
-    const mr = new MediaRecorder(streamRef.current);
-    mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-    mr.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: "video/webm" });
-      setRecordedUrl(URL.createObjectURL(blob));
-    };
-    mr.start();
-    mediaRecorderRef.current = mr;
-    setRecording(true);
-    setElapsed(0);
-    timerRef.current = setInterval(() => {
-      setElapsed((e) => {
-        if (e + 1 >= maxDuration) {
-          stopRecording();
-          return maxDuration;
-        }
-        return e + 1;
-      });
-    }, 1000);
+  const handleShutter = () => {
+    if (mode === "Фото") {
+      setShutterFlash(true);
+      setTimeout(() => setShutterFlash(false), 200);
+      return;
+    }
+    if (!recording) {
+      setRecording(true);
+      setRecordSeconds(0);
+      timerRef.current = setInterval(() => setRecordSeconds((s) => s + 1), 1000);
+    } else {
+      setRecording(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+      setRecordSeconds(0);
+    }
   };
 
-  const stopRecording = () => {
-    mediaRecorderRef.current?.stop();
-    setRecording(false);
-    if (timerRef.current) clearInterval(timerRef.current);
-  };
-
-  const handleRecord = () => {
-    if (recording) stopRecording();
-    else startRecording();
-  };
-
-  const resetRecording = () => {
-    setRecordedUrl(null);
-    setElapsed(0);
-  };
-
-  const progress = (elapsed / maxDuration) * 100;
-
-  const filterStyle = (): React.CSSProperties => {
-    if (effect === "Красота") return { filter: "brightness(1.1) contrast(0.95) saturate(1.2)" };
-    if (effect === "Фильтр") return { filter: "sepia(0.4) saturate(1.5)" };
-    if (effect === "Блур") return { filter: "blur(1px) brightness(1.05)" };
-    return {};
-  };
-
-  // Preview recorded video
-  if (recordedUrl) {
-    return (
-      <div className="relative w-full h-full bg-black flex flex-col">
-        <video src={recordedUrl} className="absolute inset-0 w-full h-full object-cover" autoPlay loop playsInline />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/60" />
-
-        <div className="relative z-10 flex items-center justify-between px-4 pt-12 pb-4">
-          <button onClick={resetRecording} className="w-9 h-9 rounded-full bg-black/50 flex items-center justify-center">
-            <Icon name="RotateCcw" size={18} className="text-white" />
-          </button>
-          <span className="text-white font-bold text-base">Предпросмотр</span>
-          <button onClick={onClose} className="w-9 h-9 rounded-full bg-black/50 flex items-center justify-center">
-            <Icon name="X" size={18} className="text-white" />
-          </button>
-        </div>
-
-        <div className="absolute bottom-0 left-0 right-0 z-10 px-5 pb-12 flex flex-col gap-3">
-          <button className="w-full py-4 rounded-2xl bg-[#fe2c55] text-white font-bold text-lg flex items-center justify-center gap-2 hover:bg-[#e0264c] active:scale-95 transition-all">
-            <Icon name="Upload" size={20} />
-            Опубликовать
-          </button>
-          <button onClick={resetRecording} className="w-full py-3 rounded-2xl bg-white/10 border border-white/20 text-white font-semibold text-base flex items-center justify-center gap-2">
-            <Icon name="Trash2" size={18} />
-            Снять заново
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const formatTime = (s: number) =>
+    `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
   return (
-    <div className="relative w-full h-full bg-black flex flex-col overflow-hidden">
+    <div className="relative w-full h-full bg-black overflow-hidden flex flex-col">
+
       {/* Camera preview */}
-      {cameraError ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 gap-4">
-          <Icon name="CameraOff" size={52} className="text-white/20" />
-          <p className="text-white/40 text-sm text-center px-8">Нет доступа к камере. Разреши использование камеры в браузере.</p>
-        </div>
-      ) : (
+      <div className="absolute inset-0">
         <video
           ref={videoRef}
           autoPlay
           playsInline
           muted
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ transform: facingMode === "user" ? "scaleX(-1)" : "none", ...filterStyle() }}
+          className="w-full h-full object-cover"
+          style={{
+            filter: FILTER_STYLES[filter],
+            transform: `scaleX(${facing === "user" ? -1 : 1}) scaleX(${flipping ? 0 : 1})`,
+            transition: "transform 0.2s ease, filter 0.3s ease",
+          }}
         />
-      )}
+        <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 -z-10" />
 
-      {/* Flash overlay */}
-      {flash && <div className="absolute inset-0 bg-white z-40 opacity-80 pointer-events-none" />}
+        {/* Shutter flash */}
+        {shutterFlash && (
+          <div className="absolute inset-0 bg-white z-40 opacity-80" />
+        )}
 
-      {/* Dark overlays */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/70 pointer-events-none" />
-
-      {/* Progress bar */}
-      {recording && (
-        <div className="absolute top-0 left-0 right-0 h-1 z-20 bg-white/20">
-          <div
-            className="h-full bg-[#fe2c55] transition-all duration-1000"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      )}
+        {/* Recording border */}
+        {recording && (
+          <div className="absolute inset-0 border-[3px] border-[#fe2c55] pointer-events-none z-10" />
+        )}
+      </div>
 
       {/* Top bar */}
-      <div className="relative z-20 flex items-center justify-between px-4 pt-12 pb-2">
-        <button onClick={onClose} className="w-9 h-9 rounded-full bg-black/40 flex items-center justify-center">
+      <div className="relative z-20 flex items-center justify-between px-5 pt-14 pb-4">
+        <button
+          onClick={onClose}
+          className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center"
+        >
           <Icon name="X" size={20} className="text-white" />
         </button>
 
-        <div className="flex items-center gap-2">
-          {recording && (
-            <div className="flex items-center gap-1.5 bg-[#fe2c55] px-2.5 py-1 rounded-md">
-              <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-              <span className="text-white text-xs font-bold">
-                {String(Math.floor(elapsed / 60)).padStart(2, "0")}:{String(elapsed % 60).padStart(2, "0")}
-              </span>
-            </div>
-          )}
-        </div>
-
-        <button
-          onClick={() => setFlash((v) => !v)}
-          className="w-9 h-9 rounded-full bg-black/40 flex items-center justify-center"
-        >
-          <Icon name={flash ? "ZapOff" : "Zap"} size={18} className={flash ? "text-[#fbbf24]" : "text-white"} />
-        </button>
-      </div>
-
-      {/* Duration selector */}
-      {!recording && (
-        <div className="relative z-20 flex justify-center gap-2 mt-2">
-          {DURATIONS.map((d) => (
-            <button
-              key={d}
-              onClick={() => setMaxDuration(d)}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
-                maxDuration === d
-                  ? "bg-[#fe2c55] text-white"
-                  : "bg-black/40 text-white/60 border border-white/20"
-              }`}
-            >
-              {d}с
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Right side tools */}
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-5">
-        <button
-          onClick={flipCamera}
-          className="w-11 h-11 rounded-full bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center gap-0.5"
-        >
-          <Icon name="RefreshCw" size={20} className="text-white" />
-        </button>
-        <button
-          onClick={() => setShowEffects((v) => !v)}
-          className="w-11 h-11 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
-        >
-          <Icon name="Sparkles" size={20} className="text-white" />
-        </button>
-        <button className="w-11 h-11 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-          <Icon name="Music" size={20} className="text-white" />
-        </button>
-        <button className="w-11 h-11 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-          <Icon name="Timer" size={20} className="text-white" />
-        </button>
-      </div>
-
-      {/* Effects panel */}
-      {showEffects && (
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2">
-          {EFFECTS.map((e) => (
-            <button
-              key={e}
-              onClick={() => { setEffect(e); setShowEffects(false); }}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                effect === e ? "bg-white text-black" : "bg-black/50 text-white border border-white/20"
-              }`}
-            >
-              {e}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Bottom controls */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 pb-10 flex flex-col items-center gap-6">
-        {/* Gallery + Record + Flip row */}
-        <div className="flex items-center justify-between w-full px-10">
-          {/* Gallery placeholder */}
-          <button className="w-14 h-14 rounded-xl overflow-hidden bg-white/10 border-2 border-white/20 flex items-center justify-center">
-            <Icon name="Image" size={22} className="text-white/60" />
-          </button>
-
-          {/* Record button */}
-          <button
-            onPointerDown={handleRecord}
-            className="relative flex items-center justify-center"
-          >
-            <div className={`absolute rounded-full border-4 transition-all duration-200 ${
-              recording ? "border-[#fe2c55] w-20 h-20" : "border-white w-20 h-20"
-            }`} />
-            <div className={`transition-all duration-200 rounded-full bg-[#fe2c55] ${
-              recording ? "w-10 h-10 rounded-xl" : "w-14 h-14 rounded-full"
-            }`} />
-          </button>
-
-          {/* Flip camera */}
-          <button
-            onClick={flipCamera}
-            className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-sm border-2 border-white/20 flex items-center justify-center"
-          >
-            <Icon name="CameraOff" fallback="RefreshCw" name={"RefreshCw" as const} size={22} className="text-white" />
-          </button>
-        </div>
-
-        {/* Mode tabs */}
-        {!recording && (
-          <div className="flex items-center gap-6">
-            {["Фото", "Видео", "Текст"].map((m) => (
-              <button key={m} className={`text-sm font-semibold ${m === "Видео" ? "text-white border-b border-white pb-0.5" : "text-white/50"}`}>
-                {m}
-              </button>
-            ))}
+        {recording && (
+          <div className="flex items-center gap-1.5 bg-[#fe2c55] px-3 py-1 rounded-full">
+            <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+            <span className="text-white text-sm font-bold font-mono">{formatTime(recordSeconds)}</span>
           </div>
         )}
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setFlash((v) => !v)}
+            className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center"
+          >
+            <Icon
+              name={flash ? "Zap" : "ZapOff"}
+              size={18}
+              className={flash ? "text-yellow-400" : "text-white"}
+            />
+          </button>
+          <button className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+            <Icon name="Settings2" size={18} className="text-white" />
+          </button>
+        </div>
+      </div>
+
+      {/* Mode selector */}
+      <div className="relative z-20 flex justify-center gap-8 pb-2">
+        {MODES.map((m) => (
+          <button
+            key={m}
+            onClick={() => {
+              setMode(m);
+              setRecording(false);
+              setRecordSeconds(0);
+              if (timerRef.current) clearInterval(timerRef.current);
+            }}
+            className={`text-sm font-semibold pb-1 transition-all ${
+              mode === m ? "text-white border-b-2 border-white" : "text-white/40"
+            }`}
+          >
+            {m}
+          </button>
+        ))}
+      </div>
+
+      {/* Spacer */}
+      <div className="relative z-20 flex-1" />
+
+      {/* Filters */}
+      <div
+        className="relative z-20 flex gap-3 px-4 pb-5 overflow-x-scroll"
+        style={{ scrollbarWidth: "none" }}
+      >
+        {FILTERS.map((f) => (
+          <button key={f.id} onClick={() => setFilter(f.id)} className="flex-shrink-0 flex flex-col items-center gap-1">
+            <div
+              className={`w-14 h-14 rounded-xl overflow-hidden border-2 transition-all ${
+                filter === f.id ? "border-white scale-105" : "border-white/20"
+              }`}
+            >
+              <img
+                src="https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/48f38c64-742e-458c-9f09-0013a0813b5f.jpg"
+                className="w-full h-full object-cover"
+                alt={f.label}
+                style={{ filter: FILTER_STYLES[f.id] }}
+              />
+            </div>
+            <span className={`text-xs ${filter === f.id ? "text-white" : "text-white/40"}`}>{f.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Bottom controls */}
+      <div className="relative z-20 flex items-center justify-between px-8 pb-14">
+
+        {/* Gallery */}
+        <button className="w-14 h-14 rounded-xl overflow-hidden border-2 border-white/30 active:scale-95 transition-transform">
+          <img
+            src="https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/0730a864-0860-4c86-8845-835a8c4a720e.jpg"
+            className="w-full h-full object-cover"
+            alt="gallery"
+          />
+        </button>
+
+        {/* Shutter button */}
+        <button onClick={handleShutter} className="relative flex items-center justify-center">
+          <div
+            className={`w-20 h-20 rounded-full border-4 flex items-center justify-center transition-all duration-200 ${
+              recording ? "border-[#fe2c55]" : "border-white"
+            }`}
+          >
+            <div
+              className={`transition-all duration-200 bg-white ${
+                recording ? "w-8 h-8 rounded-lg bg-[#fe2c55]" : "w-16 h-16 rounded-full"
+              }`}
+            />
+          </div>
+        </button>
+
+        {/* Flip camera button */}
+        <button
+          onClick={flipCamera}
+          className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-sm border border-white/25 flex items-center justify-center active:scale-90 transition-all duration-200"
+        >
+          <Icon
+            name="RefreshCw"
+            size={24}
+            className="text-white"
+            style={{ transform: flipping ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
+          />
+        </button>
       </div>
     </div>
   );
