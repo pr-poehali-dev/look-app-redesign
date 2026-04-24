@@ -56,6 +56,25 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
   const [uploadedMedia, setUploadedMedia] = useState<{ url: string; type: "image" | "video" } | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [published, setPublished] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("humor");
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+
+  const VIDEO_CATEGORIES = [
+    { id: "music", label: "Музыка" },
+    { id: "dance", label: "Танцы" },
+    { id: "sport", label: "Спорт" },
+    { id: "humor", label: "Юмор" },
+    { id: "travel", label: "Путешествия" },
+    { id: "food", label: "Еда" },
+    { id: "style", label: "Стиль" },
+    { id: "gaming", label: "Игры" },
+    { id: "nature", label: "Природа" },
+    { id: "animals", label: "Животные" },
+    { id: "beauty", label: "Красота" },
+    { id: "diy", label: "Сделай сам" },
+    { id: "science", label: "Наука" },
+    { id: "auto", label: "Авто" },
+  ];
 
   const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -79,7 +98,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
         const res = await fetch("https://functions.poehali.dev/78967386-1bfb-4070-9bb3-549cc5c00de6", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ file: base64, type: file.type, ext }),
+          body: JSON.stringify({ file: base64, type: file.type, ext, category: uploadedMedia?.type === "video" ? selectedCategory : "feed" }),
         });
         const data = await res.json();
         if (data.url) {
@@ -218,21 +237,61 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
 
         {/* Uploaded media preview */}
         {uploadedMedia && (
-          <div className="absolute inset-0 z-30 bg-black">
-            {uploadedMedia.type === "image" ? (
-              <img src={uploadedMedia.url} className="w-full h-full object-contain" alt="preview" />
-            ) : (
-              <video src={uploadedMedia.url} className="w-full h-full object-contain" autoPlay loop playsInline />
-            )}
-            <button
-              onClick={() => setUploadedMedia(null)}
-              className="absolute top-14 left-5 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center z-40"
-            >
-              <Icon name="X" size={20} className="text-white" />
-            </button>
-            <div className="absolute bottom-14 left-0 right-0 flex justify-center z-40">
+          <div className="absolute inset-0 z-30 bg-black flex flex-col">
+            {/* Preview */}
+            <div className="relative flex-1">
+              {uploadedMedia.type === "image" ? (
+                <img src={uploadedMedia.url} className="w-full h-full object-contain" alt="preview" />
+              ) : (
+                <video src={uploadedMedia.url} className="w-full h-full object-contain" autoPlay loop playsInline />
+              )}
+              <button
+                onClick={() => { setUploadedMedia(null); setPublished(false); }}
+                className="absolute top-14 left-5 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center"
+              >
+                <Icon name="X" size={20} className="text-white" />
+              </button>
+              <div className="absolute top-14 right-5 bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full">
+                <span className="text-white text-xs font-semibold">
+                  {uploadedMedia.type === "video" ? "🎬 Видео → Главная" : "🖼 Фото → Лента"}
+                </span>
+              </div>
+            </div>
+
+            {/* Bottom panel */}
+            <div className="bg-black/90 px-4 pt-4 pb-10 flex flex-col gap-3">
+              {/* Category picker (only for video) */}
+              {uploadedMedia.type === "video" && (
+                <div>
+                  <p className="text-white/60 text-xs mb-2 font-medium">Категория</p>
+                  <button
+                    onClick={() => setShowCategoryPicker(v => !v)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-white/10 border border-white/15"
+                  >
+                    <span className="text-white text-sm font-medium">
+                      {VIDEO_CATEGORIES.find(c => c.id === selectedCategory)?.label}
+                    </span>
+                    <Icon name="ChevronDown" size={16} className="text-white/50" />
+                  </button>
+                  {showCategoryPicker && (
+                    <div className="mt-1 bg-zinc-900 rounded-xl border border-white/10 overflow-hidden max-h-40 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
+                      {VIDEO_CATEGORIES.map(cat => (
+                        <button
+                          key={cat.id}
+                          onClick={() => { setSelectedCategory(cat.id); setShowCategoryPicker(false); }}
+                          className={`w-full text-left px-4 py-2.5 text-sm border-b border-white/5 last:border-0 ${selectedCategory === cat.id ? "text-[#8b5cf6] font-semibold" : "text-white/80"}`}
+                        >
+                          {cat.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Publish button */}
               {published ? (
-                <div className="flex items-center gap-2 px-8 py-3 rounded-full bg-green-500">
+                <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-green-500">
                   <Icon name="Check" size={18} className="text-white" />
                   <span className="text-white font-bold text-base">Опубликовано!</span>
                 </div>
@@ -240,9 +299,9 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
                 <button
                   onClick={handlePublish}
                   disabled={publishing}
-                  className="flex items-center gap-2 px-8 py-3 rounded-full bg-white text-black font-bold text-base disabled:opacity-60"
+                  className="flex items-center justify-center gap-2 py-3 rounded-xl bg-[#8b5cf6] text-white font-bold text-base disabled:opacity-60"
                 >
-                  {publishing && <Icon name="Loader" size={18} className="text-black animate-spin" />}
+                  {publishing && <Icon name="Loader" size={18} className="text-white animate-spin" />}
                   {publishing ? "Загрузка..." : "Опубликовать"}
                 </button>
               )}
