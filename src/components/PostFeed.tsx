@@ -289,9 +289,9 @@ const PostCard = ({ post }: { post: Post }) => {
 
       {/* Hashtags */}
       {post.hashtags.length > 0 && (
-        <div className="px-3 pb-1 flex flex-col">
+        <div className="px-3 pb-1 flex flex-row flex-wrap gap-x-1">
           {post.hashtags.map(tag => (
-            <span key={tag} className="text-[#00a2ff] text-[13px] leading-6">#{tag}</span>
+            <span key={tag} className="text-[#00a2ff] text-[13px]">#{tag}</span>
           ))}
         </div>
       )}
