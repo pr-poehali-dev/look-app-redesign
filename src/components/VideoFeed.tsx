@@ -334,6 +334,17 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
     }
   }, [activeCategory]);
 
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const handleScroll = () => {
+      const index = Math.round(container.scrollTop / container.clientHeight);
+      setActiveIndex(index);
+    };
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <div
       ref={containerRef}
