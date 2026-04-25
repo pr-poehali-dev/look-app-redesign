@@ -31,7 +31,6 @@ const MOCK_COMMENTS = [
 
 const VideoCard = ({ video, isActive }: VideoCardProps) => {
   const [liked, setLiked] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [following, setFollowing] = useState(false);
   const [paused, setPaused] = useState(false);
   const [showPauseIcon, setShowPauseIcon] = useState(false);
@@ -59,23 +58,6 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
     setPaused(next);
     setShowPauseIcon(true);
     setTimeout(() => setShowPauseIcon(false), 800);
-  };
-
-  const handleShare = async () => {
-    const url = window.location.href;
-    const text = `${video.description} — @${video.handle}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: `@${video.handle}`, text, url });
-      } catch (e) { void e; }
-    } else {
-      try {
-        await navigator.clipboard.writeText(`${text}\n${url}`);
-        alert("Ссылка скопирована!");
-      } catch {
-        alert("Поделиться: " + url);
-      }
-    }
   };
 
   const handleSendComment = () => {
@@ -160,85 +142,68 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
         </div>
       </div>
 
-      {/* Right side actions */}
-      <div
-        className="absolute right-3 bottom-24 flex flex-col items-center gap-5 z-30"
-        style={{ touchAction: "manipulation", pointerEvents: "auto" }}
-      >
-        {/* Avatar */}
-        <div className="relative mb-2">
-          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white">
-            <img src={video.avatar} alt={video.author} className="w-full h-full object-cover" />
-          </div>
-          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#fe2c55] flex items-center justify-center">
-            <Icon name="Plus" size={12} className="text-white" />
-          </div>
-        </div>
-
-        {/* Like */}
-        <button
-          onClick={() => setLiked(!liked)}
-          className="flex flex-col items-center gap-1 group"
-          style={{ touchAction: "manipulation" }}
+      {/* Right side actions — через портал чтобы не перекрывался скролл-контейнером */}
+      {isActive && createPortal(
+        <div
+          className="fixed flex flex-col items-center gap-5 z-[100]"
+          style={{ right: 12, bottom: 96, touchAction: "manipulation" }}
         >
-          <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 ${liked ? "scale-110" : "group-active:scale-90"}`}>
-            <Icon
-              name="Heart"
-              size={28}
-              className={`transition-colors duration-200 ${liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"}`}
-            />
+          {/* Avatar */}
+          <div className="relative mb-2">
+            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white">
+              <img src={video.avatar} alt={video.author} className="w-full h-full object-cover" />
+            </div>
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#fe2c55] flex items-center justify-center">
+              <Icon name="Plus" size={12} className="text-white" />
+            </div>
           </div>
-          <span className="text-white text-xs font-semibold">{liked ? parseInt(video.likes.replace("K","")) + 0.1 + "K" : video.likes}</span>
-        </button>
 
-        {/* Comment */}
-        <button
-          onClick={(e) => { e.stopPropagation(); setShowComments(true); }}
-          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowComments(true); }}
-          className="flex flex-col items-center gap-1"
-          style={{ touchAction: "manipulation" }}
-        >
-          <div className="w-11 h-11 rounded-full flex items-center justify-center">
-            <Icon name="MessageCircle" size={26} className="text-white" />
+          {/* Like */}
+          <button
+            onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setLiked(l => !l); }}
+            onClick={() => setLiked(l => !l)}
+            className="flex flex-col items-center gap-1"
+            style={{ touchAction: "manipulation" }}
+          >
+            <div className="w-11 h-11 rounded-full flex items-center justify-center">
+              <Icon name="Heart" size={28} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"} />
+            </div>
+            <span className="text-white text-xs font-semibold">{liked ? parseInt(video.likes.replace("K","")) + 0.1 + "K" : video.likes}</span>
+          </button>
+
+          {/* Comment */}
+          <button
+            onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowComments(true); }}
+            onClick={() => setShowComments(true)}
+            className="flex flex-col items-center gap-1"
+            style={{ touchAction: "manipulation" }}
+          >
+            <div className="w-11 h-11 rounded-full flex items-center justify-center">
+              <Icon name="MessageCircle" size={26} className="text-white" />
+            </div>
+            <span className="text-white text-xs font-semibold">{video.comments}</span>
+          </button>
+
+          {/* Send / Share */}
+          <button
+            onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowShare(true); }}
+            onClick={() => setShowShare(true)}
+            className="flex flex-col items-center gap-1"
+            style={{ touchAction: "manipulation" }}
+          >
+            <div className="w-11 h-11 rounded-full flex items-center justify-center">
+              <Icon name="Send" size={26} className="text-white" />
+            </div>
+            <span className="text-white text-xs font-semibold">{video.shares}</span>
+          </button>
+
+          {/* Spinning disc */}
+          <div className="w-10 h-10 rounded-full border-4 border-white/30 overflow-hidden animate-spin" style={{ animationDuration: "3s" }}>
+            <img src={video.avatar} alt="disc" className="w-full h-full object-cover" />
           </div>
-          <span className="text-white text-xs font-semibold">{video.comments}</span>
-        </button>
-
-        {/* Send / Share */}
-        <button
-          onClick={(e) => { e.stopPropagation(); setShowShare(true); }}
-          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowShare(true); }}
-          className="flex flex-col items-center gap-1 group"
-          style={{ touchAction: "manipulation" }}
-        >
-          <div className="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 group-active:scale-90">
-            <Icon name="Send" size={26} className="text-white" />
-          </div>
-          <span className="text-white text-xs font-semibold">{video.shares}</span>
-        </button>
-
-        {/* Download */}
-        <button
-          onClick={() => {
-            const a = document.createElement("a");
-            a.href = video.image;
-            a.download = `look_${video.id}.jpg`;
-            a.target = "_blank";
-            a.click();
-          }}
-          className="flex flex-col items-center gap-1"
-        >
-          <div className="w-11 h-11 rounded-full flex items-center justify-center">
-            <Icon name="Download" size={24} className="text-white" />
-          </div>
-          <span className="text-white text-xs font-semibold">Скачать</span>
-        </button>
-
-        {/* Spinning disc */}
-        <div className="w-10 h-10 rounded-full border-4 border-white/30 overflow-hidden animate-spin" style={{ animationDuration: "3s" }}>
-          <img src={video.avatar} alt="disc" className="w-full h-full object-cover" />
-        </div>
-      </div>
+        </div>,
+        document.body
+      )}
 
       {showShare && createPortal(
         <div

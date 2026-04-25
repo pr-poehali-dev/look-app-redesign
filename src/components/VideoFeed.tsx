@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect } from "react";
 import VideoCard, { VideoData } from "./VideoCard";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
@@ -270,8 +270,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [dbVideos, setDbVideos] = useState<(VideoData & { category: string })[]>([]);
   const [dbLoaded, setDbLoaded] = useState(false);
-  const touchStartY = useRef<number | null>(null);
-  const touchStartX = useRef<number | null>(null);
+
   const { userVideos } = useUserMedia();
   const { user } = useAuth();
 
@@ -335,42 +334,14 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
     }
   }, [activeCategory]);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    touchStartY.current = touch.clientY;
-    touchStartX.current = touch.clientX;
-  }, []);
-
-  const handleTouchEnd = useCallback((e: React.TouchEvent, total: number) => {
-    if (touchStartY.current === null || touchStartX.current === null) return;
-    const touch = e.changedTouches[0];
-    const dy = touchStartY.current - touch.clientY;
-    const dx = Math.abs(touchStartX.current - touch.clientX);
-    // Only vertical swipe, ignore if horizontal or small movement or touch on right 80px (buttons)
-    const isRightZone = touch.clientX > window.innerWidth - 90;
-    if (isRightZone || dx > Math.abs(dy) || Math.abs(dy) < 50) return;
-    setActiveIndex(prev => {
-      const next = dy > 0 ? prev + 1 : prev - 1;
-      const clamped = Math.max(0, Math.min(total - 1, next));
-      if (containerRef.current) {
-        containerRef.current.scrollTo({ top: clamped * containerRef.current.clientHeight, behavior: "smooth" });
-      }
-      return clamped;
-    });
-    touchStartY.current = null;
-    touchStartX.current = null;
-  }, []);
-
   return (
     <div
       ref={containerRef}
-      className="w-full h-full overflow-hidden scrollbar-none"
+      className="w-full h-full overflow-y-scroll snap-y snap-mandatory"
       style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={(e) => handleTouchEnd(e, filtered.length)}
     >
       {filtered.length > 0 ? filtered.map((video, i) => (
-        <div key={video.id} className="w-full flex-shrink-0" style={{ height: "100%" }}>
+        <div key={video.id} className="w-full snap-start" style={{ height: "100%" }}>
           <VideoCard video={video} isActive={activeIndex === i} />
         </div>
       )) : (
