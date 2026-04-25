@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
 
@@ -88,15 +89,35 @@ const GET_PHOTOS_URL = "https://functions.poehali.dev/f58115ec-de09-405d-a2db-08
 const formatLikes = (n: number) =>
   n >= 1000 ? (n / 1000).toFixed(1).replace(".0", "") + "K" : String(n);
 
+const MOCK_COMMENTS = [
+  { id: 1, name: "anya_dance", text: "🔥 Просто огонь!", time: "1 мин" },
+  { id: 2, name: "max_parkour", text: "Лучшее что я видел сегодня 😂", time: "3 мин" },
+  { id: 3, name: "cozy_coffee", text: "Подписалась сразу!", time: "5 мин" },
+  { id: 4, name: "travel_rus", text: "Продолжай в том же духе 👏", time: "12 мин" },
+];
+
 const PostCard = ({ post }: { post: Post }) => {
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [likes, setLikes] = useState(post.likes);
   const [expanded, setExpanded] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [extraComments, setExtraComments] = useState<typeof MOCK_COMMENTS>([]);
+  const [copied, setCopied] = useState(false);
+
+  const allComments = [...extraComments, ...MOCK_COMMENTS];
 
   const handleLike = () => {
     setLiked((v) => !v);
     setLikes((v) => (liked ? v - 1 : v + 1));
+  };
+
+  const handleSendComment = () => {
+    if (!commentText.trim()) return;
+    setExtraComments(prev => [{ id: Date.now(), name: "Я", text: commentText.trim(), time: "сейчас" }, ...prev]);
+    setCommentText("");
   };
 
   return (
@@ -134,10 +155,10 @@ const PostCard = ({ post }: { post: Post }) => {
               className={`transition-all duration-200 ${liked ? "text-[#fe2c55] fill-[#fe2c55] scale-110" : "text-white"}`}
             />
           </button>
-          <button className="flex items-center gap-1.5">
+          <button onClick={() => setShowComments(true)} className="flex items-center gap-1.5">
             <Icon name="MessageCircle" size={24} className="text-white" />
           </button>
-          <button>
+          <button onClick={() => setShowShare(true)}>
             <Icon name="Send" size={22} className="text-white" />
           </button>
         </div>
@@ -181,6 +202,88 @@ const PostCard = ({ post }: { post: Post }) => {
       <div className="px-3 pb-3">
         <span className="text-white/30 text-xs uppercase tracking-wide">{post.time}</span>
       </div>
+
+      {/* Comments popup */}
+      {showComments && createPortal(
+        <div className="fixed inset-0 z-[9999] flex flex-col justify-end" onPointerDown={() => setShowComments(false)}>
+          <div className="bg-zinc-900 rounded-t-3xl flex flex-col max-h-[70%]" onPointerDown={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/10">
+              <span className="text-white font-bold text-base">{allComments.length} комментариев</span>
+              <button onPointerDown={() => setShowComments(false)}>
+                <Icon name="X" size={20} className="text-white/60" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-4" style={{ scrollbarWidth: "none" }}>
+              {allComments.map(c => (
+                <div key={c.id} className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-xs font-bold">{c.name[0].toUpperCase()}</span>
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-white font-semibold text-sm mr-2">{c.name}</span>
+                    <span className="text-white/80 text-sm">{c.text}</span>
+                    <div className="text-white/30 text-xs mt-1">{c.time}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-3 px-4 py-3 border-t border-white/10 pb-8">
+              <div className="flex-1 flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
+                <input
+                  value={commentText}
+                  onChange={e => setCommentText(e.target.value)}
+                  placeholder="Написать комментарий..."
+                  className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/40"
+                  onKeyDown={e => e.key === "Enter" && handleSendComment()}
+                />
+              </div>
+              <button onClick={handleSendComment} className="w-9 h-9 rounded-full bg-[#fe2c55] flex items-center justify-center flex-shrink-0">
+                <Icon name="Send" size={16} className="text-white" />
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Share popup */}
+      {showShare && createPortal(
+        <div className="fixed inset-0 z-[9999] flex flex-col justify-end" onClick={() => setShowShare(false)}>
+          <div className="bg-zinc-900 rounded-t-3xl px-4 pt-5 pb-10" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <span className="text-white font-bold text-base">Поделиться</span>
+              <button onClick={() => setShowShare(false)}>
+                <Icon name="X" size={20} className="text-white/60" />
+              </button>
+            </div>
+            <div className="grid grid-cols-4 gap-4 mb-6">
+              {[
+                { icon: "MessageCircle", label: "Telegram", color: "#229ED9", href: `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`@${post.handle}: ${post.caption}`)}` },
+                { icon: "Send", label: "WhatsApp", color: "#25D366", href: `https://wa.me/?text=${encodeURIComponent(`@${post.handle}: ${post.caption}\n${window.location.href}`)}` },
+                { icon: "Share2", label: "VK", color: "#0077FF", href: `https://vk.com/share.php?url=${encodeURIComponent(window.location.href)}` },
+                { icon: "Mail", label: "Email", color: "#fe2c55", href: `mailto:?subject=${encodeURIComponent(`@${post.handle}`)}&body=${encodeURIComponent(`${post.caption}\n${window.location.href}`)}` },
+              ].map(opt => (
+                <a key={opt.label} href={opt.href} target="_blank" rel="noreferrer" className="flex flex-col items-center gap-2" onClick={() => setShowShare(false)}>
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: opt.color + "22", border: `1.5px solid ${opt.color}55` }}>
+                    <Icon name={opt.icon} size={24} style={{ color: opt.color }} />
+                  </div>
+                  <span className="text-white/70 text-xs">{opt.label}</span>
+                </a>
+              ))}
+            </div>
+            <button
+              onClick={() => { navigator.clipboard.writeText(window.location.href).catch(() => {}); setCopied(true); setTimeout(() => { setCopied(false); setShowShare(false); }, 1500); }}
+              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3"
+            >
+              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                <Icon name={copied ? "Check" : "Link"} size={20} className={copied ? "text-green-400" : "text-white"} />
+              </div>
+              <span className="text-white text-sm font-medium">{copied ? "Скопировано!" : "Скопировать ссылку"}</span>
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };
