@@ -80,11 +80,7 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
       body: JSON.stringify({ id: String(id), token, user_id: userId }),
     })
       .then(r => r.json())
-      .then(raw => {
-        const d = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-        alert("DELETE response: " + JSON.stringify(d));
-      })
-      .catch(e => alert("removeMedia fetch error: " + e));
+      .catch(() => {});
   };
 
   return (
