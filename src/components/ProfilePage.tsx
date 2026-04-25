@@ -266,12 +266,13 @@ const ProfilePage = () => {
   const [tab, setTab] = useState<"videos" | "posts">("videos");
   const [showSettings, setShowSettings] = useState(false);
   const [showScreen, setShowScreen] = useState<"followers" | "following" | null>(null);
-  const { userVideos: stories, removeMedia } = useUserMedia();
+  const { userVideos: stories, removeMedia, addMedia } = useUserMedia();
   const { user, token, logout, updateUser } = useAuth();
   const [viewingStory, setViewingStory] = useState<number | null>(null);
   const [mediaViewer, setMediaViewer] = useState<{ tab: "video" | "image"; index: number } | null>(null);
   const [avatarLoading, setAvatarLoading] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const storyInputRef = useRef<HTMLInputElement>(null);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -384,12 +385,27 @@ const ProfilePage = () => {
       {/* Stories */}
       <div className="flex gap-4 px-4 pb-4 overflow-x-scroll" style={{ scrollbarWidth: "none" }}>
         {/* Add story */}
-        <div className="flex flex-col items-center gap-1 flex-shrink-0">
+        <input
+          ref={storyInputRef}
+          type="file"
+          accept="image/*,video/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) addMedia(file);
+            e.target.value = "";
+          }}
+        />
+        <button
+          onClick={() => storyInputRef.current?.click()}
+          className="flex flex-col items-center gap-1 flex-shrink-0"
+          style={{ touchAction: "manipulation" }}
+        >
           <div className="w-16 h-16 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
             <Icon name="Plus" size={22} className="text-gray-400" />
           </div>
           <span className="text-[10px] text-gray-400">Добавить</span>
-        </div>
+        </button>
         {/* User stories from uploaded media */}
         {stories.slice(0, 8).map((s, i) => (
           <button
