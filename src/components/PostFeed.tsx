@@ -185,6 +185,7 @@ const PostCard = ({ post }: { post: Post }) => {
   const [expanded, setExpanded] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [extraComments, setExtraComments] = useState<typeof MOCK_COMMENTS>([]);
   const [copied, setCopied] = useState(false);
@@ -223,7 +224,7 @@ const PostCard = ({ post }: { post: Post }) => {
             )}
           </div>
         </div>
-        <button className="p-1">
+        <button className="p-1" onClick={() => setShowMenu(true)}>
           <Icon name="MoreHorizontal" size={20} className="text-white" />
         </button>
       </div>
@@ -295,6 +296,32 @@ const PostCard = ({ post }: { post: Post }) => {
       <div className="px-3 pb-3 pt-0.5">
         <span className="text-white/30 text-[11px] uppercase tracking-wide">{post.time}</span>
       </div>
+
+      {/* Menu popup */}
+      {showMenu && createPortal(
+        <div className="fixed inset-0 z-[9999] flex flex-col justify-end" onClick={() => setShowMenu(false)}>
+          <div className="bg-zinc-900 rounded-t-3xl overflow-hidden pb-8" onClick={e => e.stopPropagation()}>
+            {[
+              { icon: "Bookmark", label: saved ? "Убрать из сохранённых" : "Сохранить", action: () => { setSaved(v => !v); setShowMenu(false); } },
+              { icon: "UserMinus", label: "Отписаться", action: () => setShowMenu(false) },
+              { icon: "BellOff", label: "Выключить уведомления", action: () => setShowMenu(false) },
+              { icon: "Link", label: "Скопировать ссылку", action: () => { navigator.clipboard.writeText(window.location.href).catch(() => {}); setShowMenu(false); } },
+              { icon: "Share2", label: "Поделиться", action: () => { setShowMenu(false); setShowShare(true); } },
+              { icon: "Flag", label: "Пожаловаться", action: () => setShowMenu(false) },
+            ].map((item, i) => (
+              <button
+                key={i}
+                onClick={item.action}
+                className="w-full flex items-center gap-4 px-6 py-4 border-b border-white/5 last:border-0 active:bg-white/5"
+              >
+                <Icon name={item.icon} size={20} className={item.icon === "Flag" ? "text-[#fe2c55]" : "text-white"} />
+                <span className={`text-sm font-medium ${item.icon === "Flag" ? "text-[#fe2c55]" : "text-white"}`}>{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Comments popup */}
       {showComments && createPortal(
