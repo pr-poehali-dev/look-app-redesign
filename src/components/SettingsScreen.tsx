@@ -186,6 +186,104 @@ const TextScreen = ({ onBack, title, text }: { onBack: () => void; title: string
   </div>
 );
 
+const SubscriptionScreen = ({ onBack }: { onBack: () => void }) => {
+  const [current] = useState<"free" | "premium">("free");
+  const [showPending, setShowPending] = useState(false);
+
+  return (
+    <div className="h-full bg-gray-100 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
+      <div className="flex items-center gap-3 px-4 pt-14 pb-4 bg-white border-b border-gray-100">
+        <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
+        <span className="flex-1 text-center text-black font-bold text-lg pr-7">Подписка</span>
+      </div>
+
+      <div className="px-4 pt-6 flex flex-col gap-4">
+        {/* Бесплатный тариф */}
+        <div className={`rounded-2xl border-2 p-5 bg-white ${current === "free" ? "border-[#8b5cf6]" : "border-gray-200"}`}>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-lg font-bold text-black">Бесплатный</span>
+            {current === "free" && (
+              <span className="text-xs font-semibold text-[#8b5cf6] bg-purple-50 px-2 py-1 rounded-full">Активен</span>
+            )}
+          </div>
+          <p className="text-2xl font-bold text-black mb-4">0 ₽<span className="text-sm font-normal text-gray-400"> / мес</span></p>
+          <ul className="flex flex-col gap-2">
+            <li className="flex items-center gap-2 text-sm text-gray-600">
+              <Icon name="Check" size={16} className="text-green-500 flex-shrink-0" />
+              Лента видео и сторис
+            </li>
+            <li className="flex items-center gap-2 text-sm text-gray-600">
+              <Icon name="Check" size={16} className="text-green-500 flex-shrink-0" />
+              Загрузка видео
+            </li>
+            <li className="flex items-center gap-2 text-sm text-gray-600">
+              <Icon name="X" size={16} className="text-red-400 flex-shrink-0" />
+              <span className="text-gray-400">Реклама в ленте</span>
+            </li>
+          </ul>
+        </div>
+
+        {/* Премиум тариф */}
+        <div className={`rounded-2xl border-2 p-5 bg-white ${current === "premium" ? "border-[#8b5cf6]" : "border-gray-200"} relative overflow-hidden`}>
+          <div className="absolute top-3 right-3 bg-gradient-to-r from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+            ЛУЧШИЙ ВЫБОР
+          </div>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-lg font-bold text-black">Премиум</span>
+            {current === "premium" && (
+              <span className="text-xs font-semibold text-[#8b5cf6] bg-purple-50 px-2 py-1 rounded-full">Активен</span>
+            )}
+          </div>
+          <p className="text-2xl font-bold text-black mb-4">50 ₽<span className="text-sm font-normal text-gray-400"> / мес</span></p>
+          <ul className="flex flex-col gap-2 mb-5">
+            <li className="flex items-center gap-2 text-sm text-gray-600">
+              <Icon name="Check" size={16} className="text-green-500 flex-shrink-0" />
+              Лента видео и сторис
+            </li>
+            <li className="flex items-center gap-2 text-sm text-gray-600">
+              <Icon name="Check" size={16} className="text-green-500 flex-shrink-0" />
+              Загрузка видео
+            </li>
+            <li className="flex items-center gap-2 text-sm text-gray-600">
+              <Icon name="Check" size={16} className="text-green-500 flex-shrink-0" />
+              <span className="font-medium text-black">Без рекламы</span>
+            </li>
+          </ul>
+          {current !== "premium" && (
+            <button
+              onClick={() => setShowPending(true)}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-[#8b5cf6] to-[#6228d7] text-white font-semibold text-base"
+            >
+              Подключить за 50 ₽/мес
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Модалка "скоро" */}
+      {showPending && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={() => setShowPending(false)}>
+          <div className="bg-white rounded-t-2xl w-full max-w-sm p-6 flex flex-col items-center gap-3" onClick={e => e.stopPropagation()}>
+            <div className="w-14 h-14 rounded-full bg-purple-50 flex items-center justify-center mb-1">
+              <Icon name="Clock" size={28} className="text-[#8b5cf6]" />
+            </div>
+            <p className="text-black font-bold text-lg text-center">Оплата скоро появится</p>
+            <p className="text-gray-400 text-sm text-center">Мы подключаем оплату через ЮКассу. Совсем скоро вы сможете оформить премиум прямо здесь.</p>
+            <button
+              className="w-full py-3 rounded-xl bg-[#8b5cf6] text-white font-semibold mt-2"
+              onClick={() => setShowPending(false)}
+            >
+              Понятно
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="pb-28" />
+    </div>
+  );
+};
+
 // Main Settings
 const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   const [showSubscriptions, setShowSubscriptions] = useState(true);
@@ -201,6 +299,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   if (screen === "notifications") return <NotificationsScreen onBack={() => setScreen(null)} />;
   if (screen === "terms") return <TextScreen onBack={() => setScreen(null)} title="Условия использования" text="Используя приложение Look, вы соглашаетесь с нашими условиями использования. Мы оставляем за собой право изменять условия в любое время. Продолжая использовать приложение, вы принимаете обновлённые условия. Запрещается публиковать незаконный, оскорбительный или вводящий в заблуждение контент. Мы вправе заблокировать аккаунт при нарушении правил." />;
   if (screen === "privacy") return <TextScreen onBack={() => setScreen(null)} title="Политика конфиденциальности" text="Мы уважаем вашу конфиденциальность. Собираемые данные используются только для улучшения работы приложения Look. Мы не передаём личные данные третьим лицам без вашего согласия. Вы вправе в любой момент запросить удаление своих данных через настройки аккаунта или обратившись в поддержку." />;
+  if (screen === "subscription") return <SubscriptionScreen onBack={() => setScreen(null)} />;
 
   const Toggle = ({ value, onChange }: { value: boolean; onChange: () => void }) => (
     <button
@@ -235,6 +334,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
       </div>
 
       <div className="mt-2">
+        <Row icon="Star" label="Подписка и тарифы" onPress={() => setScreen("subscription")} />
         <Row icon="Bookmark" label="Сохранённые" onPress={() => setScreen("saved")} />
         <Row icon="Languages" label="Языки" onPress={() => setScreen("languages")} />
         <Row icon="Ban" label="Заблокированные" onPress={() => setScreen("blocked")} />
