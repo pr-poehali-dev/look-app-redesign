@@ -422,18 +422,23 @@ const PostFeed = () => {
       .then(raw => {
         const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const dbPosts: Post[] = (data.videos || []).map((v: any) => ({
-          id: v.id,
-          author: v.author || "Пользователь",
-          handle: v.handle || "user",
-          avatar: user?.avatar || `https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/48f38c64-742e-458c-9f09-0013a0813b5f.jpg`,
-          image: v.url,
-          caption: v.description || "Фото",
-          hashtags: [],
-          likes: parseInt(v.likes) || 0,
-          comments: parseInt(v.comments) || 0,
-          time: "недавно",
-        }));
+        const dbPosts: Post[] = (data.videos || []).map((v: any) => {
+          const desc: string = v.description || "";
+          const tags = (desc.match(/#\S+/g) || []).map((t: string) => t.slice(1));
+          const caption = desc.replace(/#\S+/g, "").trim() || "Фото";
+          return {
+            id: v.id,
+            author: v.author || "Пользователь",
+            handle: v.handle || "user",
+            avatar: user?.avatar || `https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/48f38c64-742e-458c-9f09-0013a0813b5f.jpg`,
+            image: v.url,
+            caption,
+            hashtags: tags,
+            likes: parseInt(v.likes) || 0,
+            comments: parseInt(v.comments) || 0,
+            time: "недавно",
+          };
+        });
         setPosts([...dbPosts, ...MOCK_POSTS]);
       })
       .catch(() => setPosts(MOCK_POSTS))
