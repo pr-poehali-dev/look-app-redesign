@@ -82,9 +82,9 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
       .then(r => r.json())
       .then(raw => {
         const d = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-        if (d.error) console.error("removeMedia error:", d.error);
+        alert("DELETE response: " + JSON.stringify(d));
       })
-      .catch(e => console.error("removeMedia fetch error:", e));
+      .catch(e => alert("removeMedia fetch error: " + e));
   };
 
   return (
