@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
+import { useUserMedia } from "@/context/UserMediaContext";
 
 interface Story {
   id: number;
@@ -412,6 +413,8 @@ const PostFeed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { addMedia } = useUserMedia();
+  const myStoryInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch(`${GET_PHOTOS_URL}?type=image`)
@@ -453,15 +456,33 @@ const PostFeed = () => {
       {/* Stories row */}
       <div className="flex gap-4 px-3 py-3 overflow-x-scroll border-b border-white/8" style={{ scrollbarWidth: "none" }}>
         {/* "Your story" first */}
-        <div className="flex flex-col items-center gap-1 flex-shrink-0">
-          <div className="w-[62px] h-[62px] rounded-full border-2 border-white/20 flex items-center justify-center relative">
-            <img src={storyUsers[0]?.avatar} className="w-full h-full rounded-full object-cover opacity-60" />
+        <input
+          ref={myStoryInputRef}
+          type="file"
+          accept="image/*,video/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) addMedia(file);
+            e.target.value = "";
+          }}
+        />
+        <button
+          onClick={() => myStoryInputRef.current?.click()}
+          className="flex flex-col items-center gap-1 flex-shrink-0"
+          style={{ touchAction: "manipulation" }}
+        >
+          <div className="w-[62px] h-[62px] rounded-full border-2 border-white/20 flex items-center justify-center relative overflow-hidden">
+            {user?.avatar
+              ? <img src={user.avatar} className="w-full h-full object-cover opacity-70" />
+              : <div className="w-full h-full bg-white/10" />
+            }
             <div className="absolute bottom-0 right-0 w-5 h-5 bg-[#0095f6] rounded-full flex items-center justify-center border-2 border-black">
               <Icon name="Plus" size={11} className="text-white" />
             </div>
           </div>
           <span className="text-white/80 text-[10px] w-16 text-center truncate">Ваша история</span>
-        </div>
+        </button>
         {storyUsers.map((post, i) => (
           <button key={post.id} onClick={() => setStoryIndex(i)} className="flex flex-col items-center gap-1 flex-shrink-0">
             <div className="w-[62px] h-[62px] rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]">
