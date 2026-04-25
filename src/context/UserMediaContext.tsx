@@ -60,9 +60,10 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
             category: type === "video" ? "humor" : "feed",
           }),
         });
-        const data = await res.json();
+        const raw = await res.json();
+        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
         if (data.url) {
-          setUserVideos(s => s.map(v => v.id === tempId ? { ...v, id: data.id, url: data.url } : v));
+          setUserVideos(s => s.map(v => v.id === tempId ? { ...v, id: Number(data.id), url: data.url } : v));
         }
       } catch {
         // оставляем blob-версию
@@ -79,7 +80,10 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
       body: JSON.stringify({ id: String(id), token, user_id: userId }),
     })
       .then(r => r.json())
-      .then(d => { if (d.error) console.error("removeMedia error:", d.error); })
+      .then(raw => {
+        const d = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+        if (d.error) console.error("removeMedia error:", d.error);
+      })
       .catch(e => console.error("removeMedia fetch error:", e));
   };
 

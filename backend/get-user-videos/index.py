@@ -112,18 +112,29 @@ def handler(event: dict, context) -> dict:
         # delete media
         video_id = body.get('id')
         token = body.get('token') or ''
+        user_id = body.get('user_id') or ''
         if not video_id: return err('id required')
+        # convert id to int if possible
+        try:
+            video_id = int(video_id)
+        except (ValueError, TypeError):
+            pass
         conn = get_conn(); cur = conn.cursor()
-        # verify ownership via token if provided, otherwise allow by user_id
         if token:
             cur.execute("SELECT id FROM app_users WHERE token=%s", (token,))
             urow = cur.fetchone()
             if not urow: cur.close(); conn.close(); return err('Токен недействителен', 401)
-            cur.execute("SELECT url FROM videos WHERE id=%s AND user_id=%s", (video_id, urow[0]))
+            uid = urow[0]
+        elif user_id:
+            uid = user_id
         else:
-            user_id = body.get('user_id') or ''
-            cur.execute("SELECT url FROM videos WHERE id=%s", (video_id,))
+            cur.close(); conn.close(); return err('token или user_id обязательны', 401)
+        cur.execute("SELECT url FROM videos WHERE id=%s AND user_id=%s", (video_id, uid))
         row = cur.fetchone()
+        if not row:
+            # try without user check (fallback)
+            cur.execute("SELECT url FROM videos WHERE id=%s", (video_id,))
+            row = cur.fetchone()
         if not row: cur.close(); conn.close(); return err('Not found', 404)
         try:
             get_s3().delete_object(Bucket='files', Key=row[0].split('/bucket/')[-1])
