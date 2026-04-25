@@ -322,7 +322,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
       .finally(() => setDbLoaded(true));
   }, [activeCategory]);
 
-  const allVideos = [...userVideoData, ...dbVideos, ...(dbLoaded && dbVideos.length > 0 ? [] : VIDEOS)];
+  const allVideos = [...userVideoData, ...dbVideos];
   const filtered = activeCategory === "all"
     ? allVideos
     : allVideos.filter((v) => v.category === activeCategory);
@@ -340,13 +340,18 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
       className="w-full h-full overflow-y-scroll snap-y snap-mandatory"
       style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
     >
-      {filtered.length > 0 ? filtered.map((video, i) => (
-        <div key={video.id} className="w-full snap-start" style={{ height: "100%" }}>
+      {!dbLoaded ? (
+        <div className="w-full flex items-center justify-center" style={{ height: "100%" }}>
+          <p className="text-white/40 text-sm">Загрузка...</p>
+        </div>
+      ) : filtered.length > 0 ? filtered.map((video, i) => (
+        <div key={`${video.id}-${i}`} className="w-full snap-start" style={{ height: "100%" }}>
           <VideoCard video={video} isActive={activeIndex === i} />
         </div>
       )) : (
-        <div className="w-full flex items-center justify-center" style={{ height: "100%" }}>
-          <p className="text-white/40 text-sm">Видео не найдено</p>
+        <div className="w-full flex flex-col items-center justify-center gap-3" style={{ height: "100%" }}>
+          <p className="text-white/40 text-sm">Видео пока нет</p>
+          <p className="text-white/20 text-xs">Нажми + чтобы загрузить первое</p>
         </div>
       )}
     </div>
