@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {
+      "name": "Reupload videos batch",
+      "method": "POST",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {"done": false},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

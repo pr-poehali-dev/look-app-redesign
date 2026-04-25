@@ -1,4 +1,5 @@
 {
+  "reupload-videos": "https://functions.poehali.dev/eb443a8e-b2e9-45c0-a29d-b16c903ace99",
   "import-from-shortvideo": "https://functions.poehali.dev/d43a0739-b87d-4876-83c9-76ad7ded193f",
   "get-user-videos": "https://functions.poehali.dev/075d6280-020a-48ce-a5e4-64eb3291a01e",
   "get-videos": "https://functions.poehali.dev/f58115ec-de09-405d-a2db-08fe1cd958e1",
