@@ -76,8 +76,11 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
     fetch(USER_VIDEOS_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, token, user_id: userId }),
-    }).catch(() => {});
+      body: JSON.stringify({ id: String(id), token, user_id: userId }),
+    })
+      .then(r => r.json())
+      .then(d => { if (d.error) console.error("removeMedia error:", d.error); })
+      .catch(e => console.error("removeMedia fetch error:", e));
   };
 
   return (
