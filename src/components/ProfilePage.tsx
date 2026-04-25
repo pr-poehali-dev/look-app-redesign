@@ -271,6 +271,8 @@ const ProfilePage = () => {
   const [viewingStory, setViewingStory] = useState<number | null>(null);
   const [mediaViewer, setMediaViewer] = useState<{ tab: "video" | "image"; index: number } | null>(null);
   const [avatarLoading, setAvatarLoading] = useState(false);
+  const [deleteStoryId, setDeleteStoryId] = useState<number | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const storyInputRef = useRef<HTMLInputElement>(null);
 
@@ -408,23 +410,50 @@ const ProfilePage = () => {
         </button>
         {/* User stories from uploaded media */}
         {stories.slice(0, 8).map((s, i) => (
-          <button
-            key={s.id}
-            onClick={() => setViewingStory(i)}
-            className="flex flex-col items-center gap-1 flex-shrink-0"
-            style={{ touchAction: "manipulation" }}
-          >
-            <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]">
-              <div className="w-full h-full rounded-full overflow-hidden border-2 border-white bg-gray-100">
-                {s.type === "video"
-                  ? <video src={s.url} className="w-full h-full object-cover" muted playsInline />
-                  : <img src={s.url} className="w-full h-full object-cover" alt="" />
-                }
+          <div key={s.id} className="relative flex flex-col items-center gap-1 flex-shrink-0">
+            <button
+              onClick={() => setViewingStory(i)}
+              onMouseDown={() => { longPressTimer.current = setTimeout(() => setDeleteStoryId(s.id), 600); }}
+              onMouseUp={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
+              onMouseLeave={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
+              onTouchStart={() => { longPressTimer.current = setTimeout(() => setDeleteStoryId(s.id), 600); }}
+              onTouchEnd={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
+              className="flex flex-col items-center gap-1"
+              style={{ touchAction: "manipulation" }}
+            >
+              <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]">
+                <div className="w-full h-full rounded-full overflow-hidden border-2 border-white bg-gray-100">
+                  {s.type === "video"
+                    ? <video src={s.url} className="w-full h-full object-cover" muted playsInline />
+                    : <img src={s.url} className="w-full h-full object-cover" alt="" />
+                  }
+                </div>
               </div>
-            </div>
-            <span className="text-[10px] text-gray-500 w-16 text-center truncate">{s.label || `История ${i + 1}`}</span>
-          </button>
+              <span className="text-[10px] text-gray-500 w-16 text-center truncate">{s.label || `История ${i + 1}`}</span>
+            </button>
+          </div>
         ))}
+
+        {/* Подтверждение удаления сторис */}
+        {deleteStoryId !== null && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={() => setDeleteStoryId(null)}>
+            <div className="bg-white rounded-t-2xl w-full max-w-sm p-5 flex flex-col gap-3" onClick={e => e.stopPropagation()}>
+              <p className="text-center font-semibold text-gray-800">Удалить историю?</p>
+              <button
+                className="w-full py-3 rounded-xl bg-red-500 text-white font-semibold"
+                onClick={() => { removeMedia(deleteStoryId); setDeleteStoryId(null); }}
+              >
+                Удалить
+              </button>
+              <button
+                className="w-full py-3 rounded-xl bg-gray-100 text-gray-700 font-semibold"
+                onClick={() => setDeleteStoryId(null)}
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
