@@ -128,13 +128,13 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
         <img
           src={video.image}
           alt={video.description}
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
 
       {/* Bottom left info */}
-      <div className="absolute bottom-20 left-4 right-16 z-10">
+      <div className="absolute bottom-20 left-4 z-10" style={{ right: '80px' }}>
         <div className="flex items-center gap-2 mb-3">
           <span className="font-bold text-white text-base">@{video.handle}</span>
           {!following && (
@@ -161,7 +161,10 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
       </div>
 
       {/* Right side actions */}
-      <div className="absolute right-3 bottom-24 flex flex-col items-center gap-5 z-30">
+      <div
+        className="absolute right-3 bottom-24 flex flex-col items-center gap-5 z-30"
+        style={{ touchAction: "manipulation", pointerEvents: "auto" }}
+      >
         {/* Avatar */}
         <div className="relative mb-2">
           <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white">
@@ -176,6 +179,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
         <button
           onClick={() => setLiked(!liked)}
           className="flex flex-col items-center gap-1 group"
+          style={{ touchAction: "manipulation" }}
         >
           <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 ${liked ? "scale-110" : "group-active:scale-90"}`}>
             <Icon
@@ -192,6 +196,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
           onClick={(e) => { e.stopPropagation(); setShowComments(true); }}
           onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowComments(true); }}
           className="flex flex-col items-center gap-1"
+          style={{ touchAction: "manipulation" }}
         >
           <div className="w-11 h-11 rounded-full flex items-center justify-center">
             <Icon name="MessageCircle" size={26} className="text-white" />
@@ -204,6 +209,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
           onClick={(e) => { e.stopPropagation(); setShowShare(true); }}
           onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowShare(true); }}
           className="flex flex-col items-center gap-1 group"
+          style={{ touchAction: "manipulation" }}
         >
           <div className="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 group-active:scale-90">
             <Icon name="Send" size={26} className="text-white" />
