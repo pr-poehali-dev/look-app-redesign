@@ -208,6 +208,12 @@ const WatchStream = ({ channel, onBack }: { channel: typeof LIVE_CHANNELS[0]; on
 
 const LiveList = () => {
   const [watching, setWatching] = useState<typeof LIVE_CHANNELS[0] | null>(null);
+  const [activeCategory, setActiveCategory] = useState("Все");
+
+  const CATS = ["Все", "Игры", "Музыка", "Кулинария", "Путешествия"];
+  const filtered = activeCategory === "Все"
+    ? LIVE_CHANNELS
+    : LIVE_CHANNELS.filter(ch => ch.category === activeCategory);
 
   if (watching) return <WatchStream channel={watching} onBack={() => setWatching(null)} />;
 
@@ -229,21 +235,32 @@ const LiveList = () => {
 
       {/* Categories */}
       <div className="flex gap-2 px-4 py-3 overflow-x-scroll" style={{ scrollbarWidth: "none" }}>
-        {["Все", "Игры", "Музыка", "Кулинария", "Путешествия"].map((cat) => (
-          <span key={cat} className="flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold bg-white/10 text-white/70 border border-white/10">
+        {CATS.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setActiveCategory(cat)}
+            style={{ touchAction: "manipulation" }}
+            className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+              activeCategory === cat
+                ? "bg-[#fe2c55] text-white border-[#fe2c55]"
+                : "bg-white/10 text-white/70 border-white/10"
+            }`}
+          >
             {cat}
-          </span>
+          </button>
         ))}
       </div>
 
       {/* Featured — big card */}
+      {filtered.length > 0 && (
       <div className="px-4 mb-4">
         <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-3">Топ эфир</p>
         <button
-          onClick={() => setWatching(LIVE_CHANNELS[2])}
-          className="relative w-full rounded-2xl overflow-hidden aspect-video group"
+          onClick={() => setWatching(filtered[0])}
+          className="relative w-full rounded-2xl overflow-hidden aspect-video"
+          style={{ touchAction: "manipulation" }}
         >
-          <img src={LIVE_CHANNELS[2].thumb} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="" />
+          <img src={filtered[0].thumb} className="w-full h-full object-cover" alt="" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
           <div className="absolute top-3 left-3 flex items-center gap-2">
             <div className="flex items-center gap-1.5 bg-[#fe2c55] px-2 py-0.5 rounded-md">
@@ -252,26 +269,33 @@ const LiveList = () => {
             </div>
             <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-md">
               <Icon name="Eye" size={10} className="text-white/70" />
-              <span className="text-white text-xs">{formatViewers(LIVE_CHANNELS[2].viewers)}</span>
+              <span className="text-white text-xs">{formatViewers(filtered[0].viewers)}</span>
             </div>
           </div>
           <div className="absolute bottom-3 left-3 right-3">
-            <p className="text-white font-bold text-sm">{LIVE_CHANNELS[2].name}</p>
-            <p className="text-white/70 text-xs mt-0.5 line-clamp-1">{LIVE_CHANNELS[2].title}</p>
+            <p className="text-white font-bold text-sm">{filtered[0].name}</p>
+            <p className="text-white/70 text-xs mt-0.5 line-clamp-1">{filtered[0].title}</p>
           </div>
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
               <Icon name="Play" size={28} className="text-white ml-1" />
             </div>
           </div>
         </button>
       </div>
+      )}
 
       {/* List */}
       <div className="px-4">
         <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-3">Все трансляции</p>
+        {filtered.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <Icon name="Radio" size={40} className="text-white/20" />
+            <p className="text-white/40 text-sm">Нет эфиров в этой категории</p>
+          </div>
+        )}
         <div className="flex flex-col gap-3">
-          {LIVE_CHANNELS.map((ch) => (
+          {filtered.map((ch) => (
             <button
               key={ch.id}
               onClick={() => setWatching(ch)}
