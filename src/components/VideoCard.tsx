@@ -31,6 +31,7 @@ const MOCK_COMMENTS = [
 
 const VideoCard = ({ video, isActive }: VideoCardProps) => {
   const [liked, setLiked] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [following, setFollowing] = useState(false);
   const [paused, setPaused] = useState(false);
   const [showPauseIcon, setShowPauseIcon] = useState(false);
@@ -187,6 +188,32 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
             <Icon name="Send" size={26} className="text-white" />
           </div>
           <span className="text-white text-xs font-semibold">{video.shares}</span>
+        </button>
+
+        {/* Bookmark */}
+        <button
+          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setSaved(s => !s); }}
+          onClick={() => setSaved(s => !s)}
+          className="flex flex-col items-center gap-1"
+          style={{ touchAction: "manipulation" }}
+        >
+          <div className="w-11 h-11 rounded-full flex items-center justify-center">
+            <Icon name="Bookmark" size={26} className={saved ? "text-[#ffd700] fill-[#ffd700]" : "text-white"} />
+          </div>
+          <span className="text-white text-xs font-semibold">Сохранить</span>
+        </button>
+
+        {/* Download */}
+        <button
+          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); window.open(video.image, '_blank'); }}
+          onClick={() => window.open(video.image, '_blank')}
+          className="flex flex-col items-center gap-1"
+          style={{ touchAction: "manipulation" }}
+        >
+          <div className="w-11 h-11 rounded-full flex items-center justify-center">
+            <Icon name="Download" size={24} className="text-white" />
+          </div>
+          <span className="text-white text-xs font-semibold">Скачать</span>
         </button>
 
         {/* Spinning disc */}
