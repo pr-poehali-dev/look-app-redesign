@@ -172,6 +172,16 @@ const GET_PHOTOS_URL = "https://functions.poehali.dev/f58115ec-de09-405d-a2db-08
 const formatLikes = (n: number) =>
   n >= 1000 ? (n / 1000).toFixed(1).replace(".0", "") + "K" : String(n);
 
+const formatTime = (iso: string | null | undefined): string => {
+  if (!iso) return "недавно";
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (diff < 60) return "только что";
+  if (diff < 3600) return `${Math.floor(diff / 60)} мин назад`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} ч назад`;
+  if (diff < 2592000) return `${Math.floor(diff / 86400)} д назад`;
+  return `${Math.floor(diff / 2592000)} мес назад`;
+};
+
 const MOCK_COMMENTS = [
   { id: 1, name: "anya_dance", text: "🔥 Просто огонь!", time: "1 мин" },
   { id: 2, name: "max_parkour", text: "Лучшее что я видел сегодня 😂", time: "3 мин" },
@@ -436,7 +446,7 @@ const PostFeed = () => {
             hashtags: tags,
             likes: parseInt(v.likes) || 0,
             comments: parseInt(v.comments) || 0,
-            time: "недавно",
+            time: formatTime(v.created_at),
           };
         });
         setPosts([...dbPosts, ...MOCK_POSTS]);
