@@ -1,7 +1,89 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
+
+interface Story {
+  id: number;
+  handle: string;
+  avatar: string;
+  image: string;
+}
+
+const StoryViewer = ({ stories, startIndex, onClose }: { stories: Story[]; startIndex: number; onClose: () => void }) => {
+  const [index, setIndex] = useState(startIndex);
+  const [progress, setProgress] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const DURATION = 5000;
+
+  const startProgress = () => {
+    setProgress(0);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    const start = Date.now();
+    intervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - start;
+      const pct = Math.min((elapsed / DURATION) * 100, 100);
+      setProgress(pct);
+      if (pct >= 100) {
+        clearInterval(intervalRef.current!);
+        setIndex(i => {
+          if (i + 1 < stories.length) return i + 1;
+          onClose();
+          return i;
+        });
+      }
+    }, 30);
+  };
+
+  useEffect(() => {
+    startProgress();
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [index]);
+
+  const story = stories[index];
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] bg-black flex flex-col" onClick={(e) => {
+      const x = (e as React.MouseEvent).clientX;
+      if (x < window.innerWidth / 2) {
+        setIndex(i => Math.max(0, i - 1));
+      } else {
+        if (index + 1 < stories.length) setIndex(i => i + 1);
+        else onClose();
+      }
+    }}>
+      {/* Progress bars */}
+      <div className="flex gap-1 px-2 pt-12 pb-2 z-10">
+        {stories.map((_, i) => (
+          <div key={i} className="flex-1 h-[2px] bg-white/30 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-white rounded-full transition-none"
+              style={{ width: i < index ? "100%" : i === index ? `${progress}%` : "0%" }}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Header */}
+      <div className="flex items-center gap-2 px-3 pb-3 z-10">
+        <div className="w-8 h-8 rounded-full overflow-hidden border border-white/40">
+          <img src={story.avatar} className="w-full h-full object-cover" />
+        </div>
+        <span className="text-white font-semibold text-sm">{story.handle}</span>
+        <span className="text-white/40 text-xs">сейчас</span>
+        <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="ml-auto">
+          <Icon name="X" size={22} className="text-white" />
+        </button>
+      </div>
+
+      {/* Image */}
+      <div className="flex-1 relative">
+        <img src={story.image} className="absolute inset-0 w-full h-full object-cover" />
+      </div>
+    </div>,
+    document.body
+  );
+};
 
 interface Post {
   id: number;
@@ -329,9 +411,16 @@ const PostFeed = () => {
   }, [user]);
 
   const storyUsers = posts.slice(0, 6);
+  const stories: Story[] = storyUsers.map(p => ({ id: p.id, handle: p.handle, avatar: p.avatar, image: p.image }));
+  const [storyIndex, setStoryIndex] = useState<number | null>(null);
 
   return (
     <div className="h-full overflow-y-scroll bg-black" style={{ scrollbarWidth: "none" }}>
+      {/* Story viewer */}
+      {storyIndex !== null && (
+        <StoryViewer stories={stories} startIndex={storyIndex} onClose={() => setStoryIndex(null)} />
+      )}
+
       {/* Stories row */}
       <div className="flex gap-4 px-3 py-3 overflow-x-scroll border-b border-white/8" style={{ scrollbarWidth: "none" }}>
         {/* "Your story" first */}
@@ -344,15 +433,15 @@ const PostFeed = () => {
           </div>
           <span className="text-white/80 text-[10px] w-16 text-center truncate">Ваша история</span>
         </div>
-        {storyUsers.map((post) => (
-          <div key={post.id} className="flex flex-col items-center gap-1 flex-shrink-0">
+        {storyUsers.map((post, i) => (
+          <button key={post.id} onClick={() => setStoryIndex(i)} className="flex flex-col items-center gap-1 flex-shrink-0">
             <div className="w-[62px] h-[62px] rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]">
               <div className="w-full h-full rounded-full overflow-hidden border-2 border-black">
                 <img src={post.avatar} alt={post.handle} className="w-full h-full object-cover" />
               </div>
             </div>
             <span className="text-white/80 text-[10px] w-16 text-center truncate">{post.handle}</span>
-          </div>
+          </button>
         ))}
       </div>
 
