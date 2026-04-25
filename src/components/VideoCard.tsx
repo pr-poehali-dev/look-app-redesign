@@ -142,14 +142,26 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
       {/* Right side actions */}
       <div className="absolute right-3 bottom-24 flex flex-col items-center gap-5 z-30">
         {/* Avatar */}
-        <div className="relative mb-2">
-          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white">
+        <button
+          className="relative mb-2"
+          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setFollowing(f => !f); }}
+          onClick={() => setFollowing(f => !f)}
+          style={{ touchAction: "manipulation" }}
+        >
+          <div className={`w-12 h-12 rounded-full overflow-hidden border-2 ${following ? "border-[#fe2c55]" : "border-white"}`}>
             <img src={video.avatar} alt={video.author} className="w-full h-full object-cover" />
           </div>
-          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#fe2c55] flex items-center justify-center">
-            <Icon name="Plus" size={12} className="text-white" />
-          </div>
-        </div>
+          {!following && (
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#fe2c55] flex items-center justify-center">
+              <Icon name="Plus" size={12} className="text-white" />
+            </div>
+          )}
+          {following && (
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+              <Icon name="Check" size={12} className="text-white" />
+            </div>
+          )}
+        </button>
 
         {/* Like */}
         <button
