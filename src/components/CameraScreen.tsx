@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useUserMedia } from "@/context/UserMediaContext";
+import { useAuth } from "@/context/AuthContext";
 import CameraPreview from "@/components/camera/CameraPreview";
 import CameraTopBar from "@/components/camera/CameraTopBar";
 import CameraMusicPanel from "@/components/camera/CameraMusicPanel";
@@ -22,6 +23,7 @@ interface CameraScreenProps {
 
 const CameraScreen = ({ onClose }: CameraScreenProps) => {
   const { addMedia } = useUserMedia();
+  const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [facing, setFacing] = useState<"user" | "environment">("environment");
@@ -72,7 +74,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
         const res = await fetch("https://functions.poehali.dev/78967386-1bfb-4070-9bb3-549cc5c00de6", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ file: base64, type: file.type, ext, category: destination === "home" ? selectedCategory : "feed", description: hashtags }),
+          body: JSON.stringify({ file: base64, type: file.type, ext, category: destination === "home" ? selectedCategory : "feed", description: hashtags, author: user?.name || "Пользователь", handle: user?.handle || user?.name || "user", user_id: user?.id || "anonymous" }),
         });
         const data = await res.json();
         if (data.url) {

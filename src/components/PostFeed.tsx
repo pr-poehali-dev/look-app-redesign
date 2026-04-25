@@ -438,8 +438,8 @@ const PostFeed = () => {
           const caption = desc.replace(/#\S+/g, "").trim() || "Фото";
           return {
             id: v.id,
-            author: v.author || "Пользователь",
-            handle: v.handle || "user",
+            author: (v.author === "Я" || !v.author) ? (user?.name || "Пользователь") : v.author,
+            handle: (v.handle === "user" || !v.handle) ? (user?.handle || user?.name || "user") : v.handle,
             avatar: user?.avatar || `https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/48f38c64-742e-458c-9f09-0013a0813b5f.jpg`,
             image: v.url,
             caption,
