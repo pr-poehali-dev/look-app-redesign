@@ -169,6 +169,7 @@ const MediaViewer = ({ items, startIndex, onClose, onDelete }: { items: Story[];
   const goPrev = () => index > 0 ? setIndex(i => i - 1) : null;
 
   const handleDelete = () => {
+    alert("Удаляю id=" + item.id + " type=" + typeof item.id);
     onDelete(item.id);
     setConfirmDelete(false);
     setDeleted(true);
