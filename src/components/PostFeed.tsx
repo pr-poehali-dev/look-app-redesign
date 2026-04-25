@@ -410,9 +410,11 @@ const PostFeed = () => {
       .finally(() => setLoading(false));
   }, [user]);
 
-  const storyUsers = posts.slice(0, 6);
-  const stories: Story[] = storyUsers.map(p => ({ id: p.id, handle: p.handle, avatar: p.avatar, image: p.image }));
   const [storyIndex, setStoryIndex] = useState<number | null>(null);
+
+  const storySource = posts.length > 0 ? posts : MOCK_POSTS;
+  const storyUsers = storySource.slice(0, 6);
+  const stories: Story[] = storyUsers.map(p => ({ id: p.id, handle: p.handle, avatar: p.avatar, image: p.image }));
 
   return (
     <div className="h-full overflow-y-scroll bg-black" style={{ scrollbarWidth: "none" }}>
