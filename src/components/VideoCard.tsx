@@ -199,31 +199,16 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
           <span className="text-white text-xs font-semibold">{video.comments}</span>
         </button>
 
-        {/* Save */}
-        <button
-          onClick={() => setSaved(!saved)}
-          className="flex flex-col items-center gap-1"
-        >
-          <div className="w-11 h-11 rounded-full flex items-center justify-center">
-            <Icon
-              name="Bookmark"
-              size={26}
-              className={`transition-colors duration-200 ${saved ? "text-[#ffd700] fill-[#ffd700]" : "text-white"}`}
-            />
-          </div>
-          <span className="text-white text-xs font-semibold">{video.shares}</span>
-        </button>
-
-        {/* Share */}
+        {/* Send / Share */}
         <button
           onClick={(e) => { e.stopPropagation(); setShowShare(true); }}
           onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowShare(true); }}
-          className="flex flex-col items-center gap-1"
+          className="flex flex-col items-center gap-1 group"
         >
-          <div className="w-11 h-11 rounded-full flex items-center justify-center">
-            <Icon name="Share2" size={24} className="text-white" />
+          <div className="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 group-active:scale-90">
+            <Icon name="Send" size={26} className="text-white" />
           </div>
-          <span className="text-white text-xs font-semibold">Поделиться</span>
+          <span className="text-white text-xs font-semibold">{video.shares}</span>
         </button>
 
         {/* Download */}
