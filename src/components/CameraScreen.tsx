@@ -46,6 +46,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
   const [selectedCategory, setSelectedCategory] = useState("humor");
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [destination, setDestination] = useState<"home" | "feed">("home");
+  const [hashtags, setHashtags] = useState("");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,7 +72,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
         const res = await fetch("https://functions.poehali.dev/78967386-1bfb-4070-9bb3-549cc5c00de6", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ file: base64, type: file.type, ext, category: destination === "home" ? selectedCategory : "feed" }),
+          body: JSON.stringify({ file: base64, type: file.type, ext, category: destination === "home" ? selectedCategory : "feed", description: hashtags }),
         });
         const data = await res.json();
         if (data.url) {
@@ -203,7 +204,9 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
         showCategoryPicker={showCategoryPicker}
         destination={destination}
         onDestinationChange={setDestination}
-        onCloseMedia={() => { setUploadedMedia(null); setPublished(false); }}
+        hashtags={hashtags}
+        onHashtagsChange={setHashtags}
+        onCloseMedia={() => { setUploadedMedia(null); setPublished(false); setHashtags(""); }}
         onPublish={handlePublish}
         onCategoryChange={(id) => { setSelectedCategory(id); setShowCategoryPicker(false); }}
         onToggleCategoryPicker={() => setShowCategoryPicker(v => !v)}

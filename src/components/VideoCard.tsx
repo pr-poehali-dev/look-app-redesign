@@ -130,7 +130,18 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
             </span>
           )}
         </div>
-        <p className="text-white text-sm leading-snug mb-3 line-clamp-2">{video.description}</p>
+        {video.description && (() => {
+          const parts = video.description.split(/(#\S+)/g);
+          return (
+            <p className="text-white text-sm leading-snug mb-3 line-clamp-2">
+              {parts.map((part, i) =>
+                part.startsWith('#')
+                  ? <span key={i} className="text-[#61d4f0] font-medium">{part}</span>
+                  : part
+              )}
+            </p>
+          );
+        })()}
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center animate-spin" style={{ animationDuration: "3s" }}>
             <Icon name="Music" size={10} className="text-white" />

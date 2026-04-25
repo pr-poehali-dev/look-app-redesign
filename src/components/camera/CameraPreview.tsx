@@ -39,6 +39,8 @@ interface CameraPreviewProps {
   selectedCategory: string;
   showCategoryPicker: boolean;
   destination: "home" | "feed";
+  hashtags: string;
+  onHashtagsChange: (v: string) => void;
   onDestinationChange: (d: "home" | "feed") => void;
   onCloseMedia: () => void;
   onPublish: () => void;
@@ -60,6 +62,8 @@ const CameraPreview = ({
   published,
   selectedCategory,
   showCategoryPicker,
+  hashtags,
+  onHashtagsChange,
   onCloseMedia,
   onPublish,
   onCategoryChange,
@@ -150,6 +154,18 @@ const CameraPreview = ({
                 )}
               </div>
             )}
+
+            {/* Хэштеги */}
+            <div>
+              <p className="text-white/60 text-xs mb-2 font-medium">Хэштеги</p>
+              <input
+                type="text"
+                value={hashtags}
+                onChange={e => onHashtagsChange(e.target.value)}
+                placeholder="#природа #фото #жизнь"
+                className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white text-sm placeholder:text-white/30 outline-none"
+              />
+            </div>
 
             {published ? (
               <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-green-500">
