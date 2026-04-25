@@ -38,6 +38,8 @@ interface CameraPreviewProps {
   published: boolean;
   selectedCategory: string;
   showCategoryPicker: boolean;
+  destination: "home" | "feed";
+  onDestinationChange: (d: "home" | "feed") => void;
   onCloseMedia: () => void;
   onPublish: () => void;
   onCategoryChange: (id: string) => void;
@@ -53,6 +55,8 @@ const CameraPreview = ({
   recording,
   uploadedMedia,
   publishing,
+  destination,
+  onDestinationChange,
   published,
   selectedCategory,
   showCategoryPicker,
@@ -92,15 +96,34 @@ const CameraPreview = ({
             >
               <Icon name="X" size={20} className="text-white" />
             </button>
-            <div className="absolute top-14 right-5 bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full">
-              <span className="text-white text-xs font-semibold">
-                {uploadedMedia.type === "video" ? "🎬 Видео → Главная" : "🖼 Фото → Лента"}
-              </span>
-            </div>
           </div>
 
           <div className="bg-black/90 px-4 pt-4 pb-10 flex flex-col gap-3">
-            {uploadedMedia.type === "video" && (
+
+            {/* Destination picker */}
+            <div>
+              <p className="text-white/60 text-xs mb-2 font-medium">Куда публиковать?</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onDestinationChange("home")}
+                  className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl border transition-all ${destination === "home" ? "bg-[#fe2c55]/20 border-[#fe2c55]" : "bg-white/5 border-white/10"}`}
+                >
+                  <Icon name="Play" size={20} className={destination === "home" ? "text-[#fe2c55]" : "text-white/50"} />
+                  <span className={`text-xs font-semibold ${destination === "home" ? "text-[#fe2c55]" : "text-white/50"}`}>Главная</span>
+                  <span className="text-white/30 text-[10px]">Видеолента</span>
+                </button>
+                <button
+                  onClick={() => onDestinationChange("feed")}
+                  className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl border transition-all ${destination === "feed" ? "bg-[#0095f6]/20 border-[#0095f6]" : "bg-white/5 border-white/10"}`}
+                >
+                  <Icon name="LayoutList" size={20} className={destination === "feed" ? "text-[#0095f6]" : "text-white/50"} />
+                  <span className={`text-xs font-semibold ${destination === "feed" ? "text-[#0095f6]" : "text-white/50"}`}>Лента</span>
+                  <span className="text-white/30 text-[10px]">Фото и посты</span>
+                </button>
+              </div>
+            </div>
+
+            {uploadedMedia.type === "video" && destination === "home" && (
               <div>
                 <p className="text-white/60 text-xs mb-2 font-medium">Категория</p>
                 <button
