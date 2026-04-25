@@ -23,14 +23,15 @@ def handler(event: dict, context) -> dict:
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
 
+    schema = os.environ['MAIN_DB_SCHEMA']
     if category and category != 'all':
         cur.execute(
-            "SELECT id, url, author, handle, description, category, type, likes, comments, shares FROM videos WHERE type = %s AND category = %s ORDER BY created_at DESC LIMIT 50",
+            f"SELECT id, url, author, handle, description, category, type, likes, comments, shares FROM {schema}.videos WHERE type = %s AND category = %s AND (hidden IS NULL OR hidden = FALSE) ORDER BY created_at DESC LIMIT 50",
             (media_type, category)
         )
     else:
         cur.execute(
-            "SELECT id, url, author, handle, description, category, type, likes, comments, shares FROM videos WHERE type = %s ORDER BY created_at DESC LIMIT 50",
+            f"SELECT id, url, author, handle, description, category, type, likes, comments, shares FROM {schema}.videos WHERE type = %s AND (hidden IS NULL OR hidden = FALSE) ORDER BY created_at DESC LIMIT 50",
             (media_type,)
         )
 
