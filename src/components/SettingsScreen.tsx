@@ -242,10 +242,6 @@ const SubscriptionScreen = ({ onBack }: { onBack: () => void }) => {
             </li>
             <li className="flex items-center gap-2 text-sm text-gray-600">
               <Icon name="Check" size={16} className="text-green-500 flex-shrink-0" />
-              Загрузка видео
-            </li>
-            <li className="flex items-center gap-2 text-sm text-gray-600">
-              <Icon name="Check" size={16} className="text-green-500 flex-shrink-0" />
               <span className="font-medium text-black">Без рекламы</span>
             </li>
           </ul>
