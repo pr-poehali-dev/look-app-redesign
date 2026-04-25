@@ -122,85 +122,96 @@ const PostCard = ({ post }: { post: Post }) => {
 
   return (
     <div className="bg-black border-b border-white/8">
-      <div className="flex items-center justify-between px-3 py-3">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-[#fe2c55] ring-offset-1 ring-offset-black">
-            <img src={post.avatar} alt={post.author} className="w-full h-full object-cover" />
+
+      {/* Header */}
+      <div className="flex items-center justify-between px-3 py-2.5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]">
+            <div className="w-full h-full rounded-full overflow-hidden border-2 border-black">
+              <img src={post.avatar} alt={post.author} className="w-full h-full object-cover" />
+            </div>
           </div>
           <div>
             <div className="flex items-center gap-1">
-              <span className="text-white font-semibold text-sm">{post.handle}</span>
-              <Icon name="BadgeCheck" size={13} className="text-[#61d4f0]" />
+              <span className="text-white font-semibold text-[13px]">{post.handle}</span>
+              <Icon name="BadgeCheck" size={12} className="text-[#61d4f0]" />
             </div>
             {post.location && (
-              <span className="text-white/40 text-xs">{post.location}</span>
+              <span className="text-white/40 text-[11px]">{post.location}</span>
             )}
           </div>
         </div>
-        <button>
-          <Icon name="MoreHorizontal" size={20} className="text-white/60" />
+        <button className="p-1">
+          <Icon name="MoreHorizontal" size={20} className="text-white" />
         </button>
       </div>
 
-      <div className="relative w-full aspect-square overflow-hidden">
+      {/* Photo */}
+      <div className="w-full aspect-square overflow-hidden">
         <img src={post.image} alt={post.caption} className="w-full h-full object-cover" />
       </div>
 
-      <div className="flex items-center justify-between px-3 pt-3 pb-1">
+      {/* Action buttons */}
+      <div className="flex items-center justify-between px-3 pt-2.5 pb-1">
         <div className="flex items-center gap-4">
-          <button onClick={handleLike} className="flex items-center gap-1.5">
+          <button onClick={handleLike} className="active:scale-90 transition-transform">
             <Icon
               name="Heart"
-              size={24}
-              className={`transition-all duration-200 ${liked ? "text-[#fe2c55] fill-[#fe2c55] scale-110" : "text-white"}`}
+              size={26}
+              className={`transition-all duration-150 ${liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"}`}
             />
           </button>
-          <button onClick={() => setShowComments(true)} className="flex items-center gap-1.5">
-            <Icon name="MessageCircle" size={24} className="text-white" />
+          <button onClick={() => setShowComments(true)} className="active:scale-90 transition-transform">
+            <Icon name="MessageCircle" size={26} className="text-white" />
           </button>
-          <button onClick={() => setShowShare(true)}>
-            <Icon name="Send" size={22} className="text-white" />
+          <button onClick={() => setShowShare(true)} className="active:scale-90 transition-transform">
+            <Icon name="Send" size={24} className="text-white" style={{ transform: "rotate(-20deg)" }} />
           </button>
         </div>
-        <button onClick={() => setSaved((v) => !v)}>
+        <button onClick={() => setSaved(v => !v)} className="active:scale-90 transition-transform">
           <Icon
             name="Bookmark"
-            size={24}
-            className={`transition-colors duration-200 ${saved ? "text-white fill-white" : "text-white"}`}
+            size={26}
+            className={`transition-all duration-150 ${saved ? "text-white fill-white" : "text-white"}`}
           />
         </button>
       </div>
 
+      {/* Likes count */}
       <div className="px-3 pb-1">
-        <span className="text-white font-semibold text-sm">{formatLikes(likes)} отметок «Нравится»</span>
+        <span className="text-white font-semibold text-[13px]">{formatLikes(likes)} отметок «Нравится»</span>
       </div>
 
-      <div className="px-3 pb-2">
-        <span className="text-white font-semibold text-sm mr-2">{post.handle}</span>
-        <span className="text-white/80 text-sm">
-          {expanded ? post.caption : post.caption.slice(0, 80) + (post.caption.length > 80 ? "..." : "")}
+      {/* Caption */}
+      <div className="px-3 pb-1">
+        <span className="text-white font-semibold text-[13px] mr-1.5">{post.handle}</span>
+        <span className="text-white text-[13px]">
+          {expanded ? post.caption : post.caption.slice(0, 90) + (post.caption.length > 90 ? "…" : "")}
         </span>
-        {post.caption.length > 80 && !expanded && (
-          <button onClick={() => setExpanded(true)} className="text-white/40 text-sm ml-1">ещё</button>
+        {post.caption.length > 90 && !expanded && (
+          <button onClick={() => setExpanded(true)} className="text-white/40 text-[13px] ml-1">ещё</button>
         )}
       </div>
 
-      <div className="px-3 pb-2 flex flex-wrap gap-1">
-        {post.hashtags.map((tag) => (
-          <span key={tag} className="text-[#61d4f0] text-xs font-medium">#{tag}</span>
-        ))}
-      </div>
-
-      {post.comments > 0 && (
-        <div className="px-3 pb-2">
-          <button className="text-white/40 text-xs">
-            Посмотреть все {post.comments} комментариев
-          </button>
+      {/* Hashtags */}
+      {post.hashtags.length > 0 && (
+        <div className="px-3 pb-1 flex flex-wrap gap-x-1">
+          {post.hashtags.map(tag => (
+            <span key={tag} className="text-[#00a2ff] text-[13px]">#{tag}</span>
+          ))}
         </div>
       )}
 
-      <div className="px-3 pb-3">
-        <span className="text-white/30 text-xs uppercase tracking-wide">{post.time}</span>
+      {/* View comments */}
+      {post.comments > 0 && (
+        <button onClick={() => setShowComments(true)} className="px-3 pb-1 block">
+          <span className="text-white/40 text-[13px]">Посмотреть все комментарии ({post.comments})</span>
+        </button>
+      )}
+
+      {/* Time */}
+      <div className="px-3 pb-3 pt-0.5">
+        <span className="text-white/30 text-[11px] uppercase tracking-wide">{post.time}</span>
       </div>
 
       {/* Comments popup */}
@@ -321,15 +332,26 @@ const PostFeed = () => {
 
   return (
     <div className="h-full overflow-y-scroll bg-black" style={{ scrollbarWidth: "none" }}>
-      <div className="flex gap-3 px-3 py-3 overflow-x-scroll border-b border-white/8" style={{ scrollbarWidth: "none" }}>
+      {/* Stories row */}
+      <div className="flex gap-4 px-3 py-3 overflow-x-scroll border-b border-white/8" style={{ scrollbarWidth: "none" }}>
+        {/* "Your story" first */}
+        <div className="flex flex-col items-center gap-1 flex-shrink-0">
+          <div className="w-[62px] h-[62px] rounded-full border-2 border-white/20 flex items-center justify-center relative">
+            <img src={storyUsers[0]?.avatar} className="w-full h-full rounded-full object-cover opacity-60" />
+            <div className="absolute bottom-0 right-0 w-5 h-5 bg-[#0095f6] rounded-full flex items-center justify-center border-2 border-black">
+              <Icon name="Plus" size={11} className="text-white" />
+            </div>
+          </div>
+          <span className="text-white/80 text-[10px] w-16 text-center truncate">Ваша история</span>
+        </div>
         {storyUsers.map((post) => (
           <div key={post.id} className="flex flex-col items-center gap-1 flex-shrink-0">
-            <div className="w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-[#fe2c55] via-[#ff9800] to-[#61d4f0]">
+            <div className="w-[62px] h-[62px] rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]">
               <div className="w-full h-full rounded-full overflow-hidden border-2 border-black">
                 <img src={post.avatar} alt={post.handle} className="w-full h-full object-cover" />
               </div>
             </div>
-            <span className="text-white/70 text-[10px] w-14 text-center truncate">{post.handle}</span>
+            <span className="text-white/80 text-[10px] w-16 text-center truncate">{post.handle}</span>
           </div>
         ))}
       </div>
