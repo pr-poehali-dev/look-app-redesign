@@ -381,7 +381,35 @@ const ProfilePage = () => {
         </button>
       </div>
 
-
+      {/* Stories */}
+      <div className="flex gap-4 px-4 pb-4 overflow-x-scroll" style={{ scrollbarWidth: "none" }}>
+        {/* Add story */}
+        <div className="flex flex-col items-center gap-1 flex-shrink-0">
+          <div className="w-16 h-16 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
+            <Icon name="Plus" size={22} className="text-gray-400" />
+          </div>
+          <span className="text-[10px] text-gray-400">Добавить</span>
+        </div>
+        {/* User stories from uploaded media */}
+        {stories.slice(0, 8).map((s, i) => (
+          <button
+            key={s.id}
+            onClick={() => setViewingStory(i)}
+            className="flex flex-col items-center gap-1 flex-shrink-0"
+            style={{ touchAction: "manipulation" }}
+          >
+            <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]">
+              <div className="w-full h-full rounded-full overflow-hidden border-2 border-white bg-gray-100">
+                {s.type === "video"
+                  ? <video src={s.url} className="w-full h-full object-cover" muted playsInline />
+                  : <img src={s.url} className="w-full h-full object-cover" alt="" />
+                }
+              </div>
+            </div>
+            <span className="text-[10px] text-gray-500 w-16 text-center truncate">{s.label || `История ${i + 1}`}</span>
+          </button>
+        ))}
+      </div>
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200">
