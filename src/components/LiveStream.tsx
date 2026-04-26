@@ -38,15 +38,6 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const chatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const attachStream = (stream: MediaStream) => {
-    streamRef.current = stream;
-    const v = videoRef.current ?? document.querySelector<HTMLVideoElement>("#live-video");
-    if (v) {
-      v.srcObject = stream;
-      v.play().catch(() => {});
-    }
-  };
-
   const startCamera = async (facingMode: "user" | "environment" = "user") => {
     if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
     try {
@@ -56,12 +47,23 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
       } catch {
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
       }
-      attachStream(stream);
+      // Сохраняем стрим — useEffect подхватит и привяжет к video после рендера
+      streamRef.current = stream;
       setDenied(false);
     } catch {
       setDenied(true);
     }
   };
+
+  // Привязываем стрим к <video> после каждого рендера
+  useEffect(() => {
+    const v = videoRef.current;
+    const s = streamRef.current;
+    if (v && s && v.srcObject !== s) {
+      v.srcObject = s;
+      v.play().catch(() => {});
+    }
+  });
 
   // Запрашиваем камеру сразу — браузер покажет системный диалог
   useEffect(() => {
@@ -72,15 +74,6 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
       if (chatTimerRef.current) clearInterval(chatTimerRef.current);
     };
   }, []);
-
-  // Страховка на каждый рендер: если стрим есть, а video ещё без srcObject — подключаем
-  useEffect(() => {
-    const v = videoRef.current;
-    if (v && streamRef.current && !v.srcObject) {
-      v.srcObject = streamRef.current;
-      v.play().catch(() => {});
-    }
-  });
 
   const formatTime = (s: number) => {
     const h = Math.floor(s / 3600);
