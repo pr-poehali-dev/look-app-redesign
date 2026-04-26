@@ -30,6 +30,40 @@ const AppContent = () => {
   const [activeCall, setActiveCall] = useState<IncomingCall | null>(null);
   const lastSigRef = useRef(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const ringtoneRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const playRingtone = () => {
+    try {
+      const ctx = new AudioContext();
+      audioCtxRef.current = ctx;
+      let beat = 0;
+      ringtoneRef.current = setInterval(() => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(beat % 2 === 0 ? 880 : 660, ctx.currentTime);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.4);
+        beat++;
+      }, 600);
+    } catch (e) { void e; }
+  };
+
+  const stopRingtone = () => {
+    if (ringtoneRef.current) { clearInterval(ringtoneRef.current); ringtoneRef.current = null; }
+    if (audioCtxRef.current) { audioCtxRef.current.close().catch(() => {}); audioCtxRef.current = null; }
+  };
+
+  const vibrate = () => {
+    if ("vibrate" in navigator) {
+      navigator.vibrate([400, 200, 400, 200, 400]);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -44,6 +78,8 @@ const AppContent = () => {
         for (const sig of data.signals || []) {
           lastSigRef.current = sig.id;
           if (sig.type === "call_invite" && sig.payload) {
+            playRingtone();
+            vibrate();
             setIncomingCall({
               callerId: sig.payload.callerId,
               callerName: sig.payload.callerName,
@@ -52,22 +88,28 @@ const AppContent = () => {
               sigId: sig.id,
             });
           } else if (sig.type === "call_cancel") {
+            stopRingtone();
             setIncomingCall(null);
           }
         }
       } catch (e) { void e; }
     }, 1500);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      stopRingtone();
+    };
   }, [user]);
 
   const acceptCall = () => {
     if (!incomingCall) return;
+    stopRingtone();
     setActiveCall(incomingCall);
     setIncomingCall(null);
   };
 
   const declineCall = async () => {
     if (!incomingCall || !user) return;
+    stopRingtone();
     await fetch(`${CHAT_API}?module=signal`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-User-Id": user.id },
