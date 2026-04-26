@@ -83,6 +83,14 @@ def handler(event: dict, context) -> dict:
     body = json.loads(event.get('body') or '{}')
     action = body.get('action')
 
+    if action == 'test_smtp':
+        to_email = (body.get('email') or '').strip()
+        if not to_email:
+            return err('email required')
+        link = 'https://visov.ru/?reset_token=TEST_TOKEN_123'
+        sent = send_email(to_email, link)
+        return ok({'sent': sent})
+
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
 
