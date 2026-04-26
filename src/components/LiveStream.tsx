@@ -183,39 +183,74 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
   // ── Экран 2: отказ — инструкция как разрешить вручную ──
   if (camStep === "denied") {
     return (
-      <div className="relative w-full h-full bg-black flex flex-col items-center justify-center px-8">
+      <div className="relative w-full h-full bg-black flex flex-col overflow-y-auto px-6 pt-16 pb-8">
         <button onClick={onClose} className="absolute top-12 right-4 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
           <Icon name="X" size={18} className="text-white" />
         </button>
 
-        <div className="text-6xl mb-6">🔒</div>
-        <h2 className="text-white font-bold text-xl mb-3 text-center">Доступ к камере закрыт</h2>
+        <div className="text-5xl mb-4 text-center">⚠️</div>
+        <h2 className="text-white font-bold text-xl mb-2 text-center">Камера заблокирована</h2>
         <p className="text-white/50 text-sm text-center mb-6 leading-relaxed">
-          Ты нажал «Запретить». Чтобы разрешить вручную:
+          Браузер запомнил отказ. Нужно разрешить вручную — это займёт 30 секунд.
         </p>
 
-        <div className="w-full bg-white/5 rounded-2xl p-4 mb-6 space-y-4 text-sm">
-          <div className="flex gap-3">
-            <span className="text-[#fe2c55] font-bold shrink-0">1.</span>
-            <span className="text-white/70">Нажми на значок <span className="text-white">🔒</span> слева в адресной строке браузера</span>
+        {/* Шаг 1 */}
+        <div className="bg-white/5 rounded-2xl p-4 mb-3">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="w-6 h-6 rounded-full bg-[#fe2c55] text-white text-xs font-bold flex items-center justify-center shrink-0">1</span>
+            <span className="text-white text-sm font-semibold">Нажми на значок замка в браузере</span>
           </div>
-          <div className="flex gap-3">
-            <span className="text-[#fe2c55] font-bold shrink-0">2.</span>
-            <span className="text-white/70">Найди пункт <span className="text-white">«Камера»</span> и выбери <span className="text-white">«Разрешить»</span></span>
+          {/* Визуальная подсказка — имитация адресной строки */}
+          <div className="bg-zinc-800 rounded-xl px-3 py-2 flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-1.5 bg-[#fe2c55]/20 border border-[#fe2c55] rounded-lg px-2 py-1">
+              <Icon name="Lock" size={13} className="text-[#fe2c55]" />
+              <span className="text-[#fe2c55] text-xs font-bold">← нажми сюда</span>
+            </div>
+            <span className="text-white/30 text-xs truncate">...poehali.dev</span>
           </div>
-          <div className="flex gap-3">
-            <span className="text-[#fe2c55] font-bold shrink-0">3.</span>
-            <span className="text-white/70">Обнови страницу и открой эфир снова</span>
+        </div>
+
+        {/* Шаг 2 */}
+        <div className="bg-white/5 rounded-2xl p-4 mb-3">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="w-6 h-6 rounded-full bg-[#fe2c55] text-white text-xs font-bold flex items-center justify-center shrink-0">2</span>
+            <span className="text-white text-sm font-semibold">Найди «Камера» → выбери «Разрешить»</span>
+          </div>
+          <div className="bg-zinc-800 rounded-xl p-3 mt-2 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Icon name="Camera" size={15} className="text-white/60" />
+                <span className="text-white/80 text-sm">Камера</span>
+              </div>
+              <div className="flex items-center gap-1 bg-[#fe2c55]/20 border border-[#fe2c55] rounded-lg px-2 py-0.5">
+                <span className="text-[#fe2c55] text-xs font-bold">Разрешить ←</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between opacity-40">
+              <div className="flex items-center gap-2">
+                <Icon name="Mic" size={15} className="text-white/60" />
+                <span className="text-white/80 text-sm">Микрофон</span>
+              </div>
+              <span className="text-white/40 text-xs">Разрешить</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Шаг 3 */}
+        <div className="bg-white/5 rounded-2xl p-4 mb-6">
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-[#fe2c55] text-white text-xs font-bold flex items-center justify-center shrink-0">3</span>
+            <span className="text-white text-sm font-semibold">Обнови страницу и нажми «Попробовать снова»</span>
           </div>
         </div>
 
         <button
-          onClick={() => requestCamera("user")}
-          className="w-full py-4 rounded-2xl bg-[#fe2c55] text-white font-bold text-base active:scale-95 transition-all"
+          onClick={() => window.location.reload()}
+          className="w-full py-4 rounded-2xl bg-[#fe2c55] text-white font-bold text-base active:scale-95 transition-all mb-3"
         >
-          Попробовать снова
+          Обновить страницу
         </button>
-        <button onClick={onClose} className="mt-4 text-white/30 text-sm">
+        <button onClick={onClose} className="text-white/30 text-sm text-center">
           Закрыть
         </button>
       </div>
