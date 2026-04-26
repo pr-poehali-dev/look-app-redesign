@@ -131,6 +131,23 @@ const MessagesScreen = () => {
     setNewChatName("");
   };
 
+  const startCall = async (u: { id: string; name: string }, mode: "audio" | "video") => {
+    setOnlineMenu(null);
+    if (!user) return;
+    const roomId = `call_${[user.id, u.id].sort().join("_")}`;
+    await fetch(`${CHAT_API}?module=signal`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": user.name },
+      body: JSON.stringify({
+        room_id: `incoming_${u.id}`,
+        to_user: u.id,
+        type: "call_invite",
+        payload: { callerId: user.id, callerName: user.name, mode, roomId },
+      }),
+    }).catch(() => {});
+    setActiveCall({ user: u, mode });
+  };
+
   if (activeCall) return (
     <CallScreen
       name={activeCall.user.name}
@@ -239,7 +256,7 @@ const MessagesScreen = () => {
                 </button>
                 <div className="w-px bg-white/8" />
                 <button
-                  onClick={() => { setOnlineMenu(null); setActiveCall({ user: onlineMenu, mode: "audio" }); }}
+                  onClick={() => startCall(onlineMenu, "audio")}
                   className="flex-1 flex flex-col items-center gap-1.5 py-3 hover:bg-white/5 transition-colors"
                 >
                   <Icon name="Phone" size={20} className="text-green-400" />
@@ -247,7 +264,7 @@ const MessagesScreen = () => {
                 </button>
                 <div className="w-px bg-white/8" />
                 <button
-                  onClick={() => { setOnlineMenu(null); setActiveCall({ user: onlineMenu, mode: "video" }); }}
+                  onClick={() => startCall(onlineMenu, "video")}
                   className="flex-1 flex flex-col items-center gap-1.5 py-3 hover:bg-white/5 transition-colors"
                 >
                   <Icon name="Video" size={20} className="text-[#fe2c55]" />
