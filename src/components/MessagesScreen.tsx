@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import ChatRoom from "./ChatRoom";
 import CommunitiesScreen from "./CommunitiesScreen";
@@ -46,6 +46,8 @@ const MessagesScreen = () => {
   const [showNewChat, setShowNewChat] = useState(false);
   const [newChatName, setNewChatName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState<{ id: string; name: string }[]>([]);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { user } = useAuth();
 
   const loadChats = () => {
@@ -67,8 +69,32 @@ const MessagesScreen = () => {
       .finally(() => setLoading(false));
   };
 
+  const loadOnlineUsers = () => {
+    if (!user) return;
+    fetch(`${CHAT_API}?module=chat&action=online`, {
+      headers: { "X-User-Id": user.id, "X-User-Name": user.name },
+    })
+      .then(r => r.json())
+      .then(raw => {
+        const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
+        setOnlineUsers((data.users || []).filter((u: { id: string }) => u.id !== user.id));
+      })
+      .catch(() => {});
+  };
+
   useEffect(() => {
     loadChats();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    loadOnlineUsers();
+    heartbeatRef.current = setInterval(() => {
+      loadOnlineUsers();
+    }, 25000);
+    return () => {
+      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+    };
   }, [user]);
 
   const handleCreateChat = async () => {
@@ -141,6 +167,31 @@ const MessagesScreen = () => {
           />
         </div>
       </div>
+
+      {onlineUsers.length > 0 && (
+        <div className="px-4 pb-3">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <span className="text-white/40 text-xs font-medium">Онлайн сейчас</span>
+            <span className="text-white/25 text-xs">{onlineUsers.length}</span>
+          </div>
+          <div className="flex gap-3 overflow-x-scroll" style={{ scrollbarWidth: "none" }}>
+            {onlineUsers.map((u) => (
+              <div key={u.id} className="flex flex-col items-center gap-1 flex-shrink-0">
+                <div className="relative">
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#fe2c55]/40 to-[#8b5cf6]/40 border border-white/10 flex items-center justify-center">
+                    <span className="text-white font-semibold text-sm">
+                      {u.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-black" />
+                </div>
+                <span className="text-white/50 text-[10px] w-11 text-center truncate">{u.name.split(" ")[0]}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-4 px-4 pb-4 overflow-x-scroll" style={{ scrollbarWidth: "none" }}>
         <div className="flex flex-col items-center gap-1.5 flex-shrink-0" onClick={() => setShowNewChat(true)}>
