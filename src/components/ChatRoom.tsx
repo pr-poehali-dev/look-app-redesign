@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { Chat } from "./MessagesScreen";
 import CallScreen from "./CallScreen";
+import GroupCallScreen from "./GroupCallScreen";
 import { useAuth } from "@/context/AuthContext";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
@@ -151,6 +152,21 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
       </div>
     );
   };
+
+  const isGroup = chat.type === "group" || String(chat.id).startsWith("community_");
+
+  if (call && isGroup) {
+    return (
+      <GroupCallScreen
+        roomId={`gcall_${String(chat.id)}`}
+        roomName={chat.name}
+        mode={call}
+        myId={MY_ID}
+        myName={MY_NAME}
+        onEnd={() => setCall(null)}
+      />
+    );
+  }
 
   if (call) {
     return (

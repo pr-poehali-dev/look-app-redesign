@@ -1,64 +1,123 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
+import { useAuth } from "@/context/AuthContext";
+import ChatRoom from "./ChatRoom";
+import GroupCallScreen from "./GroupCallScreen";
+import { Chat } from "./MessagesScreen";
 
-const COMMUNITIES = [
-  { id: 1, name: "Фотографы России", desc: "Делимся снимками, лайфхаками и вдохновением", type: "open", members: 14820, img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/dbf882bc-5b07-4604-a1fa-628313ce915f.jpg", category: "Фото", joined: true },
-  { id: 2, name: "Клуб путешественников", desc: "Только для тех, кто уже побывал в 10+ странах", type: "closed", members: 3241, img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/a3325030-6571-46e9-845b-2a54062f9059.jpg", category: "Путешествия", joined: false },
-  { id: 3, name: "Фитнес & ЗОЖ", desc: "Тренировки, питание, мотивация каждый день", type: "open", members: 28903, img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/5b90e1a9-665b-4e6c-9184-2edf68db2e91.jpg", category: "Спорт", joined: true },
-  { id: 4, name: "Геймеры Look", desc: "Закрытое сообщество для хардкорных геймеров", type: "closed", members: 891, img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/45213a06-ddb6-4425-9410-cb3777726c55.jpg", category: "Игры", joined: false },
-  { id: 5, name: "Кофейная культура", desc: "Всё о кофе: варка, обжарка, кофейни мира", type: "open", members: 7120, img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/0730a864-0860-4c86-8845-835a8c4a720e.jpg", category: "Еда", joined: false },
-  { id: 6, name: "Ночная музыка", desc: "Закрытый клуб любителей электронной музыки", type: "closed", members: 2204, img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/c96bc59d-e416-4e11-adf2-a308d67a562d.jpg", category: "Музыка", joined: true },
-];
-
+const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 const CATEGORIES = ["Все", "Фото", "Путешествия", "Спорт", "Игры", "Еда", "Музыка"];
+
+interface Community {
+  id: string;
+  name: string;
+  description: string;
+  type: "open" | "closed";
+  category: string;
+  img: string;
+  members: number;
+  joined: boolean;
+}
 
 interface Props { onBack: () => void; }
 
 const CommunitiesScreen = ({ onBack }: Props) => {
-  const [joined, setJoined] = useState<Record<number, boolean>>(
-    Object.fromEntries(COMMUNITIES.map((c) => [c.id, c.joined]))
-  );
+  const { user } = useAuth();
+  const [communities, setCommunities] = useState<Community[]>([]);
+  const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("Все");
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState<"open" | "closed">("open");
   const [newDesc, setNewDesc] = useState("");
-  const [created, setCreated] = useState<typeof COMMUNITIES[0] | null>(null);
+  const [newCategory, setNewCategory] = useState("Другое");
+  const [creating, setCreating] = useState(false);
+  const [openChat, setOpenChat] = useState<Chat | null>(null);
+  const [groupCall, setGroupCall] = useState<{ communityId: string; name: string; mode: "audio" | "video" } | null>(null);
 
-  const handleJoin = (id: number, type: string) => {
-    if (type === "closed" && !joined[id]) {
+  const loadCommunities = () => {
+    if (!user) return;
+    fetch(`${API}?module=community&action=list`, {
+      headers: { "X-User-Id": user.id, "X-User-Name": user.name },
+    })
+      .then(r => r.json())
+      .then(raw => {
+        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+        setCommunities(data.communities || []);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadCommunities(); }, [user]);
+
+  const handleJoin = async (com: Community) => {
+    if (!user) return;
+    if (com.type === "closed" && !com.joined) {
       alert("Заявка на вступление отправлена! Администратор рассмотрит её.");
       return;
     }
-    setJoined((p) => ({ ...p, [id]: !p[id] }));
+    const action = com.joined ? "leave" : "join";
+    await fetch(`${API}?module=community`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": user.name },
+      body: JSON.stringify({ action, community_id: com.id }),
+    });
+    setCommunities(prev => prev.map(c => c.id === com.id ? { ...c, joined: !c.joined, members: c.members + (c.joined ? -1 : 1) } : c));
   };
 
-  const handleCreate = () => {
-    if (!newName.trim()) return;
-    const newCom = {
-      id: Date.now(),
-      name: newName,
-      desc: newDesc || "Новое сообщество",
-      type: newType,
-      members: 1,
-      img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/014c6ddd-1707-4449-afdd-e9012de11b20.jpg",
-      category: "Другое",
-      joined: true,
+  const handleCreate = async () => {
+    if (!newName.trim() || !user) return;
+    setCreating(true);
+    const res = await fetch(`${API}?module=community`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": user.name },
+      body: JSON.stringify({ action: "create", name: newName.trim(), description: newDesc, type: newType, category: newCategory }),
+    });
+    const raw = await res.json();
+    const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+    if (data.ok) {
+      await loadCommunities();
+      setShowCreate(false);
+      setNewName("");
+      setNewDesc("");
+    }
+    setCreating(false);
+  };
+
+  const openCommunityChat = (com: Community) => {
+    const chat: Chat = {
+      id: `community_${com.id}`,
+      type: "group",
+      name: com.name,
+      avatar: com.img || "",
+      lastMsg: "",
+      time: "сейчас",
+      unread: 0,
+      online: false,
     };
-    setCreated(newCom);
-    setJoined((p) => ({ ...p, [newCom.id]: true }));
-    setShowCreate(false);
-    setNewName("");
-    setNewDesc("");
+    setOpenChat(chat);
   };
 
-  const filtered = [...(created ? [created] : []), ...COMMUNITIES].filter(
-    (c) => category === "Все" || c.category === category
+  if (groupCall) return (
+    <GroupCallScreen
+      roomId={`gcall_${groupCall.communityId}`}
+      roomName={groupCall.name}
+      mode={groupCall.mode}
+      myId={user?.id || "anon"}
+      myName={user?.name || "Пользователь"}
+      onEnd={() => setGroupCall(null)}
+    />
   );
+
+  if (openChat) return (
+    <ChatRoom chat={openChat} onBack={() => { setOpenChat(null); }} />
+  );
+
+  const filtered = communities.filter(c => category === "Все" || c.category === category);
 
   return (
     <div className="h-full bg-black flex flex-col overflow-hidden">
-      {/* Header */}
       <div className="flex items-center justify-between px-4 pt-14 pb-3">
         <div className="flex items-center gap-2">
           <button onClick={onBack}>
@@ -75,22 +134,18 @@ const CommunitiesScreen = ({ onBack }: Props) => {
         </button>
       </div>
 
-      {/* Category filter */}
       <div className="flex gap-2 px-4 pb-3 overflow-x-scroll" style={{ scrollbarWidth: "none" }}>
-        {CATEGORIES.map((cat) => (
+        {CATEGORIES.map(cat => (
           <button
             key={cat}
             onClick={() => setCategory(cat)}
-            className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
-              category === cat ? "bg-white text-black" : "bg-white/10 text-white/60"
-            }`}
+            className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${category === cat ? "bg-white text-black" : "bg-white/10 text-white/60"}`}
           >
             {cat}
           </button>
         ))}
       </div>
 
-      {/* Create form */}
       {showCreate && (
         <div className="mx-4 mb-4 bg-[#111] rounded-2xl border border-white/10 p-4 flex flex-col gap-3">
           <div className="flex items-center justify-between">
@@ -101,24 +156,22 @@ const CommunitiesScreen = ({ onBack }: Props) => {
           </div>
           <input
             value={newName}
-            onChange={(e) => setNewName(e.target.value)}
+            onChange={e => setNewName(e.target.value)}
             placeholder="Название сообщества..."
             className="bg-zinc-800 rounded-xl px-3 py-2.5 text-white text-sm outline-none placeholder-zinc-500 border border-white/10"
           />
           <input
             value={newDesc}
-            onChange={(e) => setNewDesc(e.target.value)}
+            onChange={e => setNewDesc(e.target.value)}
             placeholder="Описание (необязательно)..."
             className="bg-zinc-800 rounded-xl px-3 py-2.5 text-white text-sm outline-none placeholder-zinc-500 border border-white/10"
           />
           <div className="flex gap-2">
-            {(["open", "closed"] as const).map((t) => (
+            {(["open", "closed"] as const).map(t => (
               <button
                 key={t}
                 onClick={() => setNewType(t)}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold transition-all ${
-                  newType === t ? "bg-[#fe2c55] text-white" : "bg-white/8 text-white/50"
-                }`}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold transition-all ${newType === t ? "bg-[#fe2c55] text-white" : "bg-white/8 text-white/50"}`}
               >
                 <Icon name={t === "open" ? "Globe" : "Lock"} size={14} />
                 {t === "open" ? "Открытое" : "Закрытое"}
@@ -127,26 +180,33 @@ const CommunitiesScreen = ({ onBack }: Props) => {
           </div>
           <button
             onClick={handleCreate}
-            disabled={!newName.trim()}
+            disabled={!newName.trim() || creating}
             className="py-2.5 rounded-xl bg-[#fe2c55] text-white font-bold text-sm disabled:opacity-40"
           >
-            Создать
+            {creating ? "Создаём..." : "Создать"}
           </button>
         </div>
       )}
 
-      {/* List */}
-      <div className="flex-1 overflow-y-scroll px-4 flex flex-col gap-3" style={{ scrollbarWidth: "none" }}>
-        {filtered.map((com) => (
+      <div className="flex-1 overflow-y-scroll px-4 flex flex-col gap-3 pb-28" style={{ scrollbarWidth: "none" }}>
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : filtered.map(com => (
           <div key={com.id} className="bg-[#111] rounded-2xl overflow-hidden border border-white/8">
             <div className="relative h-24">
-              <img src={com.img} className="w-full h-full object-cover opacity-70" alt={com.name} />
+              {com.img ? (
+                <img src={com.img} className="w-full h-full object-cover opacity-70" alt={com.name} />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-[#fe2c55]/30 to-[#8b5cf6]/30" />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
               <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full">
                 <Icon name={com.type === "open" ? "Globe" : "Lock"} size={10} className="text-white/70" />
                 <span className="text-white/70 text-[10px]">{com.type === "open" ? "Открытое" : "Закрытое"}</span>
               </div>
-              {joined[com.id] && (
+              {com.joined && (
                 <div className="absolute top-2 left-2 bg-[#fe2c55] px-2 py-0.5 rounded-full">
                   <span className="text-white text-[10px] font-bold">Участник</span>
                 </div>
@@ -163,23 +223,41 @@ const CommunitiesScreen = ({ onBack }: Props) => {
                   <span className="text-white/40 text-xs">{com.members >= 1000 ? (com.members / 1000).toFixed(1) + "K" : com.members}</span>
                 </div>
               </div>
-              <p className="text-white/50 text-xs mb-3 leading-snug">{com.desc}</p>
-              <button
-                onClick={() => handleJoin(com.id, com.type)}
-                className={`w-full py-2 rounded-xl text-sm font-bold transition-all ${
-                  joined[com.id]
-                    ? "bg-white/10 text-white/60"
-                    : com.type === "closed"
-                    ? "bg-white/10 text-white border border-white/20"
-                    : "bg-[#fe2c55] text-white"
-                }`}
-              >
-                {joined[com.id] ? "Вы участник" : com.type === "closed" ? "Подать заявку" : "Вступить"}
-              </button>
+              <p className="text-white/50 text-xs mb-3 leading-snug">{com.description}</p>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleJoin(com)}
+                  className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${com.joined ? "bg-white/10 text-white/60" : "bg-[#fe2c55] text-white"}`}
+                >
+                  {com.joined ? "Выйти" : com.type === "closed" ? "Подать заявку" : "Вступить"}
+                </button>
+                {com.joined && (
+                  <>
+                    <button
+                      onClick={() => openCommunityChat(com)}
+                      className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center"
+                    >
+                      <Icon name="MessageCircle" size={16} className="text-white/60" />
+                    </button>
+                    <button
+                      onClick={() => setGroupCall({ communityId: com.id, name: com.name, mode: "audio" })}
+                      className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center"
+                    >
+                      <Icon name="Phone" size={16} className="text-green-400" />
+                    </button>
+                    <button
+                      onClick={() => setGroupCall({ communityId: com.id, name: com.name, mode: "video" })}
+                      className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center"
+                    >
+                      <Icon name="Video" size={16} className="text-[#00a2ff]" />
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         ))}
-        <div className="pb-28" />
       </div>
     </div>
   );

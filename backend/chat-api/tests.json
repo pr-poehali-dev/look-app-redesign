@@ -41,6 +41,23 @@
       "expectedStatus": 200,
       "expectedBody": {"signals": []},
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get communities",
+      "method": "GET",
+      "path": "/?module=community&action=list",
+      "expectedStatus": 200,
+      "expectedBody": {"communities": []},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Join community",
+      "method": "POST",
+      "path": "/?module=community",
+      "body": {"action": "join", "community_id": "com_photo_ru"},
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
     }
   ]
 }

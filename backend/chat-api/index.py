@@ -2,8 +2,17 @@ import json
 import os
 import psycopg2
 
+SEED_COMMUNITIES = [
+    ('com_photo_ru', 'Фотографы России', 'Делимся снимками, лайфхаками и вдохновением', 'open', 'Фото', 'https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/dbf882bc-5b07-4604-a1fa-628313ce915f.jpg'),
+    ('com_travel', 'Клуб путешественников', 'Только для тех, кто уже побывал в 10+ странах', 'closed', 'Путешествия', 'https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/a3325030-6571-46e9-845b-2a54062f9059.jpg'),
+    ('com_fitness', 'Фитнес & ЗОЖ', 'Тренировки, питание, мотивация каждый день', 'open', 'Спорт', 'https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/5b90e1a9-665b-4e6c-9184-2edf68db2e91.jpg'),
+    ('com_gaming', 'Геймеры Look', 'Закрытое сообщество для хардкорных геймеров', 'closed', 'Игры', 'https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/45213a06-ddb6-4425-9410-cb3777726c55.jpg'),
+    ('com_coffee', 'Кофейная культура', 'Всё о кофе: варка, обжарка, кофейни мира', 'open', 'Еда', 'https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/0730a864-0860-4c86-8845-835a8c4a720e.jpg'),
+    ('com_music', 'Ночная музыка', 'Закрытый клуб любителей электронной музыки', 'closed', 'Музыка', 'https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/c96bc59d-e416-4e11-adf2-a308d67a562d.jpg'),
+]
+
 def handler(event: dict, context) -> dict:
-    """Чат API: сообщения, онлайн-пользователи и WebRTC signaling для P2P звонков"""
+    """Чат API: сообщения, онлайн-пользователи, сообщества и WebRTC signaling"""
     headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -171,6 +180,109 @@ def handler(event: dict, context) -> dict:
                 conn.commit()
                 return {'statusCode': 200, 'headers': headers,
                         'body': json.dumps({'id': row[0], 'time': row[1].strftime('%H:%M'), 'ok': True})}
+
+        # ── COMMUNITIES MODULE ───────────────────────────────────────
+        elif module == 'community':
+            import uuid as _uuid
+
+            # Seed default communities if empty
+            cur.execute("SELECT COUNT(*) FROM communities")
+            if cur.fetchone()[0] == 0:
+                for com in SEED_COMMUNITIES:
+                    cur.execute(
+                        "INSERT INTO communities (id, name, description, type, category, img, created_by) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, 'system')",
+                        com
+                    )
+
+            if method == 'GET':
+                action = params.get('action', 'list')
+
+                if action == 'list':
+                    cur.execute(
+                        "SELECT c.id, c.name, c.description, c.type, c.category, c.img, "
+                        "COUNT(DISTINCT cm.user_id) as member_count, "
+                        "MAX(CASE WHEN cm.user_id = %s THEN 1 ELSE 0 END) as is_member "
+                        "FROM communities c "
+                        "LEFT JOIN community_members cm ON cm.community_id = c.id "
+                        "GROUP BY c.id, c.name, c.description, c.type, c.category, c.img "
+                        "ORDER BY c.created_at ASC",
+                        (user_id,)
+                    )
+                    rows = cur.fetchall()
+                    communities = [
+                        {'id': r[0], 'name': r[1], 'description': r[2], 'type': r[3],
+                         'category': r[4], 'img': r[5], 'members': r[6], 'joined': bool(r[7])}
+                        for r in rows
+                    ]
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'communities': communities})}
+
+                elif action == 'members':
+                    com_id = params.get('community_id')
+                    if not com_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'community_id required'})}
+                    cur.execute(
+                        "SELECT cm.user_id, cm.user_name, cm.role, "
+                        "u.online_at > NOW() - INTERVAL '30 seconds' as online "
+                        "FROM community_members cm "
+                        "LEFT JOIN sa_users u ON u.id = cm.user_id "
+                        "WHERE cm.community_id = %s ORDER BY cm.joined_at ASC",
+                        (com_id,)
+                    )
+                    rows = cur.fetchall()
+                    members = [{'id': r[0], 'name': r[1], 'role': r[2], 'online': bool(r[3])} for r in rows]
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'members': members})}
+
+            elif method == 'POST':
+                body = json.loads(event.get('body') or '{}')
+                post_action = body.get('action')
+
+                if post_action == 'join':
+                    com_id = body.get('community_id')
+                    cur.execute("SELECT type FROM communities WHERE id = %s", (com_id,))
+                    row = cur.fetchone()
+                    if not row:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers, 'body': json.dumps({'error': 'not found'})}
+                    cur.execute(
+                        "INSERT INTO community_members (community_id, user_id, user_name) VALUES (%s, %s, %s) "
+                        "ON CONFLICT DO NOTHING",
+                        (com_id, user_id, user_name)
+                    )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True, 'joined': True})}
+
+                elif post_action == 'leave':
+                    com_id = body.get('community_id')
+                    cur.execute(
+                        "UPDATE community_members SET role = 'left' WHERE community_id = %s AND user_id = %s",
+                        (com_id, user_id)
+                    )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True, 'joined': False})}
+
+                elif post_action == 'create':
+                    com_name = body.get('name', 'Сообщество')
+                    com_desc = body.get('description', '')
+                    com_type = body.get('type', 'open')
+                    com_category = body.get('category', 'Другое')
+                    new_id = 'com_' + str(_uuid.uuid4())[:8]
+                    cur.execute(
+                        "INSERT INTO communities (id, name, description, type, category, created_by) "
+                        "VALUES (%s, %s, %s, %s, %s, %s)",
+                        (new_id, com_name, com_desc, com_type, com_category, user_id)
+                    )
+                    cur.execute(
+                        "INSERT INTO community_members (community_id, user_id, user_name, role) VALUES (%s, %s, %s, 'admin')",
+                        (new_id, user_id, user_name)
+                    )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True, 'community_id': new_id})}
 
         # ── SIGNALING MODULE ─────────────────────────────────────────
         elif module == 'signal':
