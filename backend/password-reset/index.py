@@ -2,7 +2,11 @@ import json
 import os
 import hashlib
 import secrets
-import urllib.request
+import smtplib
+import ssl
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.utils import formataddr
 from datetime import datetime, timedelta
 import psycopg2
 
@@ -22,40 +26,49 @@ def hash_pw(p):
     return hashlib.sha256(p.encode()).hexdigest()
 
 def send_email(to_email: str, reset_link: str) -> bool:
-    api_key = os.environ.get('RESEND_API_KEY', '').strip()
-    if not api_key:
+    smtp_user = os.environ.get('SMTP_USER', '').strip()
+    smtp_password = os.environ.get('SMTP_PASSWORD', '').strip()
+    if not smtp_user or not smtp_password:
         return False
-    from_email = os.environ.get('RESEND_FROM_EMAIL', '').strip() or 'Look <onboarding@resend.dev>'
-    payload = {
-        'from': from_email,
-        'to': [to_email],
-        'subject': 'Восстановление пароля',
-        'html': f'''
-            <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:20px;color:#111">
-              <h2 style="color:#fe2c55">Восстановление пароля</h2>
-              <p>Ты запросил восстановление пароля в приложении Look.</p>
-              <p>Нажми на кнопку ниже, чтобы задать новый пароль:</p>
-              <p style="margin:24px 0">
-                <a href="{reset_link}" style="display:inline-block;padding:14px 28px;background:linear-gradient(90deg,#fe2c55,#8b5cf6);color:#fff;text-decoration:none;border-radius:12px;font-weight:bold">Сбросить пароль</a>
-              </p>
-              <p style="color:#666;font-size:13px">Если кнопка не работает, открой ссылку: <br><a href="{reset_link}">{reset_link}</a></p>
-              <p style="color:#999;font-size:12px;margin-top:32px">Ссылка действует 1 час. Если ты не запрашивал восстановление — просто проигнорируй это письмо.</p>
-            </div>
-        '''
-    }
-    req = urllib.request.Request(
-        'https://api.resend.com/emails',
-        data=json.dumps(payload).encode('utf-8'),
-        headers={
-            'Authorization': f'Bearer {api_key}',
-            'Content-Type': 'application/json',
-        },
-        method='POST'
-    )
+
+    smtp_host = os.environ.get('SMTP_HOST', 'smtp.beget.com').strip()
+    smtp_port = int(os.environ.get('SMTP_PORT', '465').strip() or '465')
+
+    html_body = f'''
+        <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:20px;color:#111">
+          <h2 style="color:#fe2c55">Восстановление пароля</h2>
+          <p>Ты запросил восстановление пароля в приложении Look.</p>
+          <p>Нажми на кнопку ниже, чтобы задать новый пароль:</p>
+          <p style="margin:24px 0">
+            <a href="{reset_link}" style="display:inline-block;padding:14px 28px;background:linear-gradient(90deg,#fe2c55,#8b5cf6);color:#fff;text-decoration:none;border-radius:12px;font-weight:bold">Сбросить пароль</a>
+          </p>
+          <p style="color:#666;font-size:13px">Если кнопка не работает, открой ссылку: <br><a href="{reset_link}">{reset_link}</a></p>
+          <p style="color:#999;font-size:12px;margin-top:32px">Ссылка действует 1 час. Если ты не запрашивал восстановление — просто проигнорируй это письмо.</p>
+        </div>
+    '''
+    text_body = f'Восстановление пароля\n\nОткрой ссылку, чтобы задать новый пароль:\n{reset_link}\n\nСсылка действует 1 час.'
+
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = 'Восстановление пароля'
+    msg['From'] = formataddr(('Look', smtp_user))
+    msg['To'] = to_email
+    msg.attach(MIMEText(text_body, 'plain', 'utf-8'))
+    msg.attach(MIMEText(html_body, 'html', 'utf-8'))
+
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            return resp.status in (200, 201, 202)
-    except Exception:
+        context = ssl.create_default_context()
+        if smtp_port == 465:
+            with smtplib.SMTP_SSL(smtp_host, smtp_port, context=context, timeout=15) as server:
+                server.login(smtp_user, smtp_password)
+                server.sendmail(smtp_user, [to_email], msg.as_string())
+        else:
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server:
+                server.starttls(context=context)
+                server.login(smtp_user, smtp_password)
+                server.sendmail(smtp_user, [to_email], msg.as_string())
+        return True
+    except Exception as e:
+        print(f'SMTP error: {e}')
         return False
 
 def handler(event: dict, context) -> dict:
