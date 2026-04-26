@@ -19,13 +19,8 @@ const GIFTS = ["🌹", "🎁", "💎", "🚀", "⭐", "🏆", "💰", "🎉"];
 interface ChatMsg { id: number; name: string; text: string; color: string; }
 interface Gift { id: number; emoji: string; x: number; }
 
-// Шаг 1: "ask" — экран с объяснением и кнопкой разрешить
-// Шаг 2: "ready" — камера работает, показываем превью
-// Шаг 3: "denied" — пользователь отказал, инструкция как разрешить вручную
-type CamStep = "ask" | "ready" | "denied";
-
 const LiveStream = ({ onClose }: { onClose: () => void }) => {
-  const [camStep, setCamStep] = useState<CamStep>("ask");
+  const [denied, setDenied] = useState(false);
   const [isLive, setIsLive] = useState(false);
   const [viewers, setViewers] = useState(0);
   const [likes, setLikes] = useState(0);
@@ -43,38 +38,32 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const chatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const startCamera = async (facingMode: "user" | "environment" = "user") => {
+    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+    try {
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: true });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
+      }
+      streamRef.current = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;
+      setDenied(false);
+    } catch {
+      setDenied(true);
+    }
+  };
+
+  // Запрашиваем камеру сразу — браузер покажет системный диалог
   useEffect(() => {
+    startCamera("user");
     return () => {
       streamRef.current?.getTracks().forEach(t => t.stop());
       if (timerRef.current) clearInterval(timerRef.current);
       if (chatTimerRef.current) clearInterval(chatTimerRef.current);
     };
   }, []);
-
-  // Вызывается по нажатию кнопки — это пользовательский жест, браузер покажет диалог
-  const requestCamera = async (facingMode: "user" | "environment" = "user") => {
-    try {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(t => t.stop());
-      }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode },
-        audio: true,
-      }).catch(() =>
-        // Если с audio отклонили — пробуем только video
-        navigator.mediaDevices.getUserMedia({ video: { facingMode } })
-      );
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      setCamStep("ready");
-      return true;
-    } catch {
-      setCamStep("denied");
-      return false;
-    }
-  };
 
   const formatTime = (s: number) => {
     const h = Math.floor(s / 3600);
@@ -109,7 +98,7 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
     if (flipping) return;
     setFlipping(true);
     const next = facing === "user" ? "environment" : "user";
-    await requestCamera(next);
+    await startCamera(next);
     setFacing(next);
     setFlipping(false);
   };
@@ -131,57 +120,8 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
     setInputMsg("");
   };
 
-  // ── Экран 1: объяснение перед запросом камеры ──
-  if (camStep === "ask") {
-    return (
-      <div className="relative w-full h-full bg-black flex flex-col items-center justify-center px-8">
-        <button onClick={onClose} className="absolute top-12 right-4 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-          <Icon name="X" size={18} className="text-white" />
-        </button>
-
-        <div className="text-6xl mb-6">📸</div>
-        <h2 className="text-white font-bold text-2xl mb-3 text-center">Разреши камеру</h2>
-        <p className="text-white/50 text-sm text-center mb-8 leading-relaxed">
-          Для прямого эфира нужен доступ к камере и микрофону. После нажатия кнопки браузер спросит разрешение — нажми <span className="text-white font-semibold">«Разрешить»</span>.
-        </p>
-
-        <div className="w-full bg-white/5 rounded-2xl p-4 mb-8 space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[#fe2c55]/20 flex items-center justify-center shrink-0">
-              <Icon name="Camera" size={18} className="text-[#fe2c55]" />
-            </div>
-            <div>
-              <p className="text-white text-sm font-medium">Камера</p>
-              <p className="text-white/40 text-xs">Для видео в эфире</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[#61d4f0]/20 flex items-center justify-center shrink-0">
-              <Icon name="Mic" size={18} className="text-[#61d4f0]" />
-            </div>
-            <div>
-              <p className="text-white text-sm font-medium">Микрофон</p>
-              <p className="text-white/40 text-xs">Для звука в эфире</p>
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={() => requestCamera("user")}
-          className="w-full py-4 rounded-2xl bg-[#fe2c55] text-white font-bold text-lg active:scale-95 transition-all flex items-center justify-center gap-3"
-        >
-          <Icon name="Camera" size={22} />
-          Разрешить и продолжить
-        </button>
-        <button onClick={onClose} className="mt-4 text-white/30 text-sm">
-          Отмена
-        </button>
-      </div>
-    );
-  }
-
-  // ── Экран 2: отказ — инструкция как разрешить вручную ──
-  if (camStep === "denied") {
+  // ── Экран: камера заблокирована ──
+  if (denied) {
     return (
       <div className="relative w-full h-full bg-black flex flex-col overflow-y-auto px-6 pt-16 pb-8">
         <button onClick={onClose} className="absolute top-12 right-4 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
@@ -191,56 +131,45 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
         <div className="text-5xl mb-4 text-center">⚠️</div>
         <h2 className="text-white font-bold text-xl mb-2 text-center">Камера заблокирована</h2>
         <p className="text-white/50 text-sm text-center mb-6 leading-relaxed">
-          Браузер запомнил отказ. Нужно разрешить вручную — это займёт 30 секунд.
+          Браузер запомнил отказ. Разреши вручную — это займёт 30 секунд.
         </p>
 
-        {/* Шаг 1 */}
         <div className="bg-white/5 rounded-2xl p-4 mb-3">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-3">
             <span className="w-6 h-6 rounded-full bg-[#fe2c55] text-white text-xs font-bold flex items-center justify-center shrink-0">1</span>
-            <span className="text-white text-sm font-semibold">Нажми на значок замка в браузере</span>
+            <span className="text-white text-sm font-semibold">Нажми на замок в адресной строке</span>
           </div>
-          {/* Визуальная подсказка — имитация адресной строки */}
-          <div className="bg-zinc-800 rounded-xl px-3 py-2 flex items-center gap-2 mt-2">
+          <div className="bg-zinc-800 rounded-xl px-3 py-2 flex items-center gap-2">
             <div className="flex items-center gap-1.5 bg-[#fe2c55]/20 border border-[#fe2c55] rounded-lg px-2 py-1">
               <Icon name="Lock" size={13} className="text-[#fe2c55]" />
-              <span className="text-[#fe2c55] text-xs font-bold">← нажми сюда</span>
+              <span className="text-[#fe2c55] text-xs font-bold">← сюда</span>
             </div>
             <span className="text-white/30 text-xs truncate">...poehali.dev</span>
           </div>
         </div>
 
-        {/* Шаг 2 */}
         <div className="bg-white/5 rounded-2xl p-4 mb-3">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-3">
             <span className="w-6 h-6 rounded-full bg-[#fe2c55] text-white text-xs font-bold flex items-center justify-center shrink-0">2</span>
-            <span className="text-white text-sm font-semibold">Найди «Камера» → выбери «Разрешить»</span>
+            <span className="text-white text-sm font-semibold">Камера → Разрешить</span>
           </div>
-          <div className="bg-zinc-800 rounded-xl p-3 mt-2 space-y-2">
+          <div className="bg-zinc-800 rounded-xl p-3 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Icon name="Camera" size={15} className="text-white/60" />
                 <span className="text-white/80 text-sm">Камера</span>
               </div>
-              <div className="flex items-center gap-1 bg-[#fe2c55]/20 border border-[#fe2c55] rounded-lg px-2 py-0.5">
+              <div className="bg-[#fe2c55]/20 border border-[#fe2c55] rounded-lg px-2 py-0.5">
                 <span className="text-[#fe2c55] text-xs font-bold">Разрешить ←</span>
               </div>
-            </div>
-            <div className="flex items-center justify-between opacity-40">
-              <div className="flex items-center gap-2">
-                <Icon name="Mic" size={15} className="text-white/60" />
-                <span className="text-white/80 text-sm">Микрофон</span>
-              </div>
-              <span className="text-white/40 text-xs">Разрешить</span>
             </div>
           </div>
         </div>
 
-        {/* Шаг 3 */}
         <div className="bg-white/5 rounded-2xl p-4 mb-6">
           <div className="flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-[#fe2c55] text-white text-xs font-bold flex items-center justify-center shrink-0">3</span>
-            <span className="text-white text-sm font-semibold">Обнови страницу и нажми «Попробовать снова»</span>
+            <span className="text-white text-sm font-semibold">Обнови страницу и открой эфир снова</span>
           </div>
         </div>
 
@@ -257,7 +186,7 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
     );
   }
 
-  // ── Экран 3: камера работает — превью + эфир ──
+  // ── Основной экран: видео + UI ──
   return (
     <div className="relative w-full h-full bg-black flex flex-col overflow-hidden">
 
