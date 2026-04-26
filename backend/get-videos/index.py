@@ -26,12 +26,12 @@ def handler(event: dict, context) -> dict:
     schema = os.environ['MAIN_DB_SCHEMA']
     if category and category != 'all':
         cur.execute(
-            f"SELECT id, url, author, handle, description, category, type, likes, comments, shares, created_at FROM {schema}.videos WHERE type = %s AND category = %s AND (hidden IS NULL OR hidden = FALSE) ORDER BY created_at DESC LIMIT 50",
+            f"SELECT id, url, author, handle, description, hashtags, category, type, likes, comments, shares, created_at FROM {schema}.videos WHERE type = %s AND category = %s AND (hidden IS NULL OR hidden = FALSE) ORDER BY created_at DESC LIMIT 50",
             (media_type, category)
         )
     else:
         cur.execute(
-            f"SELECT id, url, author, handle, description, category, type, likes, comments, shares, created_at FROM {schema}.videos WHERE type = %s AND (hidden IS NULL OR hidden = FALSE) ORDER BY created_at DESC LIMIT 50",
+            f"SELECT id, url, author, handle, description, hashtags, category, type, likes, comments, shares, created_at FROM {schema}.videos WHERE type = %s AND (hidden IS NULL OR hidden = FALSE) ORDER BY created_at DESC LIMIT 50",
             (media_type,)
         )
 
@@ -46,13 +46,14 @@ def handler(event: dict, context) -> dict:
             'author': r[2],
             'handle': r[3],
             'description': r[4],
-            'category': r[5],
-            'type': r[6],
-            'likes': str(r[7]),
-            'comments': str(r[8]),
-            'shares': str(r[9]),
-            'avatar': r[1] if r[6] == 'image' else None,
-            'created_at': r[10].isoformat() if r[10] else None,
+            'hashtags': r[5] or '',
+            'category': r[6],
+            'type': r[7],
+            'likes': str(r[8]),
+            'comments': str(r[9]),
+            'shares': str(r[10]),
+            'avatar': r[1] if r[7] == 'image' else None,
+            'created_at': r[11].isoformat() if r[11] else None,
         }
         for r in rows
     ]

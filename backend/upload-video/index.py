@@ -28,6 +28,7 @@ def handler(event: dict, context) -> dict:
     author = body.get('author', 'Я')
     handle = body.get('handle', 'user')
     description = body.get('description', '')
+    hashtags = body.get('hashtags', '')
     media_type = 'video' if file_type.startswith('video') else 'image'
 
     if not file_data:
@@ -59,8 +60,8 @@ def handler(event: dict, context) -> dict:
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO videos (url, author, handle, description, category, type, user_id) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id",
-        (cdn_url, author, handle, description, category, media_type, user_id)
+        "INSERT INTO videos (url, author, handle, description, hashtags, category, type, user_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+        (cdn_url, author, handle, description, hashtags, category, media_type, user_id)
     )
     video_id = cur.fetchone()[0]
     conn.commit()

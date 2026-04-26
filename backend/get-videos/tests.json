@@ -5,7 +5,7 @@
       "method": "GET",
       "path": "/?type=video",
       "expectedStatus": 200,
-      "expectedBody": {"videos": []},
+      "expectedBody": {"videos": [{}]},
       "bodyMatcher": "partial"
     }
   ]
