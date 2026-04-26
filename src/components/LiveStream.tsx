@@ -145,39 +145,23 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
           <Icon name="X" size={18} className="text-white" />
         </button>
 
-        <div className="text-5xl mb-4 text-center">⚠️</div>
-        <h2 className="text-white font-bold text-xl mb-2 text-center">Камера заблокирована</h2>
+        <div className="text-5xl mb-4 text-center">📷</div>
+        <h2 className="text-white font-bold text-xl mb-2 text-center">Включи доступ к камере</h2>
         <p className="text-white/50 text-sm text-center mb-6 leading-relaxed">
-          Браузер запомнил отказ. Разреши вручную — это займёт 30 секунд.
+          Внизу экрана открылась панель «Разрешения». Сделай так:
         </p>
 
         <div className="bg-white/5 rounded-2xl p-4 mb-3">
           <div className="flex items-center gap-2 mb-3">
             <span className="w-6 h-6 rounded-full bg-[#fe2c55] text-white text-xs font-bold flex items-center justify-center shrink-0">1</span>
-            <span className="text-white text-sm font-semibold">Нажми на замок в адресной строке</span>
+            <span className="text-white text-sm font-semibold">Включи переключатель «Камера»</span>
           </div>
-          <div className="bg-zinc-800 rounded-xl px-3 py-2 flex items-center gap-2">
-            <div className="flex items-center gap-1.5 bg-[#fe2c55]/20 border border-[#fe2c55] rounded-lg px-2 py-1">
-              <Icon name="Lock" size={13} className="text-[#fe2c55]" />
-              <span className="text-[#fe2c55] text-xs font-bold">← сюда</span>
-            </div>
-            <span className="text-white/30 text-xs truncate">...poehali.dev</span>
-          </div>
-        </div>
-
-        <div className="bg-white/5 rounded-2xl p-4 mb-3">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="w-6 h-6 rounded-full bg-[#fe2c55] text-white text-xs font-bold flex items-center justify-center shrink-0">2</span>
-            <span className="text-white text-sm font-semibold">Камера → Разрешить</span>
-          </div>
-          <div className="bg-zinc-800 rounded-xl p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Icon name="Camera" size={15} className="text-white/60" />
-                <span className="text-white/80 text-sm">Камера</span>
-              </div>
-              <div className="bg-[#fe2c55]/20 border border-[#fe2c55] rounded-lg px-2 py-0.5">
-                <span className="text-[#fe2c55] text-xs font-bold">Разрешить ←</span>
+          <div className="bg-zinc-800 rounded-xl px-4 py-3 flex items-center justify-between">
+            <span className="text-white/80 text-sm">Камера</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[#fe2c55] text-xs font-bold">← включи</span>
+              <div className="w-11 h-6 rounded-full bg-[#fe2c55] flex items-center justify-end px-0.5">
+                <div className="w-5 h-5 rounded-full bg-white shadow" />
               </div>
             </div>
           </div>
@@ -185,8 +169,8 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
 
         <div className="bg-white/5 rounded-2xl p-4 mb-6">
           <div className="flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-[#fe2c55] text-white text-xs font-bold flex items-center justify-center shrink-0">3</span>
-            <span className="text-white text-sm font-semibold">Обнови страницу и открой эфир снова</span>
+            <span className="w-6 h-6 rounded-full bg-[#fe2c55] text-white text-xs font-bold flex items-center justify-center shrink-0">2</span>
+            <span className="text-white text-sm font-semibold">Нажми кнопку «Обновить страницу» ниже</span>
           </div>
         </div>
 
