@@ -57,11 +57,6 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
       });
 
   useEffect(() => {
-    // Пробуем получить камеру, при неудаче — повтор через 800мс
-    startCamera("user").catch(() => {
-      const t = setTimeout(() => startCamera("user").catch(() => {}), 800);
-      return () => clearTimeout(t);
-    });
     return () => {
       streamRef.current?.getTracks().forEach(t => t.stop());
       if (timerRef.current) clearInterval(timerRef.current);
@@ -78,6 +73,8 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
   };
 
   const startLive = () => {
+    // Запускаем камеру прямо внутри обработчика клика — браузер разрешит autoplay
+    startCamera("user").catch(() => {});
     setIsLive(true);
     setViewers(Math.floor(Math.random() * 50) + 10);
     setSeconds(0);
