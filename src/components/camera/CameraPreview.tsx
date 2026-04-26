@@ -138,7 +138,27 @@ const CameraPreview = ({
                   <input
                     type="text"
                     value={hashtags}
-                    onChange={e => onHashtagsChange(e.target.value)}
+                    onChange={e => {
+                      const val = e.target.value;
+                      const words = val.split(" ");
+                      const processed = words.map((w, i) => {
+                        if (w === "") return w;
+                        if (i === words.length - 1 && !val.endsWith(" ")) {
+                          return w.startsWith("#") ? w : "#" + w;
+                        }
+                        return w.startsWith("#") ? w : "#" + w;
+                      });
+                      onHashtagsChange(processed.join(" "));
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === " ") {
+                        e.preventDefault();
+                        const cur = hashtags.trim();
+                        if (cur && !cur.endsWith(" ")) {
+                          onHashtagsChange(cur + " ");
+                        }
+                      }
+                    }}
                     placeholder="#природа #фото #жизнь"
                     className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white text-sm placeholder:text-white/30 outline-none"
                   />
