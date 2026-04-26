@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import ChatRoom from "./ChatRoom";
 import CommunitiesScreen from "./CommunitiesScreen";
+import CallScreen from "./CallScreen";
 import { useAuth } from "@/context/AuthContext";
 
 const AVATARS = [
@@ -47,6 +48,8 @@ const MessagesScreen = () => {
   const [newChatName, setNewChatName] = useState("");
   const [creating, setCreating] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<{ id: string; name: string }[]>([]);
+  const [activeCall, setActiveCall] = useState<{ user: { id: string; name: string }; mode: "audio" | "video" } | null>(null);
+  const [onlineMenu, setOnlineMenu] = useState<{ id: string; name: string } | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { user } = useAuth();
 
@@ -128,6 +131,32 @@ const MessagesScreen = () => {
     setNewChatName("");
   };
 
+  if (activeCall) return (
+    <CallScreen
+      name={activeCall.user.name}
+      avatar=""
+      mode={activeCall.mode}
+      myId={user?.id || "anon"}
+      peerId={activeCall.user.id}
+      onEnd={() => setActiveCall(null)}
+    />
+  );
+
+  const openChatWithUser = (u: { id: string; name: string }) => {
+    const chat: Chat = {
+      id: `dm_${[user?.id, u.id].sort().join("_")}`,
+      type: "personal",
+      name: u.name,
+      avatar: AVATARS[Math.floor(Math.random() * AVATARS.length)],
+      lastMsg: "",
+      time: "сейчас",
+      unread: 0,
+      online: true,
+    };
+    setOnlineMenu(null);
+    setOpenChat(chat);
+  };
+
   if (openChat) return <ChatRoom chat={openChat} onBack={() => { setOpenChat(null); loadChats(); }} />;
   if (tab === "communities") return <CommunitiesScreen onBack={() => setTab("chats")} />;
 
@@ -177,9 +206,13 @@ const MessagesScreen = () => {
           </div>
           <div className="flex gap-3 overflow-x-scroll" style={{ scrollbarWidth: "none" }}>
             {onlineUsers.map((u) => (
-              <div key={u.id} className="flex flex-col items-center gap-1 flex-shrink-0">
+              <div
+                key={u.id}
+                className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer active:scale-95 transition-transform"
+                onClick={() => setOnlineMenu(onlineMenu?.id === u.id ? null : u)}
+              >
                 <div className="relative">
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#fe2c55]/40 to-[#8b5cf6]/40 border border-white/10 flex items-center justify-center">
+                  <div className={`w-11 h-11 rounded-full bg-gradient-to-br from-[#fe2c55]/40 to-[#8b5cf6]/40 flex items-center justify-center border-2 transition-colors ${onlineMenu?.id === u.id ? "border-[#fe2c55]" : "border-white/10"}`}>
                     <span className="text-white font-semibold text-sm">
                       {u.name.charAt(0).toUpperCase()}
                     </span>
@@ -190,6 +223,39 @@ const MessagesScreen = () => {
               </div>
             ))}
           </div>
+
+          {onlineMenu && (
+            <div className="mt-3 bg-white/8 rounded-2xl overflow-hidden border border-white/10">
+              <div className="px-4 py-2.5 border-b border-white/8">
+                <span className="text-white/60 text-xs">{onlineMenu.name}</span>
+              </div>
+              <div className="flex">
+                <button
+                  onClick={() => openChatWithUser(onlineMenu)}
+                  className="flex-1 flex flex-col items-center gap-1.5 py-3 hover:bg-white/5 transition-colors"
+                >
+                  <Icon name="MessageCircle" size={20} className="text-[#00a2ff]" />
+                  <span className="text-white/60 text-[11px]">Написать</span>
+                </button>
+                <div className="w-px bg-white/8" />
+                <button
+                  onClick={() => { setOnlineMenu(null); setActiveCall({ user: onlineMenu, mode: "audio" }); }}
+                  className="flex-1 flex flex-col items-center gap-1.5 py-3 hover:bg-white/5 transition-colors"
+                >
+                  <Icon name="Phone" size={20} className="text-green-400" />
+                  <span className="text-white/60 text-[11px]">Аудио</span>
+                </button>
+                <div className="w-px bg-white/8" />
+                <button
+                  onClick={() => { setOnlineMenu(null); setActiveCall({ user: onlineMenu, mode: "video" }); }}
+                  className="flex-1 flex flex-col items-center gap-1.5 py-3 hover:bg-white/5 transition-colors"
+                >
+                  <Icon name="Video" size={20} className="text-[#fe2c55]" />
+                  <span className="text-white/60 text-[11px]">Видео</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
