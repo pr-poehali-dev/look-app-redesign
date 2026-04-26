@@ -25,10 +25,13 @@ def err(msg, code=400):
 def hash_pw(p):
     return hashlib.sha256(p.encode()).hexdigest()
 
+LAST_SMTP_ERROR = {'msg': ''}
+
 def send_email(to_email: str, reset_link: str) -> bool:
     smtp_user = os.environ.get('SMTP_USER', '').strip()
     smtp_password = os.environ.get('SMTP_PASSWORD', '').strip()
     if not smtp_user or not smtp_password:
+        LAST_SMTP_ERROR['msg'] = 'no credentials'
         return False
 
     smtp_host = os.environ.get('SMTP_HOST', 'smtp.beget.com').strip()
@@ -68,7 +71,8 @@ def send_email(to_email: str, reset_link: str) -> bool:
                 server.sendmail(smtp_user, [to_email], msg.as_string())
         return True
     except Exception as e:
-        print(f'SMTP error: {e}')
+        LAST_SMTP_ERROR['msg'] = f'{type(e).__name__}: {e}'
+        print(f'SMTP error: {type(e).__name__}: {e}')
         return False
 
 def handler(event: dict, context) -> dict:
@@ -88,8 +92,12 @@ def handler(event: dict, context) -> dict:
         if not to_email:
             return err('email required')
         link = 'https://visov.ru/?reset_token=TEST_TOKEN_123'
+        has_user = bool(os.environ.get('SMTP_USER', '').strip())
+        has_pass = bool(os.environ.get('SMTP_PASSWORD', '').strip())
+        smtp_host = os.environ.get('SMTP_HOST', 'smtp.beget.com').strip()
+        smtp_port = os.environ.get('SMTP_PORT', '465').strip()
         sent = send_email(to_email, link)
-        return ok({'sent': sent})
+        return ok({'sent': sent, 'has_user': has_user, 'has_pass': has_pass, 'host': smtp_host, 'port': smtp_port, 'error': LAST_SMTP_ERROR['msg']})
 
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
