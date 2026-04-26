@@ -1,0 +1,32 @@
+{
+  "tests": [
+    {
+      "name": "Request reset - empty email",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "request", "email": ""},
+      "expectedStatus": 400
+    },
+    {
+      "name": "Request reset - non-existing email",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "request", "email": "nobody-test-12345@example.com"},
+      "expectedStatus": 200
+    },
+    {
+      "name": "Verify - invalid token",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "verify", "token": "invalid_token_123"},
+      "expectedStatus": 400
+    },
+    {
+      "name": "Confirm - missing fields",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "confirm", "token": "", "password": ""},
+      "expectedStatus": 400
+    }
+  ]
+}

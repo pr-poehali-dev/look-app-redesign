@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import { UserMediaProvider } from "./context/UserMediaContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import AuthScreen from "./components/AuthScreen";
+import ResetPasswordScreen from "./components/ResetPasswordScreen";
 import CallScreen from "./components/CallScreen";
 import Icon from "@/components/ui/icon";
 
@@ -26,6 +27,11 @@ const queryClient = new QueryClient();
 
 const AppContent = () => {
   const { user, token, loading } = useAuth();
+  const [resetToken, setResetToken] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const params = new URLSearchParams(window.location.search);
+    return params.get("reset_token");
+  });
   const [incomingCall, setIncomingCall] = useState<IncomingCall | null>(null);
   const [activeCall, setActiveCall] = useState<IncomingCall | null>(null);
   const lastSigRef = useRef(0);
@@ -130,6 +136,18 @@ const AppContent = () => {
           <span className="text-white font-black text-xl">L</span>
         </div>
       </div>
+    );
+  }
+
+  if (resetToken) {
+    return (
+      <ResetPasswordScreen
+        token={resetToken}
+        onDone={() => {
+          setResetToken(null);
+          window.history.replaceState({}, "", window.location.pathname);
+        }}
+      />
     );
   }
 

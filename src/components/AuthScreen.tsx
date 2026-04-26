@@ -15,9 +15,25 @@ const AuthScreen = () => {
   const [showForgot, setShowForgot] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
 
-  const handleForgot = () => {
+  const handleForgot = async () => {
     if (!forgotEmail.trim()) return;
+    setForgotLoading(true);
+    try {
+      await fetch("https://functions.poehali.dev/050dfa15-1d92-4aaf-9b87-55d04c9affa7", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "request",
+          email: forgotEmail.trim(),
+          origin: window.location.origin,
+        }),
+      });
+    } catch {
+      // молча
+    }
+    setForgotLoading(false);
     setForgotSent(true);
   };
 
@@ -166,10 +182,10 @@ const AuthScreen = () => {
                 </div>
                 <button
                   onClick={handleForgot}
-                  disabled={!forgotEmail.trim()}
+                  disabled={!forgotEmail.trim() || forgotLoading}
                   className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold text-base disabled:opacity-40 transition-opacity"
                 >
-                  Отправить ссылку
+                  {forgotLoading ? "Отправка..." : "Отправить ссылку"}
                 </button>
               </>
             ) : (
