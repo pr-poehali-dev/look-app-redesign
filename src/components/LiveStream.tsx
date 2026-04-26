@@ -38,9 +38,27 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
   const [seconds, setSeconds] = useState(0);
   const [inputMsg, setInputMsg] = useState("");
   const [showGifts, setShowGifts] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const chatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true })
+      .then((stream) => {
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+        setCameraReady(true);
+      })
+      .catch(() => setCameraReady(false));
+    return () => {
+      streamRef.current?.getTracks().forEach(t => t.stop());
+    };
+  }, []);
 
   const formatTime = (s: number) => {
     const h = Math.floor(s / 3600);
@@ -80,6 +98,7 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (chatTimerRef.current) clearInterval(chatTimerRef.current);
+      streamRef.current?.getTracks().forEach(t => t.stop());
     };
   }, []);
 
@@ -107,14 +126,22 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
 
   return (
     <div className="relative w-full h-full bg-black flex flex-col overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0">
-        <img
-          src="https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/103e28db-2fd5-4239-9505-f9d4f282bf1f.jpg"
-          className="w-full h-full object-cover opacity-70"
-          alt="live bg"
+      {/* Background — camera or fallback */}
+      <div className="absolute inset-0 bg-zinc-950">
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          playsInline
+          className={`w-full h-full object-cover ${cameraReady ? "opacity-100" : "opacity-0"}`}
+          style={{ transform: "scaleX(-1)" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/40" />
+        {!cameraReady && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Icon name="VideoOff" size={48} className="text-white/20" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-black/30" />
       </div>
 
       {/* Floating gifts */}
