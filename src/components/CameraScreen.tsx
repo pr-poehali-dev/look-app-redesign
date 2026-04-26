@@ -49,6 +49,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [destination, setDestination] = useState<"home" | "feed">("home");
   const [hashtags, setHashtags] = useState("");
+  const [description, setDescription] = useState("");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,7 +75,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
         const res = await fetch("https://functions.poehali.dev/78967386-1bfb-4070-9bb3-549cc5c00de6", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ file: base64, type: file.type, ext, category: destination === "home" ? selectedCategory : "feed", description: hashtags, author: user?.name || "Пользователь", handle: user?.handle || user?.name || "user", user_id: user?.id || "anonymous" }),
+          body: JSON.stringify({ file: base64, type: file.type, ext, category: destination === "home" ? selectedCategory : "feed", description, hashtags, author: user?.name || "Пользователь", handle: user?.handle || user?.name || "user", user_id: user?.id || "anonymous" }),
         });
         const data = await res.json();
         if (data.url) {
@@ -208,7 +209,9 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
         onDestinationChange={setDestination}
         hashtags={hashtags}
         onHashtagsChange={setHashtags}
-        onCloseMedia={() => { setUploadedMedia(null); setPublished(false); setHashtags(""); }}
+        description={description}
+        onDescriptionChange={setDescription}
+        onCloseMedia={() => { setUploadedMedia(null); setPublished(false); setHashtags(""); setDescription(""); }}
         onPublish={handlePublish}
         onCategoryChange={(id) => { setSelectedCategory(id); setShowCategoryPicker(false); }}
         onToggleCategoryPicker={() => setShowCategoryPicker(v => !v)}

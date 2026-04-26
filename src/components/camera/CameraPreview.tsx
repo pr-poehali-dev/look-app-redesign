@@ -1,4 +1,4 @@
-import { RefObject } from "react";
+import { RefObject, useState } from "react";
 import Icon from "@/components/ui/icon";
 
 const FILTER_STYLES: Record<string, string> = {
@@ -40,7 +40,9 @@ interface CameraPreviewProps {
   showCategoryPicker: boolean;
   destination: "home" | "feed";
   hashtags: string;
+  description: string;
   onHashtagsChange: (v: string) => void;
+  onDescriptionChange: (v: string) => void;
   onDestinationChange: (d: "home" | "feed") => void;
   onCloseMedia: () => void;
   onPublish: () => void;
@@ -63,12 +65,15 @@ const CameraPreview = ({
   selectedCategory,
   showCategoryPicker,
   hashtags,
+  description,
   onHashtagsChange,
+  onDescriptionChange,
   onCloseMedia,
   onPublish,
   onCategoryChange,
   onToggleCategoryPicker,
 }: CameraPreviewProps) => {
+  const [showMore, setShowMore] = useState(false);
   return (
     <div className="absolute inset-0">
       <video
@@ -104,68 +109,93 @@ const CameraPreview = ({
 
           <div className="bg-black/90 px-4 pt-4 pb-10 flex flex-col gap-3">
 
-            {/* Destination picker */}
+            {/* Описание */}
             <div>
-              <p className="text-white/60 text-xs mb-2 font-medium">Куда публиковать?</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onDestinationChange("home")}
-                  className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl border transition-all ${destination === "home" ? "bg-[#fe2c55]/20 border-[#fe2c55]" : "bg-white/5 border-white/10"}`}
-                >
-                  <Icon name="Play" size={20} className={destination === "home" ? "text-[#fe2c55]" : "text-white/50"} />
-                  <span className={`text-xs font-semibold ${destination === "home" ? "text-[#fe2c55]" : "text-white/50"}`}>Главная</span>
-                  <span className="text-white/30 text-[10px]">Видеолента</span>
-                </button>
-                <button
-                  onClick={() => onDestinationChange("feed")}
-                  className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl border transition-all ${destination === "feed" ? "bg-[#0095f6]/20 border-[#0095f6]" : "bg-white/5 border-white/10"}`}
-                >
-                  <Icon name="LayoutList" size={20} className={destination === "feed" ? "text-[#0095f6]" : "text-white/50"} />
-                  <span className={`text-xs font-semibold ${destination === "feed" ? "text-[#0095f6]" : "text-white/50"}`}>Лента</span>
-                  <span className="text-white/30 text-[10px]">Фото и посты</span>
-                </button>
-              </div>
-            </div>
-
-            {uploadedMedia.type === "video" && destination === "home" && (
-              <div>
-                <p className="text-white/60 text-xs mb-2 font-medium">Категория</p>
-                <button
-                  onClick={onToggleCategoryPicker}
-                  className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-white/10 border border-white/15"
-                >
-                  <span className="text-white text-sm font-medium">
-                    {VIDEO_CATEGORIES.find(c => c.id === selectedCategory)?.label}
-                  </span>
-                  <Icon name="ChevronDown" size={16} className="text-white/50" />
-                </button>
-                {showCategoryPicker && (
-                  <div className="mt-1 bg-zinc-900 rounded-xl border border-white/10 overflow-hidden max-h-40 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-                    {VIDEO_CATEGORIES.map(cat => (
-                      <button
-                        key={cat.id}
-                        onClick={() => onCategoryChange(cat.id)}
-                        className={`w-full text-left px-4 py-2.5 text-sm border-b border-white/5 last:border-0 ${selectedCategory === cat.id ? "text-[#8b5cf6] font-semibold" : "text-white/80"}`}
-                      >
-                        {cat.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Хэштеги */}
-            <div>
-              <p className="text-white/60 text-xs mb-2 font-medium">Хэштеги</p>
-              <input
-                type="text"
-                value={hashtags}
-                onChange={e => onHashtagsChange(e.target.value)}
-                placeholder="#природа #фото #жизнь"
-                className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white text-sm placeholder:text-white/30 outline-none"
+              <p className="text-white/60 text-xs mb-2 font-medium">Описание</p>
+              <textarea
+                value={description}
+                onChange={e => onDescriptionChange(e.target.value)}
+                placeholder="Расскажи о публикации..."
+                rows={2}
+                className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white text-sm placeholder:text-white/30 outline-none resize-none"
               />
             </div>
+
+            {/* Кнопка «Ещё» */}
+            <button
+              onClick={() => setShowMore(v => !v)}
+              className="flex items-center gap-1.5 text-white/50 text-xs font-medium self-start"
+            >
+              <Icon name={showMore ? "ChevronUp" : "ChevronDown"} size={14} />
+              {showMore ? "Скрыть" : "Ещё"}
+            </button>
+
+            {showMore && (
+              <>
+                {/* Хэштеги */}
+                <div>
+                  <p className="text-white/60 text-xs mb-2 font-medium">Хэштеги</p>
+                  <input
+                    type="text"
+                    value={hashtags}
+                    onChange={e => onHashtagsChange(e.target.value)}
+                    placeholder="#природа #фото #жизнь"
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white text-sm placeholder:text-white/30 outline-none"
+                  />
+                </div>
+
+                {/* Destination picker */}
+                <div>
+                  <p className="text-white/60 text-xs mb-2 font-medium">Куда публиковать?</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => onDestinationChange("home")}
+                      className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl border transition-all ${destination === "home" ? "bg-[#fe2c55]/20 border-[#fe2c55]" : "bg-white/5 border-white/10"}`}
+                    >
+                      <Icon name="Play" size={20} className={destination === "home" ? "text-[#fe2c55]" : "text-white/50"} />
+                      <span className={`text-xs font-semibold ${destination === "home" ? "text-[#fe2c55]" : "text-white/50"}`}>Главная</span>
+                      <span className="text-white/30 text-[10px]">Видеолента</span>
+                    </button>
+                    <button
+                      onClick={() => onDestinationChange("feed")}
+                      className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl border transition-all ${destination === "feed" ? "bg-[#0095f6]/20 border-[#0095f6]" : "bg-white/5 border-white/10"}`}
+                    >
+                      <Icon name="LayoutList" size={20} className={destination === "feed" ? "text-[#0095f6]" : "text-white/50"} />
+                      <span className={`text-xs font-semibold ${destination === "feed" ? "text-[#0095f6]" : "text-white/50"}`}>Лента</span>
+                      <span className="text-white/30 text-[10px]">Фото и посты</span>
+                    </button>
+                  </div>
+                </div>
+
+                {uploadedMedia.type === "video" && destination === "home" && (
+                  <div>
+                    <p className="text-white/60 text-xs mb-2 font-medium">Категория</p>
+                    <button
+                      onClick={onToggleCategoryPicker}
+                      className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-white/10 border border-white/15"
+                    >
+                      <span className="text-white text-sm font-medium">
+                        {VIDEO_CATEGORIES.find(c => c.id === selectedCategory)?.label}
+                      </span>
+                      <Icon name="ChevronDown" size={16} className="text-white/50" />
+                    </button>
+                    {showCategoryPicker && (
+                      <div className="mt-1 bg-zinc-900 rounded-xl border border-white/10 overflow-hidden max-h-40 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
+                        {VIDEO_CATEGORIES.map(cat => (
+                          <button
+                            key={cat.id}
+                            onClick={() => onCategoryChange(cat.id)}
+                            className={`w-full text-left px-4 py-2.5 text-sm border-b border-white/5 last:border-0 ${selectedCategory === cat.id ? "text-[#8b5cf6] font-semibold" : "text-white/80"}`}
+                          >
+                            {cat.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
 
             {published ? (
               <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-green-500">
