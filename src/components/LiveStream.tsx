@@ -19,7 +19,13 @@ const GIFTS = ["🌹", "🎁", "💎", "🚀", "⭐", "🏆", "💰", "🎉"];
 interface ChatMsg { id: number; name: string; text: string; color: string; }
 interface Gift { id: number; emoji: string; x: number; }
 
+// Шаг 1: "ask" — экран с объяснением и кнопкой разрешить
+// Шаг 2: "ready" — камера работает, показываем превью
+// Шаг 3: "denied" — пользователь отказал, инструкция как разрешить вручную
+type CamStep = "ask" | "ready" | "denied";
+
 const LiveStream = ({ onClose }: { onClose: () => void }) => {
+  const [camStep, setCamStep] = useState<CamStep>("ask");
   const [isLive, setIsLive] = useState(false);
   const [viewers, setViewers] = useState(0);
   const [likes, setLikes] = useState(0);
@@ -30,7 +36,6 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
   const [showGifts, setShowGifts] = useState(false);
   const [facing, setFacing] = useState<"user" | "environment">("user");
   const [flipping, setFlipping] = useState(false);
-  const [camError, setCamError] = useState<string | null>(null);
 
   const chatRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -38,9 +43,7 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const chatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Запрашиваем камеру сразу при монтировании — videoRef уже в DOM
   useEffect(() => {
-    startCamera("user");
     return () => {
       streamRef.current?.getTracks().forEach(t => t.stop());
       if (timerRef.current) clearInterval(timerRef.current);
@@ -48,29 +51,28 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
     };
   }, []);
 
-  const startCamera = async (facingMode: "user" | "environment") => {
-    setCamError(null);
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-    }
+  // Вызывается по нажатию кнопки — это пользовательский жест, браузер покажет диалог
+  const requestCamera = async (facingMode: "user" | "environment" = "user") => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: true });
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode },
+        audio: true,
+      }).catch(() =>
+        // Если с audio отклонили — пробуем только video
+        navigator.mediaDevices.getUserMedia({ video: { facingMode } })
+      );
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
-    } catch (e: unknown) {
-      const err = e as Error;
-      // Пробуем без audio
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch {
-        setCamError(err.name);
-      }
+      setCamStep("ready");
+      return true;
+    } catch {
+      setCamStep("denied");
+      return false;
     }
   };
 
@@ -107,7 +109,7 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
     if (flipping) return;
     setFlipping(true);
     const next = facing === "user" ? "environment" : "user";
-    await startCamera(next);
+    await requestCamera(next);
     setFacing(next);
     setFlipping(false);
   };
@@ -129,10 +131,101 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
     setInputMsg("");
   };
 
+  // ── Экран 1: объяснение перед запросом камеры ──
+  if (camStep === "ask") {
+    return (
+      <div className="relative w-full h-full bg-black flex flex-col items-center justify-center px-8">
+        <button onClick={onClose} className="absolute top-12 right-4 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+          <Icon name="X" size={18} className="text-white" />
+        </button>
+
+        <div className="text-6xl mb-6">📸</div>
+        <h2 className="text-white font-bold text-2xl mb-3 text-center">Разреши камеру</h2>
+        <p className="text-white/50 text-sm text-center mb-8 leading-relaxed">
+          Для прямого эфира нужен доступ к камере и микрофону. После нажатия кнопки браузер спросит разрешение — нажми <span className="text-white font-semibold">«Разрешить»</span>.
+        </p>
+
+        <div className="w-full bg-white/5 rounded-2xl p-4 mb-8 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-[#fe2c55]/20 flex items-center justify-center shrink-0">
+              <Icon name="Camera" size={18} className="text-[#fe2c55]" />
+            </div>
+            <div>
+              <p className="text-white text-sm font-medium">Камера</p>
+              <p className="text-white/40 text-xs">Для видео в эфире</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-[#61d4f0]/20 flex items-center justify-center shrink-0">
+              <Icon name="Mic" size={18} className="text-[#61d4f0]" />
+            </div>
+            <div>
+              <p className="text-white text-sm font-medium">Микрофон</p>
+              <p className="text-white/40 text-xs">Для звука в эфире</p>
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={() => requestCamera("user")}
+          className="w-full py-4 rounded-2xl bg-[#fe2c55] text-white font-bold text-lg active:scale-95 transition-all flex items-center justify-center gap-3"
+        >
+          <Icon name="Camera" size={22} />
+          Разрешить и продолжить
+        </button>
+        <button onClick={onClose} className="mt-4 text-white/30 text-sm">
+          Отмена
+        </button>
+      </div>
+    );
+  }
+
+  // ── Экран 2: отказ — инструкция как разрешить вручную ──
+  if (camStep === "denied") {
+    return (
+      <div className="relative w-full h-full bg-black flex flex-col items-center justify-center px-8">
+        <button onClick={onClose} className="absolute top-12 right-4 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+          <Icon name="X" size={18} className="text-white" />
+        </button>
+
+        <div className="text-6xl mb-6">🔒</div>
+        <h2 className="text-white font-bold text-xl mb-3 text-center">Доступ к камере закрыт</h2>
+        <p className="text-white/50 text-sm text-center mb-6 leading-relaxed">
+          Ты нажал «Запретить». Чтобы разрешить вручную:
+        </p>
+
+        <div className="w-full bg-white/5 rounded-2xl p-4 mb-6 space-y-4 text-sm">
+          <div className="flex gap-3">
+            <span className="text-[#fe2c55] font-bold shrink-0">1.</span>
+            <span className="text-white/70">Нажми на значок <span className="text-white">🔒</span> слева в адресной строке браузера</span>
+          </div>
+          <div className="flex gap-3">
+            <span className="text-[#fe2c55] font-bold shrink-0">2.</span>
+            <span className="text-white/70">Найди пункт <span className="text-white">«Камера»</span> и выбери <span className="text-white">«Разрешить»</span></span>
+          </div>
+          <div className="flex gap-3">
+            <span className="text-[#fe2c55] font-bold shrink-0">3.</span>
+            <span className="text-white/70">Обнови страницу и открой эфир снова</span>
+          </div>
+        </div>
+
+        <button
+          onClick={() => requestCamera("user")}
+          className="w-full py-4 rounded-2xl bg-[#fe2c55] text-white font-bold text-base active:scale-95 transition-all"
+        >
+          Попробовать снова
+        </button>
+        <button onClick={onClose} className="mt-4 text-white/30 text-sm">
+          Закрыть
+        </button>
+      </div>
+    );
+  }
+
+  // ── Экран 3: камера работает — превью + эфир ──
   return (
     <div className="relative w-full h-full bg-black flex flex-col overflow-hidden">
 
-      {/* Видео — всегда в DOM, камера стартует при монтировании */}
       <div className="absolute inset-0 bg-zinc-950">
         <video
           ref={videoRef}
@@ -149,7 +242,6 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-black/30" />
       </div>
 
-      {/* Подарки */}
       {gifts.map(g => (
         <div key={g.id} className="absolute z-30 text-4xl pointer-events-none"
           style={{ left: `${g.x}%`, bottom: "30%", animation: "gift-float 2.5s ease-out forwards" }}>
@@ -157,7 +249,6 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
         </div>
       ))}
 
-      {/* Топ-бар */}
       <div className="relative z-20 flex items-center justify-between px-4 pt-12 pb-3">
         <div className="flex items-center gap-2">
           {isLive && (
@@ -190,30 +281,7 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
         </div>
       </div>
 
-      {/* Ошибка доступа к камере */}
-      {camError === "NotAllowedError" && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center px-8 bg-black/95">
-          <div className="text-5xl mb-4">📵</div>
-          <h3 className="text-white font-bold text-xl mb-2 text-center">Нет доступа к камере</h3>
-          <p className="text-white/60 text-sm text-center mb-6">
-            Яндекс Браузер заблокировал камеру. Разреши доступ:
-          </p>
-          <div className="bg-white/10 rounded-2xl p-4 w-full text-sm text-white/80 space-y-3 mb-6">
-            <div className="flex gap-3"><span className="text-[#fe2c55] font-bold">1.</span><span>Нажми на значок 🔒 в адресной строке браузера</span></div>
-            <div className="flex gap-3"><span className="text-[#fe2c55] font-bold">2.</span><span>Найди пункт «Камера» → выбери «Разрешить»</span></div>
-            <div className="flex gap-3"><span className="text-[#fe2c55] font-bold">3.</span><span>Обнови страницу и открой эфир снова</span></div>
-          </div>
-          <button
-            onClick={() => { setCamError(null); onClose(); }}
-            className="w-full py-3 rounded-2xl bg-[#fe2c55] text-white font-bold"
-          >
-            Понятно
-          </button>
-        </div>
-      )}
-
-      {/* Экран до начала — поверх видео */}
-      {!isLive && !camError && (
+      {!isLive && (
         <div className="relative z-20 flex-1 flex flex-col items-center justify-center gap-6 px-8">
           <div className="w-24 h-24 rounded-full bg-[#fe2c55]/20 border-2 border-[#fe2c55] flex items-center justify-center animate-pulse">
             <Icon name="Radio" size={40} className="text-[#fe2c55]" />
@@ -230,7 +298,6 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
         </div>
       )}
 
-      {/* Live UI */}
       {isLive && (
         <>
           <div className="absolute right-4 top-1/3 z-20 flex flex-col items-center gap-1">
