@@ -1,4 +1,4 @@
-import { RefObject, useState } from "react";
+import { RefObject, useState, useRef, KeyboardEvent } from "react";
 import Icon from "@/components/ui/icon";
 
 const FILTER_STYLES: Record<string, string> = {
@@ -74,6 +74,35 @@ const CameraPreview = ({
   onToggleCategoryPicker,
 }: CameraPreviewProps) => {
   const [showMore, setShowMore] = useState(false);
+  const [tagInput, setTagInput] = useState("");
+  const tagInputRef = useRef<HTMLInputElement>(null);
+
+  const chips = hashtags
+    ? hashtags.split(" ").map(t => t.replace(/^#+/, "")).filter(Boolean)
+    : [];
+
+  const addTag = (raw: string) => {
+    const tag = raw.replace(/^#+/, "").trim();
+    if (!tag) return;
+    if (!chips.includes(tag)) {
+      onHashtagsChange([...chips, tag].map(t => "#" + t).join(" "));
+    }
+    setTagInput("");
+  };
+
+  const removeTag = (tag: string) => {
+    onHashtagsChange(chips.filter(t => t !== tag).map(t => "#" + t).join(" "));
+  };
+
+  const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      addTag(tagInput);
+    } else if (e.key === "Backspace" && !tagInput && chips.length > 0) {
+      removeTag(chips[chips.length - 1]);
+    }
+  };
+
   return (
     <div className="absolute inset-0">
       <video
@@ -135,33 +164,34 @@ const CameraPreview = ({
                 {/* Хэштеги */}
                 <div>
                   <p className="text-white/60 text-xs mb-2 font-medium">Хэштеги</p>
-                  <input
-                    type="text"
-                    value={hashtags}
-                    onChange={e => {
-                      const val = e.target.value;
-                      const words = val.split(" ");
-                      const processed = words.map((w, i) => {
-                        if (w === "") return w;
-                        if (i === words.length - 1 && !val.endsWith(" ")) {
-                          return w.startsWith("#") ? w : "#" + w;
-                        }
-                        return w.startsWith("#") ? w : "#" + w;
-                      });
-                      onHashtagsChange(processed.join(" "));
-                    }}
-                    onKeyDown={e => {
-                      if (e.key === " ") {
-                        e.preventDefault();
-                        const cur = hashtags.trim();
-                        if (cur && !cur.endsWith(" ")) {
-                          onHashtagsChange(cur + " ");
-                        }
-                      }
-                    }}
-                    placeholder="#природа #фото #жизнь"
-                    className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white text-sm placeholder:text-white/30 outline-none"
-                  />
+                  <div
+                    className="flex flex-wrap gap-1.5 px-3 py-2.5 rounded-xl bg-white/10 border border-white/15 cursor-text min-h-[44px]"
+                    onClick={() => tagInputRef.current?.focus()}
+                  >
+                    {chips.map(tag => (
+                      <span
+                        key={tag}
+                        className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#00a2ff]/20 border border-[#00a2ff]/40 text-[#00a2ff] text-xs font-medium"
+                      >
+                        #{tag}
+                        <button
+                          type="button"
+                          onClick={e => { e.stopPropagation(); removeTag(tag); }}
+                          className="text-[#00a2ff]/60 hover:text-[#00a2ff] leading-none"
+                        >×</button>
+                      </span>
+                    ))}
+                    <input
+                      ref={tagInputRef}
+                      type="text"
+                      value={tagInput}
+                      onChange={e => setTagInput(e.target.value.replace(/^#+/, ""))}
+                      onKeyDown={handleTagKeyDown}
+                      onBlur={() => addTag(tagInput)}
+                      placeholder={chips.length === 0 ? "природа фото жизнь..." : ""}
+                      className="flex-1 min-w-[80px] bg-transparent text-white text-sm placeholder:text-white/30 outline-none"
+                    />
+                  </div>
                 </div>
 
                 {/* Destination picker */}
