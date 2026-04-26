@@ -30,9 +30,11 @@ const formatRelative = (iso: string | null | undefined): string => {
   }
 };
 
-export const useComments = (targetType: TargetType, targetId: string | number, enabled: boolean) => {
+export const useComments = (targetType: TargetType, targetId: string | number, enabled: boolean, initialCount = 0) => {
   const [comments, setComments] = useState<CommentItem[]>([]);
+  const [count, setCount] = useState<number>(initialCount);
   const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   const load = useCallback(async () => {
     if (!targetId) return;
@@ -48,6 +50,8 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
         time: formatRelative(c.time),
       }));
       setComments(list);
+      setCount(prev => Math.max(prev, list.length));
+      setLoaded(true);
     } catch {
       // молча
     } finally {
@@ -56,8 +60,8 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
   }, [targetType, targetId]);
 
   useEffect(() => {
-    if (enabled) load();
-  }, [enabled, load]);
+    if (enabled && !loaded) load();
+  }, [enabled, loaded, load]);
 
   const send = useCallback(async (text: string, authorName = "Я") => {
     const trimmed = text.trim();
@@ -69,6 +73,7 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
       time: "сейчас",
     };
     setComments(prev => [optimistic, ...prev]);
+    setCount(c => c + 1);
     try {
       const res = await fetch(COMMENTS_URL, {
         method: "POST",
@@ -95,5 +100,5 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
     }
   }, [targetType, targetId]);
 
-  return { comments, loading, send, reload: load };
+  return { comments, count, loading, send, reload: load };
 };

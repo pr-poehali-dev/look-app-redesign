@@ -15,7 +15,7 @@ const PostCard = ({ post }: { post: Post }) => {
   const [commentText, setCommentText] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const { comments: allComments, send } = useComments("post", post.id, showComments);
+  const { comments: allComments, count: commentCount, send } = useComments("post", post.id, showComments, post.comments || 0);
 
   const handleLike = () => {
     setLiked((v) => !v);
@@ -111,9 +111,9 @@ const PostCard = ({ post }: { post: Post }) => {
       )}
 
       {/* View comments */}
-      {post.comments > 0 && (
+      {commentCount > 0 && (
         <button onClick={() => setShowComments(true)} className="px-3 pb-1 block">
-          <span className="text-white/40 text-[13px]">Посмотреть все комментарии ({post.comments})</span>
+          <span className="text-white/40 text-[13px]">Посмотреть все комментарии ({commentCount})</span>
         </button>
       )}
 
@@ -153,7 +153,7 @@ const PostCard = ({ post }: { post: Post }) => {
         <div className="fixed inset-0 z-[9999] flex flex-col justify-end" onPointerDown={() => setShowComments(false)}>
           <div className="bg-zinc-900 rounded-t-3xl flex flex-col max-h-[70%]" onPointerDown={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/10">
-              <span className="text-white font-bold text-base">{allComments.length} комментариев</span>
+              <span className="text-white font-bold text-base">{commentCount} комментариев</span>
               <button onPointerDown={() => setShowComments(false)}>
                 <Icon name="X" size={20} className="text-white/60" />
               </button>

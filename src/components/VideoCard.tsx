@@ -34,7 +34,14 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
   const [copied, setCopied] = useState(false);
   const [commentText, setCommentText] = useState("");
   const videoRef = useRef<HTMLVideoElement>(null);
-  const { comments: allComments, send } = useComments("video", video.id, showComments);
+  const initialCommentCount = (() => {
+    const raw = String(video.comments || "0").trim().toUpperCase();
+    if (raw.endsWith("K")) return Math.round(parseFloat(raw) * 1000) || 0;
+    if (raw.endsWith("M")) return Math.round(parseFloat(raw) * 1_000_000) || 0;
+    return parseInt(raw, 10) || 0;
+  })();
+  const { comments: allComments, count: commentCount, send } = useComments("video", video.id, showComments, initialCommentCount);
+  const formatCount = (n: number) => n >= 1_000_000 ? (n / 1_000_000).toFixed(1) + "M" : n >= 1000 ? (n / 1000).toFixed(1) + "K" : String(n);
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -185,7 +192,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
           <div className="w-11 h-11 rounded-full flex items-center justify-center">
             <Icon name="MessageCircle" size={26} className="text-white" />
           </div>
-          <span className="text-white text-xs font-semibold">{video.comments}</span>
+          <span className="text-white text-xs font-semibold">{formatCount(commentCount)}</span>
         </button>
 
         {/* Send / Share */}
@@ -303,7 +310,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/10">
-              <span className="text-white font-bold text-base">{allComments.length} комментариев</span>
+              <span className="text-white font-bold text-base">{commentCount} комментариев</span>
               <button onPointerDown={() => setShowComments(false)}>
                 <Icon name="X" size={20} className="text-white/60" />
               </button>
