@@ -12,6 +12,14 @@ const AuthScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
+
+  const handleForgot = () => {
+    if (!forgotEmail.trim()) return;
+    setForgotSent(true);
+  };
 
   const handleSubmit = async () => {
     setError("");
@@ -106,6 +114,15 @@ const AuthScreen = () => {
               <Icon name={showPassword ? "EyeOff" : "Eye"} size={18} className="text-gray-400" />
             </button>
           </div>
+          {mode === "login" && (
+            <button
+              type="button"
+              onClick={() => { setShowForgot(true); setForgotEmail(email); setForgotSent(false); }}
+              className="self-end text-[#8b5cf6] text-xs font-semibold mt-1"
+            >
+              Забыли пароль?
+            </button>
+          )}
         </div>
 
         {error && (
@@ -123,6 +140,60 @@ const AuthScreen = () => {
           {loading ? "Загрузка..." : mode === "login" ? "Войти" : "Создать аккаунт"}
         </button>
       </div>
+
+      {showForgot && (
+        <div className="fixed inset-0 z-[9999] bg-black/60 flex items-end sm:items-center justify-center" onClick={() => setShowForgot(false)}>
+          <div className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl px-6 pt-6 pb-8 flex flex-col gap-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-black font-bold text-lg">Восстановление пароля</h2>
+              <button onClick={() => setShowForgot(false)} className="p-1">
+                <Icon name="X" size={20} className="text-gray-400" />
+              </button>
+            </div>
+
+            {!forgotSent ? (
+              <>
+                <p className="text-gray-500 text-sm">Введи email, на который мы отправим ссылку для восстановления пароля.</p>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</label>
+                  <input
+                    value={forgotEmail}
+                    onChange={e => setForgotEmail(e.target.value)}
+                    type="email"
+                    placeholder="example@mail.com"
+                    className="w-full px-4 py-3 rounded-xl bg-gray-100 text-black text-sm outline-none focus:ring-2 focus:ring-[#8b5cf6]/30"
+                  />
+                </div>
+                <button
+                  onClick={handleForgot}
+                  disabled={!forgotEmail.trim()}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold text-base disabled:opacity-40 transition-opacity"
+                >
+                  Отправить ссылку
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="flex flex-col items-center gap-3 py-4">
+                  <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+                    <Icon name="MailCheck" size={28} className="text-green-600" />
+                  </div>
+                  <p className="text-black font-semibold text-base text-center">Письмо отправлено</p>
+                  <p className="text-gray-500 text-sm text-center">
+                    Если аккаунт с адресом <span className="font-semibold text-black">{forgotEmail}</span> существует, мы отправили ссылку для восстановления пароля.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowForgot(false)}
+                  className="w-full py-3.5 rounded-xl bg-gray-100 text-black font-bold text-base"
+                >
+                  Понятно
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
