@@ -2,13 +2,9 @@ import json
 import os
 import hashlib
 import secrets
-import smtplib
-import ssl
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.utils import formataddr
 from datetime import datetime, timedelta
 import psycopg2
+import requests
 
 HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -28,14 +24,12 @@ def hash_pw(p):
 LAST_SMTP_ERROR = {'msg': ''}
 
 def send_email(to_email: str, reset_link: str) -> bool:
-    smtp_user = os.environ.get('SMTP_USER', '').strip()
-    smtp_password = os.environ.get('SMTP_PASSWORD', '').strip()
-    if not smtp_user or not smtp_password:
-        LAST_SMTP_ERROR['msg'] = 'no credentials'
+    api_key = os.environ.get('RESEND_API_KEY', '').strip()
+    if not api_key:
+        LAST_SMTP_ERROR['msg'] = 'no RESEND_API_KEY'
         return False
 
-    smtp_host = os.environ.get('SMTP_HOST', 'smtp.beget.com').strip()
-    smtp_port = int(os.environ.get('SMTP_PORT', '465').strip() or '465')
+    from_email = os.environ.get('RESEND_FROM_EMAIL', '').strip() or 'Look <onboarding@resend.dev>'
 
     html_body = f'''
         <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:20px;color:#111">
@@ -51,28 +45,27 @@ def send_email(to_email: str, reset_link: str) -> bool:
     '''
     text_body = f'Восстановление пароля\n\nОткрой ссылку, чтобы задать новый пароль:\n{reset_link}\n\nСсылка действует 1 час.'
 
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = 'Восстановление пароля'
-    msg['From'] = formataddr(('Look', smtp_user))
-    msg['To'] = to_email
-    msg.attach(MIMEText(text_body, 'plain', 'utf-8'))
-    msg.attach(MIMEText(html_body, 'html', 'utf-8'))
-
     try:
-        context = ssl.create_default_context()
-        if smtp_port == 465:
-            with smtplib.SMTP_SSL(smtp_host, smtp_port, context=context, timeout=15) as server:
-                server.login(smtp_user, smtp_password)
-                server.sendmail(smtp_user, [to_email], msg.as_string())
-        else:
-            with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server:
-                server.starttls(context=context)
-                server.login(smtp_user, smtp_password)
-                server.sendmail(smtp_user, [to_email], msg.as_string())
+        resp = requests.post(
+            'https://api.resend.com/emails',
+            headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+            json={
+                'from': from_email,
+                'to': [to_email],
+                'subject': 'Восстановление пароля',
+                'html': html_body,
+                'text': text_body,
+            },
+            timeout=15,
+        )
+        if resp.status_code >= 400:
+            LAST_SMTP_ERROR['msg'] = f'Resend {resp.status_code}: {resp.text}'
+            print(f'Resend error: {resp.status_code} {resp.text}')
+            return False
         return True
     except Exception as e:
         LAST_SMTP_ERROR['msg'] = f'{type(e).__name__}: {e}'
-        print(f'SMTP error: {type(e).__name__}: {e}')
+        print(f'Resend error: {type(e).__name__}: {e}')
         return False
 
 def handler(event: dict, context) -> dict:
@@ -92,12 +85,10 @@ def handler(event: dict, context) -> dict:
         if not to_email:
             return err('email required')
         link = 'https://visov.ru/?reset_token=TEST_TOKEN_123'
-        has_user = bool(os.environ.get('SMTP_USER', '').strip())
-        has_pass = bool(os.environ.get('SMTP_PASSWORD', '').strip())
-        smtp_host = os.environ.get('SMTP_HOST', 'smtp.beget.com').strip()
-        smtp_port = os.environ.get('SMTP_PORT', '465').strip()
+        has_key = bool(os.environ.get('RESEND_API_KEY', '').strip())
+        from_email = os.environ.get('RESEND_FROM_EMAIL', '').strip() or 'onboarding@resend.dev'
         sent = send_email(to_email, link)
-        return ok({'sent': sent, 'has_user': has_user, 'has_pass': has_pass, 'host': smtp_host, 'port': smtp_port, 'error': LAST_SMTP_ERROR['msg']})
+        return ok({'sent': sent, 'has_key': has_key, 'from': from_email, 'error': LAST_SMTP_ERROR['msg']})
 
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
