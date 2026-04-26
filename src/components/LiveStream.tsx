@@ -39,6 +39,8 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
   const [inputMsg, setInputMsg] = useState("");
   const [showGifts, setShowGifts] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
+  const [facing, setFacing] = useState<"user" | "environment">("user");
+  const [flipping, setFlipping] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -144,6 +146,23 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
     setShowGifts(false);
   };
 
+  const flipCamera = async () => {
+    if (flipping) return;
+    setFlipping(true);
+    const nextFacing = facing === "user" ? "environment" : "user";
+    try {
+      streamRef.current?.getTracks().forEach(t => t.stop());
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: nextFacing }, audio: true });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(() => {});
+      }
+      setFacing(nextFacing);
+    } catch { /* нет задней/фронтальной камеры */ }
+    setFlipping(false);
+  };
+
   const sendMessage = () => {
     if (!inputMsg.trim()) return;
     setChat((prev) => [
@@ -162,8 +181,8 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
           autoPlay
           muted
           playsInline
-          className={`w-full h-full object-cover ${cameraReady ? "opacity-100" : "opacity-0"}`}
-          style={{ transform: "scaleX(-1)" }}
+          className={`w-full h-full object-cover transition-opacity ${cameraReady ? "opacity-100" : "opacity-0"} ${flipping ? "opacity-0" : ""}`}
+          style={{ transform: facing === "user" ? "scaleX(-1)" : "none" }}
         />
         {!cameraReady && (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -209,12 +228,21 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
             </div>
           )}
         </div>
-        <button
-          onClick={onClose}
-          className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
-        >
-          <Icon name="X" size={18} className="text-white" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={flipCamera}
+            disabled={flipping}
+            className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform"
+          >
+            <Icon name="RefreshCw" size={16} className={`text-white ${flipping ? "animate-spin" : ""}`} />
+          </button>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
+          >
+            <Icon name="X" size={18} className="text-white" />
+          </button>
+        </div>
       </div>
 
       {/* Pre-live screen */}
