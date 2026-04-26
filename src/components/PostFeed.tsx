@@ -434,8 +434,11 @@ const PostFeed = () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const dbPosts: Post[] = (data.videos || []).map((v: any) => {
           const desc: string = v.description || "";
-          const tags = (desc.match(/#\S+/g) || []).map((t: string) => t.slice(1));
-          const caption = desc.replace(/#\S+/g, "").trim() || "Фото";
+          const hashtagsField: string = v.hashtags || "";
+          const tags = hashtagsField
+            ? (hashtagsField.match(/#\S+/g) || hashtagsField.split(/[\s,]+/).filter(Boolean).map((t: string) => t.replace(/^#/, ""))).map((t: string) => t.replace(/^#/, ""))
+            : (desc.match(/#\S+/g) || []).map((t: string) => t.slice(1));
+          const caption = desc || "Фото";
           return {
             id: v.id,
             author: (v.author === "Я" || !v.author) ? (user?.name || "Пользователь") : v.author,
