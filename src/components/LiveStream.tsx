@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 
 const FAKE_VIEWERS = [
@@ -33,49 +33,46 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
   const [camError, setCamError] = useState<string | null>(null);
 
   const chatRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const chatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // useCallback делает ref стабильным — React не будет пересоздавать <video>
-  const videoCallbackRef = useCallback((el: HTMLVideoElement | null) => {
-    videoRef.current = el;
-    if (el && streamRef.current) {
-      el.srcObject = streamRef.current;
-      el.play().catch(() => {});
-    }
-  }, []);
-
-  const startCamera = (facingMode: "user" | "environment") => {
-    setCamError(null);
-    // Сначала пробуем с audio, если не выйдет — только video
-    const tryGet = (constraints: MediaStreamConstraints) =>
-      navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-        streamRef.current = stream;
-        const v = videoRef.current ?? document.querySelector<HTMLVideoElement>("video[data-live]");
-        if (v) {
-          v.srcObject = stream;
-          v.play().catch((e) => setCamError("play() blocked: " + e.message));
-        } else {
-          setCamError("video element not found");
-        }
-      });
-
-    return tryGet({ video: { facingMode }, audio: true })
-      .catch(() => tryGet({ video: true, audio: false }))
-      .catch((e: Error) => {
-        setCamError(e.name + ": " + e.message);
-      });
-  };
-
+  // Запрашиваем камеру сразу при монтировании — videoRef уже в DOM
   useEffect(() => {
+    startCamera("user");
     return () => {
       streamRef.current?.getTracks().forEach(t => t.stop());
       if (timerRef.current) clearInterval(timerRef.current);
       if (chatTimerRef.current) clearInterval(chatTimerRef.current);
     };
   }, []);
+
+  const startCamera = async (facingMode: "user" | "environment") => {
+    setCamError(null);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: true });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (e: unknown) {
+      const err = e as Error;
+      // Пробуем без audio
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch {
+        setCamError(err.name);
+      }
+    }
+  };
 
   const formatTime = (s: number) => {
     const h = Math.floor(s / 3600);
@@ -85,10 +82,7 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
     return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
   };
 
-  const startLive = async () => {
-    // Сначала получаем камеру (в контексте клика — браузер разрешит)
-    await startCamera("user").catch(() => {});
-    // Только после этого переключаем UI — videoRef.current уже будет в DOM
+  const startLive = () => {
     setIsLive(true);
     setViewers(Math.floor(Math.random() * 50) + 10);
     setSeconds(0);
@@ -113,11 +107,8 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
     if (flipping) return;
     setFlipping(true);
     const next = facing === "user" ? "environment" : "user";
-    try {
-      streamRef.current?.getTracks().forEach(t => t.stop());
-      await startCamera(next);
-      setFacing(next);
-    } catch { /* нет камеры с этой стороны */ }
+    await startCamera(next);
+    setFacing(next);
     setFlipping(false);
   };
 
@@ -141,43 +132,21 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
   return (
     <div className="relative w-full h-full bg-black flex flex-col overflow-hidden">
 
-      {/* Фон — всегда видео с камеры */}
+      {/* Видео — всегда в DOM, камера стартует при монтировании */}
       <div className="absolute inset-0 bg-zinc-950">
         <video
-          ref={videoCallbackRef}
-          data-live
+          ref={videoRef}
           autoPlay
           muted
           playsInline
           className="w-full h-full object-cover"
-          style={{ transform: facing === "user" ? "scaleX(-1)" : "none", opacity: flipping ? 0 : 1, transition: "opacity 0.2s" }}
+          style={{
+            transform: facing === "user" ? "scaleX(-1)" : "none",
+            opacity: flipping ? 0 : 1,
+            transition: "opacity 0.2s",
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-black/30" />
-        {camError && camError.includes("NotAllowed") && (
-          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center px-8 bg-black/95">
-            <div className="text-5xl mb-4">📵</div>
-            <h3 className="text-white font-bold text-xl mb-2 text-center">Нет доступа к камере</h3>
-            <p className="text-white/60 text-sm text-center mb-6">
-              Браузер заблокировал камеру. Разреши доступ вручную:
-            </p>
-            <div className="bg-white/10 rounded-2xl p-4 w-full text-sm text-white/80 space-y-2 mb-6">
-              <div className="flex gap-2"><span>1.</span><span>Нажми на иконку 🔒 или ⓘ в адресной строке</span></div>
-              <div className="flex gap-2"><span>2.</span><span>Найди «Камера» и выбери «Разрешить»</span></div>
-              <div className="flex gap-2"><span>3.</span><span>Обнови страницу и попробуй снова</span></div>
-            </div>
-            <button
-              onClick={() => { setCamError(null); setIsLive(false); }}
-              className="w-full py-3 rounded-2xl bg-[#fe2c55] text-white font-bold"
-            >
-              Понятно
-            </button>
-          </div>
-        )}
-        {camError && !camError.includes("NotAllowed") && (
-          <div className="absolute bottom-4 left-4 right-4 bg-red-900/90 text-white text-xs p-3 rounded-xl z-50 break-all">
-            Ошибка камеры: {camError}
-          </div>
-        )}
       </div>
 
       {/* Подарки */}
@@ -221,8 +190,30 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
         </div>
       </div>
 
-      {/* Экран до начала */}
-      {!isLive && (
+      {/* Ошибка доступа к камере */}
+      {camError === "NotAllowedError" && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center px-8 bg-black/95">
+          <div className="text-5xl mb-4">📵</div>
+          <h3 className="text-white font-bold text-xl mb-2 text-center">Нет доступа к камере</h3>
+          <p className="text-white/60 text-sm text-center mb-6">
+            Яндекс Браузер заблокировал камеру. Разреши доступ:
+          </p>
+          <div className="bg-white/10 rounded-2xl p-4 w-full text-sm text-white/80 space-y-3 mb-6">
+            <div className="flex gap-3"><span className="text-[#fe2c55] font-bold">1.</span><span>Нажми на значок 🔒 в адресной строке браузера</span></div>
+            <div className="flex gap-3"><span className="text-[#fe2c55] font-bold">2.</span><span>Найди пункт «Камера» → выбери «Разрешить»</span></div>
+            <div className="flex gap-3"><span className="text-[#fe2c55] font-bold">3.</span><span>Обнови страницу и открой эфир снова</span></div>
+          </div>
+          <button
+            onClick={() => { setCamError(null); onClose(); }}
+            className="w-full py-3 rounded-2xl bg-[#fe2c55] text-white font-bold"
+          >
+            Понятно
+          </button>
+        </div>
+      )}
+
+      {/* Экран до начала — поверх видео */}
+      {!isLive && !camError && (
         <div className="relative z-20 flex-1 flex flex-col items-center justify-center gap-6 px-8">
           <div className="w-24 h-24 rounded-full bg-[#fe2c55]/20 border-2 border-[#fe2c55] flex items-center justify-center animate-pulse">
             <Icon name="Radio" size={40} className="text-[#fe2c55]" />
