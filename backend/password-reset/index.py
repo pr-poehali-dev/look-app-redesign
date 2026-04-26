@@ -25,8 +25,9 @@ def send_email(to_email: str, reset_link: str) -> bool:
     api_key = os.environ.get('RESEND_API_KEY', '').strip()
     if not api_key:
         return False
+    from_email = os.environ.get('RESEND_FROM_EMAIL', '').strip() or 'Look <onboarding@resend.dev>'
     payload = {
-        'from': 'Look <onboarding@resend.dev>',
+        'from': from_email,
         'to': [to_email],
         'subject': 'Восстановление пароля',
         'html': f'''
