@@ -38,6 +38,15 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const chatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const attachStream = (stream: MediaStream) => {
+    streamRef.current = stream;
+    const v = videoRef.current ?? document.querySelector<HTMLVideoElement>("#live-video");
+    if (v) {
+      v.srcObject = stream;
+      v.play().catch(() => {});
+    }
+  };
+
   const startCamera = async (facingMode: "user" | "environment" = "user") => {
     if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
     try {
@@ -47,8 +56,7 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
       } catch {
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
       }
-      streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
+      attachStream(stream);
       setDenied(false);
     } catch {
       setDenied(true);
@@ -64,6 +72,15 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
       if (chatTimerRef.current) clearInterval(chatTimerRef.current);
     };
   }, []);
+
+  // Страховка на каждый рендер: если стрим есть, а video ещё без srcObject — подключаем
+  useEffect(() => {
+    const v = videoRef.current;
+    if (v && streamRef.current && !v.srcObject) {
+      v.srcObject = streamRef.current;
+      v.play().catch(() => {});
+    }
+  });
 
   const formatTime = (s: number) => {
     const h = Math.floor(s / 3600);
@@ -193,6 +210,7 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
       <div className="absolute inset-0 bg-zinc-950">
         <video
           ref={videoRef}
+          id="live-video"
           autoPlay
           muted
           playsInline
