@@ -21,6 +21,7 @@ interface Gift { id: number; emoji: string; x: number; }
 
 const LiveStream = ({ onClose }: { onClose: () => void }) => {
   const [denied, setDenied] = useState(false);
+  const [camErrorMsg, setCamErrorMsg] = useState("");
   const [isLive, setIsLive] = useState(false);
   const [viewers, setViewers] = useState(0);
   const [likes, setLikes] = useState(0);
@@ -47,10 +48,12 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
       } catch {
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
       }
-      // Сохраняем стрим — useEffect подхватит и привяжет к video после рендера
       streamRef.current = stream;
       setDenied(false);
-    } catch {
+      setCamErrorMsg("");
+    } catch (e: unknown) {
+      const err = e as Error;
+      setCamErrorMsg(`${err.name}: ${err.message}`);
       setDenied(true);
     }
   };
@@ -140,6 +143,11 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
 
         <div className="text-5xl mb-4 text-center">📷</div>
         <h2 className="text-white font-bold text-xl mb-2 text-center">Включи доступ к камере</h2>
+        {camErrorMsg && (
+          <div className="bg-red-900/60 rounded-xl px-3 py-2 mb-4 w-full">
+            <p className="text-red-300 text-xs font-mono break-all">{camErrorMsg}</p>
+          </div>
+        )}
         <p className="text-white/50 text-sm text-center mb-6 leading-relaxed">
           Внизу экрана открылась панель «Разрешения». Сделай так:
         </p>
