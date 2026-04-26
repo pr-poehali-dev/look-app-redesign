@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 
 const FAKE_VIEWERS = [
@@ -37,22 +37,24 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const chatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // ref callback — вызывается каждый раз когда <video> монтируется в DOM
-  const videoCallbackRef = (el: HTMLVideoElement | null) => {
+  // useCallback делает ref стабильным — React не будет пересоздавать <video>
+  const videoCallbackRef = useCallback((el: HTMLVideoElement | null) => {
     videoRef.current = el;
     if (el && streamRef.current) {
       el.srcObject = streamRef.current;
       el.play().catch(() => {});
     }
-  };
+  }, []);
 
   const startCamera = (facingMode: "user" | "environment") =>
     navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: true })
       .then((stream) => {
         streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play().catch(() => {});
+        // videoRef.current может быть null если ещё не смонтирован — ищем напрямую
+        const v = videoRef.current ?? document.querySelector<HTMLVideoElement>("video[data-live]");
+        if (v) {
+          v.srcObject = stream;
+          v.play().catch(() => {});
         }
       });
 
@@ -72,9 +74,10 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
     return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
   };
 
-  const startLive = () => {
-    // Запускаем камеру прямо внутри обработчика клика — браузер разрешит autoplay
-    startCamera("user").catch(() => {});
+  const startLive = async () => {
+    // Сначала получаем камеру (в контексте клика — браузер разрешит)
+    await startCamera("user").catch(() => {});
+    // Только после этого переключаем UI — videoRef.current уже будет в DOM
     setIsLive(true);
     setViewers(Math.floor(Math.random() * 50) + 10);
     setSeconds(0);
@@ -131,6 +134,7 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
       <div className="absolute inset-0 bg-zinc-950">
         <video
           ref={videoCallbackRef}
+          data-live
           autoPlay
           muted
           playsInline
