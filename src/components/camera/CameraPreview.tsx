@@ -9,6 +9,24 @@ const FILTER_STYLES: Record<string, string> = {
   vivid: "saturate(2) contrast(1.1)",
 };
 
+const SUGGESTED_TAGS: Record<string, string[]> = {
+  music: ["музыка", "трек", "исполнитель", "песня", "cover"],
+  dance: ["танцы", "choreography", "движение", "dancevideo"],
+  sport: ["спорт", "тренировка", "фитнес", "gym", "мотивация"],
+  humor: ["юмор", "смешно", "мем", "приколы", "лол"],
+  travel: ["путешествия", "природа", "поездка", "мир", "adventure"],
+  food: ["еда", "рецепт", "вкусно", "кухня", "foodporn"],
+  style: ["стиль", "мода", "outfit", "fashion", "образ"],
+  gaming: ["игры", "gaming", "стрим", "геймер", "play"],
+  nature: ["природа", "пейзаж", "закат", "лес", "красота"],
+  animals: ["животные", "питомцы", "кот", "собака", "cute"],
+  beauty: ["красота", "макияж", "уход", "beauty", "skincare"],
+  diy: ["сделайсам", "творчество", "handmade", "дизайн", "проект"],
+  science: ["наука", "технологии", "факты", "эксперимент", "познавательно"],
+  auto: ["авто", "машина", "тюнинг", "drive", "car"],
+  feed: ["фото", "момент", "жизнь", "настроение", "daily"],
+};
+
 const VIDEO_CATEGORIES = [
   { id: "music", label: "Музыка" },
   { id: "dance", label: "Танцы" },
@@ -192,6 +210,30 @@ const CameraPreview = ({
                       className="flex-1 min-w-[80px] bg-transparent text-white text-sm placeholder:text-white/30 outline-none"
                     />
                   </div>
+                  {/* Подсказки */}
+                  {(() => {
+                    const key = destination === "feed" ? "feed" : selectedCategory;
+                    const suggestions = (SUGGESTED_TAGS[key] || SUGGESTED_TAGS["feed"]).filter(t => !chips.includes(t));
+                    if (!suggestions.length) return null;
+                    return (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {suggestions.slice(0, 6).map(tag => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => {
+                              if (!chips.includes(tag)) {
+                                onHashtagsChange([...chips, tag].map(t => "#" + t).join(" "));
+                              }
+                            }}
+                            className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/40 text-xs hover:bg-white/10 hover:text-white/70 transition-colors"
+                          >
+                            <span className="text-white/25">+</span> #{tag}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Destination picker */}
