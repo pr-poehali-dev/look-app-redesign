@@ -141,45 +141,32 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
           <Icon name="X" size={18} className="text-white" />
         </button>
 
-        <div className="text-5xl mb-4 text-center">📷</div>
-        <h2 className="text-white font-bold text-xl mb-2 text-center">Включи доступ к камере</h2>
-        {camErrorMsg && (
-          <div className="bg-red-900/60 rounded-xl px-3 py-2 mb-4 w-full">
-            <p className="text-red-300 text-xs font-mono break-all">{camErrorMsg}</p>
-          </div>
-        )}
-        <p className="text-white/50 text-sm text-center mb-6 leading-relaxed">
-          Внизу экрана открылась панель «Разрешения». Сделай так:
-        </p>
+        <div className="text-5xl mb-3 text-center">🔒</div>
+        <h2 className="text-white font-bold text-xl mb-1 text-center">Камера заблокирована</h2>
+        <p className="text-white/40 text-xs text-center mb-5">Яндекс Браузер запретил доступ к камере</p>
 
-        <div className="bg-white/5 rounded-2xl p-4 mb-3">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="w-6 h-6 rounded-full bg-[#fe2c55] text-white text-xs font-bold flex items-center justify-center shrink-0">1</span>
-            <span className="text-white text-sm font-semibold">Включи переключатель «Камера»</span>
-          </div>
-          <div className="bg-zinc-800 rounded-xl px-4 py-3 flex items-center justify-between">
-            <span className="text-white/80 text-sm">Камера</span>
-            <div className="flex items-center gap-2">
-              <span className="text-[#fe2c55] text-xs font-bold">← включи</span>
-              <div className="w-11 h-6 rounded-full bg-[#fe2c55] flex items-center justify-end px-0.5">
-                <div className="w-5 h-5 rounded-full bg-white shadow" />
-              </div>
+        <p className="text-white/70 text-sm font-semibold mb-3">Открой настройки браузера:</p>
+
+        <div className="space-y-2 mb-6">
+          {[
+            { n: "1", text: 'Нажми ··· (три точки) внизу экрана браузера' },
+            { n: "2", text: 'Выбери «Настройки»' },
+            { n: "3", text: 'Перейди в «Сайты» → «Камера»' },
+            { n: "4", text: `Найди ${window.location.hostname} и выбери «Разрешить»` },
+            { n: "5", text: 'Вернись сюда и нажми «Попробовать снова»' },
+          ].map(s => (
+            <div key={s.n} className="bg-white/5 rounded-xl px-4 py-3 flex items-center gap-3">
+              <span className="w-6 h-6 rounded-full bg-[#fe2c55] text-white text-xs font-bold flex items-center justify-center shrink-0">{s.n}</span>
+              <span className="text-white/80 text-sm">{s.text}</span>
             </div>
-          </div>
-        </div>
-
-        <div className="bg-white/5 rounded-2xl p-4 mb-6">
-          <div className="flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-[#fe2c55] text-white text-xs font-bold flex items-center justify-center shrink-0">2</span>
-            <span className="text-white text-sm font-semibold">Нажми кнопку «Обновить страницу» ниже</span>
-          </div>
+          ))}
         </div>
 
         <button
-          onClick={() => window.location.reload()}
+          onClick={() => startCamera("user")}
           className="w-full py-4 rounded-2xl bg-[#fe2c55] text-white font-bold text-base active:scale-95 transition-all mb-3"
         >
-          Обновить страницу
+          Попробовать снова
         </button>
         <button onClick={onClose} className="text-white/30 text-sm text-center">
           Закрыть
