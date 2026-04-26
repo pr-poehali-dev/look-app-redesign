@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
-import { Post, MOCK_COMMENTS, formatLikes } from "./PostFeedTypes";
+import { Post, formatLikes } from "./PostFeedTypes";
+import { useComments } from "@/hooks/useComments";
 
 const PostCard = ({ post }: { post: Post }) => {
   const [liked, setLiked] = useState(false);
@@ -12,10 +13,9 @@ const PostCard = ({ post }: { post: Post }) => {
   const [showShare, setShowShare] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [commentText, setCommentText] = useState("");
-  const [extraComments, setExtraComments] = useState<typeof MOCK_COMMENTS>([]);
   const [copied, setCopied] = useState(false);
 
-  const allComments = [...extraComments, ...MOCK_COMMENTS];
+  const { comments: allComments, send } = useComments("post", post.id, showComments);
 
   const handleLike = () => {
     setLiked((v) => !v);
@@ -24,7 +24,7 @@ const PostCard = ({ post }: { post: Post }) => {
 
   const handleSendComment = () => {
     if (!commentText.trim()) return;
-    setExtraComments(prev => [{ id: Date.now(), name: "Я", text: commentText.trim(), time: "сейчас" }, ...prev]);
+    send(commentText);
     setCommentText("");
   };
 
@@ -162,7 +162,7 @@ const PostCard = ({ post }: { post: Post }) => {
               {allComments.map(c => (
                 <div key={c.id} className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-xs font-bold">{c.name[0].toUpperCase()}</span>
+                    <span className="text-white text-xs font-bold">{(c.name || "?")[0].toUpperCase()}</span>
                   </div>
                   <div className="flex-1">
                     <span className="text-white font-semibold text-sm mr-2">{c.name}</span>

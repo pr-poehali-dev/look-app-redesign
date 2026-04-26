@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
+import { useComments } from "@/hooks/useComments";
 
 export interface VideoData {
   id: number;
@@ -21,14 +22,6 @@ interface VideoCardProps {
   isActive: boolean;
 }
 
-const MOCK_COMMENTS = [
-  { id: 1, name: "anya_dance", text: "🔥 Это просто огонь!", time: "1 мин" },
-  { id: 2, name: "max_parkour", text: "Лучшее что я видел сегодня 😂", time: "3 мин" },
-  { id: 3, name: "cozy_coffee", text: "Подписалась сразу!", time: "5 мин" },
-  { id: 4, name: "travel_rus", text: "Продолжай в том же духе 👏", time: "12 мин" },
-  { id: 5, name: "fit_pro", text: "Как ты это делаешь?? 🤯", time: "20 мин" },
-];
-
 const VideoCard = ({ video, isActive }: VideoCardProps) => {
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -40,8 +33,8 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
   const [showShare, setShowShare] = useState(false);
   const [copied, setCopied] = useState(false);
   const [commentText, setCommentText] = useState("");
-  const [extraComments, setExtraComments] = useState<typeof MOCK_COMMENTS>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { comments: allComments, send } = useComments("video", video.id, showComments);
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -63,14 +56,9 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
 
   const handleSendComment = () => {
     if (!commentText.trim()) return;
-    setExtraComments(prev => [
-      { id: Date.now(), name: "Я", text: commentText.trim(), time: "сейчас" },
-      ...prev,
-    ]);
+    send(commentText);
     setCommentText("");
   };
-
-  const allComments = [...extraComments, ...MOCK_COMMENTS];
 
   const isVideo = video.isVideo ?? (video.image.includes('.mp4') || video.image.includes('.mov') || video.image.includes('.webm'));
 
@@ -326,7 +314,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
               {allComments.map(c => (
                 <div key={c.id} className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-xs font-bold">{c.name[0].toUpperCase()}</span>
+                    <span className="text-white text-xs font-bold">{(c.name || "?")[0].toUpperCase()}</span>
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-0.5">

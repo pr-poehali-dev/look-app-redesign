@@ -1,0 +1,17 @@
+{
+  "tests": [
+    {
+      "name": "POST comment",
+      "method": "POST",
+      "path": "/",
+      "body": {"target_type": "video", "target_id": "test-1", "text": "Hello", "author_name": "Test"},
+      "expectedStatus": 200
+    },
+    {
+      "name": "GET comments",
+      "method": "GET",
+      "path": "/?target_type=video&target_id=test-1",
+      "expectedStatus": 200
+    }
+  ]
+}
