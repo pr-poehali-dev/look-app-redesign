@@ -153,7 +153,27 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
           style={{ transform: facing === "user" ? "scaleX(-1)" : "none", opacity: flipping ? 0 : 1, transition: "opacity 0.2s" }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-black/30" />
-        {camError && (
+        {camError && camError.includes("NotAllowed") && (
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center px-8 bg-black/95">
+            <div className="text-5xl mb-4">📵</div>
+            <h3 className="text-white font-bold text-xl mb-2 text-center">Нет доступа к камере</h3>
+            <p className="text-white/60 text-sm text-center mb-6">
+              Браузер заблокировал камеру. Разреши доступ вручную:
+            </p>
+            <div className="bg-white/10 rounded-2xl p-4 w-full text-sm text-white/80 space-y-2 mb-6">
+              <div className="flex gap-2"><span>1.</span><span>Нажми на иконку 🔒 или ⓘ в адресной строке</span></div>
+              <div className="flex gap-2"><span>2.</span><span>Найди «Камера» и выбери «Разрешить»</span></div>
+              <div className="flex gap-2"><span>3.</span><span>Обнови страницу и попробуй снова</span></div>
+            </div>
+            <button
+              onClick={() => { setCamError(null); setIsLive(false); }}
+              className="w-full py-3 rounded-2xl bg-[#fe2c55] text-white font-bold"
+            >
+              Понятно
+            </button>
+          </div>
+        )}
+        {camError && !camError.includes("NotAllowed") && (
           <div className="absolute bottom-4 left-4 right-4 bg-red-900/90 text-white text-xs p-3 rounded-xl z-50 break-all">
             Ошибка камеры: {camError}
           </div>
