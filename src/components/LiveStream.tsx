@@ -46,16 +46,36 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
   const chatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true })
-      .then((stream) => {
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-        setCameraReady(true);
-      })
-      .catch(() => setCameraReady(false));
+    const acquire = () =>
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true })
+        .then((stream) => {
+          streamRef.current = stream;
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            videoRef.current.play().catch(() => {});
+          }
+          setCameraReady(true);
+        })
+        .catch(() => {
+          // Камера могла не освободиться — пробуем ещё раз через 500ms
+          setTimeout(() => {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true })
+              .then((stream) => {
+                streamRef.current = stream;
+                if (videoRef.current) {
+                  videoRef.current.srcObject = stream;
+                  videoRef.current.play().catch(() => {});
+                }
+                setCameraReady(true);
+              })
+              .catch(() => setCameraReady(false));
+          }, 500);
+        });
+
+    // Небольшая задержка чтобы предыдущий поток успел освободиться
+    const t = setTimeout(acquire, 300);
     return () => {
+      clearTimeout(t);
       streamRef.current?.getTracks().forEach(t => t.stop());
     };
   }, []);
@@ -101,6 +121,15 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
       streamRef.current?.getTracks().forEach(t => t.stop());
     };
   }, []);
+
+  useEffect(() => {
+    if (cameraReady && streamRef.current && videoRef.current) {
+      if (!videoRef.current.srcObject) {
+        videoRef.current.srcObject = streamRef.current;
+        videoRef.current.play().catch(() => {});
+      }
+    }
+  }, [cameraReady]);
 
   useEffect(() => {
     if (chatRef.current) {
