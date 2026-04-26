@@ -5,6 +5,7 @@ import CameraPreview from "@/components/camera/CameraPreview";
 import CameraTopBar from "@/components/camera/CameraTopBar";
 import CameraMusicPanel from "@/components/camera/CameraMusicPanel";
 import CameraBottomControls from "@/components/camera/CameraBottomControls";
+import LiveStream from "@/components/LiveStream";
 
 const TRACKS = [
   { id: 1, title: "Roses Remix", artist: "Imanbek", duration: "2:34", color: "#fe2c55" },
@@ -50,6 +51,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
   const [destination, setDestination] = useState<"home" | "feed">("home");
   const [hashtags, setHashtags] = useState("");
   const [description, setDescription] = useState("");
+  const [showLive, setShowLive] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -170,6 +172,18 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
     }
   };
 
+  const handleGoLive = () => {
+    // Останавливаем камеру CameraScreen чтобы LiveStream мог её захватить
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+    setShowLive(true);
+  };
+
+  if (showLive) {
+    return <LiveStream onClose={onClose} />;
+  }
+
   return (
     <div className="relative w-full h-full bg-black overflow-hidden flex flex-col">
 
@@ -247,16 +261,29 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
         onRemoveTrack={() => { setSelectedTrack(null); removeUploadedAudio(); }}
       />
 
-      <CameraBottomControls
-        filter={filter}
-        recording={recording}
-        flipping={flipping}
-        uploadedMedia={uploadedMedia}
-        mediaInputRef={mediaInputRef}
-        onFilterChange={setFilter}
-        onShutter={handleShutter}
-        onFlipCamera={flipCamera}
-      />
+      {mode === "Прямой эфир" ? (
+        <div className="relative z-20 flex flex-col items-center gap-4 px-8 pb-14 pt-4">
+          <p className="text-white/50 text-sm text-center">Зрители увидят твой экран в реальном времени</p>
+          <button
+            onClick={handleGoLive}
+            className="w-full py-4 rounded-2xl bg-[#fe2c55] text-white font-bold text-lg flex items-center justify-center gap-3 active:scale-95 transition-transform"
+          >
+            <div className="w-3 h-3 rounded-full bg-white animate-pulse" />
+            Начать эфир
+          </button>
+        </div>
+      ) : (
+        <CameraBottomControls
+          filter={filter}
+          recording={recording}
+          flipping={flipping}
+          uploadedMedia={uploadedMedia}
+          mediaInputRef={mediaInputRef}
+          onFilterChange={setFilter}
+          onShutter={handleShutter}
+          onFlipCamera={flipCamera}
+        />
+      )}
     </div>
   );
 };
