@@ -71,7 +71,7 @@ const AppContent = () => {
       try {
         const res = await fetch(
           `${CHAT_API}?module=signal&room_id=incoming_${user.id}&since_id=${lastSigRef.current}`,
-          { headers: { "X-User-Id": user.id, "X-User-Name": user.name } }
+          { headers: { "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) } }
         );
         const raw = await res.json();
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;

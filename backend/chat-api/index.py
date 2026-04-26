@@ -28,8 +28,9 @@ def handler(event: dict, context) -> dict:
     method = event.get('httpMethod', 'GET')
     params = event.get('queryStringParameters') or {}
     req_headers = event.get('headers') or {}
+    from urllib.parse import unquote
     user_id = req_headers.get('X-User-Id', 'anon')
-    user_name = req_headers.get('X-User-Name', 'Гость')
+    user_name = unquote(req_headers.get('X-User-Name', 'Гость'))
     module = params.get('module', 'chat')
 
     try:

@@ -38,7 +38,7 @@ const CommunitiesScreen = ({ onBack }: Props) => {
   const loadCommunities = () => {
     if (!user) return;
     fetch(`${API}?module=community&action=list`, {
-      headers: { "X-User-Id": user.id, "X-User-Name": user.name },
+      headers: { "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
     })
       .then(r => r.json())
       .then(raw => {
@@ -60,7 +60,7 @@ const CommunitiesScreen = ({ onBack }: Props) => {
     const action = com.joined ? "leave" : "join";
     await fetch(`${API}?module=community`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": user.name },
+      headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
       body: JSON.stringify({ action, community_id: com.id }),
     });
     setCommunities(prev => prev.map(c => c.id === com.id ? { ...c, joined: !c.joined, members: c.members + (c.joined ? -1 : 1) } : c));
@@ -71,7 +71,7 @@ const CommunitiesScreen = ({ onBack }: Props) => {
     setCreating(true);
     const res = await fetch(`${API}?module=community`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": user.name },
+      headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
       body: JSON.stringify({ action: "create", name: newName.trim(), description: newDesc, type: newType, category: newCategory }),
     });
     const raw = await res.json();

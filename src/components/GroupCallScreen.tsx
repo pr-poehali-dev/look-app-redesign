@@ -40,7 +40,7 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
   const sendSig = useCallback(async (toUser: string, type: string, payload: unknown) => {
     await fetch(`${API}?module=signal`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-User-Id": myId, "X-User-Name": myName },
+      headers: { "Content-Type": "application/json", "X-User-Id": myId, "X-User-Name": encodeURIComponent(myName) },
       body: JSON.stringify({ room_id: roomId, to_user: toUser, type, payload }),
     }).catch(() => {});
   }, [myId, myName, roomId]);
@@ -132,7 +132,7 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
       pollRef.current = setInterval(async () => {
         try {
           const res = await fetch(`${API}?module=signal&room_id=${roomId}&since_id=${lastSigRef.current}`,
-            { headers: { "X-User-Id": myId, "X-User-Name": myName } });
+            { headers: { "X-User-Id": myId, "X-User-Name": encodeURIComponent(myName) } });
           const raw = await res.json();
           const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
           for (const sig of data.signals || []) await handleSig(sig);
@@ -194,7 +194,7 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
               <span className="text-white text-[11px]">Вы</span>
             </div>
           </div>
-          {peers.map(peer => <RemoteVideoTile key={peer.id} peer={peer} />)}
+          {peers.map(peer => <RemoteVideoTile key={peer.id} peer={peer} stream={peer.stream} />)}
           {peers.length === 0 && (
             <div className="col-span-2 flex items-center justify-center py-10">
               <p className="text-white/25 text-sm">Ожидание участников...</p>
@@ -234,13 +234,13 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
   );
 };
 
-const RemoteVideoTile = ({ peer }: { peer: PeerEntry }) => {
+const RemoteVideoTile = ({ peer, stream }: { peer: PeerEntry; stream: MediaStream | null }) => {
   const ref = useRef<HTMLVideoElement>(null);
-  useEffect(() => { if (ref.current && peer.stream) ref.current.srcObject = peer.stream; }, [peer.stream]);
+  useEffect(() => { if (ref.current) ref.current.srcObject = stream; }, [stream]);
   return (
     <div className="relative rounded-2xl overflow-hidden bg-zinc-900 aspect-video">
       <video ref={ref} autoPlay playsInline className="w-full h-full object-cover" />
-      {!peer.stream && (
+      {!stream && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center">
             <span className="text-white font-bold text-xl">{peer.name.charAt(0).toUpperCase()}</span>

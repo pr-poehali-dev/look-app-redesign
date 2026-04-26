@@ -56,7 +56,7 @@ const MessagesScreen = () => {
   const loadChats = () => {
     if (!user) return;
     fetch(`${CHAT_API}?module=chat&action=list`, {
-      headers: { "X-User-Id": user.id, "X-User-Name": user.name },
+      headers: { "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
     })
       .then(r => r.json())
       .then(raw => {
@@ -75,7 +75,7 @@ const MessagesScreen = () => {
   const loadOnlineUsers = () => {
     if (!user) return;
     fetch(`${CHAT_API}?module=chat&action=online`, {
-      headers: { "X-User-Id": user.id, "X-User-Name": user.name },
+      headers: { "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
     })
       .then(r => r.json())
       .then(raw => {
@@ -106,7 +106,7 @@ const MessagesScreen = () => {
     try {
       const res = await fetch(CHAT_API + "?module=chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": user.name },
+        headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
         body: JSON.stringify({ action: "create_chat", name: newChatName.trim(), chat_type: "personal" }),
       });
       const raw = await res.json();
@@ -137,7 +137,7 @@ const MessagesScreen = () => {
     const roomId = `call_${[user.id, u.id].sort().join("_")}`;
     await fetch(`${CHAT_API}?module=signal`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": user.name },
+      headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
       body: JSON.stringify({
         room_id: `incoming_${u.id}`,
         to_user: u.id,

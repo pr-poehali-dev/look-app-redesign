@@ -45,7 +45,7 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
     try {
       const res = await fetch(
         `${API}?module=chat&action=messages&chat_id=${chatId}&since_id=${lastIdRef.current}`,
-        { headers: { "X-User-Id": MY_ID, "X-User-Name": MY_NAME } }
+        { headers: { "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) } }
       );
       const raw = await res.json();
       const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
@@ -72,7 +72,7 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
     try {
       const res = await fetch(`${API}?module=chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": MY_NAME },
+        headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
         body: JSON.stringify({ chat_id: chatId, content, type }),
       });
       const raw = await res.json();
