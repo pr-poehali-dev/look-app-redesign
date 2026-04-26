@@ -142,25 +142,28 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
         </button>
 
         <div className="text-5xl mb-3 text-center">🔒</div>
-        <h2 className="text-white font-bold text-xl mb-1 text-center">Камера заблокирована</h2>
-        <p className="text-white/40 text-xs text-center mb-5">Яндекс Браузер запретил доступ к камере</p>
+        <h2 className="text-white font-bold text-xl mb-1 text-center">Нет доступа к камере</h2>
+        <p className="text-white/40 text-xs text-center mb-6">Твой браузер не разрешает камеру на этом сайте</p>
 
-        <p className="text-white/70 text-sm font-semibold mb-3">Открой настройки браузера:</p>
-
-        <div className="space-y-2 mb-6">
-          {[
-            { n: "1", text: 'Нажми ··· (три точки) внизу экрана браузера' },
-            { n: "2", text: 'Выбери «Настройки»' },
-            { n: "3", text: 'Перейди в «Сайты» → «Камера»' },
-            { n: "4", text: `Найди ${window.location.hostname} и выбери «Разрешить»` },
-            { n: "5", text: 'Вернись сюда и нажми «Попробовать снова»' },
-          ].map(s => (
-            <div key={s.n} className="bg-white/5 rounded-xl px-4 py-3 flex items-center gap-3">
-              <span className="w-6 h-6 rounded-full bg-[#fe2c55] text-white text-xs font-bold flex items-center justify-center shrink-0">{s.n}</span>
-              <span className="text-white/80 text-sm">{s.text}</span>
-            </div>
-          ))}
+        {/* Рекомендация — Chrome */}
+        <div className="bg-white/5 rounded-2xl p-4 mb-3 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shrink-0 text-2xl">🌐</div>
+          <div>
+            <p className="text-white font-semibold text-sm mb-0.5">Открой в Google Chrome</p>
+            <p className="text-white/50 text-xs">Chrome корректно работает с камерой. Скопируй ссылку и открой там.</p>
+          </div>
         </div>
+
+        <button
+          onClick={() => { navigator.clipboard.writeText(window.location.href).catch(() => {}); }}
+          className="w-full py-3 rounded-2xl bg-white/10 text-white text-sm font-medium active:scale-95 transition-all mb-4 flex items-center justify-center gap-2"
+        >
+          <Icon name="Copy" size={16} className="text-white/60" />
+          Скопировать ссылку на сайт
+        </button>
+
+        <div className="w-full h-px bg-white/10 mb-4" />
+        <p className="text-white/40 text-xs text-center mb-3">Или попробуй разрешить камеру вручную:</p>
 
         <button
           onClick={() => startCamera("user")}
