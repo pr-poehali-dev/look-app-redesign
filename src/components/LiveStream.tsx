@@ -30,6 +30,7 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
   const [showGifts, setShowGifts] = useState(false);
   const [facing, setFacing] = useState<"user" | "environment">("user");
   const [flipping, setFlipping] = useState(false);
+  const [camError, setCamError] = useState<string | null>(null);
 
   const chatRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -46,17 +47,27 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
     }
   }, []);
 
-  const startCamera = (facingMode: "user" | "environment") =>
-    navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: true })
-      .then((stream) => {
+  const startCamera = (facingMode: "user" | "environment") => {
+    setCamError(null);
+    // Сначала пробуем с audio, если не выйдет — только video
+    const tryGet = (constraints: MediaStreamConstraints) =>
+      navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
         streamRef.current = stream;
-        // videoRef.current может быть null если ещё не смонтирован — ищем напрямую
         const v = videoRef.current ?? document.querySelector<HTMLVideoElement>("video[data-live]");
         if (v) {
           v.srcObject = stream;
-          v.play().catch(() => {});
+          v.play().catch((e) => setCamError("play() blocked: " + e.message));
+        } else {
+          setCamError("video element not found");
         }
       });
+
+    return tryGet({ video: { facingMode }, audio: true })
+      .catch(() => tryGet({ video: true, audio: false }))
+      .catch((e: Error) => {
+        setCamError(e.name + ": " + e.message);
+      });
+  };
 
   useEffect(() => {
     return () => {
@@ -142,6 +153,11 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
           style={{ transform: facing === "user" ? "scaleX(-1)" : "none", opacity: flipping ? 0 : 1, transition: "opacity 0.2s" }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-black/30" />
+        {camError && (
+          <div className="absolute bottom-4 left-4 right-4 bg-red-900/90 text-white text-xs p-3 rounded-xl z-50 break-all">
+            Ошибка камеры: {camError}
+          </div>
+        )}
       </div>
 
       {/* Подарки */}
