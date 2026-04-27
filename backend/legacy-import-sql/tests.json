@@ -1,0 +1,10 @@
+{
+  "tests": [
+    {
+      "name": "Import SQL dump into PostgreSQL legacy_* tables",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}
