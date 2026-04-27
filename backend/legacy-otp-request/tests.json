@@ -1,0 +1,18 @@
+{
+  "tests": [
+    {
+      "name": "Reject invalid email",
+      "method": "POST",
+      "path": "/",
+      "body": {"email": "not-an-email"},
+      "expectedStatus": 400
+    },
+    {
+      "name": "Silent OK for unknown email",
+      "method": "POST",
+      "path": "/",
+      "body": {"email": "noone@nowhere.invalid"},
+      "expectedStatus": 200
+    }
+  ]
+}

@@ -1,4 +1,6 @@
 {
+  "legacy-otp-request": "https://functions.poehali.dev/37ce1591-438c-4426-870f-1031b2c57d22",
+  "legacy-otp-verify": "https://functions.poehali.dev/b9c5bff7-0a7d-43c6-9e65-4d6365a68447",
   "legacy-import-sql": "https://functions.poehali.dev/61ce0917-98cb-4caa-9e74-773c816f46f0",
   "legacy-sql-explore": "https://functions.poehali.dev/cc5c1904-8f26-4310-b400-904296563b8d",
   "legacy-fetch-sql": "https://functions.poehali.dev/9a112661-17f2-4932-8dbe-4088a7665239",

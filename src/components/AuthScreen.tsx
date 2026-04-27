@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
+import LegacyLoginDialog from "@/components/LegacyLoginDialog";
 
 const AuthScreen = () => {
   const { login, register } = useAuth();
@@ -16,6 +17,7 @@ const AuthScreen = () => {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [showLegacy, setShowLegacy] = useState(false);
 
   const handleForgot = async () => {
     if (!forgotEmail.trim()) return;
@@ -155,7 +157,20 @@ const AuthScreen = () => {
         >
           {loading ? "Загрузка..." : mode === "login" ? "Войти" : "Создать аккаунт"}
         </button>
+
+        <button
+          type="button"
+          onClick={() => setShowLegacy(true)}
+          className="flex items-center justify-center gap-2 mt-1 py-2.5 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold"
+        >
+          <Icon name="History" size={16} className="text-gray-500" />
+          У меня был аккаунт в short-video
+        </button>
       </div>
+
+      {showLegacy && (
+        <LegacyLoginDialog initialEmail={email} onClose={() => setShowLegacy(false)} />
+      )}
 
       {showForgot && (
         <div className="fixed inset-0 z-[9999] bg-black/60 flex items-end sm:items-center justify-center" onClick={() => setShowForgot(false)}>

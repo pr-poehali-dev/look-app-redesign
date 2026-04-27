@@ -1,0 +1,18 @@
+{
+  "tests": [
+    {
+      "name": "Reject without email and code",
+      "method": "POST",
+      "path": "/",
+      "body": {},
+      "expectedStatus": 400
+    },
+    {
+      "name": "Reject when no code requested",
+      "method": "POST",
+      "path": "/",
+      "body": {"email": "noone@nowhere.invalid", "code": "123456"},
+      "expectedStatus": 400
+    }
+  ]
+}
