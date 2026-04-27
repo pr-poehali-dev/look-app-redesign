@@ -1,0 +1,10 @@
+{
+  "tests": [
+    {
+      "name": "Inspect MySQL legacy DB",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}
