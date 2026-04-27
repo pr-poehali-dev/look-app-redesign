@@ -1,7 +1,7 @@
 {
   "tests": [
     {
-      "name": "List archive contents",
+      "name": "Fetch SQL dump from Yandex Disk",
       "method": "GET",
       "path": "/",
       "expectedStatus": 200

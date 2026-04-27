@@ -1,0 +1,10 @@
+{
+  "tests": [
+    {
+      "name": "Explore SQL dump structure",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "tests": [
+    {
+      "name": "List Yandex Disk public folder",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}
