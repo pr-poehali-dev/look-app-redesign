@@ -1,0 +1,10 @@
+{
+  "tests": [
+    {
+      "name": "List 7z archive contents",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "tests": [
+    {
+      "name": "Process media batch",
+      "method": "GET",
+      "path": "/?batch=1",
+      "expectedStatus": 200
+    }
+  ]
+}

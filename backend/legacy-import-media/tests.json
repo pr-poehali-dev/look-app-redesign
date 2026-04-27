@@ -1,0 +1,10 @@
+{
+  "tests": [
+    {
+      "name": "Update paths only (no download)",
+      "method": "GET",
+      "path": "/?only_paths=1",
+      "expectedStatus": 200
+    }
+  ]
+}
