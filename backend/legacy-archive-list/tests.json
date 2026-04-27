@@ -1,7 +1,7 @@
 {
   "tests": [
     {
-      "name": "Inspect MySQL legacy DB",
+      "name": "List archive contents",
       "method": "GET",
       "path": "/",
       "expectedStatus": 200

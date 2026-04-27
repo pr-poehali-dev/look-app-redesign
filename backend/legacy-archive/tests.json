@@ -1,0 +1,10 @@
+{
+  "tests": [
+    {
+      "name": "Status check",
+      "method": "GET",
+      "path": "/?action=status",
+      "expectedStatus": 200
+    }
+  ]
+}
