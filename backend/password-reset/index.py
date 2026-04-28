@@ -2,6 +2,11 @@ import json
 import os
 import hashlib
 import secrets
+import smtplib
+import ssl
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.utils import formataddr, make_msgid
 from datetime import datetime, timedelta
 import psycopg2
 import requests
@@ -22,6 +27,49 @@ def hash_pw(p):
     return hashlib.sha256(p.encode()).hexdigest()
 
 LAST_SMTP_ERROR = {'msg': ''}
+
+def _send_via_smtp(to_email: str, subject: str, html_body: str, text_body: str) -> bool:
+    host = os.environ.get('SMTP_HOST', '').strip()
+    port_raw = os.environ.get('SMTP_PORT', '').strip()
+    user = os.environ.get('SMTP_USER', '').strip()
+    password = os.environ.get('SMTP_PASSWORD', '')
+    if not host or not user or not password:
+        return False
+    try:
+        port = int(port_raw or '465')
+    except ValueError:
+        port = 465
+    from_name = os.environ.get('SMTP_FROM_NAME', '').strip() or 'Look'
+
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = subject
+    msg['From'] = formataddr((from_name, user))
+    msg['To'] = to_email
+    msg['Message-ID'] = make_msgid(domain=user.split('@')[-1] if '@' in user else 'localhost')
+    msg['List-Unsubscribe'] = f'<mailto:{user}?subject=unsubscribe>'
+    msg['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click'
+    msg.attach(MIMEText(text_body, 'plain', 'utf-8'))
+    msg.attach(MIMEText(html_body, 'html', 'utf-8'))
+
+    try:
+        ctx = ssl.create_default_context()
+        if port == 465:
+            with smtplib.SMTP_SSL(host, port, context=ctx, timeout=20) as srv:
+                srv.login(user, password)
+                srv.sendmail(user, [to_email], msg.as_string())
+        else:
+            with smtplib.SMTP(host, port, timeout=20) as srv:
+                srv.ehlo()
+                srv.starttls(context=ctx)
+                srv.ehlo()
+                srv.login(user, password)
+                srv.sendmail(user, [to_email], msg.as_string())
+        return True
+    except Exception as e:
+        LAST_SMTP_ERROR['msg'] = f'{type(e).__name__}: {e}'
+        print(f'SMTP error: {type(e).__name__}: {e}')
+        return False
+
 
 def _send_via_brevo(to_email: str, subject: str, html_body: str, text_body: str) -> bool:
     api_key = os.environ.get('BREVO_API_KEY', '').strip()
@@ -58,6 +106,11 @@ def _send_via_brevo(to_email: str, subject: str, html_body: str, text_body: str)
 
 
 def _send_via_resend(to_email: str, subject: str, html_body: str, text_body: str) -> bool:
+    if os.environ.get('SMTP_HOST', '').strip() and os.environ.get('SMTP_USER', '').strip():
+        if _send_via_smtp(to_email, subject, html_body, text_body):
+            return True
+        # если SMTP упал — пробуем дальше другие провайдеры
+
     if os.environ.get('BREVO_API_KEY', '').strip():
         return _send_via_brevo(to_email, subject, html_body, text_body)
 
