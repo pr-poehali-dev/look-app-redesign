@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
 
@@ -290,6 +290,22 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   const [showWhoSees, setShowWhoSees] = useState(false);
   const [screen, setScreen] = useState<string | null>(null);
   const [verifyStatus, setVerifyStatus] = useState<"idle" | "loading" | "sent" | "already" | "error">("idle");
+  const [emailVerified, setEmailVerified] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!user?.email) { setEmailVerified(null); return; }
+    fetch("https://functions.poehali.dev/050dfa15-1d92-4aaf-9b87-55d04c9affa7", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "check_verified", email: user.email }),
+    })
+      .then(r => r.json())
+      .then(raw => {
+        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+        setEmailVerified(!!data.verified);
+      })
+      .catch(() => setEmailVerified(false));
+  }, [user?.email]);
 
   const sendVerifyEmail = async () => {
     if (!user?.email || verifyStatus === "loading") return;
@@ -302,7 +318,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
       });
       const raw = await res.json();
       const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-      if (data.already) setVerifyStatus("already");
+      if (data.already) { setVerifyStatus("already"); setEmailVerified(true); }
       else if (data.sent) setVerifyStatus("sent");
       else setVerifyStatus("error");
     } catch {
@@ -351,7 +367,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
         <span className="flex-1 text-center text-black font-bold text-lg pr-7">Настройки</span>
       </div>
 
-      {user?.email && (
+      {user?.email && emailVerified === false && (
         <div className="mx-4 mt-3 rounded-2xl bg-white p-4 flex items-start gap-3">
           <div className="w-9 h-9 rounded-full bg-[#fe2c55]/10 flex items-center justify-center flex-shrink-0">
             <Icon name="MailCheck" size={18} className="text-[#fe2c55]" />

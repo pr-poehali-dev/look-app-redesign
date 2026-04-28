@@ -202,6 +202,16 @@ def handler(event: dict, context) -> dict:
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
 
+    if action == 'check_verified':
+        email = (body.get('email') or '').strip().lower()
+        if not email:
+            cur.close(); conn.close()
+            return err('email required')
+        cur.execute("SELECT email_verified FROM app_users WHERE email=%s", (email,))
+        row = cur.fetchone()
+        cur.close(); conn.close()
+        return ok({'verified': bool(row[0]) if row else False})
+
     if action == 'request':
         email = (body.get('email') or '').strip().lower()
         origin = (body.get('origin') or '').strip().rstrip('/')

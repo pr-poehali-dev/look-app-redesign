@@ -41,6 +41,20 @@
       "path": "/",
       "body": {"action": "verify_send", "email": ""},
       "expectedStatus": 400
+    },
+    {
+      "name": "Check verified - missing email",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "check_verified", "email": ""},
+      "expectedStatus": 400
+    },
+    {
+      "name": "Check verified - non-existing email",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "check_verified", "email": "nobody@example.com"},
+      "expectedStatus": 200
     }
   ]
 }
