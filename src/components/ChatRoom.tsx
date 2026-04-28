@@ -116,14 +116,38 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
     setShowAttach(false);
   };
 
+  const lastReadMyId = (() => {
+    let lastMy = 0;
+    let read = 0;
+    for (const m of messages) {
+      if (m.user_id === MY_ID) {
+        lastMy = m.id;
+      } else if (lastMy) {
+        read = lastMy;
+      }
+    }
+    return read;
+  })();
+
+  const Ticks = ({ msg }: { msg: Message }) => {
+    const isRead = msg.id <= lastReadMyId;
+    return (
+      <span className="inline-flex items-center -mr-0.5">
+        <Icon name="Check" size={13} className={isRead ? "text-[#61d4f0]" : "text-white/60"} />
+        {isRead && <Icon name="Check" size={13} className="text-[#61d4f0] -ml-2" />}
+      </span>
+    );
+  };
+
   const renderMsg = (msg: Message) => {
     const isMe = msg.user_id === MY_ID;
     if (msg.type === "image") {
       return (
         <div className={`max-w-[70%] rounded-2xl overflow-hidden ${isMe ? "rounded-br-sm" : "rounded-bl-sm"}`}>
           <img src={msg.content} className="w-full object-cover max-h-56" alt="img" />
-          <div className="bg-[#1a1a1a] px-3 py-1.5 flex justify-end">
+          <div className="bg-[#1a1a1a] px-3 py-1.5 flex justify-end items-center gap-1.5">
             <span className="text-white/30 text-[10px]">{msg.time}</span>
+            {isMe && <Ticks msg={msg} />}
           </div>
         </div>
       );
@@ -141,14 +165,16 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
             ))}
           </div>
           <span className="text-white/70 text-xs flex-shrink-0">{dur}с</span>
+          {isMe && <Ticks msg={msg} />}
         </div>
       );
     }
     return (
       <div className={`px-4 py-2.5 rounded-2xl max-w-[78%] ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
         <p className="text-white text-sm leading-snug">{msg.content}</p>
-        <div className={`flex items-center gap-1 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
+        <div className={`flex items-center gap-1.5 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
           <span className="text-white/40 text-[10px]">{msg.time}</span>
+          {isMe && <Ticks msg={msg} />}
         </div>
       </div>
     );
