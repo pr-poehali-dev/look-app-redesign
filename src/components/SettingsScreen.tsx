@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
+import { useAuth } from "@/context/AuthContext";
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -282,11 +283,32 @@ const SubscriptionScreen = ({ onBack }: { onBack: () => void }) => {
 
 // Main Settings
 const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
+  const { user } = useAuth();
   const [showSubscriptions, setShowSubscriptions] = useState(true);
   const [showChatButton, setShowChatButton] = useState(true);
   const [whoSees, setWhoSees] = useState("Все");
   const [showWhoSees, setShowWhoSees] = useState(false);
   const [screen, setScreen] = useState<string | null>(null);
+  const [verifyStatus, setVerifyStatus] = useState<"idle" | "loading" | "sent" | "already" | "error">("idle");
+
+  const sendVerifyEmail = async () => {
+    if (!user?.email || verifyStatus === "loading") return;
+    setVerifyStatus("loading");
+    try {
+      const res = await fetch("https://functions.poehali.dev/050dfa15-1d92-4aaf-9b87-55d04c9affa7", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "verify_send", email: user.email, origin: window.location.origin }),
+      });
+      const raw = await res.json();
+      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      if (data.already) setVerifyStatus("already");
+      else if (data.sent) setVerifyStatus("sent");
+      else setVerifyStatus("error");
+    } catch {
+      setVerifyStatus("error");
+    }
+  };
 
   if (screen === "saved") return <SavedScreen onBack={() => setScreen(null)} />;
   if (screen === "languages") return <LanguagesScreen onBack={() => setScreen(null)} />;
@@ -328,6 +350,28 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
         </button>
         <span className="flex-1 text-center text-black font-bold text-lg pr-7">Настройки</span>
       </div>
+
+      {user?.email && (
+        <div className="mx-4 mt-3 rounded-2xl bg-white p-4 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-full bg-[#fe2c55]/10 flex items-center justify-center flex-shrink-0">
+            <Icon name="MailCheck" size={18} className="text-[#fe2c55]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-black font-semibold text-sm">Подтверждение email</p>
+            <p className="text-gray-500 text-xs mt-0.5 break-all">{user.email}</p>
+            {verifyStatus === "sent" && <p className="text-green-600 text-xs mt-2">Письмо отправлено! Проверь почту.</p>}
+            {verifyStatus === "already" && <p className="text-green-600 text-xs mt-2">Email уже подтверждён.</p>}
+            {verifyStatus === "error" && <p className="text-red-600 text-xs mt-2">Не удалось отправить письмо.</p>}
+            <button
+              onClick={sendVerifyEmail}
+              disabled={verifyStatus === "loading" || verifyStatus === "sent" || verifyStatus === "already"}
+              className="mt-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white text-xs font-semibold disabled:opacity-50"
+            >
+              {verifyStatus === "loading" ? "Отправляем..." : verifyStatus === "sent" ? "Отправлено" : verifyStatus === "already" ? "Подтверждено" : "Отправить письмо"}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="mt-2">
         <Row icon="Star" label="Подписка и тарифы" onPress={() => setScreen("subscription")} />
