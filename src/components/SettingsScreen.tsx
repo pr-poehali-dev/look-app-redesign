@@ -186,75 +186,6 @@ const TextScreen = ({ onBack, title, text }: { onBack: () => void; title: string
   </div>
 );
 
-const TestEmailScreen = ({ onBack }: { onBack: () => void }) => {
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ ok: boolean; provider?: string; from?: string; error?: string } | null>(null);
-
-  const send = async () => {
-    if (!email.trim()) return;
-    setLoading(true);
-    setResult(null);
-    try {
-      const res = await fetch("https://functions.poehali.dev/050dfa15-1d92-4aaf-9b87-55d04c9affa7", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "test_email", email: email.trim() }),
-      });
-      const raw = await res.json();
-      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-      setResult({ ok: !!data.sent, provider: data.provider, from: data.from, error: data.error });
-    } catch (e) {
-      setResult({ ok: false, error: String(e) });
-    }
-    setLoading(false);
-  };
-
-  return (
-    <div className="h-full bg-gray-100 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-      <div className="flex items-center gap-3 px-4 pt-14 pb-4 bg-white border-b border-gray-100">
-        <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
-        <span className="flex-1 text-center text-black font-bold text-lg pr-7">Тестовое письмо</span>
-      </div>
-      <div className="px-4 pt-6 flex flex-col gap-4">
-        <div className="bg-white rounded-2xl p-5 flex flex-col gap-3">
-          <p className="text-gray-500 text-sm">Введи email — туда придёт тестовое письмо. Так можно проверить, что отправка работает и письма доходят.</p>
-          <input
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            type="email"
-            placeholder="example@mail.ru"
-            className="w-full px-4 py-3 rounded-xl bg-gray-100 text-black text-sm outline-none focus:ring-2 focus:ring-[#8b5cf6]/30"
-          />
-          <button
-            onClick={send}
-            disabled={!email.trim() || loading}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold text-base disabled:opacity-40"
-          >
-            {loading ? "Отправка..." : "Отправить тестовое письмо"}
-          </button>
-        </div>
-
-        {result && (
-          <div className={`rounded-2xl p-5 flex flex-col gap-2 ${result.ok ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
-            <div className="flex items-center gap-2">
-              <Icon name={result.ok ? "CheckCircle2" : "AlertCircle"} size={20} className={result.ok ? "text-green-600" : "text-red-600"} />
-              <span className={`font-semibold ${result.ok ? "text-green-700" : "text-red-700"}`}>
-                {result.ok ? "Письмо отправлено" : "Не удалось отправить"}
-              </span>
-            </div>
-            {result.provider && <p className="text-xs text-gray-600">Провайдер: <b>{result.provider}</b></p>}
-            {result.from && <p className="text-xs text-gray-600">Отправитель: <b>{result.from}</b></p>}
-            {result.error && <p className="text-xs text-red-600 break-all">{result.error}</p>}
-            {result.ok && <p className="text-xs text-gray-600 mt-1">Проверь Входящие и Спам в почте получателя.</p>}
-          </div>
-        )}
-      </div>
-      <div className="pb-28" />
-    </div>
-  );
-};
-
 const SubscriptionScreen = ({ onBack }: { onBack: () => void }) => {
   const [current] = useState<"free" | "premium">("free");
   const [showPending, setShowPending] = useState(false);
@@ -365,7 +296,6 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   if (screen === "terms") return <TextScreen onBack={() => setScreen(null)} title="Условия использования" text="Используя приложение Look, вы соглашаетесь с нашими условиями использования. Мы оставляем за собой право изменять условия в любое время. Продолжая использовать приложение, вы принимаете обновлённые условия. Запрещается публиковать незаконный, оскорбительный или вводящий в заблуждение контент. Мы вправе заблокировать аккаунт при нарушении правил." />;
   if (screen === "privacy") return <TextScreen onBack={() => setScreen(null)} title="Политика конфиденциальности" text="Мы уважаем вашу конфиденциальность. Собираемые данные используются только для улучшения работы приложения Look. Мы не передаём личные данные третьим лицам без вашего согласия. Вы вправе в любой момент запросить удаление своих данных через настройки аккаунта или обратившись в поддержку." />;
   if (screen === "subscription") return <SubscriptionScreen onBack={() => setScreen(null)} />;
-  if (screen === "test_email") return <TestEmailScreen onBack={() => setScreen(null)} />;
 
   const Toggle = ({ value, onChange }: { value: boolean; onChange: () => void }) => (
     <button
@@ -401,7 +331,6 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
 
       <div className="mt-2">
         <Row icon="Star" label="Подписка и тарифы" onPress={() => setScreen("subscription")} />
-        <Row icon="MailCheck" label="Проверить отправку email" onPress={() => setScreen("test_email")} />
         <Row icon="Bookmark" label="Сохранённые" onPress={() => setScreen("saved")} />
         <Row icon="Languages" label="Языки" onPress={() => setScreen("languages")} />
         <Row icon="Ban" label="Заблокированные" onPress={() => setScreen("blocked")} />
