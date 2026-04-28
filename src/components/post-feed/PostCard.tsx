@@ -162,8 +162,8 @@ const PostCard = ({ post }: { post: Post }) => {
             <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-4" style={{ scrollbarWidth: "none" }}>
               {allComments.map(c => (
                 <div key={c.id} className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-xs font-bold">{(c.name || "?")[0].toUpperCase()}</span>
+                  <div className="w-8 h-8 flex-shrink-0">
+                    <UserAvatar name={c.name} />
                   </div>
                   <div className="flex-1">
                     <span className="text-white font-semibold text-sm mr-2">{c.name}</span>

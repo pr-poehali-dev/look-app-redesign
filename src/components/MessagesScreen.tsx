@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
+import UserAvatar from "@/components/ui/user-avatar";
 import ChatRoom from "./ChatRoom";
 import CommunitiesScreen from "./CommunitiesScreen";
 import CallScreen from "./CallScreen";
@@ -287,7 +288,7 @@ const MessagesScreen = () => {
           <div key={String(s.id)} className="flex flex-col items-center gap-1.5 flex-shrink-0" onClick={() => setOpenChat(s)}>
             <div className="w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-[#fe2c55] to-[#61d4f0] cursor-pointer active:scale-95 transition-transform">
               <div className="w-full h-full rounded-full overflow-hidden border-2 border-black">
-                <img src={s.avatar} alt={s.name} className="w-full h-full object-cover" />
+                <UserAvatar src={s.avatar} name={s.name} alt={s.name} />
               </div>
             </div>
             <span className="text-white/60 text-[10px] w-14 text-center truncate">{s.name.split(" ")[0]}</span>
@@ -310,11 +311,17 @@ const MessagesScreen = () => {
               <div className="relative flex-shrink-0">
                 {chat.type === "group" && chat.avatars ? (
                   <div className="w-12 h-12 relative">
-                    <img src={chat.avatars[0]} className="w-9 h-9 rounded-full absolute top-0 left-0 border-2 border-black object-cover" alt="" />
-                    <img src={chat.avatars[1]} className="w-9 h-9 rounded-full absolute bottom-0 right-0 border-2 border-black object-cover" alt="" />
+                    <div className="w-9 h-9 rounded-full absolute top-0 left-0 border-2 border-black overflow-hidden">
+                      <UserAvatar src={chat.avatars[0]} name={chat.name} alt="" />
+                    </div>
+                    <div className="w-9 h-9 rounded-full absolute bottom-0 right-0 border-2 border-black overflow-hidden">
+                      <UserAvatar src={chat.avatars[1]} name={chat.name + "_2"} alt="" />
+                    </div>
                   </div>
                 ) : (
-                  <img src={chat.avatar} className="w-12 h-12 rounded-full object-cover" alt={chat.name} />
+                  <div className="w-12 h-12 rounded-full overflow-hidden">
+                    <UserAvatar src={chat.avatar} name={chat.name} alt={chat.name} />
+                  </div>
                 )}
                 {chat.online && (
                   <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-400 border-2 border-black" />

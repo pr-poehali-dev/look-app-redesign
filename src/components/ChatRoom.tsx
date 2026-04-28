@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
+import UserAvatar from "@/components/ui/user-avatar";
 import { Chat } from "./MessagesScreen";
 import CallScreen from "./CallScreen";
 import GroupCallScreen from "./GroupCallScreen";
@@ -191,7 +192,7 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
           <Icon name="ChevronLeft" size={26} className="text-white" />
         </button>
         <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 relative">
-          <img src={chat.avatar} className="w-full h-full object-cover" alt={chat.name} />
+          <UserAvatar src={chat.avatar} name={chat.name} alt={chat.name} />
           {chat.online && <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-black" />}
         </div>
         <div className="flex-1 min-w-0">
