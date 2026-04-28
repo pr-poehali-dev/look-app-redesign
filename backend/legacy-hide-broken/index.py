@@ -50,11 +50,12 @@ def url_to_key(url: str) -> str:
 
 
 def handler(event: dict, context) -> dict:
-    """Скрывает legacy-видео, у которых файл отсутствует в S3 (ставит hidden=TRUE). Параметры: ?dry=1 — только посчитать, ничего не менять; ?timeout=N."""
+    """Управление скрытием legacy-видео по наличию файла в S3. Параметры: ?action=hide_missing|unhide_present (по умолчанию hide_missing); ?dry=1 — только посчитать; ?timeout=N."""
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': cors(), 'body': ''}
 
     qs = event.get('queryStringParameters') or {}
+    action = qs.get('action', 'hide_missing')
     dry = qs.get('dry') == '1'
     timeout_sec = int(qs.get('timeout', '25'))
     deadline = time.time() + timeout_sec
@@ -65,7 +66,7 @@ def handler(event: dict, context) -> dict:
     cur = conn.cursor()
 
     cur.execute(
-        f"SELECT v.id, v.url, v.hidden FROM {schema}.videos v "
+        f"SELECT v.id, v.url, v.hidden, lp.is_private, lp.is_block FROM {schema}.videos v "
         f"JOIN {schema}.legacy_posts lp ON lp.migrated_to_video_id = v.id "
         f"WHERE v.url LIKE '%%cdn.poehali.dev%%legacy/uploads/%%' "
         f"ORDER BY v.id"
@@ -74,46 +75,56 @@ def handler(event: dict, context) -> dict:
 
     checked = 0
     missing_ids = []
-    present = 0
-    already_hidden = 0
+    present_ids = []
     to_hide = []
+    to_unhide = []
 
-    for vid, url, hidden in rows:
+    for vid, url, hidden, is_private, is_block in rows:
         if time.time() > deadline:
             break
         key = url_to_key(url)
         if not key:
             continue
         checked += 1
-        if s3_exists(s3, key):
-            present += 1
+        exists = s3_exists(s3, key)
+        if exists:
+            present_ids.append(vid)
+            if hidden and not is_private and not is_block:
+                to_unhide.append(vid)
         else:
             missing_ids.append(vid)
-            if hidden:
-                already_hidden += 1
-            else:
+            if not hidden:
                 to_hide.append(vid)
 
     updated = 0
-    if to_hide and not dry:
-        cur.execute(
-            f"UPDATE {schema}.videos SET hidden = TRUE WHERE id = ANY(%s)",
-            (to_hide,),
-        )
-        updated = cur.rowcount
-        conn.commit()
+    if not dry:
+        if action == 'hide_missing' and to_hide:
+            cur.execute(
+                f"UPDATE {schema}.videos SET hidden = TRUE WHERE id = ANY(%s)",
+                (to_hide,),
+            )
+            updated = cur.rowcount
+            conn.commit()
+        elif action == 'unhide_present' and to_unhide:
+            cur.execute(
+                f"UPDATE {schema}.videos SET hidden = FALSE WHERE id = ANY(%s)",
+                (to_unhide,),
+            )
+            updated = cur.rowcount
+            conn.commit()
 
     cur.close()
     conn.close()
 
     return jr({
+        'action': action,
         'total_rows': len(rows),
         'checked': checked,
-        'present': present,
+        'present': len(present_ids),
         'missing': len(missing_ids),
-        'already_hidden': already_hidden,
-        'to_hide_now': len(to_hide),
+        'to_hide_count': len(to_hide),
+        'to_unhide_count': len(to_unhide),
         'updated': updated,
         'dry': dry,
-        'sample_missing_ids': missing_ids[:20],
+        'sample_to_unhide': to_unhide[:20],
     })
