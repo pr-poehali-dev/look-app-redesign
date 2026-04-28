@@ -101,7 +101,8 @@ def handler(event: dict, context) -> dict:
                     cur.execute(
                         "SELECT c.id, c.type, c.name, c.avatar, "
                         "m.user_name, m.type, m.content, m.created_at, "
-                        "u.online_at > NOW() - INTERVAL '30 seconds' "
+                        "u.online_at > NOW() - INTERVAL '30 seconds', "
+                        "t.name "
                         "FROM sa_chats c "
                         "JOIN sa_chat_members cm ON cm.chat_id = c.id AND cm.user_id = %s "
                         "LEFT JOIN LATERAL ("
@@ -112,8 +113,10 @@ def handler(event: dict, context) -> dict:
                         "  SELECT user_id FROM sa_chat_members "
                         "  WHERE chat_id = c.id AND user_id != %s LIMIT 1"
                         ") "
+                        "LEFT JOIN sa_users t ON t.typing_chat_id = c.id "
+                        "  AND t.typing_at > NOW() - INTERVAL '5 seconds' AND t.id != %s "
                         "ORDER BY COALESCE(m.created_at, c.created_at) DESC",
-                        (user_id, user_id)
+                        (user_id, user_id, user_id)
                     )
                     rows = cur.fetchall()
                     chats = []
@@ -142,7 +145,8 @@ def handler(event: dict, context) -> dict:
                         chats.append({
                             'id': r[0], 'type': r[1], 'name': r[2] or 'Чат',
                             'avatar': r[3], 'lastMsg': last_msg, 'time': time_str,
-                            'online': bool(r[8])
+                            'online': bool(r[8]),
+                            'typing': r[9] or ''
                         })
                     conn.commit()
                     return {'statusCode': 200, 'headers': headers,

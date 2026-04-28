@@ -25,6 +25,7 @@ export interface Chat {
   online: boolean;
   members?: number;
   avatars?: string[];
+  typing?: string;
 }
 
 const MOCK_CHATS: Chat[] = [
@@ -337,7 +338,18 @@ const MessagesScreen = () => {
                   <span className="text-white/30 text-xs">{chat.time}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-white/50 text-xs truncate">{chat.lastMsg || "Нет сообщений"}</span>
+                  {chat.typing ? (
+                    <span className="text-[#61d4f0] text-xs truncate flex items-center gap-1.5">
+                      <span>{chat.type === "group" ? `${chat.typing} печатает` : "печатает"}</span>
+                      <span className="inline-flex gap-0.5">
+                        <span className="w-1 h-1 rounded-full bg-[#61d4f0] animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <span className="w-1 h-1 rounded-full bg-[#61d4f0] animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <span className="w-1 h-1 rounded-full bg-[#61d4f0] animate-bounce" style={{ animationDelay: "300ms" }} />
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="text-white/50 text-xs truncate">{chat.lastMsg || "Нет сообщений"}</span>
+                  )}
                   {chat.unread > 0 && (
                     <span className="ml-2 min-w-[18px] h-[18px] rounded-full bg-[#fe2c55] text-white text-[10px] font-bold flex items-center justify-center px-1 flex-shrink-0">
                       {chat.unread > 99 ? "99+" : chat.unread}
