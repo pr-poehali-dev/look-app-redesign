@@ -231,15 +231,32 @@ def handler(event: dict, context) -> dict:
     body = json.loads(event.get('body') or '{}')
     action = body.get('action')
 
-    if action == 'test_smtp':
+    if action == 'test_smtp' or action == 'test_email':
         to_email = (body.get('email') or '').strip()
         if not to_email:
             return err('email required')
-        link = 'https://visov.ru/?reset_token=TEST_TOKEN_123'
-        has_key = bool(os.environ.get('RESEND_API_KEY', '').strip())
-        from_email = os.environ.get('RESEND_FROM_EMAIL', '').strip() or 'onboarding@resend.dev'
-        sent = send_email(to_email, link)
-        return ok({'sent': sent, 'has_key': has_key, 'from': from_email, 'error': LAST_SMTP_ERROR['msg']})
+        smtp_user = os.environ.get('SMTP_USER', '').strip()
+        smtp_host = os.environ.get('SMTP_HOST', '').strip()
+        provider = 'smtp' if (smtp_host and smtp_user) else (
+            'brevo' if os.environ.get('BREVO_API_KEY', '').strip() else (
+                'resend' if os.environ.get('RESEND_API_KEY', '').strip() else 'none'
+            )
+        )
+        from_email = smtp_user or os.environ.get('BREVO_FROM_EMAIL', '').strip() or os.environ.get('RESEND_FROM_EMAIL', '').strip() or '—'
+        subject = 'Тестовое письмо · Look'
+        html_body = f'''<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f5f5f7;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f7;padding:24px 0"><tr><td align="center">
+    <table role="presentation" width="520" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;padding:32px;max-width:520px"><tr><td>
+      <h1 style="margin:0 0 16px;font-size:22px;color:#111">Письмо доставлено!</h1>
+      <p style="margin:0 0 16px;font-size:15px;color:#333;line-height:1.5">Это тестовое письмо от приложения Look. Если ты его видишь — отправка email работает корректно.</p>
+      <p style="margin:0;font-size:13px;color:#888">Провайдер: <b>{provider}</b><br>Отправитель: <b>{from_email}</b></p>
+    </td></tr></table>
+  </td></tr></table>
+</body></html>'''
+        text_body = f'Тестовое письмо от Look\n\nПровайдер: {provider}\nОтправитель: {from_email}'
+        sent = _send_via_resend(to_email, subject, html_body, text_body)
+        return ok({'sent': sent, 'provider': provider, 'from': from_email, 'error': LAST_SMTP_ERROR['msg']})
 
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
