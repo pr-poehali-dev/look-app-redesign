@@ -1,12 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
+import { RTC_CONFIG } from "@/lib/webrtc-config";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
-
-const ICE_SERVERS = [
-  { urls: "stun:stun.l.google.com:19302" },
-  { urls: "stun:stun1.l.google.com:19302" },
-];
 
 interface CallScreenProps {
   name: string;
@@ -26,6 +22,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
   const [cameraOff, setCameraOff] = useState(false);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [status, setStatus] = useState<"connecting" | "ringing" | "connected" | "ended">("connecting");
+  const [quality, setQuality] = useState<"good" | "fair" | "poor" | "unknown">("unknown");
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -37,6 +34,9 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
   const callIdRef = useRef<number | null>(null);
   const secondsRef = useRef(0);
   const answeredRef = useRef(false);
+  const statsRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const prevPacketsLostRef = useRef(0);
+  const prevPacketsRef = useRef(0);
 
   const sendSignal = async (type: string, payload: unknown) => {
     try {
@@ -94,7 +94,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
 
     const start = async () => {
       setStatus("connecting");
-      pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+      pc = new RTCPeerConnection(RTC_CONFIG);
       pcRef.current = pc;
 
       try {
@@ -122,7 +122,22 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
 
       pc.onconnectionstatechange = () => {
         if (pc.connectionState === "connected") setStatus("connected");
-        if (pc.connectionState === "disconnected" || pc.connectionState === "failed") setStatus("ended");
+        if (pc.connectionState === "failed") {
+          if (isCaller.current) {
+            pc.createOffer({ iceRestart: true })
+              .then((o) => pc.setLocalDescription(o).then(() => sendSignal("offer", o)))
+              .catch(() => setStatus("ended"));
+          }
+        }
+      };
+
+      pc.oniceconnectionstatechange = () => {
+        if (pc.iceConnectionState === "disconnected") setQuality("poor");
+        if (pc.iceConnectionState === "failed" && isCaller.current) {
+          pc.createOffer({ iceRestart: true })
+            .then((o) => pc.setLocalDescription(o).then(() => sendSignal("offer", o)))
+            .catch(() => {});
+        }
       };
 
       startPoll(pc);
@@ -158,6 +173,38 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
     if (status !== "connected") return;
     const t = setInterval(() => setSeconds((s) => { secondsRef.current = s + 1; return s + 1; }), 1000);
     return () => clearInterval(t);
+  }, [status]);
+
+  useEffect(() => {
+    if (status !== "connected" || !pcRef.current) return;
+    statsRef.current = setInterval(async () => {
+      const pc = pcRef.current;
+      if (!pc) return;
+      try {
+        const stats = await pc.getStats();
+        let lost = 0, total = 0, rtt = 0, hasInbound = false;
+        stats.forEach((r) => {
+          if (r.type === "inbound-rtp" && !r.isRemote) {
+            lost += r.packetsLost || 0;
+            total += (r.packetsReceived || 0) + (r.packetsLost || 0);
+            hasInbound = true;
+          }
+          if (r.type === "candidate-pair" && r.state === "succeeded" && r.currentRoundTripTime) {
+            rtt = r.currentRoundTripTime * 1000;
+          }
+        });
+        if (!hasInbound) return;
+        const deltaLost = lost - prevPacketsLostRef.current;
+        const deltaTotal = total - prevPacketsRef.current;
+        prevPacketsLostRef.current = lost;
+        prevPacketsRef.current = total;
+        const lossRate = deltaTotal > 0 ? deltaLost / deltaTotal : 0;
+        if (lossRate > 0.1 || rtt > 400) setQuality("poor");
+        else if (lossRate > 0.03 || rtt > 200) setQuality("fair");
+        else setQuality("good");
+      } catch (e) { void e; }
+    }, 2000);
+    return () => { if (statsRef.current) clearInterval(statsRef.current); };
   }, [status]);
 
   const hangup = () => {
@@ -266,6 +313,20 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
           <Icon name={mode === "video" ? "Video" : "Phone"} size={12} />
           <span>{mode === "video" ? "Видеозвонок" : "Аудиозвонок"}</span>
         </div>
+        {status === "connected" && quality !== "unknown" && (
+          <div className={`mt-2 flex items-center gap-1.5 text-xs ${
+            quality === "good" ? "text-green-400" : quality === "fair" ? "text-yellow-400" : "text-red-400"
+          }`}>
+            <div className="flex items-end gap-0.5 h-3">
+              <div className={`w-1 h-1 rounded-sm ${quality !== "unknown" ? "bg-current" : "bg-current/30"}`} />
+              <div className={`w-1 h-2 rounded-sm ${quality === "fair" || quality === "good" ? "bg-current" : "bg-current/30"}`} />
+              <div className={`w-1 h-3 rounded-sm ${quality === "good" ? "bg-current" : "bg-current/30"}`} />
+            </div>
+            <span>
+              {quality === "good" ? "Хорошее соединение" : quality === "fair" ? "Среднее соединение" : "Слабое соединение"}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="flex-1" />

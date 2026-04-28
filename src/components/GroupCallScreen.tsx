@@ -1,11 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
+import { RTC_CONFIG } from "@/lib/webrtc-config";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
-const ICE_SERVERS = [
-  { urls: "stun:stun.l.google.com:19302" },
-  { urls: "stun:stun1.l.google.com:19302" },
-];
 
 interface PeerEntry {
   id: string;
@@ -51,7 +48,7 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
     const existing = peersMapRef.current.get(peerId);
     if (existing) return existing.pc;
 
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    const pc = new RTCPeerConnection(RTC_CONFIG);
     const entry: PeerEntry = { id: peerId, name: peerName, pc, stream: null };
     peersMapRef.current.set(peerId, entry);
     syncPeers();
