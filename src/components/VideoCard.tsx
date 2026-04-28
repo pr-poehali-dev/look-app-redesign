@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
+import UserAvatar from "@/components/ui/user-avatar";
 import { useComments } from "@/hooks/useComments";
 
 export interface VideoData {
@@ -155,7 +156,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
           style={{ touchAction: "manipulation" }}
         >
           <div className={`w-12 h-12 rounded-full overflow-hidden border-2 ${following ? "border-[#fe2c55]" : "border-white"}`}>
-            <img src={video.avatar} alt={video.author} className="w-full h-full object-cover" />
+            <UserAvatar src={video.avatar} name={video.author || video.handle} alt={video.author} />
           </div>
           {!following && (
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#fe2c55] flex items-center justify-center">
@@ -236,7 +237,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
 
         {/* Spinning disc */}
         <div className="w-10 h-10 rounded-full border-4 border-white/30 overflow-hidden animate-spin" style={{ animationDuration: "3s" }}>
-          <img src={video.avatar} alt="disc" className="w-full h-full object-cover" />
+          <UserAvatar src={video.avatar} name={video.author || video.handle} alt="disc" />
         </div>
       </div>
 

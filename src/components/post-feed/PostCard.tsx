@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
+import UserAvatar from "@/components/ui/user-avatar";
 import { Post, formatLikes } from "./PostFeedTypes";
 import { useComments } from "@/hooks/useComments";
 
@@ -36,7 +37,7 @@ const PostCard = ({ post }: { post: Post }) => {
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]">
             <div className="w-full h-full rounded-full overflow-hidden border-2 border-black">
-              <img src={post.avatar} alt={post.author} className="w-full h-full object-cover" />
+              <UserAvatar src={post.avatar} name={post.author || post.handle} alt={post.author} />
             </div>
           </div>
           <div>
