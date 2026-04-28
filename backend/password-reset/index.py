@@ -106,50 +106,18 @@ def _send_via_brevo(to_email: str, subject: str, html_body: str, text_body: str)
 
 
 def _send_via_resend(to_email: str, subject: str, html_body: str, text_body: str) -> bool:
-    # Если SMTP настроен — используем ТОЛЬКО его, без фолбэков (чтобы видеть реальную ошибку)
-    if os.environ.get('SMTP_HOST', '').strip() and os.environ.get('SMTP_USER', '').strip():
-        return _send_via_smtp(to_email, subject, html_body, text_body)
-
-    if os.environ.get('BREVO_API_KEY', '').strip():
-        return _send_via_brevo(to_email, subject, html_body, text_body)
-
-    api_key = os.environ.get('RESEND_API_KEY', '').strip()
-    if not api_key:
-        LAST_SMTP_ERROR['msg'] = 'no email provider configured'
+    # Только SMTP. Никаких фолбэков на Resend/Brevo.
+    host = os.environ.get('SMTP_HOST', '').strip()
+    user = os.environ.get('SMTP_USER', '').strip()
+    pwd = os.environ.get('SMTP_PASSWORD', '')
+    if not host or not user or not pwd:
+        missing = []
+        if not host: missing.append('SMTP_HOST')
+        if not user: missing.append('SMTP_USER')
+        if not pwd: missing.append('SMTP_PASSWORD')
+        LAST_SMTP_ERROR['msg'] = f'SMTP not configured. Empty: {", ".join(missing)}'
         return False
-
-    from_email = os.environ.get('RESEND_FROM_EMAIL', '').strip() or 'Look <onboarding@resend.dev>'
-    reply_to = os.environ.get('RESEND_REPLY_TO', '').strip() or 'support@visov.ru'
-
-    payload = {
-        'from': from_email,
-        'to': [to_email],
-        'subject': subject,
-        'html': html_body,
-        'text': text_body,
-        'reply_to': reply_to,
-        'headers': {
-            'List-Unsubscribe': f'<mailto:{reply_to}?subject=unsubscribe>',
-            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-            'X-Entity-Ref-ID': secrets.token_hex(8),
-        },
-    }
-    try:
-        resp = requests.post(
-            'https://api.resend.com/emails',
-            headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
-            json=payload,
-            timeout=15,
-        )
-        if resp.status_code >= 400:
-            LAST_SMTP_ERROR['msg'] = f'Resend {resp.status_code}: {resp.text}'
-            print(f'Resend error: {resp.status_code} {resp.text}')
-            return False
-        return True
-    except Exception as e:
-        LAST_SMTP_ERROR['msg'] = f'{type(e).__name__}: {e}'
-        print(f'Resend error: {type(e).__name__}: {e}')
-        return False
+    return _send_via_smtp(to_email, subject, html_body, text_body)
 
 
 def send_email(to_email: str, reset_link: str) -> bool:
@@ -243,12 +211,8 @@ def handler(event: dict, context) -> dict:
             'SMTP_PASSWORD': 'set' if smtp_password else 'EMPTY',
             'SMTP_PORT': os.environ.get('SMTP_PORT', '').strip() or 'EMPTY',
         }
-        provider = 'smtp' if (smtp_host and smtp_user) else (
-            'brevo' if os.environ.get('BREVO_API_KEY', '').strip() else (
-                'resend' if os.environ.get('RESEND_API_KEY', '').strip() else 'none'
-            )
-        )
-        from_email = smtp_user or os.environ.get('BREVO_FROM_EMAIL', '').strip() or os.environ.get('RESEND_FROM_EMAIL', '').strip() or '—'
+        provider = 'smtp'
+        from_email = smtp_user or '—'
         subject = 'Тестовое письмо · Look'
         html_body = f'''<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"></head>
 <body style="margin:0;padding:0;background:#f5f5f7;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif">
