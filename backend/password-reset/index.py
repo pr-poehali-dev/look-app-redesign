@@ -106,10 +106,9 @@ def _send_via_brevo(to_email: str, subject: str, html_body: str, text_body: str)
 
 
 def _send_via_resend(to_email: str, subject: str, html_body: str, text_body: str) -> bool:
+    # Если SMTP настроен — используем ТОЛЬКО его, без фолбэков (чтобы видеть реальную ошибку)
     if os.environ.get('SMTP_HOST', '').strip() and os.environ.get('SMTP_USER', '').strip():
-        if _send_via_smtp(to_email, subject, html_body, text_body):
-            return True
-        # если SMTP упал — пробуем дальше другие провайдеры
+        return _send_via_smtp(to_email, subject, html_body, text_body)
 
     if os.environ.get('BREVO_API_KEY', '').strip():
         return _send_via_brevo(to_email, subject, html_body, text_body)
