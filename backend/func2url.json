@@ -4,7 +4,6 @@
   "legacy-fetch-media": "https://functions.poehali.dev/57318c7a-4812-45ac-8609-2790c021545e",
   "legacy-import-media": "https://functions.poehali.dev/9ebae380-9dc6-4e3f-b5cb-d636b6ca77f2",
   "legacy-7z-list": "https://functions.poehali.dev/6a6e5bbb-2af4-4e5f-ba91-38e17c2420a4",
-  "legacy-otp-request": "https://functions.poehali.dev/37ce1591-438c-4426-870f-1031b2c57d22",
   "legacy-otp-verify": "https://functions.poehali.dev/b9c5bff7-0a7d-43c6-9e65-4d6365a68447",
   "legacy-import-sql": "https://functions.poehali.dev/61ce0917-98cb-4caa-9e74-773c816f46f0",
   "legacy-sql-explore": "https://functions.poehali.dev/cc5c1904-8f26-4310-b400-904296563b8d",
