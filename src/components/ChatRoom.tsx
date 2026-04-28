@@ -290,13 +290,13 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
         {messages.map((msg, i) => {
           const isMe = msg.user_id === MY_ID;
           const prev = messages[i - 1];
-          const showAvatar = !isMe && (!prev || prev.user_id !== msg.user_id);
-          const showName = isGroup && showAvatar;
+          const isFirstInGroup = !isMe && (!prev || prev.user_id !== msg.user_id);
+          const showName = isGroup && isFirstInGroup;
           return (
             <div key={msg.id} className={`flex items-end gap-2 ${isMe ? "justify-end" : "justify-start"}`}>
               {!isMe && (
                 <div className="w-7 h-7 flex-shrink-0">
-                  {showAvatar ? <UserAvatar name={msg.user_name} /> : null}
+                  <UserAvatar name={msg.user_name} />
                 </div>
               )}
               <div className="flex flex-col max-w-[78%]">
