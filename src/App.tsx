@@ -50,7 +50,10 @@ const AppContent = () => {
       .then(r => r.json())
       .then(data => {
         const d = typeof data.body === "string" ? JSON.parse(data.body) : data;
-        if (d.verified) setVerifyState("ok");
+        if (d.verified) {
+          setVerifyState("ok");
+          if (d.email) localStorage.setItem(`email_verified:${d.email.toLowerCase()}`, "1");
+        }
         else { setVerifyState("error"); setVerifyError(d.error || "Ссылка недействительна"); }
       })
       .catch(() => { setVerifyState("error"); setVerifyError("Ошибка сети"); });

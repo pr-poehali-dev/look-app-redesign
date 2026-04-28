@@ -290,10 +290,15 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   const [showWhoSees, setShowWhoSees] = useState(false);
   const [screen, setScreen] = useState<string | null>(null);
   const [verifyStatus, setVerifyStatus] = useState<"idle" | "loading" | "sent" | "already" | "error">("idle");
-  const [emailVerified, setEmailVerified] = useState<boolean | null>(null);
+  const [emailVerified, setEmailVerified] = useState<boolean | null>(() => {
+    if (typeof window === "undefined" || !user?.email) return null;
+    return localStorage.getItem(`email_verified:${user.email.toLowerCase()}`) === "1" ? true : null;
+  });
 
   useEffect(() => {
     if (!user?.email) { setEmailVerified(null); return; }
+    const cached = localStorage.getItem(`email_verified:${user.email.toLowerCase()}`);
+    if (cached === "1") { setEmailVerified(true); return; }
     fetch("https://functions.poehali.dev/050dfa15-1d92-4aaf-9b87-55d04c9affa7", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -302,7 +307,9 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
       .then(r => r.json())
       .then(raw => {
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-        setEmailVerified(!!data.verified);
+        const verified = !!data.verified;
+        setEmailVerified(verified);
+        if (verified) localStorage.setItem(`email_verified:${user.email!.toLowerCase()}`, "1");
       })
       .catch(() => setEmailVerified(false));
   }, [user?.email]);
