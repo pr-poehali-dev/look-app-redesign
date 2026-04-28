@@ -23,10 +23,47 @@ def hash_pw(p):
 
 LAST_SMTP_ERROR = {'msg': ''}
 
+def _send_via_brevo(to_email: str, subject: str, html_body: str, text_body: str) -> bool:
+    api_key = os.environ.get('BREVO_API_KEY', '').strip()
+    from_email = os.environ.get('BREVO_FROM_EMAIL', '').strip()
+    from_name = os.environ.get('BREVO_FROM_NAME', '').strip() or 'Look'
+    if not api_key or not from_email:
+        return False
+    payload = {
+        'sender': {'name': from_name, 'email': from_email},
+        'to': [{'email': to_email}],
+        'subject': subject,
+        'htmlContent': html_body,
+        'textContent': text_body,
+        'headers': {
+            'List-Unsubscribe': f'<mailto:{from_email}?subject=unsubscribe>',
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
+    }
+    try:
+        resp = requests.post(
+            'https://api.brevo.com/v3/smtp/email',
+            headers={'api-key': api_key, 'Content-Type': 'application/json', 'accept': 'application/json'},
+            json=payload, timeout=15,
+        )
+        if resp.status_code >= 400:
+            LAST_SMTP_ERROR['msg'] = f'Brevo {resp.status_code}: {resp.text}'
+            print(f'Brevo error: {resp.status_code} {resp.text}')
+            return False
+        return True
+    except Exception as e:
+        LAST_SMTP_ERROR['msg'] = f'{type(e).__name__}: {e}'
+        print(f'Brevo error: {type(e).__name__}: {e}')
+        return False
+
+
 def _send_via_resend(to_email: str, subject: str, html_body: str, text_body: str) -> bool:
+    if os.environ.get('BREVO_API_KEY', '').strip():
+        return _send_via_brevo(to_email, subject, html_body, text_body)
+
     api_key = os.environ.get('RESEND_API_KEY', '').strip()
     if not api_key:
-        LAST_SMTP_ERROR['msg'] = 'no RESEND_API_KEY'
+        LAST_SMTP_ERROR['msg'] = 'no email provider configured'
         return False
 
     from_email = os.environ.get('RESEND_FROM_EMAIL', '').strip() or 'Look <onboarding@resend.dev>'
