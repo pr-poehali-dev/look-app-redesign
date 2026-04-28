@@ -236,6 +236,13 @@ def handler(event: dict, context) -> dict:
             return err('email required')
         smtp_user = os.environ.get('SMTP_USER', '').strip()
         smtp_host = os.environ.get('SMTP_HOST', '').strip()
+        smtp_password = os.environ.get('SMTP_PASSWORD', '')
+        smtp_diag = {
+            'SMTP_HOST': 'set' if smtp_host else 'EMPTY',
+            'SMTP_USER': 'set' if smtp_user else 'EMPTY',
+            'SMTP_PASSWORD': 'set' if smtp_password else 'EMPTY',
+            'SMTP_PORT': os.environ.get('SMTP_PORT', '').strip() or 'EMPTY',
+        }
         provider = 'smtp' if (smtp_host and smtp_user) else (
             'brevo' if os.environ.get('BREVO_API_KEY', '').strip() else (
                 'resend' if os.environ.get('RESEND_API_KEY', '').strip() else 'none'
@@ -255,7 +262,7 @@ def handler(event: dict, context) -> dict:
 </body></html>'''
         text_body = f'Тестовое письмо от Look\n\nПровайдер: {provider}\nОтправитель: {from_email}'
         sent = _send_via_resend(to_email, subject, html_body, text_body)
-        return ok({'sent': sent, 'provider': provider, 'from': from_email, 'error': LAST_SMTP_ERROR['msg']})
+        return ok({'sent': sent, 'provider': provider, 'from': from_email, 'error': LAST_SMTP_ERROR['msg'], 'smtp_diag': smtp_diag})
 
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
