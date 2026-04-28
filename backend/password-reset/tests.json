@@ -27,6 +27,20 @@
       "path": "/",
       "body": {"action": "confirm", "token": "", "password": ""},
       "expectedStatus": 400
+    },
+    {
+      "name": "Verify email - invalid token",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "verify_email", "token": "invalid_xyz"},
+      "expectedStatus": 400
+    },
+    {
+      "name": "Verify send - missing email",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "verify_send", "email": ""},
+      "expectedStatus": 400
     }
   ]
 }

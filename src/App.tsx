@@ -32,6 +32,29 @@ const AppContent = () => {
     const params = new URLSearchParams(window.location.search);
     return params.get("reset_token");
   });
+  const [verifyToken, setVerifyToken] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const params = new URLSearchParams(window.location.search);
+    return params.get("verify_token");
+  });
+  const [verifyState, setVerifyState] = useState<"loading" | "ok" | "error">("loading");
+  const [verifyError, setVerifyError] = useState<string>("");
+
+  useEffect(() => {
+    if (!verifyToken) return;
+    fetch("https://functions.poehali.dev/050dfa15-1d92-4aaf-9b87-55d04c9affa7", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "verify_email", token: verifyToken }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        const d = typeof data.body === "string" ? JSON.parse(data.body) : data;
+        if (d.verified) setVerifyState("ok");
+        else { setVerifyState("error"); setVerifyError(d.error || "Ссылка недействительна"); }
+      })
+      .catch(() => { setVerifyState("error"); setVerifyError("Ошибка сети"); });
+  }, [verifyToken]);
   const [incomingCall, setIncomingCall] = useState<IncomingCall | null>(null);
   const [activeCall, setActiveCall] = useState<IncomingCall | null>(null);
   const lastSigRef = useRef(0);
@@ -148,6 +171,50 @@ const AppContent = () => {
           window.history.replaceState({}, "", window.location.pathname);
         }}
       />
+    );
+  }
+
+  if (verifyToken) {
+    const close = () => {
+      setVerifyToken(null);
+      window.history.replaceState({}, "", window.location.pathname);
+    };
+    return (
+      <div className="fixed inset-0 bg-black flex flex-col" style={{ maxWidth: 480, margin: "0 auto" }}>
+        <div className="flex-1 flex flex-col items-center justify-center px-8 gap-2">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center mb-2">
+            <Icon name="MailCheck" size={28} className="text-white" />
+          </div>
+          <h1 className="text-white font-black text-3xl">Подтверждение email</h1>
+        </div>
+        <div className="bg-white rounded-t-3xl px-6 pt-7 pb-10 flex flex-col gap-4">
+          {verifyState === "loading" ? (
+            <p className="text-gray-500 text-center py-6">Проверяем ссылку...</p>
+          ) : verifyState === "ok" ? (
+            <>
+              <div className="flex flex-col items-center gap-3 py-4">
+                <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+                  <Icon name="CheckCircle2" size={28} className="text-green-600" />
+                </div>
+                <p className="text-black font-semibold text-base text-center">Email подтверждён</p>
+                <p className="text-gray-500 text-sm text-center">Спасибо! Теперь твой аккаунт защищён.</p>
+              </div>
+              <button onClick={close} className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold text-base">Продолжить</button>
+            </>
+          ) : (
+            <>
+              <div className="flex flex-col items-center gap-3 py-4">
+                <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
+                  <Icon name="AlertCircle" size={28} className="text-red-600" />
+                </div>
+                <p className="text-black font-semibold text-base text-center">Ссылка не работает</p>
+                <p className="text-gray-500 text-sm text-center">{verifyError}</p>
+              </div>
+              <button onClick={close} className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold text-base">Закрыть</button>
+            </>
+          )}
+        </div>
+      </div>
     );
   }
 

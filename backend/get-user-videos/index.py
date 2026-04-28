@@ -4,6 +4,7 @@ import base64
 import hashlib
 import secrets
 import uuid
+import urllib.request
 import boto3
 import psycopg2
 
@@ -38,10 +39,13 @@ def handler(event: dict, context) -> dict:
             handle = (body.get('handle') or '').strip().lstrip('@')
             email = (body.get('email') or '').strip().lower()
             password = body.get('password') or ''
+            origin = (body.get('origin') or '').strip().rstrip('/')
             if not all([name, handle, email, password]):
                 return err('Заполни все поля')
             if len(password) < 6:
                 return err('Пароль минимум 6 символов')
+            if '@' not in email or '.' not in email.split('@')[-1]:
+                return err('Введи корректный email')
             conn = get_conn(); cur = conn.cursor()
             cur.execute("SELECT id FROM app_users WHERE email=%s OR handle=%s", (email, handle))
             if cur.fetchone():
@@ -52,7 +56,17 @@ def handler(event: dict, context) -> dict:
             cur.execute("INSERT INTO app_users (id,name,handle,email,password_hash,token) VALUES (%s,%s,%s,%s,%s,%s)",
                 (uid, name, handle, email, hash_pw(password), token))
             conn.commit(); cur.close(); conn.close()
-            return ok({'token': token, 'user': {'id': uid, 'name': name, 'handle': handle, 'email': email, 'avatar': None}})
+            try:
+                payload = json.dumps({'action': 'verify_send', 'email': email, 'origin': origin}).encode('utf-8')
+                req = urllib.request.Request(
+                    'https://functions.poehali.dev/050dfa15-1d92-4aaf-9b87-55d04c9affa7',
+                    data=payload, method='POST',
+                    headers={'Content-Type': 'application/json'},
+                )
+                urllib.request.urlopen(req, timeout=10)
+            except Exception as e:
+                print(f'verify_send error: {e}')
+            return ok({'token': token, 'user': {'id': uid, 'name': name, 'handle': handle, 'email': email, 'avatar': None}, 'verify_sent': True})
 
         if action == 'login':
             email = (body.get('email') or '').strip().lower()

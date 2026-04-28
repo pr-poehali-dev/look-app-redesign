@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const res = await fetch(AUTH_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "register", name, handle, email, password }),
+      body: JSON.stringify({ action: "register", name, handle, email, password, origin: window.location.origin }),
     });
     const raw = await res.json();
     const data = parseBody(raw);
