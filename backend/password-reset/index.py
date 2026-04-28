@@ -1,3 +1,4 @@
+# SMTP-only build v3 - force redeploy
 import json
 import os
 import hashlib
