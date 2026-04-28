@@ -219,11 +219,27 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
             <p className="text-white/20 text-sm">Начни общение первым!</p>
           </div>
         )}
-        {messages.map((msg) => (
-          <div key={msg.id} className={`flex ${msg.user_id === MY_ID ? "justify-end" : "justify-start"}`}>
-            {renderMsg(msg)}
-          </div>
-        ))}
+        {messages.map((msg, i) => {
+          const isMe = msg.user_id === MY_ID;
+          const prev = messages[i - 1];
+          const showAvatar = !isMe && (!prev || prev.user_id !== msg.user_id);
+          const showName = isGroup && showAvatar;
+          return (
+            <div key={msg.id} className={`flex items-end gap-2 ${isMe ? "justify-end" : "justify-start"}`}>
+              {!isMe && (
+                <div className="w-7 h-7 flex-shrink-0">
+                  {showAvatar ? <UserAvatar name={msg.user_name} /> : null}
+                </div>
+              )}
+              <div className="flex flex-col max-w-[78%]">
+                {showName && (
+                  <span className="text-white/50 text-[11px] font-medium ml-3 mb-0.5">{msg.user_name}</span>
+                )}
+                {renderMsg(msg)}
+              </div>
+            </div>
+          );
+        })}
         <div ref={bottomRef} />
       </div>
 
