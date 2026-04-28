@@ -69,20 +69,37 @@ const AppContent = () => {
     try {
       const ctx = new AudioContext();
       audioCtxRef.current = ctx;
-      let beat = 0;
-      ringtoneRef.current = setInterval(() => {
+
+      const playNote = (freq: number, start: number, duration: number, volume = 0.25) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.connect(gain);
+        const filter = ctx.createBiquadFilter();
+        osc.connect(filter);
+        filter.connect(gain);
         gain.connect(ctx.destination);
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(beat % 2 === 0 ? 880 : 660, ctx.currentTime);
-        gain.gain.setValueAtTime(0.3, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.4);
-        beat++;
-      }, 600);
+        osc.type = "triangle";
+        filter.type = "lowpass";
+        filter.frequency.value = 2000;
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(volume, start + 0.02);
+        gain.gain.linearRampToValueAtTime(volume * 0.7, start + duration * 0.6);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+        osc.start(start);
+        osc.stop(start + duration);
+      };
+
+      const playMelody = () => {
+        const now = ctx.currentTime;
+        playNote(659.25, now + 0.0, 0.18);
+        playNote(880.0, now + 0.2, 0.18);
+        playNote(659.25, now + 0.5, 0.18);
+        playNote(880.0, now + 0.7, 0.18);
+        playNote(987.77, now + 1.0, 0.35);
+      };
+
+      playMelody();
+      ringtoneRef.current = setInterval(playMelody, 2200);
     } catch (e) { void e; }
   };
 

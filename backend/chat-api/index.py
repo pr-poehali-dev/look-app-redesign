@@ -366,6 +366,90 @@ def handler(event: dict, context) -> dict:
                 return {'statusCode': 200, 'headers': headers,
                         'body': json.dumps({'signals': signals})}
 
+        # ── CALL HISTORY MODULE ──────────────────────────────────────
+        elif module == 'calls':
+            if method == 'POST':
+                body = json.loads(event.get('body') or '{}')
+                action = body.get('action', 'log')
+
+                if action == 'start':
+                    callee_id = body.get('callee_id')
+                    callee_name = body.get('callee_name', '')
+                    mode = body.get('mode', 'audio')
+                    room_id = body.get('room_id', '')
+                    if not callee_id:
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'callee_id required'})}
+                    cur.execute(
+                        "INSERT INTO call_history (caller_id, caller_name, callee_id, callee_name, mode, status, room_id) "
+                        "VALUES (%s, %s, %s, %s, %s, 'initiated', %s) RETURNING id",
+                        (user_id, user_name, callee_id, callee_name, mode, room_id)
+                    )
+                    call_id = cur.fetchone()[0]
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True, 'call_id': call_id})}
+
+                if action == 'finish':
+                    call_id = body.get('call_id')
+                    status = body.get('status', 'ended')
+                    duration = int(body.get('duration_sec', 0) or 0)
+                    answered = bool(body.get('answered', False))
+                    if not call_id:
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'call_id required'})}
+                    if answered:
+                        cur.execute(
+                            "UPDATE call_history SET status=%s, duration_sec=%s, ended_at=NOW(), "
+                            "answered_at=COALESCE(answered_at, NOW()) WHERE id=%s",
+                            (status, duration, int(call_id))
+                        )
+                    else:
+                        cur.execute(
+                            "UPDATE call_history SET status=%s, duration_sec=%s, ended_at=NOW() WHERE id=%s",
+                            (status, duration, int(call_id))
+                        )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True})}
+
+                if action == 'answer':
+                    call_id = body.get('call_id')
+                    if not call_id:
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'call_id required'})}
+                    cur.execute(
+                        "UPDATE call_history SET status='answered', answered_at=NOW() WHERE id=%s",
+                        (int(call_id),)
+                    )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True})}
+
+                return {'statusCode': 400, 'headers': headers,
+                        'body': json.dumps({'error': 'unknown action'})}
+
+            elif method == 'GET':
+                cur.execute(
+                    "SELECT id, caller_id, caller_name, callee_id, callee_name, mode, status, "
+                    "EXTRACT(EPOCH FROM started_at)::bigint, duration_sec, room_id "
+                    "FROM call_history WHERE caller_id=%s OR callee_id=%s "
+                    "ORDER BY started_at DESC LIMIT 100",
+                    (user_id, user_id)
+                )
+                rows = cur.fetchall()
+                calls = [{
+                    'id': r[0], 'caller_id': r[1], 'caller_name': r[2],
+                    'callee_id': r[3], 'callee_name': r[4],
+                    'mode': r[5], 'status': r[6],
+                    'started_at': r[7], 'duration_sec': r[8] or 0,
+                    'room_id': r[9],
+                    'direction': 'out' if r[1] == user_id else 'in',
+                } for r in rows]
+                conn.commit()
+                return {'statusCode': 200, 'headers': headers,
+                        'body': json.dumps({'calls': calls})}
+
         conn.commit()
         return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'unknown request'})}
 

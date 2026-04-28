@@ -75,6 +75,23 @@
       "expectedStatus": 200,
       "expectedBody": {"ok": true},
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Call start log",
+      "method": "POST",
+      "path": "/?module=calls",
+      "body": {"action": "start", "callee_id": "user_x", "callee_name": "Test", "mode": "audio", "room_id": "r1"},
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Call list",
+      "method": "GET",
+      "path": "/?module=calls",
+      "expectedStatus": 200,
+      "expectedBody": {"calls": []},
+      "bodyMatcher": "partial"
     }
   ]
 }

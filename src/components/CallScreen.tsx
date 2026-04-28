@@ -24,6 +24,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
   const [muted, setMuted] = useState(false);
   const [speakerOn, setSpeakerOn] = useState(mode === "video");
   const [cameraOff, setCameraOff] = useState(false);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [status, setStatus] = useState<"connecting" | "ringing" | "connected" | "ended">("connecting");
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
@@ -33,6 +34,9 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSigIdRef = useRef(0);
   const isCaller = useRef(myId > peerId);
+  const callIdRef = useRef<number | null>(null);
+  const secondsRef = useRef(0);
+  const answeredRef = useRef(false);
 
   const sendSignal = async (type: string, payload: unknown) => {
     try {
@@ -55,6 +59,14 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
     } else if (sig.type === "answer") {
       await pc.setRemoteDescription(new RTCSessionDescription(sig.payload as RTCSessionDescriptionInit));
       setStatus("connected");
+      answeredRef.current = true;
+      if (callIdRef.current) {
+        fetch(`${API}?module=calls`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-User-Id": myId },
+          body: JSON.stringify({ action: "answer", call_id: callIdRef.current }),
+        }).catch(() => {});
+      }
     } else if (sig.type === "ice") {
       try { await pc.addIceCandidate(new RTCIceCandidate(sig.payload as RTCIceCandidateInit)); } catch (e) { void e; }
     } else if (sig.type === "end") {
@@ -117,6 +129,16 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
 
       if (isCaller.current) {
         setStatus("ringing");
+        try {
+          const r = await fetch(`${API}?module=calls`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-User-Id": myId },
+            body: JSON.stringify({ action: "start", callee_id: peerId, callee_name: name, mode, room_id: roomId }),
+          });
+          const d = await r.json();
+          const data = typeof d.body === "string" ? JSON.parse(d.body) : d;
+          if (data.call_id) callIdRef.current = data.call_id;
+        } catch (e) { void e; }
         const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: mode === "video" });
         await pc.setLocalDescription(offer);
         await sendSignal("offer", offer);
@@ -134,7 +156,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
 
   useEffect(() => {
     if (status !== "connected") return;
-    const t = setInterval(() => setSeconds((s) => s + 1), 1000);
+    const t = setInterval(() => setSeconds((s) => { secondsRef.current = s + 1; return s + 1; }), 1000);
     return () => clearInterval(t);
   }, [status]);
 
@@ -143,7 +165,43 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
     if (pollRef.current) clearInterval(pollRef.current);
     pcRef.current?.close();
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
+    if (callIdRef.current) {
+      const status = answeredRef.current ? "ended" : "missed";
+      fetch(`${API}?module=calls`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": myId },
+        body: JSON.stringify({
+          action: "finish",
+          call_id: callIdRef.current,
+          status,
+          duration_sec: secondsRef.current,
+          answered: answeredRef.current,
+        }),
+      }).catch(() => {});
+    }
     onEnd();
+  };
+
+  const switchCamera = async () => {
+    if (mode !== "video" || !localStreamRef.current || !pcRef.current) return;
+    const newFacing = facingMode === "user" ? "environment" : "user";
+    try {
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: newFacing },
+      });
+      const newTrack = newStream.getVideoTracks()[0];
+      const sender = pcRef.current.getSenders().find((s) => s.track?.kind === "video");
+      if (sender) await sender.replaceTrack(newTrack);
+      const oldVideo = localStreamRef.current.getVideoTracks()[0];
+      if (oldVideo) {
+        localStreamRef.current.removeTrack(oldVideo);
+        oldVideo.stop();
+      }
+      localStreamRef.current.addTrack(newTrack);
+      if (localVideoRef.current) localVideoRef.current.srcObject = localStreamRef.current;
+      setFacingMode(newFacing);
+    } catch (e) { void e; }
   };
 
   const toggleMute = () => {
@@ -227,7 +285,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
               <div className={`w-14 h-14 rounded-full flex items-center justify-center ${cameraOff ? "bg-white" : "bg-white/20"}`}>
                 <Icon name={cameraOff ? "VideoOff" : "Video"} size={22} className={cameraOff ? "text-black" : "text-white"} />
               </div>
-              <span className="text-white/60 text-xs">Камера</span>
+              <span className="text-white/60 text-xs">Видео</span>
             </button>
           )}
 
@@ -238,12 +296,21 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
             <span className="text-white/60 text-xs">Динамик</span>
           </button>
 
-          <button className="flex flex-col items-center gap-2">
-            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
-              <Icon name="MoreHorizontal" size={22} className="text-white" />
-            </div>
-            <span className="text-white/60 text-xs">Ещё</span>
-          </button>
+          {mode === "video" ? (
+            <button onClick={switchCamera} className="flex flex-col items-center gap-2">
+              <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
+                <Icon name="SwitchCamera" size={22} className="text-white" />
+              </div>
+              <span className="text-white/60 text-xs">Камера</span>
+            </button>
+          ) : (
+            <button className="flex flex-col items-center gap-2 opacity-50">
+              <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
+                <Icon name="MoreHorizontal" size={22} className="text-white" />
+              </div>
+              <span className="text-white/60 text-xs">Ещё</span>
+            </button>
+          )}
         </div>
 
         <div className="flex justify-center">

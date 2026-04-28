@@ -4,6 +4,7 @@ import UserAvatar from "@/components/ui/user-avatar";
 import ChatRoom from "./ChatRoom";
 import CommunitiesScreen from "./CommunitiesScreen";
 import CallScreen from "./CallScreen";
+import CallHistoryScreen from "./CallHistoryScreen";
 import { useAuth } from "@/context/AuthContext";
 
 const AVATARS = [
@@ -38,7 +39,7 @@ const MOCK_CHATS: Chat[] = [
 
 const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
-type Tab = "chats" | "communities";
+type Tab = "chats" | "communities" | "calls";
 
 const MessagesScreen = () => {
   const [tab, setTab] = useState<Tab>("chats");
@@ -178,6 +179,12 @@ const MessagesScreen = () => {
 
   if (openChat) return <ChatRoom chat={openChat} onBack={() => { setOpenChat(null); loadChats(); }} />;
   if (tab === "communities") return <CommunitiesScreen onBack={() => setTab("chats")} />;
+  if (tab === "calls") return (
+    <CallHistoryScreen
+      onBack={() => setTab("chats")}
+      onCall={(peer, mode) => { setTab("chats"); startCall(peer, mode); }}
+    />
+  );
 
   const filtered = chats.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase())
@@ -188,6 +195,12 @@ const MessagesScreen = () => {
       <div className="flex items-center justify-between px-4 pt-14 pb-3">
         <h2 className="text-white font-bold text-xl">Чаты</h2>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setTab("calls")}
+            className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center"
+          >
+            <Icon name="Phone" size={17} className="text-white" />
+          </button>
           <button
             onClick={() => setShowNewChat(true)}
             className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center"
