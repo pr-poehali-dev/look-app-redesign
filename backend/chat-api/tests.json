@@ -43,6 +43,23 @@
       "bodyMatcher": "partial"
     },
     {
+      "name": "Send typing",
+      "method": "POST",
+      "path": "/?module=chat",
+      "body": {"action": "typing", "chat_id": "test_chat"},
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get typing",
+      "method": "GET",
+      "path": "/?module=chat&action=typing_get&chat_id=test_chat",
+      "expectedStatus": 200,
+      "expectedBody": {"typing": []},
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "Get communities",
       "method": "GET",
       "path": "/?module=community&action=list",

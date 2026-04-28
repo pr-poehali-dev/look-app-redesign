@@ -41,6 +41,9 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const lastIdRef = useRef(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const typingPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastTypingSentRef = useRef(0);
+  const [typingUsers, setTypingUsers] = useState<{ id: string; name: string }[]>([]);
 
   const fetchMessages = useCallback(async () => {
     try {
@@ -57,11 +60,39 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
     } catch (e) { void e; }
   }, [chatId, MY_ID, MY_NAME]);
 
+  const fetchTyping = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `${API}?module=chat&action=typing_get&chat_id=${chatId}`,
+        { headers: { "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) } }
+      );
+      const raw = await res.json();
+      const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
+      setTypingUsers(data.typing || []);
+    } catch (e) { void e; }
+  }, [chatId, MY_ID, MY_NAME]);
+
+  const sendTyping = useCallback(() => {
+    const now = Date.now();
+    if (now - lastTypingSentRef.current < 2500) return;
+    lastTypingSentRef.current = now;
+    fetch(`${API}?module=chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
+      body: JSON.stringify({ action: "typing", chat_id: chatId }),
+    }).catch(() => {});
+  }, [chatId, MY_ID, MY_NAME]);
+
   useEffect(() => {
     fetchMessages();
     pollRef.current = setInterval(fetchMessages, 2000);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [fetchMessages]);
+    fetchTyping();
+    typingPollRef.current = setInterval(fetchTyping, 3000);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (typingPollRef.current) clearInterval(typingPollRef.current);
+    };
+  }, [fetchMessages, fetchTyping]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -223,7 +254,18 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-white font-semibold text-sm">{chat.name}</p>
-          <p className="text-white/40 text-xs">{chat.online ? "в сети" : "был(а) недавно"}</p>
+          {typingUsers.length > 0 ? (
+            <p className="text-[#61d4f0] text-xs flex items-center gap-1">
+              <span>{isGroup ? `${typingUsers[0].name} печатает` : "печатает"}</span>
+              <span className="inline-flex gap-0.5">
+                <span className="w-1 h-1 rounded-full bg-[#61d4f0] animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-1 h-1 rounded-full bg-[#61d4f0] animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="w-1 h-1 rounded-full bg-[#61d4f0] animate-bounce" style={{ animationDelay: "300ms" }} />
+              </span>
+            </p>
+          ) : (
+            <p className="text-white/40 text-xs">{chat.online ? "в сети" : "был(а) недавно"}</p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setCall("video")} className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center">
@@ -311,7 +353,7 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
           <div className="flex-1 flex items-end gap-2 bg-[#1a1a1a] rounded-3xl px-4 py-2.5 min-h-[44px]">
             <textarea
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => { setInput(e.target.value); if (e.target.value.trim()) sendTyping(); }}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
               placeholder="Сообщение..."
               rows={1}

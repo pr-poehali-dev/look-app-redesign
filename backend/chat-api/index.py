@@ -80,6 +80,23 @@ def handler(event: dict, context) -> dict:
                     return {'statusCode': 200, 'headers': headers,
                             'body': json.dumps({'users': users})}
 
+                elif action == 'typing_get':
+                    chat_id = params.get('chat_id')
+                    if not chat_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'chat_id required'})}
+                    cur.execute(
+                        "SELECT id, name FROM sa_users "
+                        "WHERE typing_chat_id = %s AND typing_at > NOW() - INTERVAL '5 seconds' "
+                        "AND id != %s",
+                        (chat_id, user_id)
+                    )
+                    users = [{'id': r[0], 'name': r[1]} for r in cur.fetchall()]
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'typing': users})}
+
                 elif action == 'list':
                     cur.execute(
                         "SELECT c.id, c.type, c.name, c.avatar, "
@@ -134,6 +151,20 @@ def handler(event: dict, context) -> dict:
             elif method == 'POST':
                 body = json.loads(event.get('body') or '{}')
                 post_action = body.get('action', 'send')
+
+                if post_action == 'typing':
+                    chat_id = body.get('chat_id')
+                    if not chat_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'chat_id required'})}
+                    cur.execute(
+                        "UPDATE sa_users SET typing_chat_id = %s, typing_at = NOW() WHERE id = %s",
+                        (chat_id, user_id)
+                    )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True})}
 
                 if post_action == 'create_chat':
                     import uuid as _uuid
