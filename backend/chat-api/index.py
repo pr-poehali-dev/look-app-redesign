@@ -151,8 +151,9 @@ def handler(event: dict, context) -> dict:
                         "LEFT JOIN sa_users t ON t.typing_chat_id = c.id "
                         "  AND t.typing_at > NOW() - INTERVAL '5 seconds' AND t.id != %s "
                         "LEFT JOIN app_users au ON au.id = ("
-                        "  SELECT user_id FROM sa_chat_members "
-                        "  WHERE chat_id = c.id AND user_id != %s LIMIT 1"
+                        "  SELECT cm2.user_id FROM sa_chat_members cm2 "
+                        "  JOIN app_users au2 ON au2.id = cm2.user_id "
+                        "  WHERE cm2.chat_id = c.id AND cm2.user_id != %s LIMIT 1"
                         ") "
                         "ORDER BY COALESCE(m.created_at, c.created_at) DESC",
                         (user_id, user_id, user_id, user_id)
@@ -274,10 +275,20 @@ def handler(event: dict, context) -> dict:
                     "INSERT INTO sa_chat_members (chat_id, user_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
                     (chat_id, user_id)
                 )
-                # Авто-добавление второго участника для DM-чатов формата dm_<id1>_<id2>
+                # Авто-добавление второго участника для DM-чатов формата dm_u_<id1>_u_<id2>
                 if chat_id.startswith('dm_'):
-                    parts = chat_id[3:].split('_')
-                    for pid in parts:
+                    rest = chat_id[3:]
+                    ids = []
+                    if rest.startswith('u_'):
+                        # ищем разделитель "_u_" между двумя id-шниками
+                        sep = rest.find('_u_', 2)
+                        if sep > 0:
+                            ids = [rest[:sep], rest[sep + 1:]]
+                        else:
+                            ids = [rest]
+                    else:
+                        ids = rest.split('_')
+                    for pid in ids:
                         if pid and pid != user_id:
                             cur.execute(
                                 "INSERT INTO sa_chat_members (chat_id, user_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
