@@ -84,7 +84,8 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller: isCalle
           `${API}?module=signal&room_id=${roomId}&since_id=${lastSigIdRef.current}`,
           { headers: { "X-User-Id": myId } }
         );
-        const data = await res.json();
+        const raw = await res.json();
+        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
         for (const sig of data.signals || []) {
           await handleSignal(pc, sig);
         }
