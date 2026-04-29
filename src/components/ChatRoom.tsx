@@ -54,8 +54,13 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
       const raw = await res.json();
       const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
       if (data.messages?.length) {
-        lastIdRef.current = data.messages[data.messages.length - 1].id;
-        setMessages((prev) => [...prev, ...data.messages]);
+        const maxId = data.messages.reduce((m: number, x: Message) => Math.max(m, x.id), lastIdRef.current);
+        lastIdRef.current = maxId;
+        setMessages((prev) => {
+          const existingIds = new Set(prev.map(m => m.id));
+          const fresh = (data.messages as Message[]).filter(m => !existingIds.has(m.id));
+          return fresh.length ? [...prev, ...fresh] : prev;
+        });
       }
     } catch (e) { void e; }
   }, [chatId, MY_ID, MY_NAME]);
@@ -84,6 +89,8 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   }, [chatId, MY_ID, MY_NAME]);
 
   useEffect(() => {
+    setMessages([]);
+    lastIdRef.current = 0;
     fetchMessages();
     pollRef.current = setInterval(fetchMessages, 2000);
     fetchTyping();
@@ -92,7 +99,7 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
       if (pollRef.current) clearInterval(pollRef.current);
       if (typingPollRef.current) clearInterval(typingPollRef.current);
     };
-  }, [fetchMessages, fetchTyping]);
+  }, [chatId, fetchMessages, fetchTyping]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -112,8 +119,11 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
       if (data.ok) {
         const now = new Date();
         const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-        setMessages((p) => [...p, { id: data.id, user_id: MY_ID, user_name: MY_NAME, type, content, time: data.time || time }]);
-        lastIdRef.current = data.id;
+        setMessages((p) => p.some(m => m.id === data.id)
+          ? p
+          : [...p, { id: data.id, user_id: MY_ID, user_name: MY_NAME, type, content, time: data.time || time }]
+        );
+        if (data.id > lastIdRef.current) lastIdRef.current = data.id;
       }
     } catch (e) { void e; }
     setSending(false);

@@ -73,7 +73,28 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller: isCalle
     } else if (sig.type === "ice") {
       try { await pc.addIceCandidate(new RTCIceCandidate(sig.payload as RTCIceCandidateInit)); } catch (e) { void e; }
     } else if (sig.type === "end" || sig.type === "call_declined") {
-      hangup();
+      console.log("[CallScreen] received", sig.type, "— closing call");
+      // Жёсткий сброс: гасим всё и закрываем экран немедленно
+      if (noAnswerTimerRef.current) { clearTimeout(noAnswerTimerRef.current); noAnswerTimerRef.current = null; }
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+      try { pcRef.current?.close(); } catch (e) { void e; }
+      try { localStreamRef.current?.getTracks().forEach((t) => t.stop()); } catch (e) { void e; }
+      if (callIdRef.current) {
+        const status = answeredRef.current ? "ended" : (sig.type === "call_declined" ? "declined" : "missed");
+        fetch(`${API}?module=calls`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-User-Id": myId },
+          body: JSON.stringify({
+            action: "finish",
+            call_id: callIdRef.current,
+            status,
+            duration_sec: secondsRef.current,
+            answered: answeredRef.current,
+          }),
+        }).catch(() => {});
+      }
+      setStatus("ended");
+      onEnd();
     }
   };
 
