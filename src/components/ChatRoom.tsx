@@ -48,6 +48,7 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   const [reads, setReads] = useState<Record<string, number>>({});
   const readPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSentReadRef = useRef(0);
+  const [peerInfo, setPeerInfo] = useState<{ name?: string; avatar?: string; online?: boolean } | null>(null);
 
   const fetchMessages = useCallback(async () => {
     try {
@@ -137,6 +138,35 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
     const maxId = messages.reduce((m, x) => x.id > m ? x.id : m, 0);
     if (maxId > 0) markRead(maxId);
   }, [messages, markRead]);
+
+  // Подгружаем актуальное имя/аватар собеседника для DM-чатов
+  useEffect(() => {
+    const isDM = chatId.startsWith("dm_") && chat.type !== "group";
+    if (!isDM) {
+      setPeerInfo(null);
+      return;
+    }
+    const peerId = (() => {
+      const parts = chatId.slice(3).split("_");
+      return parts.find((p) => p && p !== MY_ID) || "";
+    })();
+    if (!peerId) return;
+
+    const load = async () => {
+      try {
+        const res = await fetch(`${API}?module=chat&action=all_users`, {
+          headers: { "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
+        });
+        const raw = await res.json();
+        const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
+        const found = (data.users || []).find((u: { id: string }) => u.id === peerId);
+        if (found) setPeerInfo({ name: found.name, avatar: found.avatar, online: found.online });
+      } catch (e) { void e; }
+    };
+    load();
+    const t = setInterval(load, 15000);
+    return () => clearInterval(t);
+  }, [chatId, chat.type, MY_ID, MY_NAME]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -268,6 +298,9 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   };
 
   const isGroup = chat.type === "group" || String(chat.id).startsWith("community_");
+  const displayName = !isGroup && peerInfo?.name ? peerInfo.name : chat.name;
+  const displayAvatar = !isGroup && peerInfo?.avatar ? peerInfo.avatar : chat.avatar;
+  const displayOnline = !isGroup && peerInfo ? !!peerInfo.online : chat.online;
 
   // Извлечь peerId для DM-чата формата dm_<id1>_<id2>
   const getPeerId = (): string => {
@@ -315,8 +348,8 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   if (call) {
     return (
       <CallScreen
-        name={chat.name}
-        avatar={chat.avatar}
+        name={displayName}
+        avatar={displayAvatar}
         mode={call}
         myId={MY_ID}
         peerId={getPeerId()}
@@ -336,11 +369,11 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
           <Icon name="ChevronLeft" size={26} className="text-white" />
         </button>
         <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 relative">
-          <UserAvatar src={chat.avatar} name={chat.name} alt={chat.name} />
-          {chat.online && <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-black" />}
+          <UserAvatar src={displayAvatar} name={displayName} alt={displayName} />
+          {displayOnline && <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-black" />}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-white font-semibold text-sm">{chat.name}</p>
+          <p className="text-white font-semibold text-sm">{displayName}</p>
           {typingUsers.length > 0 ? (
             <p className="text-[#61d4f0] text-xs flex items-center gap-1">
               <span>{isGroup ? `${typingUsers[0].name} печатает` : "печатает"}</span>
@@ -351,7 +384,7 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
               </span>
             </p>
           ) : (
-            <p className="text-white/40 text-xs">{chat.online ? "в сети" : "был(а) недавно"}</p>
+            <p className="text-white/40 text-xs">{displayOnline ? "в сети" : "был(а) недавно"}</p>
           )}
         </div>
         <div className="flex items-center gap-2">
