@@ -140,6 +140,7 @@ def handler(event: dict, context) -> dict:
                         "au.name, au.avatar "
                         "FROM sa_chats c "
                         "JOIN sa_chat_members cm ON cm.chat_id = c.id AND cm.user_id = %s "
+                        "AND (c.name IS NULL OR c.name != '__merged__') "
                         "LEFT JOIN LATERAL ("
                         "  SELECT user_name, type, content, created_at FROM sa_messages "
                         "  WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1"
