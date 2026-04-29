@@ -39,6 +39,8 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller: isCalle
   const prevPacketsLostRef = useRef(0);
   const prevPacketsRef = useRef(0);
   const noAnswerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingIceRef = useRef<RTCIceCandidateInit[]>([]);
+  const remoteSetRef = useRef(false);
 
   const sendSignal = async (type: string, payload: unknown) => {
     try {
@@ -50,17 +52,29 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller: isCalle
     } catch (e) { void e; }
   };
 
+  const flushPendingIce = async (pc: RTCPeerConnection) => {
+    const queued = pendingIceRef.current;
+    pendingIceRef.current = [];
+    for (const cand of queued) {
+      try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch (e) { console.warn("[CallScreen] ICE add failed", e); }
+    }
+  };
+
   const handleSignal = async (pc: RTCPeerConnection, sig: { id: number; type: string; payload: unknown }) => {
     lastSigIdRef.current = sig.id;
     if (sig.type === "offer") {
+      console.log("[CallScreen] got offer");
       await pc.setRemoteDescription(new RTCSessionDescription(sig.payload as RTCSessionDescriptionInit));
+      remoteSetRef.current = true;
+      await flushPendingIce(pc);
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       await sendSignal("answer", answer);
-      setStatus("connected");
     } else if (sig.type === "answer") {
+      console.log("[CallScreen] got answer");
       await pc.setRemoteDescription(new RTCSessionDescription(sig.payload as RTCSessionDescriptionInit));
-      setStatus("connected");
+      remoteSetRef.current = true;
+      await flushPendingIce(pc);
       answeredRef.current = true;
       if (noAnswerTimerRef.current) { clearTimeout(noAnswerTimerRef.current); noAnswerTimerRef.current = null; }
       if (callIdRef.current) {
@@ -71,7 +85,12 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller: isCalle
         }).catch(() => {});
       }
     } else if (sig.type === "ice") {
-      try { await pc.addIceCandidate(new RTCIceCandidate(sig.payload as RTCIceCandidateInit)); } catch (e) { void e; }
+      const cand = sig.payload as RTCIceCandidateInit;
+      if (!remoteSetRef.current) {
+        pendingIceRef.current.push(cand);
+      } else {
+        try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch (e) { console.warn("[CallScreen] ICE add failed", e); }
+      }
     } else if (sig.type === "end" || sig.type === "call_declined") {
       console.log("[CallScreen] received", sig.type, "— closing call");
       // Жёсткий сброс: гасим всё и закрываем экран немедленно
