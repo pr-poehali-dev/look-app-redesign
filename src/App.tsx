@@ -159,11 +159,12 @@ const AppContent = () => {
   const declineCall = async () => {
     if (!incomingCall || !user) return;
     stopRingtone();
+    // Шлём в комнату самого звонка, чтобы CallScreen звонящего получил сигнал и закрылся
     await fetch(`${CHAT_API}?module=signal`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-User-Id": user.id },
       body: JSON.stringify({
-        room_id: `incoming_${incomingCall.callerId}`,
+        room_id: incomingCall.roomId,
         to_user: incomingCall.callerId,
         type: "call_declined",
         payload: {},

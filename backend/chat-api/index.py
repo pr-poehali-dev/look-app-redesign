@@ -225,6 +225,15 @@ def handler(event: dict, context) -> dict:
                     "INSERT INTO sa_chat_members (chat_id, user_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
                     (chat_id, user_id)
                 )
+                # Авто-добавление второго участника для DM-чатов формата dm_<id1>_<id2>
+                if chat_id.startswith('dm_'):
+                    parts = chat_id[3:].split('_')
+                    for pid in parts:
+                        if pid and pid != user_id:
+                            cur.execute(
+                                "INSERT INTO sa_chat_members (chat_id, user_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                                (chat_id, pid)
+                            )
                 cur.execute(
                     "INSERT INTO sa_messages (chat_id, user_id, user_name, type, content) "
                     "VALUES (%s, %s, %s, %s, %s) RETURNING id, created_at",

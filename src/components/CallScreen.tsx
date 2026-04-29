@@ -69,7 +69,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
       }
     } else if (sig.type === "ice") {
       try { await pc.addIceCandidate(new RTCIceCandidate(sig.payload as RTCIceCandidateInit)); } catch (e) { void e; }
-    } else if (sig.type === "end") {
+    } else if (sig.type === "end" || sig.type === "call_declined") {
       hangup();
     }
   };
@@ -209,6 +209,20 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
 
   const hangup = () => {
     sendSignal("end", {});
+    // Если разговор ещё не принят — также шлём call_cancel в "incoming"-комнату,
+    // чтобы у вызываемого закрылся попап входящего вызова
+    if (!answeredRef.current && isCaller.current) {
+      fetch(`${API}?module=signal`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": myId },
+        body: JSON.stringify({
+          room_id: `incoming_${peerId}`,
+          to_user: peerId,
+          type: "call_cancel",
+          payload: {},
+        }),
+      }).catch(() => {});
+    }
     if (pollRef.current) clearInterval(pollRef.current);
     pcRef.current?.close();
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
