@@ -80,6 +80,24 @@ def handler(event: dict, context) -> dict:
                     return {'statusCode': 200, 'headers': headers,
                             'body': json.dumps({'users': users})}
 
+                elif action == 'all_users':
+                    cur.execute(
+                        "SELECT au.id, au.name, au.avatar, "
+                        "COALESCE(su.online_at > NOW() - INTERVAL '30 seconds', false) AS online "
+                        "FROM app_users au "
+                        "LEFT JOIN sa_users su ON su.id = au.id "
+                        "WHERE au.id != %s "
+                        "ORDER BY online DESC, au.name ASC",
+                        (user_id,)
+                    )
+                    users = [
+                        {'id': r[0], 'name': r[1], 'avatar': r[2] or '', 'online': bool(r[3])}
+                        for r in cur.fetchall()
+                    ]
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'users': users})}
+
                 elif action == 'typing_get':
                     chat_id = params.get('chat_id')
                     if not chat_id:

@@ -29,13 +29,12 @@ export interface Chat {
   typing?: string;
 }
 
-const MOCK_CHATS: Chat[] = [
-  { id: "mock_1", type: "personal", name: "Аня Смирнова", avatar: AVATARS[0], lastMsg: "Увидимся сегодня вечером?", time: "сейчас", unread: 2, online: true },
-  { id: "mock_2", type: "group", name: "Команда проекта", avatar: AVATARS[1], lastMsg: "Макс: Готово, проверяйте!", time: "5 мин", unread: 7, online: false, members: 8, avatars: [AVATARS[0], AVATARS[1], AVATARS[2]] },
-  { id: "mock_3", type: "personal", name: "Кофе и Уют", avatar: AVATARS[2], lastMsg: "☕ Новый рецепт уже в ленте", time: "12 мин", unread: 0, online: true },
-  { id: "mock_4", type: "group", name: "Друзья 🔥", avatar: AVATARS[3], lastMsg: "Вика: Хаха это лучшее 😂", time: "1 ч", unread: 14, online: false, members: 5, avatars: [AVATARS[3], AVATARS[4], AVATARS[0]] },
-  { id: "mock_5", type: "personal", name: "Макс Паркур", avatar: AVATARS[1], lastMsg: "Новое видео вышло!", time: "2 ч", unread: 0, online: false },
-];
+interface AppUser {
+  id: string;
+  name: string;
+  avatar: string;
+  online: boolean;
+}
 
 const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
@@ -50,9 +49,9 @@ const MessagesScreen = () => {
   const [showNewChat, setShowNewChat] = useState(false);
   const [newChatName, setNewChatName] = useState("");
   const [creating, setCreating] = useState(false);
-  const [onlineUsers, setOnlineUsers] = useState<{ id: string; name: string }[]>([]);
+  const [allUsers, setAllUsers] = useState<AppUser[]>([]);
   const [activeCall, setActiveCall] = useState<{ user: { id: string; name: string }; mode: "audio" | "video" } | null>(null);
-  const [onlineMenu, setOnlineMenu] = useState<{ id: string; name: string } | null>(null);
+  const [onlineMenu, setOnlineMenu] = useState<AppUser | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { user } = useAuth();
 
@@ -69,21 +68,21 @@ const MessagesScreen = () => {
           avatar: c.avatar || AVATARS[Math.floor(Math.random() * AVATARS.length)],
           unread: 0,
         }));
-        setChats([...dbChats, ...MOCK_CHATS]);
+        setChats(dbChats);
       })
-      .catch(() => setChats(MOCK_CHATS))
+      .catch(() => setChats([]))
       .finally(() => setLoading(false));
   };
 
-  const loadOnlineUsers = () => {
+  const loadAllUsers = () => {
     if (!user) return;
-    fetch(`${CHAT_API}?module=chat&action=online`, {
+    fetch(`${CHAT_API}?module=chat&action=all_users`, {
       headers: { "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
     })
       .then(r => r.json())
       .then(raw => {
         const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
-        setOnlineUsers((data.users || []).filter((u: { id: string }) => u.id !== user.id));
+        setAllUsers(data.users || []);
       })
       .catch(() => {});
   };
@@ -94,9 +93,9 @@ const MessagesScreen = () => {
 
   useEffect(() => {
     if (!user) return;
-    loadOnlineUsers();
+    loadAllUsers();
     heartbeatRef.current = setInterval(() => {
-      loadOnlineUsers();
+      loadAllUsers();
     }, 25000);
     return () => {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
@@ -162,16 +161,16 @@ const MessagesScreen = () => {
     />
   );
 
-  const openChatWithUser = (u: { id: string; name: string }) => {
+  const openChatWithUser = (u: AppUser) => {
     const chat: Chat = {
       id: `dm_${[user?.id, u.id].sort().join("_")}`,
       type: "personal",
       name: u.name,
-      avatar: AVATARS[Math.floor(Math.random() * AVATARS.length)],
+      avatar: u.avatar || AVATARS[Math.floor(Math.random() * AVATARS.length)],
       lastMsg: "",
       time: "сейчас",
       unread: 0,
-      online: true,
+      online: u.online,
     };
     setOnlineMenu(null);
     setOpenChat(chat);
@@ -229,37 +228,38 @@ const MessagesScreen = () => {
         </div>
       </div>
 
-      {onlineUsers.length > 0 && (
+      {allUsers.length > 0 && (
         <div className="px-4 pb-3">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-white/40 text-xs font-medium">Онлайн сейчас</span>
-            <span className="text-white/25 text-xs">{onlineUsers.length}</span>
+            <span className="text-white/40 text-xs font-medium">Пользователи</span>
+            <span className="text-white/25 text-xs">{allUsers.filter(u => u.online).length} онлайн · {allUsers.length} всего</span>
           </div>
           <div className="flex gap-3 overflow-x-scroll" style={{ scrollbarWidth: "none" }}>
-            {onlineUsers.map((u) => (
+            {allUsers.map((u) => (
               <div
                 key={u.id}
                 className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer active:scale-95 transition-transform"
                 onClick={() => setOnlineMenu(onlineMenu?.id === u.id ? null : u)}
               >
                 <div className="relative">
-                  <div className={`w-11 h-11 rounded-full bg-gradient-to-br from-[#fe2c55]/40 to-[#8b5cf6]/40 flex items-center justify-center border-2 transition-colors ${onlineMenu?.id === u.id ? "border-[#fe2c55]" : "border-white/10"}`}>
-                    <span className="text-white font-semibold text-sm">
-                      {u.name.charAt(0).toUpperCase()}
-                    </span>
+                  <div className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-colors ${onlineMenu?.id === u.id ? "border-[#fe2c55]" : "border-white/10"} ${!u.online ? "opacity-60" : ""}`}>
+                    <UserAvatar src={u.avatar} name={u.name} alt={u.name} />
                   </div>
-                  <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-black" />
+                  <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-black ${u.online ? "bg-green-400" : "bg-white/30"}`} />
                 </div>
-                <span className="text-white/50 text-[10px] w-11 text-center truncate">{u.name.split(" ")[0]}</span>
+                <span className={`text-[10px] w-12 text-center truncate ${u.online ? "text-white/70" : "text-white/40"}`}>{u.name.split(" ")[0]}</span>
               </div>
             ))}
           </div>
 
           {onlineMenu && (
             <div className="mt-3 bg-white/8 rounded-2xl overflow-hidden border border-white/10">
-              <div className="px-4 py-2.5 border-b border-white/8">
+              <div className="px-4 py-2.5 border-b border-white/8 flex items-center gap-2">
                 <span className="text-white/60 text-xs">{onlineMenu.name}</span>
+                <span className={`text-[10px] ${onlineMenu.online ? "text-green-400" : "text-white/30"}`}>
+                  {onlineMenu.online ? "онлайн" : "оффлайн"}
+                </span>
               </div>
               <div className="flex">
                 <button
@@ -290,25 +290,6 @@ const MessagesScreen = () => {
           )}
         </div>
       )}
-
-      <div className="flex gap-4 px-4 pb-4 overflow-x-scroll" style={{ scrollbarWidth: "none" }}>
-        <div className="flex flex-col items-center gap-1.5 flex-shrink-0" onClick={() => setShowNewChat(true)}>
-          <div className="w-14 h-14 rounded-full bg-white/10 border border-dashed border-white/20 flex items-center justify-center cursor-pointer active:scale-95 transition-transform">
-            <Icon name="Plus" size={22} className="text-white/50" />
-          </div>
-          <span className="text-white/40 text-[10px]">Мой статус</span>
-        </div>
-        {filtered.slice(0, 6).map((s) => (
-          <div key={String(s.id)} className="flex flex-col items-center gap-1.5 flex-shrink-0" onClick={() => setOpenChat(s)}>
-            <div className="w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-[#fe2c55] to-[#61d4f0] cursor-pointer active:scale-95 transition-transform">
-              <div className="w-full h-full rounded-full overflow-hidden border-2 border-black">
-                <UserAvatar src={s.avatar} name={s.name} alt={s.name} />
-              </div>
-            </div>
-            <span className="text-white/60 text-[10px] w-14 text-center truncate">{s.name.split(" ")[0]}</span>
-          </div>
-        ))}
-      </div>
 
       <div className="flex-1 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
         {loading ? (

@@ -26,6 +26,14 @@
       "bodyMatcher": "partial"
     },
     {
+      "name": "Get all registered users",
+      "method": "GET",
+      "path": "/?module=chat&action=all_users",
+      "expectedStatus": 200,
+      "expectedBody": {"users": []},
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "Send signal",
       "method": "POST",
       "path": "/?module=signal",
