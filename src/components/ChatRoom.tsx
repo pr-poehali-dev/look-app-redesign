@@ -331,7 +331,7 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
       )}
 
       {/* Input */}
-      <div className="flex items-end gap-2 px-3 pb-8 pt-3 bg-black border-t border-white/8">
+      <div className="flex items-end gap-2 px-3 pb-24 pt-3 bg-black border-t border-white/8 relative z-40">
         <button
           onClick={() => setShowAttach((v) => !v)}
           className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center flex-shrink-0 mb-0.5"
