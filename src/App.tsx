@@ -63,12 +63,19 @@ const AppContent = () => {
   const lastSigRef = useRef(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const masterGainRef = useRef<GainNode | null>(null);
+  const oscillatorsRef = useRef<OscillatorNode[]>([]);
   const ringtoneRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const playRingtone = () => {
     try {
       const ctx = new AudioContext();
       audioCtxRef.current = ctx;
+      const masterGain = ctx.createGain();
+      masterGain.gain.value = 1;
+      masterGain.connect(ctx.destination);
+      masterGainRef.current = masterGain;
+      oscillatorsRef.current = [];
 
       const playNote = (freq: number, start: number, duration: number, volume = 0.25) => {
         const osc = ctx.createOscillator();
@@ -76,7 +83,7 @@ const AppContent = () => {
         const filter = ctx.createBiquadFilter();
         osc.connect(filter);
         filter.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(masterGain);
         osc.type = "triangle";
         filter.type = "lowpass";
         filter.frequency.value = 2000;
@@ -87,6 +94,7 @@ const AppContent = () => {
         gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
         osc.start(start);
         osc.stop(start + duration);
+        oscillatorsRef.current.push(osc);
       };
 
       const playMelody = () => {
@@ -105,7 +113,27 @@ const AppContent = () => {
 
   const stopRingtone = () => {
     if (ringtoneRef.current) { clearInterval(ringtoneRef.current); ringtoneRef.current = null; }
-    if (audioCtxRef.current) { audioCtxRef.current.close().catch(() => {}); audioCtxRef.current = null; }
+    // Мгновенно глушим звук через master gain, потом останавливаем все осцилляторы
+    if (masterGainRef.current && audioCtxRef.current) {
+      try {
+        masterGainRef.current.gain.cancelScheduledValues(audioCtxRef.current.currentTime);
+        masterGainRef.current.gain.setValueAtTime(0, audioCtxRef.current.currentTime);
+      } catch (e) { void e; }
+    }
+    for (const osc of oscillatorsRef.current) {
+      try { osc.stop(); } catch (e) { void e; }
+      try { osc.disconnect(); } catch (e) { void e; }
+    }
+    oscillatorsRef.current = [];
+    masterGainRef.current = null;
+    if (audioCtxRef.current) {
+      const ctx = audioCtxRef.current;
+      audioCtxRef.current = null;
+      ctx.close().catch(() => {});
+    }
+    if ("vibrate" in navigator) {
+      try { navigator.vibrate(0); } catch (e) { void e; }
+    }
   };
 
   const vibrate = () => {
