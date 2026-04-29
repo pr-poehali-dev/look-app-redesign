@@ -29,6 +29,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller: isCalle
   const localStreamRef = useRef<MediaStream | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSigIdRef = useRef(0);
   const isCaller = useRef(isCallerProp !== undefined ? isCallerProp : myId > peerId);
@@ -154,8 +155,14 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller: isCalle
       } catch (e) { void e; }
 
       pc.ontrack = (e) => {
+        const remoteStream = e.streams[0];
         if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = e.streams[0];
+          remoteVideoRef.current.srcObject = remoteStream;
+        }
+        if (remoteAudioRef.current) {
+          remoteAudioRef.current.srcObject = remoteStream;
+          const playPromise = remoteAudioRef.current.play();
+          if (playPromise) playPromise.catch((err) => console.warn("[CallScreen] audio play failed", err));
         }
         setStatus("connected");
       };
@@ -340,6 +347,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller: isCalle
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col overflow-hidden" style={{ maxWidth: 480, margin: "0 auto" }}>
+      <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
       {/* Background */}
       <div className="absolute inset-0">
         {mode === "video" ? (
