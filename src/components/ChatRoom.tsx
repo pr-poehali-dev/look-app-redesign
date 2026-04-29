@@ -26,9 +26,10 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   const { user } = useAuth();
   const MY_ID = user?.id || "anon";
   const MY_NAME = user?.name || "Пользователь";
-  const chatId = String(chat.id).startsWith("mock_") || String(chat.id).startsWith("chat_")
-    ? String(chat.id)
-    : `chat_${MY_ID}_${chat.id}`;
+  const rawChatId = String(chat.id);
+  const chatId = rawChatId.startsWith("mock_") || rawChatId.startsWith("chat_") || rawChatId.startsWith("dm_") || rawChatId.startsWith("community_")
+    ? rawChatId
+    : `dm_${[MY_ID, rawChatId].sort().join("_")}`;
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [call, setCall] = useState<"audio" | "video" | null>(null);
