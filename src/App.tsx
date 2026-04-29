@@ -164,7 +164,7 @@ const AppContent = () => {
     pollRef.current = setInterval(async () => {
       try {
         const res = await fetch(
-          `${CHAT_API}?module=signal&room_id=incoming_${user.id}&since_id=${lastSigRef.current}`,
+          `${CHAT_API}?module=signal&room_id=incoming_${user.id}&since_id=${lastSigRef.current}&max_age_seconds=30`,
           { headers: { "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) } }
         );
         const raw = await res.json();

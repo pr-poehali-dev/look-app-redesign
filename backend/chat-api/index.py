@@ -372,18 +372,28 @@ def handler(event: dict, context) -> dict:
             elif method == 'GET':
                 room_id = params.get('room_id')
                 since_id = params.get('since_id', '0')
+                max_age = params.get('max_age_seconds')
 
                 if not room_id:
                     conn.commit()
                     return {'statusCode': 400, 'headers': headers,
                             'body': json.dumps({'error': 'room_id required'})}
 
-                cur.execute(
-                    "SELECT id, from_user, type, payload FROM sa_signaling "
-                    "WHERE room_id = %s AND to_user = %s AND id > %s "
-                    "ORDER BY created_at ASC LIMIT 50",
-                    (room_id, user_id, int(since_id))
-                )
+                if max_age:
+                    cur.execute(
+                        "SELECT id, from_user, type, payload FROM sa_signaling "
+                        "WHERE room_id = %s AND to_user = %s AND id > %s "
+                        "AND created_at > NOW() - (%s || ' seconds')::interval "
+                        "ORDER BY created_at ASC LIMIT 50",
+                        (room_id, user_id, int(since_id), str(int(max_age)))
+                    )
+                else:
+                    cur.execute(
+                        "SELECT id, from_user, type, payload FROM sa_signaling "
+                        "WHERE room_id = %s AND to_user = %s AND id > %s "
+                        "ORDER BY created_at ASC LIMIT 50",
+                        (room_id, user_id, int(since_id))
+                    )
                 rows = cur.fetchall()
                 signals = [
                     {'id': r[0], 'from_user': r[1], 'type': r[2], 'payload': json.loads(r[3])}
