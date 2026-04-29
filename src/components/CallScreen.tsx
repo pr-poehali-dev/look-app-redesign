@@ -37,6 +37,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
   const statsRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevPacketsLostRef = useRef(0);
   const prevPacketsRef = useRef(0);
+  const noAnswerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const sendSignal = async (type: string, payload: unknown) => {
     try {
@@ -60,6 +61,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
       await pc.setRemoteDescription(new RTCSessionDescription(sig.payload as RTCSessionDescriptionInit));
       setStatus("connected");
       answeredRef.current = true;
+      if (noAnswerTimerRef.current) { clearTimeout(noAnswerTimerRef.current); noAnswerTimerRef.current = null; }
       if (callIdRef.current) {
         fetch(`${API}?module=calls`, {
           method: "POST",
@@ -157,6 +159,13 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
         const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: mode === "video" });
         await pc.setLocalDescription(offer);
         await sendSignal("offer", offer);
+        // Авто-сброс через 30 сек, если никто не ответил
+        noAnswerTimerRef.current = setTimeout(() => {
+          if (!answeredRef.current) {
+            setStatus("ended");
+            hangup();
+          }
+        }, 30000);
       }
     };
 
@@ -164,6 +173,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
 
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      if (noAnswerTimerRef.current) clearTimeout(noAnswerTimerRef.current);
       pcRef.current?.close();
       localStreamRef.current?.getTracks().forEach((t) => t.stop());
     };
@@ -208,6 +218,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
   }, [status]);
 
   const hangup = () => {
+    if (noAnswerTimerRef.current) { clearTimeout(noAnswerTimerRef.current); noAnswerTimerRef.current = null; }
     sendSignal("end", {});
     // Если разговор ещё не принят — также шлём call_cancel в "incoming"-комнату,
     // чтобы у вызываемого закрылся попап входящего вызова

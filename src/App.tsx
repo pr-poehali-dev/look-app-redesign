@@ -66,6 +66,7 @@ const AppContent = () => {
   const masterGainRef = useRef<GainNode | null>(null);
   const oscillatorsRef = useRef<OscillatorNode[]>([]);
   const ringtoneRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const autoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const playRingtone = () => {
     try {
@@ -142,6 +143,22 @@ const AppContent = () => {
     }
   };
 
+  const autoMissCall = (call: IncomingCall) => {
+    if (!user) return;
+    stopRingtone();
+    fetch(`${CHAT_API}?module=signal`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-User-Id": user.id },
+      body: JSON.stringify({
+        room_id: call.roomId,
+        to_user: call.callerId,
+        type: "call_declined",
+        payload: { reason: "timeout" },
+      }),
+    }).catch(() => {});
+    setIncomingCall(null);
+  };
+
   useEffect(() => {
     if (!user) return;
     pollRef.current = setInterval(async () => {
@@ -157,15 +174,19 @@ const AppContent = () => {
           if (sig.type === "call_invite" && sig.payload) {
             playRingtone();
             vibrate();
-            setIncomingCall({
+            const call: IncomingCall = {
               callerId: sig.payload.callerId,
               callerName: sig.payload.callerName,
               mode: sig.payload.mode,
               roomId: sig.payload.roomId,
               sigId: sig.id,
-            });
+            };
+            setIncomingCall(call);
+            if (autoTimeoutRef.current) clearTimeout(autoTimeoutRef.current);
+            autoTimeoutRef.current = setTimeout(() => autoMissCall(call), 30000);
           } else if (sig.type === "call_cancel") {
             stopRingtone();
+            if (autoTimeoutRef.current) { clearTimeout(autoTimeoutRef.current); autoTimeoutRef.current = null; }
             setIncomingCall(null);
           }
         }
@@ -173,12 +194,14 @@ const AppContent = () => {
     }, 1500);
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      if (autoTimeoutRef.current) clearTimeout(autoTimeoutRef.current);
       stopRingtone();
     };
   }, [user]);
 
   const acceptCall = () => {
     if (!incomingCall) return;
+    if (autoTimeoutRef.current) { clearTimeout(autoTimeoutRef.current); autoTimeoutRef.current = null; }
     stopRingtone();
     setActiveCall(incomingCall);
     setIncomingCall(null);
@@ -186,6 +209,7 @@ const AppContent = () => {
 
   const declineCall = async () => {
     if (!incomingCall || !user) return;
+    if (autoTimeoutRef.current) { clearTimeout(autoTimeoutRef.current); autoTimeoutRef.current = null; }
     stopRingtone();
     // Шлём в комнату самого звонка, чтобы CallScreen звонящего получил сигнал и закрылся
     await fetch(`${CHAT_API}?module=signal`, {
