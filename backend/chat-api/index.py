@@ -98,6 +98,22 @@ def handler(event: dict, context) -> dict:
                     return {'statusCode': 200, 'headers': headers,
                             'body': json.dumps({'users': users})}
 
+                elif action == 'read_get':
+                    chat_id = params.get('chat_id')
+                    if not chat_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'chat_id required'})}
+                    cur.execute(
+                        "SELECT user_id, last_read_id FROM sa_message_reads "
+                        "WHERE chat_id = %s",
+                        (chat_id,)
+                    )
+                    reads = {r[0]: r[1] for r in cur.fetchall()}
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'reads': reads})}
+
                 elif action == 'typing_get':
                     chat_id = params.get('chat_id')
                     if not chat_id:
@@ -173,6 +189,25 @@ def handler(event: dict, context) -> dict:
             elif method == 'POST':
                 body = json.loads(event.get('body') or '{}')
                 post_action = body.get('action', 'send')
+
+                if post_action == 'read':
+                    chat_id = body.get('chat_id')
+                    last_id = body.get('last_id', 0)
+                    if not chat_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'chat_id required'})}
+                    cur.execute(
+                        "INSERT INTO sa_message_reads (chat_id, user_id, last_read_id, updated_at) "
+                        "VALUES (%s, %s, %s, NOW()) "
+                        "ON CONFLICT (chat_id, user_id) DO UPDATE "
+                        "SET last_read_id = GREATEST(sa_message_reads.last_read_id, EXCLUDED.last_read_id), "
+                        "updated_at = NOW()",
+                        (chat_id, user_id, int(last_id))
+                    )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True})}
 
                 if post_action == 'typing':
                     chat_id = body.get('chat_id')

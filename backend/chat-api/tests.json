@@ -68,6 +68,23 @@
       "bodyMatcher": "partial"
     },
     {
+      "name": "Mark messages as read",
+      "method": "POST",
+      "path": "/?module=chat",
+      "body": {"action": "read", "chat_id": "test_chat", "last_id": 1},
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get read statuses",
+      "method": "GET",
+      "path": "/?module=chat&action=read_get&chat_id=test_chat",
+      "expectedStatus": 200,
+      "expectedBody": {"reads": {}},
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "Get communities",
       "method": "GET",
       "path": "/?module=community&action=list",

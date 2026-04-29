@@ -45,6 +45,9 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   const typingPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastTypingSentRef = useRef(0);
   const [typingUsers, setTypingUsers] = useState<{ id: string; name: string }[]>([]);
+  const [reads, setReads] = useState<Record<string, number>>({});
+  const readPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastSentReadRef = useRef(0);
 
   const fetchMessages = useCallback(async () => {
     try {
@@ -78,6 +81,28 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
     } catch (e) { void e; }
   }, [chatId, MY_ID, MY_NAME]);
 
+  const fetchReads = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `${API}?module=chat&action=read_get&chat_id=${chatId}`,
+        { headers: { "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) } }
+      );
+      const raw = await res.json();
+      const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
+      setReads(data.reads || {});
+    } catch (e) { void e; }
+  }, [chatId, MY_ID, MY_NAME]);
+
+  const markRead = useCallback((lastId: number) => {
+    if (lastId <= lastSentReadRef.current) return;
+    lastSentReadRef.current = lastId;
+    fetch(`${API}?module=chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
+      body: JSON.stringify({ action: "read", chat_id: chatId, last_id: lastId }),
+    }).catch(() => {});
+  }, [chatId, MY_ID, MY_NAME]);
+
   const sendTyping = useCallback(() => {
     const now = Date.now();
     if (now - lastTypingSentRef.current < 2500) return;
@@ -91,16 +116,27 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
 
   useEffect(() => {
     setMessages([]);
+    setReads({});
     lastIdRef.current = 0;
+    lastSentReadRef.current = 0;
     fetchMessages();
     pollRef.current = setInterval(fetchMessages, 2000);
     fetchTyping();
     typingPollRef.current = setInterval(fetchTyping, 3000);
+    fetchReads();
+    readPollRef.current = setInterval(fetchReads, 3000);
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
       if (typingPollRef.current) clearInterval(typingPollRef.current);
+      if (readPollRef.current) clearInterval(readPollRef.current);
     };
-  }, [chatId, fetchMessages, fetchTyping]);
+  }, [chatId, fetchMessages, fetchTyping, fetchReads]);
+
+  useEffect(() => {
+    if (!messages.length) return;
+    const maxId = messages.reduce((m, x) => x.id > m ? x.id : m, 0);
+    if (maxId > 0) markRead(maxId);
+  }, [messages, markRead]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -168,21 +204,20 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
     setShowAttach(false);
   };
 
-  const lastReadMyId = (() => {
-    let lastMy = 0;
-    let read = 0;
-    for (const m of messages) {
-      if (m.user_id === MY_ID) {
-        lastMy = m.id;
-      } else if (lastMy) {
-        read = lastMy;
-      }
-    }
-    return read;
-  })();
+  // Максимальный id, который прочитал любой собеседник (не я)
+  const peerReadMaxId = Object.entries(reads)
+    .filter(([uid]) => uid !== MY_ID)
+    .reduce((m, [, id]) => (id > m ? id : m), 0);
 
   const Ticks = ({ msg }: { msg: Message }) => {
-    const isRead = msg.id <= lastReadMyId;
+    if (msg.id < 0) {
+      return (
+        <span className="inline-flex items-center -mr-0.5">
+          <Icon name="Clock" size={11} className="text-white/50" />
+        </span>
+      );
+    }
+    const isRead = msg.id <= peerReadMaxId;
     return (
       <span className="inline-flex items-center -mr-0.5">
         <Icon name="Check" size={13} className={isRead ? "text-[#61d4f0]" : "text-white/60"} />
