@@ -213,6 +213,36 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
 
   const isGroup = chat.type === "group" || String(chat.id).startsWith("community_");
 
+  // Извлечь peerId для DM-чата формата dm_<id1>_<id2>
+  const getPeerId = (): string => {
+    const cid = String(chat.id);
+    if (cid.startsWith("dm_")) {
+      const parts = cid.slice(3).split("_");
+      return parts.find(p => p && p !== MY_ID) || cid;
+    }
+    return cid;
+  };
+
+  const startCall = async (mode: "audio" | "video") => {
+    if (!isGroup) {
+      const peerId = getPeerId();
+      const roomId = `call_${[MY_ID, peerId].sort().join("_")}`;
+      try {
+        await fetch(`${API}?module=signal`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
+          body: JSON.stringify({
+            room_id: `incoming_${peerId}`,
+            to_user: peerId,
+            type: "call_invite",
+            payload: { callerId: MY_ID, callerName: MY_NAME, mode, roomId },
+          }),
+        });
+      } catch (e) { void e; }
+    }
+    setCall(mode);
+  };
+
   if (call && isGroup) {
     return (
       <GroupCallScreen
@@ -233,7 +263,8 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
         avatar={chat.avatar}
         mode={call}
         myId={MY_ID}
-        peerId={String(chat.id)}
+        peerId={getPeerId()}
+        isCaller={true}
         onEnd={() => setCall(null)}
       />
     );
@@ -268,10 +299,10 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setCall("video")} className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center">
+          <button onClick={() => startCall("video")} className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center">
             <Icon name="Video" size={17} className="text-white" />
           </button>
-          <button onClick={() => setCall("audio")} className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center">
+          <button onClick={() => startCall("audio")} className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center">
             <Icon name="Phone" size={17} className="text-white" />
           </button>
           <button className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center">

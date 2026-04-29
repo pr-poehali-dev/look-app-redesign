@@ -11,9 +11,10 @@ interface CallScreenProps {
   myId: string;
   peerId: string;
   onEnd: () => void;
+  isCaller?: boolean;
 }
 
-const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps) => {
+const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller: isCallerProp }: CallScreenProps) => {
   const roomId = `call_${[myId, peerId].sort().join("_")}`;
 
   const [seconds, setSeconds] = useState(0);
@@ -30,7 +31,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd }: CallScreenProps
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSigIdRef = useRef(0);
-  const isCaller = useRef(myId > peerId);
+  const isCaller = useRef(isCallerProp !== undefined ? isCallerProp : myId > peerId);
   const callIdRef = useRef<number | null>(null);
   const secondsRef = useRef(0);
   const answeredRef = useRef(false);

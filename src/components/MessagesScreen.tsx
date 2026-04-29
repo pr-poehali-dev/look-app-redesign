@@ -157,6 +157,7 @@ const MessagesScreen = () => {
       mode={activeCall.mode}
       myId={user?.id || "anon"}
       peerId={activeCall.user.id}
+      isCaller={true}
       onEnd={() => setActiveCall(null)}
     />
   );

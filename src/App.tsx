@@ -293,17 +293,6 @@ const AppContent = () => {
 
   if (!user) return <AuthScreen />;
 
-  if (activeCall) return (
-    <CallScreen
-      name={activeCall.callerName}
-      avatar=""
-      mode={activeCall.mode}
-      myId={user.id}
-      peerId={activeCall.callerId}
-      onEnd={() => setActiveCall(null)}
-    />
-  );
-
   return (
     <UserMediaProvider userId={user.id} token={token}>
       <BrowserRouter>
@@ -312,6 +301,20 @@ const AppContent = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+
+      {activeCall && (
+        <div className="fixed inset-0 z-[10000]">
+          <CallScreen
+            name={activeCall.callerName}
+            avatar=""
+            mode={activeCall.mode}
+            myId={user.id}
+            peerId={activeCall.callerId}
+            isCaller={false}
+            onEnd={() => setActiveCall(null)}
+          />
+        </div>
+      )}
 
       {incomingCall && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center pb-16 px-4">
