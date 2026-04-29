@@ -12,6 +12,14 @@ const STUN_SERVERS: RTCIceServer[] = [
 const OPEN_RELAY_TURN: RTCIceServer[] = [
   {
     urls: [
+      "turn:relay1.expressturn.com:3478",
+      "turn:relay1.expressturn.com:3478?transport=tcp",
+    ],
+    username: "ef9DCQR8YYBI3CQR4G",
+    credential: "wRkVJxC1mMR8ZjHN",
+  },
+  {
+    urls: [
       "turn:openrelay.metered.ca:80",
       "turn:openrelay.metered.ca:443",
       "turn:openrelay.metered.ca:443?transport=tcp",
@@ -40,5 +48,7 @@ export const ICE_SERVERS: RTCIceServer[] = [
 
 export const RTC_CONFIG: RTCConfiguration = {
   iceServers: ICE_SERVERS,
-  iceCandidatePoolSize: 4,
+  iceCandidatePoolSize: 10,
+  bundlePolicy: "max-bundle",
+  rtcpMuxPolicy: "require",
 };
