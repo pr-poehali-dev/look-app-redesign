@@ -187,7 +187,7 @@ def handler(event: dict, context) -> dict:
                         peer_avatar = r[11]
                         if is_personal:
                             display_name = peer_name or r[2] or 'Чат'
-                            display_avatar = r[3] or peer_avatar
+                            display_avatar = peer_avatar or r[3]
                         else:
                             display_name = r[2] or 'Чат'
                             display_avatar = r[3]
