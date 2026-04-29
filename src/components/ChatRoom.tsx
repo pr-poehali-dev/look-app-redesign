@@ -108,24 +108,34 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   const sendMsg = async (content: string, type: Message["type"] = "text") => {
     if (sending) return;
     setSending(true);
+    const now = new Date();
+    const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    const tempId = -Date.now();
+    setMessages((p) => [...p, { id: tempId, user_id: MY_ID, user_name: MY_NAME, type, content, time }]);
     try {
       const res = await fetch(`${API}?module=chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
-        body: JSON.stringify({ chat_id: chatId, content, type }),
+        body: JSON.stringify({ action: "send", chat_id: chatId, content, type }),
       });
+      console.log("[ChatRoom] send response status", res.status);
       const raw = await res.json();
       const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
-      if (data.ok) {
-        const now = new Date();
-        const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-        setMessages((p) => p.some(m => m.id === data.id)
-          ? p
-          : [...p, { id: data.id, user_id: MY_ID, user_name: MY_NAME, type, content, time: data.time || time }]
-        );
+      console.log("[ChatRoom] send response data", data);
+      if (data.id) {
+        setMessages((p) => p.map(m => m.id === tempId
+          ? { id: data.id, user_id: MY_ID, user_name: MY_NAME, type, content, time: data.time || time }
+          : m
+        ));
         if (data.id > lastIdRef.current) lastIdRef.current = data.id;
+      } else {
+        console.warn("[ChatRoom] send failed, no id returned", data);
+        setMessages((p) => p.filter(m => m.id !== tempId));
       }
-    } catch (e) { void e; }
+    } catch (e) {
+      console.error("[ChatRoom] send error", e);
+      setMessages((p) => p.filter(m => m.id !== tempId));
+    }
     setSending(false);
   };
 
