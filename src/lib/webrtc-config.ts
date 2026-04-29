@@ -9,6 +9,19 @@ const STUN_SERVERS: RTCIceServer[] = [
   { urls: "stun:stun.nextcloud.com:443" },
 ];
 
+const OPEN_RELAY_TURN: RTCIceServer[] = [
+  {
+    urls: [
+      "turn:openrelay.metered.ca:80",
+      "turn:openrelay.metered.ca:443",
+      "turn:openrelay.metered.ca:443?transport=tcp",
+      "turns:openrelay.metered.ca:443",
+    ],
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
+];
+
 const buildTurnFromEnv = (): RTCIceServer[] => {
   const urls = import.meta.env.VITE_TURN_URL as string | undefined;
   const username = import.meta.env.VITE_TURN_USERNAME as string | undefined;
@@ -18,9 +31,11 @@ const buildTurnFromEnv = (): RTCIceServer[] => {
   return [{ urls: list, username, credential }];
 };
 
+const envTurn = buildTurnFromEnv();
+
 export const ICE_SERVERS: RTCIceServer[] = [
   ...STUN_SERVERS,
-  ...buildTurnFromEnv(),
+  ...(envTurn.length > 0 ? envTurn : OPEN_RELAY_TURN),
 ];
 
 export const RTC_CONFIG: RTCConfiguration = {
