@@ -136,7 +136,8 @@ def handler(event: dict, context) -> dict:
                         "SELECT c.id, c.type, c.name, c.avatar, "
                         "m.user_name, m.type, m.content, m.created_at, "
                         "u.online_at > NOW() - INTERVAL '30 seconds', "
-                        "t.name "
+                        "t.name, "
+                        "au.name, au.avatar "
                         "FROM sa_chats c "
                         "JOIN sa_chat_members cm ON cm.chat_id = c.id AND cm.user_id = %s "
                         "LEFT JOIN LATERAL ("
@@ -149,8 +150,12 @@ def handler(event: dict, context) -> dict:
                         ") "
                         "LEFT JOIN sa_users t ON t.typing_chat_id = c.id "
                         "  AND t.typing_at > NOW() - INTERVAL '5 seconds' AND t.id != %s "
+                        "LEFT JOIN app_users au ON au.id = ("
+                        "  SELECT user_id FROM sa_chat_members "
+                        "  WHERE chat_id = c.id AND user_id != %s LIMIT 1"
+                        ") "
                         "ORDER BY COALESCE(m.created_at, c.created_at) DESC",
-                        (user_id, user_id, user_id)
+                        (user_id, user_id, user_id, user_id)
                     )
                     rows = cur.fetchall()
                     chats = []
@@ -176,9 +181,18 @@ def handler(event: dict, context) -> dict:
                                 time_str = f"{int(diff.total_seconds()//3600)} ч"
                             else:
                                 time_str = 'вчера'
+                        is_personal = (r[1] == 'personal')
+                        peer_name = r[10]
+                        peer_avatar = r[11]
+                        if is_personal:
+                            display_name = peer_name or r[2] or 'Чат'
+                            display_avatar = r[3] or peer_avatar
+                        else:
+                            display_name = r[2] or 'Чат'
+                            display_avatar = r[3]
                         chats.append({
-                            'id': r[0], 'type': r[1], 'name': r[2] or 'Чат',
-                            'avatar': r[3], 'lastMsg': last_msg, 'time': time_str,
+                            'id': r[0], 'type': r[1], 'name': display_name,
+                            'avatar': display_avatar, 'lastMsg': last_msg, 'time': time_str,
                             'online': bool(r[8]),
                             'typing': r[9] or ''
                         })
