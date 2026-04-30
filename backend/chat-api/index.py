@@ -114,6 +114,28 @@ def handler(event: dict, context) -> dict:
                     return {'statusCode': 200, 'headers': headers,
                             'body': json.dumps({'reads': reads})}
 
+                elif action == 'settings_get':
+                    chat_id = params.get('chat_id')
+                    if not chat_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'chat_id required'})}
+                    cur.execute(
+                        "SELECT muted, blocked, theme, disappear FROM chat_settings "
+                        "WHERE user_id = %s AND chat_id = %s",
+                        (user_id, chat_id)
+                    )
+                    row = cur.fetchone()
+                    if row:
+                        settings = {'muted': bool(row[0]), 'blocked': bool(row[1]),
+                                    'theme': row[2] or 'default', 'disappear': row[3] or 'off'}
+                    else:
+                        settings = {'muted': False, 'blocked': False,
+                                    'theme': 'default', 'disappear': 'off'}
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'settings': settings})}
+
                 elif action == 'typing_get':
                     chat_id = params.get('chat_id')
                     if not chat_id:
@@ -221,6 +243,45 @@ def handler(event: dict, context) -> dict:
                         "updated_at = NOW()",
                         (chat_id, user_id, int(last_id))
                     )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True})}
+
+                if post_action == 'settings_set':
+                    chat_id = body.get('chat_id')
+                    if not chat_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'chat_id required'})}
+                    field = body.get('field')
+                    value = body.get('value')
+                    allowed = {'muted', 'blocked', 'theme', 'disappear'}
+                    if field not in allowed:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'invalid field'})}
+                    if field in ('muted', 'blocked'):
+                        value = bool(value)
+                    else:
+                        value = str(value or '')
+                    cur.execute(
+                        "INSERT INTO chat_settings (user_id, chat_id, muted, blocked, theme, disappear, updated_at) "
+                        "VALUES (%s, %s, FALSE, FALSE, 'default', 'off', NOW()) "
+                        "ON CONFLICT (user_id, chat_id) DO NOTHING",
+                        (user_id, chat_id)
+                    )
+                    if field == 'muted':
+                        cur.execute("UPDATE chat_settings SET muted = %s, updated_at = NOW() "
+                                    "WHERE user_id = %s AND chat_id = %s", (value, user_id, chat_id))
+                    elif field == 'blocked':
+                        cur.execute("UPDATE chat_settings SET blocked = %s, updated_at = NOW() "
+                                    "WHERE user_id = %s AND chat_id = %s", (value, user_id, chat_id))
+                    elif field == 'theme':
+                        cur.execute("UPDATE chat_settings SET theme = %s, updated_at = NOW() "
+                                    "WHERE user_id = %s AND chat_id = %s", (value, user_id, chat_id))
+                    elif field == 'disappear':
+                        cur.execute("UPDATE chat_settings SET disappear = %s, updated_at = NOW() "
+                                    "WHERE user_id = %s AND chat_id = %s", (value, user_id, chat_id))
                     conn.commit()
                     return {'statusCode': 200, 'headers': headers,
                             'body': json.dumps({'ok': True})}

@@ -117,6 +117,41 @@
       "expectedStatus": 200,
       "expectedBody": {"calls": []},
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get chat settings (defaults)",
+      "method": "GET",
+      "path": "/?module=chat&action=settings_get&chat_id=test_chat_settings",
+      "expectedStatus": 200,
+      "expectedBody": {"settings": {"muted": false, "blocked": false, "theme": "default", "disappear": "off"}},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Set mute",
+      "method": "POST",
+      "path": "/?module=chat",
+      "body": {"action": "settings_set", "chat_id": "test_chat_settings", "field": "muted", "value": true},
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Set theme",
+      "method": "POST",
+      "path": "/?module=chat",
+      "body": {"action": "settings_set", "chat_id": "test_chat_settings", "field": "theme", "value": "blue"},
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Reject invalid field",
+      "method": "POST",
+      "path": "/?module=chat",
+      "body": {"action": "settings_set", "chat_id": "test_chat_settings", "field": "evil", "value": "x"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "invalid field"},
+      "bodyMatcher": "partial"
     }
   ]
 }

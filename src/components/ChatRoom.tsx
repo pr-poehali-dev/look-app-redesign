@@ -58,21 +58,13 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showReport, setShowReport] = useState(false);
   const [showBlock, setShowBlock] = useState(false);
-  const [muted, setMuted] = useState<boolean>(() => {
-    try { return localStorage.getItem(`chat_muted_${chatId}`) === "1"; } catch { return false; }
-  });
-  const [blocked, setBlocked] = useState<boolean>(() => {
-    try { return localStorage.getItem(`chat_blocked_${chatId}`) === "1"; } catch { return false; }
-  });
+  const [muted, setMuted] = useState<boolean>(false);
+  const [blocked, setBlocked] = useState<boolean>(false);
   const [showMute, setShowMute] = useState(false);
   const [showDisappear, setShowDisappear] = useState(false);
-  const [disappearTimer, setDisappearTimer] = useState<string>(() => {
-    try { return localStorage.getItem(`chat_disappear_${chatId}`) || "off"; } catch { return "off"; }
-  });
+  const [disappearTimer, setDisappearTimer] = useState<string>("off");
   const [showTheme, setShowTheme] = useState(false);
-  const [chatTheme, setChatTheme] = useState<string>(() => {
-    try { return localStorage.getItem(`chat_theme_${chatId}`) || "default"; } catch { return "default"; }
-  });
+  const [chatTheme, setChatTheme] = useState<string>("default");
   const [showMedia, setShowMedia] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const [toast, setToast] = useState("");
@@ -114,45 +106,31 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   };
 
   const toggleMute = (option: string) => {
-    if (option === "off") {
-      setMuted(false);
-      try { localStorage.removeItem(`chat_muted_${chatId}`); } catch { /* ignore */ }
-      showToast("Уведомления включены");
-    } else {
-      setMuted(true);
-      try { localStorage.setItem(`chat_muted_${chatId}`, "1"); } catch { /* ignore */ }
-      showToast(`Без звука: ${option}`);
-    }
+    const next = option !== "off";
+    setMuted(next);
+    saveSetting("muted", next);
     setShowMute(false);
+    showToast(next ? `Без звука: ${option}` : "Уведомления включены");
   };
 
   const toggleBlock = () => {
     const next = !blocked;
     setBlocked(next);
-    try {
-      if (next) localStorage.setItem(`chat_blocked_${chatId}`, "1");
-      else localStorage.removeItem(`chat_blocked_${chatId}`);
-    } catch { /* ignore */ }
+    saveSetting("blocked", next);
     setShowBlock(false);
     showToast(next ? "Контакт заблокирован" : "Контакт разблокирован");
   };
 
   const setDisappear = (val: string) => {
     setDisappearTimer(val);
-    try {
-      if (val === "off") localStorage.removeItem(`chat_disappear_${chatId}`);
-      else localStorage.setItem(`chat_disappear_${chatId}`, val);
-    } catch { /* ignore */ }
+    saveSetting("disappear", val);
     setShowDisappear(false);
     showToast(val === "off" ? "Исчезающие выключены" : `Исчезают через ${val}`);
   };
 
   const applyTheme = (val: string) => {
     setChatTheme(val);
-    try {
-      if (val === "default") localStorage.removeItem(`chat_theme_${chatId}`);
-      else localStorage.setItem(`chat_theme_${chatId}`, val);
-    } catch { /* ignore */ }
+    saveSetting("theme", val);
     setShowTheme(false);
   };
 
@@ -230,6 +208,30 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
     }).catch(() => {});
   }, [chatId, MY_ID, MY_NAME]);
 
+  const fetchSettings = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `${API}?module=chat&action=settings_get&chat_id=${chatId}`,
+        { headers: { "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) } }
+      );
+      const raw = await res.json();
+      const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
+      const s = data.settings || {};
+      setMuted(!!s.muted);
+      setBlocked(!!s.blocked);
+      setChatTheme(s.theme || "default");
+      setDisappearTimer(s.disappear || "off");
+    } catch (e) { void e; }
+  }, [chatId, MY_ID, MY_NAME]);
+
+  const saveSetting = useCallback((field: string, value: boolean | string) => {
+    fetch(`${API}?module=chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
+      body: JSON.stringify({ action: "settings_set", chat_id: chatId, field, value }),
+    }).catch(() => {});
+  }, [chatId, MY_ID, MY_NAME]);
+
   const sendTyping = useCallback(() => {
     const now = Date.now();
     if (now - lastTypingSentRef.current < 2500) return;
@@ -252,12 +254,13 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
     typingPollRef.current = setInterval(fetchTyping, 3000);
     fetchReads();
     readPollRef.current = setInterval(fetchReads, 3000);
+    fetchSettings();
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
       if (typingPollRef.current) clearInterval(typingPollRef.current);
       if (readPollRef.current) clearInterval(readPollRef.current);
     };
-  }, [chatId, fetchMessages, fetchTyping, fetchReads]);
+  }, [chatId, fetchMessages, fetchTyping, fetchReads, fetchSettings]);
 
   useEffect(() => {
     if (!messages.length) return;
