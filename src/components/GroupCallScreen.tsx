@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
-import { RTC_CONFIG } from "@/lib/webrtc-config";
+import { RTC_CONFIG, fetchIceServers } from "@/lib/webrtc-config";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
@@ -33,6 +33,7 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSigRef = useRef(0);
+  const rtcConfigRef = useRef<RTCConfiguration>(RTC_CONFIG);
 
   const sendSig = useCallback(async (toUser: string, type: string, payload: unknown) => {
     await fetch(`${API}?module=signal`, {
@@ -48,7 +49,7 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
     const existing = peersMapRef.current.get(peerId);
     if (existing) return existing.pc;
 
-    const pc = new RTCPeerConnection(RTC_CONFIG);
+    const pc = new RTCPeerConnection(rtcConfigRef.current);
     const entry: PeerEntry = { id: peerId, name: peerName, pc, stream: null };
     peersMapRef.current.set(peerId, entry);
     syncPeers();
@@ -117,6 +118,16 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
   useEffect(() => {
     let mounted = true;
     const start = async () => {
+      try {
+        const ice = await fetchIceServers();
+        rtcConfigRef.current = {
+          iceServers: ice,
+          iceCandidatePoolSize: 10,
+          bundlePolicy: "max-bundle",
+          rtcpMuxPolicy: "require",
+        };
+      } catch (e) { void e; }
+
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: mode === "video" });
         if (!mounted) { stream.getTracks().forEach(t => t.stop()); return; }

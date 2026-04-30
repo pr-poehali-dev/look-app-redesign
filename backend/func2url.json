@@ -1,4 +1,5 @@
 {
+  "ice-servers": "https://functions.poehali.dev/53c7b2af-c5ea-4c37-bc28-154737d35d87",
   "email-send": "https://functions.poehali.dev/cb9f8edd-ee1d-436d-95cb-e07d3b4655b0",
   "legacy-hide-broken": "https://functions.poehali.dev/9d18d13e-1ce1-4aa7-ae13-3e4be57e44b4",
   "legacy-extract-7z": "https://functions.poehali.dev/36158ddd-3a04-4aa2-af12-0c3d09f9dbe9",

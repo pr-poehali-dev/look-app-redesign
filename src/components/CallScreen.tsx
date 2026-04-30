@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
-import { RTC_CONFIG } from "@/lib/webrtc-config";
+import { RTC_CONFIG, getRtcConfig } from "@/lib/webrtc-config";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
@@ -141,7 +141,9 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller: isCalle
     const start = async () => {
       console.log("[CallScreen] start", { myId, peerId, roomId, isCaller: isCaller.current, mode });
       setStatus("connecting");
-      pc = new RTCPeerConnection(RTC_CONFIG);
+      const cfg = await getRtcConfig().catch(() => RTC_CONFIG);
+      console.log("[CallScreen] iceServers count =", (cfg.iceServers || []).length);
+      pc = new RTCPeerConnection(cfg);
       pcRef.current = pc;
 
       try {
