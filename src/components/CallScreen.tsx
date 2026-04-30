@@ -138,6 +138,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller: isCalle
     let pc: RTCPeerConnection;
 
     const start = async () => {
+      console.log("[CallScreen] start", { myId, peerId, roomId, isCaller: isCaller.current, mode });
       setStatus("connecting");
       pc = new RTCPeerConnection(RTC_CONFIG);
       pcRef.current = pc;
@@ -152,7 +153,14 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller: isCalle
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
         }
-      } catch (e) { void e; }
+        console.log("[CallScreen] getUserMedia ok", { tracks: stream.getTracks().length });
+      } catch (e) {
+        console.error("[CallScreen] getUserMedia FAILED", e);
+        alert(mode === "video" ? "Нет доступа к камере или микрофону. Разреши доступ в настройках браузера." : "Нет доступа к микрофону. Разреши доступ в настройках браузера.");
+        setStatus("ended");
+        onEnd();
+        return;
+      }
 
       pc.ontrack = (e) => {
         const remoteStream = e.streams[0];
@@ -172,9 +180,11 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller: isCalle
       };
 
       pc.onconnectionstatechange = () => {
+        console.log("[CallScreen] connectionState =", pc.connectionState);
         if (pc.connectionState === "connected") setStatus("connected");
         if (pc.connectionState === "failed") {
           if (isCaller.current) {
+            try { (pc as RTCPeerConnection & { restartIce?: () => void }).restartIce?.(); } catch (e) { void e; }
             pc.createOffer({ iceRestart: true })
               .then((o) => pc.setLocalDescription(o).then(() => sendSignal("offer", o)))
               .catch(() => setStatus("ended"));
@@ -183,12 +193,22 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller: isCalle
       };
 
       pc.oniceconnectionstatechange = () => {
+        console.log("[CallScreen] iceConnectionState =", pc.iceConnectionState);
         if (pc.iceConnectionState === "disconnected") setQuality("poor");
         if (pc.iceConnectionState === "failed" && isCaller.current) {
+          try { (pc as RTCPeerConnection & { restartIce?: () => void }).restartIce?.(); } catch (e) { void e; }
           pc.createOffer({ iceRestart: true })
             .then((o) => pc.setLocalDescription(o).then(() => sendSignal("offer", o)))
             .catch(() => {});
         }
+      };
+
+      pc.onicegatheringstatechange = () => {
+        console.log("[CallScreen] iceGatheringState =", pc.iceGatheringState);
+      };
+
+      pc.onsignalingstatechange = () => {
+        console.log("[CallScreen] signalingState =", pc.signalingState);
       };
 
       startPoll(pc);

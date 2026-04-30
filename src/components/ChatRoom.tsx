@@ -98,6 +98,16 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
     showToast("Добавь сайт через меню браузера → На главный экран");
   };
 
+  const markAllRead = () => {
+    const maxId = messages.reduce((m, msg) => msg.id > m ? msg.id : m, 0);
+    if (maxId > 0) {
+      markRead(maxId);
+      showToast("Все сообщения прочитаны");
+    } else {
+      showToast("Нет сообщений");
+    }
+  };
+
   const clearChat = async (forAll: boolean = false) => {
     setConfirmClear(false);
     try {
@@ -565,6 +575,7 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
                         <span>Назад</span>
                       </button>
                       <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); setShowMedia(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Медиа, ссылки и докум.</button>
+                      <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); markAllRead(); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Отметить как прочитанное</button>
                       <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); setConfirmClear(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Очистить чат</button>
                       <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); exportChat(); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Экспорт чата</button>
                       <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); addToHomescreen(); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Добавить иконку на экран</button>
