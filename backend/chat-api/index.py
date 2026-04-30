@@ -309,6 +309,7 @@ def handler(event: dict, context) -> dict:
 
                 if post_action == 'clear_chat':
                     chat_id = body.get('chat_id')
+                    for_all = bool(body.get('for_all', False))
                     if not chat_id:
                         conn.commit()
                         return {'statusCode': 400, 'headers': headers,
@@ -318,6 +319,21 @@ def handler(event: dict, context) -> dict:
                         (chat_id,)
                     )
                     max_id = int(cur.fetchone()[0] or 0)
+                    if for_all:
+                        cur.execute(
+                            "SELECT 1 FROM sa_chat_members WHERE chat_id = %s AND user_id = %s",
+                            (chat_id, user_id)
+                        )
+                        if not cur.fetchone():
+                            conn.commit()
+                            return {'statusCode': 403, 'headers': headers,
+                                    'body': json.dumps({'error': 'not a member'})}
+                        cur.execute("DELETE FROM sa_messages WHERE chat_id = %s", (chat_id,))
+                        cur.execute(
+                            "UPDATE chat_settings SET cleared_until_id = %s, updated_at = NOW() "
+                            "WHERE chat_id = %s",
+                            (max_id, chat_id)
+                        )
                     cur.execute(
                         "INSERT INTO chat_settings (user_id, chat_id, cleared_until_id, updated_at) "
                         "VALUES (%s, %s, %s, NOW()) "
@@ -327,7 +343,7 @@ def handler(event: dict, context) -> dict:
                     )
                     conn.commit()
                     return {'statusCode': 200, 'headers': headers,
-                            'body': json.dumps({'ok': True, 'cleared_until': max_id})}
+                            'body': json.dumps({'ok': True, 'cleared_until': max_id, 'for_all': for_all})}
 
                 if post_action == 'delete_message':
                     msg_id = body.get('message_id')

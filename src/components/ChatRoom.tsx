@@ -98,13 +98,13 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
     showToast("Добавь сайт через меню браузера → На главный экран");
   };
 
-  const clearChat = async () => {
+  const clearChat = async (forAll: boolean = false) => {
     setConfirmClear(false);
     try {
       const res = await fetch(`${API}?module=chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
-        body: JSON.stringify({ action: "clear_chat", chat_id: chatId }),
+        body: JSON.stringify({ action: "clear_chat", chat_id: chatId, for_all: forAll }),
       });
       const raw = await res.json();
       const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
@@ -112,7 +112,7 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
       setMessages([]);
       lastIdRef.current = cleared;
       lastSentReadRef.current = cleared;
-      showToast("Чат очищен");
+      showToast(forAll ? "Чат очищен у всех" : "Чат очищен");
     } catch {
       showToast("Не удалось очистить");
     }
@@ -885,12 +885,19 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
       {/* Очистить чат */}
       {confirmClear && (
         <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center px-6" onClick={() => setConfirmClear(false)}>
-          <div className="bg-[#1a1a1a] rounded-2xl p-5 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-[#1a1a1a] rounded-2xl p-5 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
             <p className="text-white text-base font-semibold mb-2">Очистить чат?</p>
-            <p className="text-white/50 text-sm mb-5">Все сообщения будут скрыты на этом устройстве.</p>
-            <div className="flex gap-2">
-              <button onClick={() => setConfirmClear(false)} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm">Отмена</button>
-              <button onClick={clearChat} className="flex-1 py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold">Очистить</button>
+            <p className="text-white/50 text-sm mb-5">Выбери, как очистить переписку.</p>
+            <div className="flex flex-col gap-2">
+              <button onClick={() => clearChat(false)} className="w-full py-3 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/15">
+                Очистить только у меня
+              </button>
+              <button onClick={() => clearChat(true)} className="w-full py-3 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold hover:opacity-90">
+                Очистить у всех
+              </button>
+              <button onClick={() => setConfirmClear(false)} className="w-full py-2.5 rounded-xl text-white/60 text-sm">
+                Отмена
+              </button>
             </div>
           </div>
         </div>
