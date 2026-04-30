@@ -180,7 +180,9 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
 
   const handleSignal = async (sig: { id: number; from_user: string; type: string; payload: unknown }) => {
     lastSigIdRef.current = sig.id;
+    console.log("[Stream] sig:", sig.type, "from", sig.from_user);
     if (sig.type === "viewer_join") {
+      console.log("[Stream] new viewer joining:", sig.from_user);
       await handleViewerJoin(sig.from_user);
     } else if (sig.type === "live_answer") {
       const pc = viewerPCsRef.current.get(sig.from_user);

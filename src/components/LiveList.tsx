@@ -55,7 +55,11 @@ const WatchStream = ({ channel, onBack }: { channel: LiveChannel; onBack: () => 
   const pendingIceRef = useRef<RTCIceCandidateInit[]>([]);
   const remoteSetRef = useRef(false);
 
-  const myId = user?.id || `guest_${Math.random().toString(36).slice(2, 10)}`;
+  const myIdRef = useRef<string>("");
+  if (!myIdRef.current) {
+    myIdRef.current = user?.id || `guest_${Math.random().toString(36).slice(2, 10)}`;
+  }
+  const myId = myIdRef.current;
   const myName = user?.name || "Гость";
 
   const sendSignal = async (type: string, payload: unknown) => {
@@ -116,6 +120,7 @@ const WatchStream = ({ channel, onBack }: { channel: LiveChannel; onBack: () => 
           const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
           for (const sig of data.signals || []) {
             lastSigIdRef.current = sig.id;
+            console.log("[Watch] sig:", sig.type, "from", sig.from_user);
             if (sig.type === "live_offer") {
               try {
                 await pc.setRemoteDescription(new RTCSessionDescription(sig.payload as RTCSessionDescriptionInit));
@@ -150,7 +155,11 @@ const WatchStream = ({ channel, onBack }: { channel: LiveChannel; onBack: () => 
         } catch (e) { void e; }
       }, 1000);
 
+      console.log("[Watch] viewer_join → streamer", { streamId: channel.id, streamer: channel.user_id, myId });
       await sendSignal("viewer_join", {});
+      // Повторяем join несколько раз на случай, если стример ещё не успел запустить poll
+      setTimeout(() => { if (!stopped && !remoteSetRef.current) sendSignal("viewer_join", {}); }, 2000);
+      setTimeout(() => { if (!stopped && !remoteSetRef.current) sendSignal("viewer_join", {}); }, 5000);
     };
 
     start();
