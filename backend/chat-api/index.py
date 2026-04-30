@@ -239,6 +239,24 @@ def handler(event: dict, context) -> dict:
                     return {'statusCode': 200, 'headers': headers,
                             'body': json.dumps({'ok': True})}
 
+                if post_action == 'delete_message':
+                    msg_id = body.get('message_id')
+                    if not msg_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'message_id required'})}
+                    cur.execute(
+                        "DELETE FROM sa_messages WHERE id = %s AND user_id = %s RETURNING id",
+                        (int(msg_id), user_id)
+                    )
+                    deleted = cur.fetchone()
+                    conn.commit()
+                    if not deleted:
+                        return {'statusCode': 403, 'headers': headers,
+                                'body': json.dumps({'error': 'not allowed'})}
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True, 'id': deleted[0]})}
+
                 if post_action == 'create_chat':
                     import uuid as _uuid
                     chat_name = body.get('name', 'Новый чат')

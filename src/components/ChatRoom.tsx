@@ -49,6 +49,28 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   const readPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSentReadRef = useRef(0);
   const [peerInfo, setPeerInfo] = useState<{ name?: string; avatar?: string; online?: boolean } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const startLongPress = (msgId: number) => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressTimer.current = setTimeout(() => setConfirmDelete(msgId), 500);
+  };
+  const cancelLongPress = () => {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+  };
+
+  const deleteMessage = async (msgId: number) => {
+    setConfirmDelete(null);
+    setMessages((p) => p.filter(m => m.id !== msgId));
+    try {
+      await fetch(`${API}?module=chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
+        body: JSON.stringify({ action: "delete_message", message_id: msgId }),
+      });
+    } catch (e) { void e; }
+  };
 
   const fetchMessages = useCallback(async () => {
     try {
@@ -412,6 +434,12 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
           const prev = messages[i - 1];
           const isFirstInGroup = !isMe && (!prev || prev.user_id !== msg.user_id);
           const showName = isGroup && isFirstInGroup;
+          const longPressProps = isMe && msg.id > 0 ? {
+            onPointerDown: () => startLongPress(msg.id),
+            onPointerUp: cancelLongPress,
+            onPointerLeave: cancelLongPress,
+            onContextMenu: (e: React.MouseEvent) => { e.preventDefault(); setConfirmDelete(msg.id); },
+          } : {};
           return (
             <div key={msg.id} className={`flex items-end gap-2 ${isMe ? "justify-end" : "justify-start"}`}>
               {!isMe && (
@@ -419,7 +447,7 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
                   <UserAvatar name={msg.user_name} />
                 </div>
               )}
-              <div className="flex flex-col max-w-[78%]">
+              <div className="flex flex-col max-w-[78%]" {...longPressProps}>
                 {showName && (
                   <span className="text-white/50 text-[11px] font-medium ml-3 mb-0.5">{msg.user_name}</span>
                 )}
@@ -503,6 +531,19 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
           </button>
         )}
       </div>
+
+      {confirmDelete !== null && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-6" onClick={() => setConfirmDelete(null)}>
+          <div className="bg-[#1a1a1a] rounded-2xl p-5 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
+            <p className="text-white text-base font-semibold mb-2">Удалить сообщение?</p>
+            <p className="text-white/50 text-sm mb-5">Это действие нельзя отменить.</p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmDelete(null)} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm">Отмена</button>
+              <button onClick={() => deleteMessage(confirmDelete)} className="flex-1 py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold">Удалить</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
