@@ -2,101 +2,146 @@ import json
 import os
 import psycopg2
 
+CORS = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, X-User-Name',
+    'Access-Control-Max-Age': '86400',
+}
+
+
+def _resp(status, payload):
+    return {'statusCode': status, 'headers': {**CORS, 'Content-Type': 'application/json'}, 'body': json.dumps(payload)}
+
+
+def _esc(value):
+    return str(value or '').replace("'", "''")
+
+
 def handler(event: dict, context) -> dict:
-    """Сохранение и получение комментариев к постам и видео"""
+    """Комментарии и лайки для видео и постов. action=likes для лайков, без action — комментарии"""
     method = event.get('httpMethod', 'GET')
 
     if method == 'OPTIONS':
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type',
-                'Access-Control-Max-Age': '86400',
-            },
-            'body': ''
-        }
+        return {'statusCode': 200, 'headers': CORS, 'body': ''}
 
     schema = os.environ['MAIN_DB_SCHEMA']
+    params = event.get('queryStringParameters') or {}
+    headers = event.get('headers') or {}
+    user_id = (headers.get('X-User-Id') or headers.get('x-user-id') or '').strip()[:100]
+    action = (params.get('action') or '').strip()
+
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
 
-    if method == 'GET':
-        params = event.get('queryStringParameters') or {}
-        target_type = params.get('target_type', '')
-        target_id = params.get('target_id', '')
+    try:
+        if action == 'likes':
+            if method == 'GET':
+                target_type = _esc(params.get('target_type', ''))[:20]
+                target_id = _esc(params.get('target_id', ''))[:100]
+                if not target_type or not target_id:
+                    return _resp(400, {'error': 'target_type and target_id required'})
 
-        if not target_type or not target_id:
-            cur.close()
-            conn.close()
-            return {
-                'statusCode': 400,
-                'headers': {'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'target_type and target_id required'})
-            }
+                cur.execute(
+                    f"SELECT COUNT(*) FROM {schema}.likes WHERE target_type = '{target_type}' AND target_id = '{target_id}'"
+                )
+                count = cur.fetchone()[0]
 
-        safe_type = target_type.replace("'", "''")
-        safe_id = target_id.replace("'", "''")
-        cur.execute(
-            f"SELECT id, author_name, author_handle, text, created_at FROM {schema}.comments WHERE target_type = '{safe_type}' AND target_id = '{safe_id}' ORDER BY created_at DESC LIMIT 200"
-        )
-        rows = cur.fetchall()
-        cur.close()
-        conn.close()
+                liked = False
+                if user_id:
+                    safe_user = _esc(user_id)
+                    cur.execute(
+                        f"SELECT 1 FROM {schema}.likes WHERE target_type = '{target_type}' AND target_id = '{target_id}' AND user_id = '{safe_user}' LIMIT 1"
+                    )
+                    liked = cur.fetchone() is not None
 
-        comments = [
-            {
-                'id': r[0],
-                'name': r[1],
-                'handle': r[2] or '',
-                'text': r[3],
-                'time': r[4].isoformat() if r[4] else None,
-            }
-            for r in rows
-        ]
+                return _resp(200, {'count': count, 'liked': liked})
 
-        return {
-            'statusCode': 200,
-            'headers': {'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'comments': comments})
-        }
+            if method == 'POST':
+                body = json.loads(event.get('body') or '{}')
+                target_type = _esc((body.get('target_type') or '').strip())[:20]
+                target_id = _esc(str(body.get('target_id') or '').strip())[:100]
+                if not user_id:
+                    return _resp(401, {'error': 'X-User-Id required'})
+                if not target_type or not target_id:
+                    return _resp(400, {'error': 'target_type and target_id required'})
 
-    if method == 'POST':
-        body = json.loads(event.get('body') or '{}')
-        target_type = (body.get('target_type') or '').strip()
-        target_id = str(body.get('target_id') or '').strip()
-        text = (body.get('text') or '').strip()
-        author_name = (body.get('author_name') or 'Я').strip()[:100]
-        author_handle = (body.get('author_handle') or '').strip()[:100]
+                safe_user = _esc(user_id)
+                cur.execute(
+                    f"SELECT id FROM {schema}.likes WHERE target_type = '{target_type}' AND target_id = '{target_id}' AND user_id = '{safe_user}' LIMIT 1"
+                )
+                row = cur.fetchone()
+                if row:
+                    cur.execute(
+                        f"DELETE FROM {schema}.likes WHERE id = {int(row[0])}"
+                    )
+                    liked = False
+                else:
+                    cur.execute(
+                        f"INSERT INTO {schema}.likes (target_type, target_id, user_id) VALUES ('{target_type}', '{target_id}', '{safe_user}')"
+                    )
+                    liked = True
 
-        if not target_type or not target_id or not text:
-            cur.close()
-            conn.close()
-            return {
-                'statusCode': 400,
-                'headers': {'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'target_type, target_id and text required'})
-            }
+                cur.execute(
+                    f"SELECT COUNT(*) FROM {schema}.likes WHERE target_type = '{target_type}' AND target_id = '{target_id}'"
+                )
+                count = cur.fetchone()[0]
+                conn.commit()
+                return _resp(200, {'count': count, 'liked': liked})
 
-        safe_type = target_type.replace("'", "''")
-        safe_id = target_id.replace("'", "''")
-        safe_text = text.replace("'", "''")
-        safe_name = author_name.replace("'", "''")
-        safe_handle = author_handle.replace("'", "''")
+            return _resp(405, {'error': 'Method not allowed'})
 
-        cur.execute(
-            f"INSERT INTO {schema}.comments (target_type, target_id, author_name, author_handle, text) VALUES ('{safe_type}', '{safe_id}', '{safe_name}', '{safe_handle}', '{safe_text}') RETURNING id, created_at"
-        )
-        row = cur.fetchone()
-        conn.commit()
-        cur.close()
-        conn.close()
+        if method == 'GET':
+            target_type = _esc(params.get('target_type', ''))[:20]
+            target_id = _esc(params.get('target_id', ''))[:100]
+            if not target_type or not target_id:
+                return _resp(400, {'error': 'target_type and target_id required'})
 
-        return {
-            'statusCode': 200,
-            'headers': {'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({
+            cur.execute(
+                f"SELECT id, author_name, author_handle, text, created_at FROM {schema}.comments WHERE target_type = '{target_type}' AND target_id = '{target_id}' ORDER BY created_at DESC LIMIT 200"
+            )
+            rows = cur.fetchall()
+            comments = [
+                {
+                    'id': r[0],
+                    'name': r[1],
+                    'handle': r[2] or '',
+                    'text': r[3],
+                    'time': r[4].isoformat() if r[4] else None,
+                }
+                for r in rows
+            ]
+            return _resp(200, {'comments': comments})
+
+        if method == 'POST':
+            body = json.loads(event.get('body') or '{}')
+            target_type = (body.get('target_type') or '').strip()
+            target_id = str(body.get('target_id') or '').strip()
+            text = (body.get('text') or '').strip()
+            author_name = (body.get('author_name') or 'Я').strip()[:100]
+            author_handle = (body.get('author_handle') or '').strip()[:100]
+
+            if not target_type or not target_id or not text:
+                return _resp(400, {'error': 'target_type, target_id and text required'})
+
+            safe_type = _esc(target_type)
+            safe_id = _esc(target_id)
+            safe_text = _esc(text[:2000])
+            safe_name = _esc(author_name)
+            safe_handle = _esc(author_handle)
+            safe_user = _esc(user_id) if user_id else ''
+
+            if safe_user:
+                cur.execute(
+                    f"INSERT INTO {schema}.comments (target_type, target_id, author_name, author_handle, text, user_id) VALUES ('{safe_type}', '{safe_id}', '{safe_name}', '{safe_handle}', '{safe_text}', '{safe_user}') RETURNING id, created_at"
+                )
+            else:
+                cur.execute(
+                    f"INSERT INTO {schema}.comments (target_type, target_id, author_name, author_handle, text) VALUES ('{safe_type}', '{safe_id}', '{safe_name}', '{safe_handle}', '{safe_text}') RETURNING id, created_at"
+                )
+            row = cur.fetchone()
+            conn.commit()
+            return _resp(200, {
                 'comment': {
                     'id': row[0],
                     'name': author_name,
@@ -105,12 +150,8 @@ def handler(event: dict, context) -> dict:
                     'time': row[1].isoformat() if row[1] else None,
                 }
             })
-        }
 
-    cur.close()
-    conn.close()
-    return {
-        'statusCode': 405,
-        'headers': {'Access-Control-Allow-Origin': '*'},
-        'body': json.dumps({'error': 'Method not allowed'})
-    }
+        return _resp(405, {'error': 'Method not allowed'})
+    finally:
+        cur.close()
+        conn.close()

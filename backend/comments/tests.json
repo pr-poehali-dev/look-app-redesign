@@ -4,6 +4,7 @@
       "name": "POST comment",
       "method": "POST",
       "path": "/",
+      "headers": {"X-User-Id": "test-user-1"},
       "body": {"target_type": "video", "target_id": "test-1", "text": "Hello", "author_name": "Test"},
       "expectedStatus": 200
     },
@@ -11,6 +12,29 @@
       "name": "GET comments",
       "method": "GET",
       "path": "/?target_type=video&target_id=test-1",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Toggle like ON",
+      "method": "POST",
+      "path": "/?action=likes",
+      "headers": {"X-User-Id": "test-user-1"},
+      "body": {"target_type": "video", "target_id": "test-1"},
+      "expectedStatus": 200
+    },
+    {
+      "name": "Get likes",
+      "method": "GET",
+      "path": "/?action=likes&target_type=video&target_id=test-1",
+      "headers": {"X-User-Id": "test-user-1"},
+      "expectedStatus": 200
+    },
+    {
+      "name": "Toggle like OFF",
+      "method": "POST",
+      "path": "/?action=likes",
+      "headers": {"X-User-Id": "test-user-1"},
+      "body": {"target_type": "video", "target_id": "test-1"},
       "expectedStatus": 200
     }
   ]

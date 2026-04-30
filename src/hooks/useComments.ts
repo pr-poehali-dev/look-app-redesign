@@ -1,4 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { getGuestId } from "@/lib/guestId";
 
 const COMMENTS_URL = "https://functions.poehali.dev/4ceed9c1-422c-484e-806e-b3cc8af8b9ec";
 
@@ -31,6 +33,9 @@ const formatRelative = (iso: string | null | undefined): string => {
 };
 
 export const useComments = (targetType: TargetType, targetId: string | number, enabled: boolean, initialCount = 0) => {
+  const { user } = useAuth();
+  const userId = user?.id || getGuestId();
+  const userName = user?.name || "Гость";
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [count, setCount] = useState<number>(initialCount);
   const [loading, setLoading] = useState(false);
@@ -63,12 +68,13 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
     if (enabled && !loaded) load();
   }, [enabled, loaded, load]);
 
-  const send = useCallback(async (text: string, authorName = "Я") => {
+  const send = useCallback(async (text: string, authorName?: string) => {
     const trimmed = text.trim();
     if (!trimmed || !targetId) return;
+    const finalName = authorName || userName;
     const optimistic: CommentItem = {
       id: `tmp-${Date.now()}`,
-      name: authorName,
+      name: finalName,
       text: trimmed,
       time: "сейчас",
     };
@@ -77,12 +83,12 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
     try {
       const res = await fetch(COMMENTS_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-User-Id": userId },
         body: JSON.stringify({
           target_type: targetType,
           target_id: String(targetId),
           text: trimmed,
-          author_name: authorName,
+          author_name: finalName,
         }),
       });
       const data = await res.json();
@@ -98,7 +104,7 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
     } catch {
       // оставляем оптимистичный
     }
-  }, [targetType, targetId]);
+  }, [targetType, targetId, userId, userName]);
 
   return { comments, count, loading, send, reload: load };
 };

@@ -4,11 +4,10 @@ import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { Post, formatLikes } from "./PostFeedTypes";
 import { useComments } from "@/hooks/useComments";
+import { useLikes } from "@/hooks/useLikes";
 
 const PostCard = ({ post }: { post: Post }) => {
-  const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [likes, setLikes] = useState(post.likes);
   const [expanded, setExpanded] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showShare, setShowShare] = useState(false);
@@ -16,12 +15,8 @@ const PostCard = ({ post }: { post: Post }) => {
   const [commentText, setCommentText] = useState("");
   const [copied, setCopied] = useState(false);
 
+  const { liked, count: likes, toggle: handleLike } = useLikes("post", post.id, post.likes);
   const { comments: allComments, count: commentCount, send } = useComments("post", post.id, showComments, post.comments || 0);
-
-  const handleLike = () => {
-    setLiked((v) => !v);
-    setLikes((v) => (liked ? v - 1 : v + 1));
-  };
 
   const handleSendComment = () => {
     if (!commentText.trim()) return;

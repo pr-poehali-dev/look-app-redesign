@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { useComments } from "@/hooks/useComments";
+import { useLikes } from "@/hooks/useLikes";
 
 export interface VideoData {
   id: number;
@@ -24,7 +25,6 @@ interface VideoCardProps {
 }
 
 const VideoCard = ({ video, isActive }: VideoCardProps) => {
-  const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [following, setFollowing] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -35,13 +35,16 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
   const [copied, setCopied] = useState(false);
   const [commentText, setCommentText] = useState("");
   const videoRef = useRef<HTMLVideoElement>(null);
-  const initialCommentCount = (() => {
-    const raw = String(video.comments || "0").trim().toUpperCase();
-    if (raw.endsWith("K")) return Math.round(parseFloat(raw) * 1000) || 0;
-    if (raw.endsWith("M")) return Math.round(parseFloat(raw) * 1_000_000) || 0;
-    return parseInt(raw, 10) || 0;
-  })();
+  const parseShortNum = (raw: string | number) => {
+    const s = String(raw || "0").trim().toUpperCase();
+    if (s.endsWith("K")) return Math.round(parseFloat(s) * 1000) || 0;
+    if (s.endsWith("M")) return Math.round(parseFloat(s) * 1_000_000) || 0;
+    return parseInt(s, 10) || 0;
+  };
+  const initialCommentCount = parseShortNum(video.comments);
+  const initialLikeCount = parseShortNum(video.likes);
   const { comments: allComments, count: commentCount, send } = useComments("video", video.id, showComments, initialCommentCount);
+  const { liked, count: likeCount, toggle: toggleLike } = useLikes("video", video.id, initialLikeCount);
   const formatCount = (n: number) => n >= 1_000_000 ? (n / 1_000_000).toFixed(1) + "M" : n >= 1000 ? (n / 1000).toFixed(1) + "K" : String(n);
 
   useEffect(() => {
@@ -172,15 +175,15 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
 
         {/* Like */}
         <button
-          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setLiked(l => !l); }}
-          onClick={() => setLiked(l => !l)}
+          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); toggleLike(); }}
+          onClick={() => toggleLike()}
           className="flex flex-col items-center gap-1"
           style={{ touchAction: "manipulation" }}
         >
           <div className="w-11 h-11 rounded-full flex items-center justify-center">
             <Icon name="Heart" size={28} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"} />
           </div>
-          <span className="text-white text-xs font-semibold">{liked ? parseInt(video.likes.replace("K","")) + 0.1 + "K" : video.likes}</span>
+          <span className="text-white text-xs font-semibold">{formatCount(likeCount)}</span>
         </button>
 
         {/* Comment */}
