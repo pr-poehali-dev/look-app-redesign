@@ -68,6 +68,10 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
     if (enabled && !loaded) load();
   }, [enabled, loaded, load]);
 
+  useEffect(() => {
+    setCount(prev => (prev === 0 || initialCount > prev ? initialCount : prev));
+  }, [initialCount]);
+
   const send = useCallback(async (text: string, authorName?: string) => {
     const trimmed = text.trim();
     if (!trimmed || !targetId) return;
