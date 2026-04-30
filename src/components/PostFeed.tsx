@@ -5,6 +5,7 @@ import { useUserMedia } from "@/context/UserMediaContext";
 import StoryViewer from "./post-feed/StoryViewer";
 import PostCard from "./post-feed/PostCard";
 import { Post, Story, MOCK_POSTS, GET_PHOTOS_URL, formatTime } from "./post-feed/PostFeedTypes";
+import { useBulkCounts } from "@/hooks/useBulkCounts";
 
 const PostFeed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -47,7 +48,14 @@ const PostFeed = () => {
 
   const [storyIndex, setStoryIndex] = useState<number | null>(null);
 
-  const storySource = posts.length > 0 ? posts : MOCK_POSTS;
+  const counts = useBulkCounts("post", posts.map(p => p.id));
+  const postsWithCounts = posts.map(p => ({
+    ...p,
+    comments: counts.comments[String(p.id)] ?? p.comments,
+    likes: counts.likes[String(p.id)] ?? p.likes,
+  }));
+
+  const storySource = postsWithCounts.length > 0 ? postsWithCounts : MOCK_POSTS;
   const storyUsers = storySource.slice(0, 6);
   const stories: Story[] = storyUsers.map(p => ({ id: p.id, handle: p.handle, avatar: p.avatar, image: p.image }));
 
@@ -105,7 +113,7 @@ const PostFeed = () => {
           <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
-        posts.map((post) => (
+        postsWithCounts.map((post) => (
           <PostCard key={post.id} post={post} />
         ))
       )}

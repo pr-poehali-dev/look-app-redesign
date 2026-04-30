@@ -91,6 +91,28 @@ def handler(event: dict, context) -> dict:
 
             return _resp(405, {'error': 'Method not allowed'})
 
+        if action == 'count' and method == 'GET':
+            target_type = _esc(params.get('target_type', ''))[:20]
+            ids_raw = (params.get('target_ids') or '').strip()
+            if not target_type or not ids_raw:
+                return _resp(400, {'error': 'target_type and target_ids required'})
+            ids = [_esc(x.strip())[:100] for x in ids_raw.split(',') if x.strip()][:200]
+            if not ids:
+                return _resp(200, {'counts': {}})
+            in_list = ", ".join(f"'{i}'" for i in ids)
+            cur.execute(
+                f"SELECT target_id, COUNT(*) FROM {schema}.comments WHERE target_type = '{target_type}' AND target_id IN ({in_list}) GROUP BY target_id"
+            )
+            c_rows = cur.fetchall()
+            cur.execute(
+                f"SELECT target_id, COUNT(*) FROM {schema}.likes WHERE target_type = '{target_type}' AND target_id IN ({in_list}) GROUP BY target_id"
+            )
+            l_rows = cur.fetchall()
+            return _resp(200, {
+                'comments': {r[0]: r[1] for r in c_rows},
+                'likes': {r[0]: r[1] for r in l_rows},
+            })
+
         if method == 'GET':
             target_type = _esc(params.get('target_type', ''))[:20]
             target_id = _esc(params.get('target_id', ''))[:100]
@@ -111,7 +133,7 @@ def handler(event: dict, context) -> dict:
                 }
                 for r in rows
             ]
-            return _resp(200, {'comments': comments})
+            return _resp(200, {'comments': comments, 'count': len(comments)})
 
         if method == 'POST':
             body = json.loads(event.get('body') or '{}')

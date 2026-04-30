@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import VideoCard, { VideoData } from "./VideoCard";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
+import { useBulkCounts } from "@/hooks/useBulkCounts";
 
 export const CATEGORIES = [
   { id: "all", label: "Все" },
@@ -327,6 +328,18 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
     ? allVideos
     : allVideos.filter((v) => v.category === activeCategory);
 
+  const counts = useBulkCounts("video", filtered.map(v => v.id));
+  const formatShort = (n: number) => n >= 1_000_000 ? (n / 1_000_000).toFixed(1) + "M" : n >= 1000 ? (n / 1000).toFixed(1) + "K" : String(n);
+  const filteredWithCounts = filtered.map(v => {
+    const c = counts.comments[String(v.id)];
+    const l = counts.likes[String(v.id)];
+    return {
+      ...v,
+      comments: typeof c === "number" ? formatShort(c) : v.comments,
+      likes: typeof l === "number" ? formatShort(l) : v.likes,
+    };
+  });
+
   useEffect(() => {
     setActiveIndex(0);
     if (containerRef.current) {
@@ -355,7 +368,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
         <div className="w-full flex items-center justify-center" style={{ height: "100%" }}>
           <p className="text-white/40 text-sm">Загрузка...</p>
         </div>
-      ) : filtered.length > 0 ? filtered.map((video, i) => (
+      ) : filteredWithCounts.length > 0 ? filteredWithCounts.map((video, i) => (
         <div key={`${video.id}-${i}`} className="w-full snap-start" style={{ height: "100%" }}>
           <VideoCard video={video} isActive={activeIndex === i} />
         </div>
