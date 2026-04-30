@@ -69,6 +69,20 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
   }, [enabled, loaded, load]);
 
   useEffect(() => {
+    if (!targetId) return;
+    let cancelled = false;
+    fetch(`${COMMENTS_URL}?action=count&target_type=${targetType}&target_ids=${encodeURIComponent(String(targetId))}`)
+      .then(r => r.json())
+      .then(data => {
+        if (cancelled) return;
+        const c = data?.comments?.[String(targetId)];
+        if (typeof c === "number") setCount(c);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [targetType, targetId]);
+
+  useEffect(() => {
     setCount(prev => (prev === 0 || initialCount > prev ? initialCount : prev));
   }, [initialCount]);
 
