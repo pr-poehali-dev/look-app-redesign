@@ -51,6 +51,31 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   const [peerInfo, setPeerInfo] = useState<{ name?: string; avatar?: string; online?: boolean } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [submenuOpen, setSubmenuOpen] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showReport, setShowReport] = useState(false);
+  const [showBlock, setShowBlock] = useState(false);
+  const [muted, setMuted] = useState<boolean>(() => {
+    try { return localStorage.getItem(`chat_muted_${chatId}`) === "1"; } catch { return false; }
+  });
+  const [blocked, setBlocked] = useState<boolean>(() => {
+    try { return localStorage.getItem(`chat_blocked_${chatId}`) === "1"; } catch { return false; }
+  });
+  const [showMute, setShowMute] = useState(false);
+  const [showDisappear, setShowDisappear] = useState(false);
+  const [disappearTimer, setDisappearTimer] = useState<string>(() => {
+    try { return localStorage.getItem(`chat_disappear_${chatId}`) || "off"; } catch { return "off"; }
+  });
+  const [showTheme, setShowTheme] = useState(false);
+  const [chatTheme, setChatTheme] = useState<string>(() => {
+    try { return localStorage.getItem(`chat_theme_${chatId}`) || "default"; } catch { return "default"; }
+  });
+  const [showMedia, setShowMedia] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [toast, setToast] = useState("");
 
   const startLongPress = (msgId: number) => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
@@ -58,6 +83,85 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   };
   const cancelLongPress = () => {
     if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+  };
+
+  const showToast = (text: string) => {
+    setToast(text);
+    setTimeout(() => setToast(""), 2000);
+  };
+
+  const exportChat = () => {
+    const lines = messages.map(m => `[${m.time}] ${m.user_name}: ${m.type === "text" ? m.content : `[${m.type}]`}`).join("\n");
+    const blob = new Blob([lines || "Чат пуст"], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `chat_${displayName || chatId}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast("Чат экспортирован");
+  };
+
+  const addToHomescreen = () => {
+    showToast("Добавь сайт через меню браузера → На главный экран");
+  };
+
+  const clearChat = async () => {
+    setConfirmClear(false);
+    setMessages([]);
+    lastIdRef.current = 0;
+    showToast("Чат очищен");
+  };
+
+  const toggleMute = (option: string) => {
+    if (option === "off") {
+      setMuted(false);
+      try { localStorage.removeItem(`chat_muted_${chatId}`); } catch { /* ignore */ }
+      showToast("Уведомления включены");
+    } else {
+      setMuted(true);
+      try { localStorage.setItem(`chat_muted_${chatId}`, "1"); } catch { /* ignore */ }
+      showToast(`Без звука: ${option}`);
+    }
+    setShowMute(false);
+  };
+
+  const toggleBlock = () => {
+    const next = !blocked;
+    setBlocked(next);
+    try {
+      if (next) localStorage.setItem(`chat_blocked_${chatId}`, "1");
+      else localStorage.removeItem(`chat_blocked_${chatId}`);
+    } catch { /* ignore */ }
+    setShowBlock(false);
+    showToast(next ? "Контакт заблокирован" : "Контакт разблокирован");
+  };
+
+  const setDisappear = (val: string) => {
+    setDisappearTimer(val);
+    try {
+      if (val === "off") localStorage.removeItem(`chat_disappear_${chatId}`);
+      else localStorage.setItem(`chat_disappear_${chatId}`, val);
+    } catch { /* ignore */ }
+    setShowDisappear(false);
+    showToast(val === "off" ? "Исчезающие выключены" : `Исчезают через ${val}`);
+  };
+
+  const applyTheme = (val: string) => {
+    setChatTheme(val);
+    try {
+      if (val === "default") localStorage.removeItem(`chat_theme_${chatId}`);
+      else localStorage.setItem(`chat_theme_${chatId}`, val);
+    } catch { /* ignore */ }
+    setShowTheme(false);
+  };
+
+  const themeBg: Record<string, string> = {
+    default: "#0a0a0a",
+    dark: "#000000",
+    blue: "#0b1a2e",
+    purple: "#1a0d2e",
+    green: "#0d2e1a",
   };
 
   const deleteMessage = async (msgId: number) => {
@@ -382,7 +486,7 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   }
 
   return (
-    <div className="h-full bg-[#0a0a0a] flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden" style={{ backgroundColor: themeBg[chatTheme] || themeBg.default }}>
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImage} />
 
       {/* Header */}
@@ -416,11 +520,63 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
           <button onClick={() => startCall("audio")} className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center">
             <Icon name="Phone" size={17} className="text-white" />
           </button>
-          <button className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center">
-            <Icon name="MoreVertical" size={17} className="text-white" />
-          </button>
+          <div className="relative">
+            <button onClick={() => { setMenuOpen(v => !v); setSubmenuOpen(false); }} className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center">
+              <Icon name="MoreVertical" size={17} className="text-white" />
+            </button>
+            {menuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => { setMenuOpen(false); setSubmenuOpen(false); }} />
+                <div className="absolute right-0 top-11 z-50 w-60 bg-[#1c1c1e] rounded-xl shadow-2xl border border-white/8 overflow-hidden py-1 animate-in fade-in slide-in-from-top-2 duration-150">
+                  {!submenuOpen ? (
+                    <>
+                      <button onClick={() => { setMenuOpen(false); setShowProfile(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Просмотр контакта</button>
+                      <button onClick={() => { setMenuOpen(false); setShowSearch(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Поиск</button>
+                      <button onClick={() => { setMenuOpen(false); setShowReport(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Пожаловаться</button>
+                      <button onClick={() => { setMenuOpen(false); setShowBlock(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{blocked ? "Разблокировать" : "Заблокировать"}</button>
+                      <button onClick={() => { setMenuOpen(false); setShowMute(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Без звука</button>
+                      <button onClick={() => { setMenuOpen(false); setShowDisappear(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Исчезающие сообщения</button>
+                      <button onClick={() => { setMenuOpen(false); setShowTheme(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Тема чата</button>
+                      <button onClick={() => setSubmenuOpen(true)} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5 flex items-center justify-between">
+                        <span>Ещё</span>
+                        <Icon name="ChevronRight" size={16} className="text-white/50" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => setSubmenuOpen(false)} className="w-full text-left px-4 py-3 text-white/60 text-xs hover:bg-white/5 flex items-center gap-2 border-b border-white/8">
+                        <Icon name="ChevronLeft" size={14} />
+                        <span>Назад</span>
+                      </button>
+                      <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); setShowMedia(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Медиа, ссылки и докум.</button>
+                      <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); setConfirmClear(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Очистить чат</button>
+                      <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); exportChat(); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Экспорт чата</button>
+                      <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); addToHomescreen(); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Добавить иконку на экран</button>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Search bar */}
+      {showSearch && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-[#111] border-b border-white/8">
+          <Icon name="Search" size={16} className="text-white/40" />
+          <input
+            autoFocus
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Поиск по сообщениям..."
+            className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/30"
+          />
+          <button onClick={() => { setShowSearch(false); setSearchQuery(""); }} className="text-white/60 text-xs">
+            <Icon name="X" size={18} />
+          </button>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-scroll px-3 py-4 flex flex-col gap-2" style={{ scrollbarWidth: "none" }}>
@@ -430,6 +586,9 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
           </div>
         )}
         {messages.map((msg, i) => {
+          const isMatch = !!searchQuery.trim() && msg.type === "text" && msg.content.toLowerCase().includes(searchQuery.toLowerCase());
+          if (searchQuery.trim() && !isMatch) return null;
+          void isMatch;
           const isMe = msg.user_id === MY_ID;
           const prev = messages[i - 1];
           const isFirstInGroup = !isMe && (!prev || prev.user_id !== msg.user_id);
@@ -542,6 +701,189 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
               <button onClick={() => deleteMessage(confirmDelete)} className="flex-1 py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold">Удалить</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Просмотр контакта */}
+      {showProfile && (
+        <div className="fixed inset-0 z-[60] bg-black/80 flex items-end sm:items-center justify-center" onClick={() => setShowProfile(false)}>
+          <div className="bg-[#1a1a1a] w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex flex-col items-center">
+              <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
+                <UserAvatar src={displayAvatar} name={displayName} alt={displayName} />
+              </div>
+              <p className="text-white text-xl font-semibold">{displayName}</p>
+              <p className="text-white/40 text-sm mt-1">{displayOnline ? "в сети" : "был(а) недавно"}</p>
+              <div className="grid grid-cols-3 gap-3 mt-6 w-full">
+                <button onClick={() => { setShowProfile(false); startCall("audio"); }} className="flex flex-col items-center gap-1 py-3 bg-white/5 rounded-xl">
+                  <Icon name="Phone" size={20} className="text-white" />
+                  <span className="text-white/70 text-xs">Звонок</span>
+                </button>
+                <button onClick={() => { setShowProfile(false); startCall("video"); }} className="flex flex-col items-center gap-1 py-3 bg-white/5 rounded-xl">
+                  <Icon name="Video" size={20} className="text-white" />
+                  <span className="text-white/70 text-xs">Видео</span>
+                </button>
+                <button onClick={() => { setShowProfile(false); setShowMute(true); }} className="flex flex-col items-center gap-1 py-3 bg-white/5 rounded-xl">
+                  <Icon name={muted ? "BellOff" : "Bell"} size={20} className="text-white" />
+                  <span className="text-white/70 text-xs">{muted ? "Без звука" : "Звук"}</span>
+                </button>
+              </div>
+              <button onClick={() => setShowProfile(false)} className="mt-5 w-full py-3 rounded-xl bg-white/10 text-white text-sm">Закрыть</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Пожаловаться */}
+      {showReport && (
+        <div className="fixed inset-0 z-[60] bg-black/80 flex items-end sm:items-center justify-center px-4" onClick={() => setShowReport(false)}>
+          <div className="bg-[#1a1a1a] w-full sm:max-w-sm rounded-3xl p-5" onClick={(e) => e.stopPropagation()}>
+            <p className="text-white text-base font-semibold mb-1">Пожаловаться</p>
+            <p className="text-white/50 text-sm mb-4">Выбери причину жалобы</p>
+            {["Спам", "Мошенничество", "Оскорбления", "Неприемлемый контент", "Другое"].map(r => (
+              <button key={r} onClick={() => { setShowReport(false); showToast("Жалоба отправлена"); }} className="w-full text-left px-3 py-3 text-white text-sm hover:bg-white/5 rounded-lg">{r}</button>
+            ))}
+            <button onClick={() => setShowReport(false)} className="mt-3 w-full py-2.5 rounded-xl bg-white/10 text-white text-sm">Отмена</button>
+          </div>
+        </div>
+      )}
+
+      {/* Заблокировать */}
+      {showBlock && (
+        <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center px-6" onClick={() => setShowBlock(false)}>
+          <div className="bg-[#1a1a1a] rounded-2xl p-5 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
+            <p className="text-white text-base font-semibold mb-2">{blocked ? "Разблокировать?" : "Заблокировать?"}</p>
+            <p className="text-white/50 text-sm mb-5">{blocked ? `${displayName} снова сможет писать тебе.` : `${displayName} не сможет писать и звонить тебе.`}</p>
+            <div className="flex gap-2">
+              <button onClick={() => setShowBlock(false)} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm">Отмена</button>
+              <button onClick={toggleBlock} className="flex-1 py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold">{blocked ? "Разблокировать" : "Заблокировать"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Без звука */}
+      {showMute && (
+        <div className="fixed inset-0 z-[60] bg-black/80 flex items-end sm:items-center justify-center px-4" onClick={() => setShowMute(false)}>
+          <div className="bg-[#1a1a1a] w-full sm:max-w-sm rounded-3xl p-5" onClick={(e) => e.stopPropagation()}>
+            <p className="text-white text-base font-semibold mb-4">Отключить уведомления</p>
+            {[
+              { v: "8 часов", l: "На 8 часов" },
+              { v: "1 неделя", l: "На неделю" },
+              { v: "Всегда", l: "Навсегда" },
+              { v: "off", l: "Включить уведомления" },
+            ].map(o => (
+              <button key={o.v} onClick={() => toggleMute(o.v)} className="w-full text-left px-3 py-3 text-white text-sm hover:bg-white/5 rounded-lg">{o.l}</button>
+            ))}
+            <button onClick={() => setShowMute(false)} className="mt-3 w-full py-2.5 rounded-xl bg-white/10 text-white text-sm">Отмена</button>
+          </div>
+        </div>
+      )}
+
+      {/* Исчезающие сообщения */}
+      {showDisappear && (
+        <div className="fixed inset-0 z-[60] bg-black/80 flex items-end sm:items-center justify-center px-4" onClick={() => setShowDisappear(false)}>
+          <div className="bg-[#1a1a1a] w-full sm:max-w-sm rounded-3xl p-5" onClick={(e) => e.stopPropagation()}>
+            <p className="text-white text-base font-semibold mb-1">Исчезающие сообщения</p>
+            <p className="text-white/50 text-sm mb-4">Текущая настройка: {disappearTimer === "off" ? "выключено" : disappearTimer}</p>
+            {[
+              { v: "off", l: "Выключено" },
+              { v: "24 часа", l: "24 часа" },
+              { v: "7 дней", l: "7 дней" },
+              { v: "90 дней", l: "90 дней" },
+            ].map(o => (
+              <button key={o.v} onClick={() => setDisappear(o.v)} className={`w-full text-left px-3 py-3 text-sm hover:bg-white/5 rounded-lg flex items-center justify-between ${disappearTimer === o.v ? "text-[#fe2c55]" : "text-white"}`}>
+                <span>{o.l}</span>
+                {disappearTimer === o.v && <Icon name="Check" size={16} />}
+              </button>
+            ))}
+            <button onClick={() => setShowDisappear(false)} className="mt-3 w-full py-2.5 rounded-xl bg-white/10 text-white text-sm">Закрыть</button>
+          </div>
+        </div>
+      )}
+
+      {/* Тема чата */}
+      {showTheme && (
+        <div className="fixed inset-0 z-[60] bg-black/80 flex items-end sm:items-center justify-center px-4" onClick={() => setShowTheme(false)}>
+          <div className="bg-[#1a1a1a] w-full sm:max-w-sm rounded-3xl p-5" onClick={(e) => e.stopPropagation()}>
+            <p className="text-white text-base font-semibold mb-4">Тема чата</p>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { v: "default", l: "Стандарт" },
+                { v: "dark", l: "Чёрный" },
+                { v: "blue", l: "Синий" },
+                { v: "purple", l: "Фиолет" },
+                { v: "green", l: "Зелёный" },
+              ].map(t => (
+                <button key={t.v} onClick={() => applyTheme(t.v)} className={`flex flex-col items-center gap-2 p-2 rounded-xl border-2 ${chatTheme === t.v ? "border-[#fe2c55]" : "border-transparent"}`}>
+                  <div className="w-full h-16 rounded-lg" style={{ backgroundColor: themeBg[t.v] }} />
+                  <span className="text-white/70 text-xs">{t.l}</span>
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setShowTheme(false)} className="mt-4 w-full py-2.5 rounded-xl bg-white/10 text-white text-sm">Закрыть</button>
+          </div>
+        </div>
+      )}
+
+      {/* Медиа, ссылки и документы */}
+      {showMedia && (
+        <div className="fixed inset-0 z-[60] bg-black/80 flex items-end sm:items-center justify-center px-4" onClick={() => setShowMedia(false)}>
+          <div className="bg-[#1a1a1a] w-full sm:max-w-md rounded-3xl p-5 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <p className="text-white text-base font-semibold mb-4">Медиа, ссылки и документы</p>
+            {(() => {
+              const imgs = messages.filter(m => m.type === "image");
+              const links = messages.filter(m => m.type === "text" && /(https?:\/\/[^\s]+)/i.test(m.content));
+              return (
+                <>
+                  <p className="text-white/50 text-xs mb-2 uppercase">Медиа ({imgs.length})</p>
+                  {imgs.length === 0 ? (
+                    <p className="text-white/30 text-sm mb-4">Нет медиафайлов</p>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-1 mb-4">
+                      {imgs.map(m => (
+                        <img key={m.id} src={m.content} alt="" className="w-full aspect-square object-cover rounded-md" />
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-white/50 text-xs mb-2 uppercase">Ссылки ({links.length})</p>
+                  {links.length === 0 ? (
+                    <p className="text-white/30 text-sm">Нет ссылок</p>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {links.map(m => {
+                        const match = m.content.match(/(https?:\/\/[^\s]+)/i);
+                        const url = match ? match[1] : "";
+                        return <a key={m.id} href={url} target="_blank" rel="noreferrer" className="text-[#61d4f0] text-sm break-all hover:underline">{url}</a>;
+                      })}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+            <button onClick={() => setShowMedia(false)} className="mt-5 w-full py-2.5 rounded-xl bg-white/10 text-white text-sm">Закрыть</button>
+          </div>
+        </div>
+      )}
+
+      {/* Очистить чат */}
+      {confirmClear && (
+        <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center px-6" onClick={() => setConfirmClear(false)}>
+          <div className="bg-[#1a1a1a] rounded-2xl p-5 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
+            <p className="text-white text-base font-semibold mb-2">Очистить чат?</p>
+            <p className="text-white/50 text-sm mb-5">Все сообщения будут скрыты на этом устройстве.</p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmClear(false)} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm">Отмена</button>
+              <button onClick={clearChat} className="flex-1 py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold">Очистить</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-32 z-[70] bg-black/90 border border-white/10 text-white text-sm px-4 py-2.5 rounded-xl shadow-2xl">
+          {toast}
         </div>
       )}
     </div>
