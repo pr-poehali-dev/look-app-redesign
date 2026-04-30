@@ -100,9 +100,22 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
 
   const clearChat = async () => {
     setConfirmClear(false);
-    setMessages([]);
-    lastIdRef.current = 0;
-    showToast("Чат очищен");
+    try {
+      const res = await fetch(`${API}?module=chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
+        body: JSON.stringify({ action: "clear_chat", chat_id: chatId }),
+      });
+      const raw = await res.json();
+      const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
+      const cleared = Number(data?.cleared_until || 0);
+      setMessages([]);
+      lastIdRef.current = cleared;
+      lastSentReadRef.current = cleared;
+      showToast("Чат очищен");
+    } catch {
+      showToast("Не удалось очистить");
+    }
   };
 
   const toggleMute = (option: string) => {

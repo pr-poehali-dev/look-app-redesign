@@ -1,0 +1,1 @@
+ALTER TABLE chat_settings ADD COLUMN IF NOT EXISTS cleared_until_id INTEGER DEFAULT 0;

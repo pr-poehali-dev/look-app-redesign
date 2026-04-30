@@ -54,10 +54,17 @@ def handler(event: dict, context) -> dict:
                         return {'statusCode': 400, 'headers': headers,
                                 'body': json.dumps({'error': 'chat_id required'})}
                     cur.execute(
+                        "SELECT cleared_until_id FROM chat_settings WHERE user_id = %s AND chat_id = %s",
+                        (user_id, chat_id)
+                    )
+                    cleared_row = cur.fetchone()
+                    cleared_until = int(cleared_row[0]) if cleared_row and cleared_row[0] else 0
+                    effective_since = max(int(since_id), cleared_until)
+                    cur.execute(
                         "SELECT id, user_id, user_name, type, content, created_at "
                         "FROM sa_messages WHERE chat_id = %s AND id > %s "
                         "ORDER BY created_at ASC LIMIT 100",
-                        (chat_id, int(since_id))
+                        (chat_id, effective_since)
                     )
                     rows = cur.fetchall()
                     messages = [
@@ -299,6 +306,28 @@ def handler(event: dict, context) -> dict:
                     conn.commit()
                     return {'statusCode': 200, 'headers': headers,
                             'body': json.dumps({'ok': True})}
+
+                if post_action == 'clear_chat':
+                    chat_id = body.get('chat_id')
+                    if not chat_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'chat_id required'})}
+                    cur.execute(
+                        "SELECT COALESCE(MAX(id), 0) FROM sa_messages WHERE chat_id = %s",
+                        (chat_id,)
+                    )
+                    max_id = int(cur.fetchone()[0] or 0)
+                    cur.execute(
+                        "INSERT INTO chat_settings (user_id, chat_id, cleared_until_id, updated_at) "
+                        "VALUES (%s, %s, %s, NOW()) "
+                        "ON CONFLICT (user_id, chat_id) DO UPDATE "
+                        "SET cleared_until_id = EXCLUDED.cleared_until_id, updated_at = NOW()",
+                        (user_id, chat_id, max_id)
+                    )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True, 'cleared_until': max_id})}
 
                 if post_action == 'delete_message':
                     msg_id = body.get('message_id')

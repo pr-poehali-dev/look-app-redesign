@@ -145,6 +145,15 @@
       "bodyMatcher": "partial"
     },
     {
+      "name": "Clear chat",
+      "method": "POST",
+      "path": "/?module=chat",
+      "body": {"action": "clear_chat", "chat_id": "test_chat_settings"},
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "Reject invalid field",
       "method": "POST",
       "path": "/?module=chat",
