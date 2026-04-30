@@ -136,13 +136,13 @@ const WatchStream = ({ channel, onBack }: { channel: LiveChannel; onBack: () => 
                 try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch { /* ignore */ }
               }
             } else if (sig.type === "live_chat" && sig.payload) {
-              const p = sig.payload as { name?: string; text?: string; color?: string };
+              const p = sig.payload as { name?: string; text?: string; color?: string; author?: boolean };
               if (p.text) {
                 setChat(prev => [...prev.slice(-40), {
                   id: Date.now() + Math.random(),
-                  name: p.name || "Зритель",
+                  name: (p.author ? "★ " : "") + (p.name || "Зритель"),
                   text: p.text,
-                  color: p.color || "#61d4f0",
+                  color: p.author ? "#fe2c55" : (p.color || "#61d4f0"),
                 }]);
               }
             }

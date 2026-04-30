@@ -169,6 +169,15 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
     }
   };
 
+  const broadcastToViewers = async (type: string, payload: unknown, exceptUser?: string) => {
+    const tasks: Promise<void>[] = [];
+    viewerPCsRef.current.forEach((_pc, viewerId) => {
+      if (exceptUser && viewerId === exceptUser) return;
+      tasks.push(sendSignal(viewerId, type, payload));
+    });
+    await Promise.all(tasks);
+  };
+
   const handleSignal = async (sig: { id: number; from_user: string; type: string; payload: unknown }) => {
     lastSigIdRef.current = sig.id;
     if (sig.type === "viewer_join") {
@@ -195,14 +204,21 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
         setViewers(viewerPCsRef.current.size);
       }
     } else if (sig.type === "live_chat" && sig.payload) {
-      const p = sig.payload as { name?: string; text?: string; color?: string };
+      const p = sig.payload as { name?: string; text?: string; color?: string; author?: boolean };
       if (p.text) {
-        setChat(prev => [...prev.slice(-30), {
-          id: Date.now() + Math.random(),
+        const relayMsg = {
           name: p.name || "Зритель",
           text: p.text,
           color: p.color || "#61d4f0",
+          author: !!p.author,
+        };
+        setChat(prev => [...prev.slice(-30), {
+          id: Date.now() + Math.random(),
+          name: relayMsg.name,
+          text: relayMsg.text,
+          color: relayMsg.color,
         }]);
+        broadcastToViewers("live_chat", relayMsg, sig.from_user).catch(() => {});
       }
     } else if (sig.type === "live_like") {
       setLikes(l => l + 1);
@@ -339,8 +355,17 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
   };
 
   const sendMessage = () => {
-    if (!inputMsg.trim()) return;
-    setChat(prev => [...prev.slice(-30), { id: Date.now(), name: "Вы", text: inputMsg.trim(), color: "#ffffff" }]);
+    const text = inputMsg.trim();
+    if (!text) return;
+    setChat(prev => [...prev.slice(-30), { id: Date.now(), name: "Вы", text, color: "#ffffff" }]);
+    if (user) {
+      broadcastToViewers("live_chat", {
+        name: user.name,
+        text,
+        color: "#fe2c55",
+        author: true,
+      }).catch(() => {});
+    }
     setInputMsg("");
   };
 
