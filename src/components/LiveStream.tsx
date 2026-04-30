@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
+import { fetchIceServers, RTC_CONFIG } from "@/lib/webrtc-config";
 
 const STREAMS_API = "https://functions.poehali.dev/54ce632b-903a-4de7-8f5f-e81fa2f42053";
+const SIGNAL_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
 const FAKE_VIEWERS = [
   { id: 1, name: "max_pro", text: "🔥🔥🔥 огонь!", color: "#fe2c55" },
@@ -30,6 +32,10 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
   const [streamTitle, setStreamTitle] = useState("");
   const [streamCategory, setStreamCategory] = useState("Общее");
   const [showStartForm, setShowStartForm] = useState(false);
+  const viewerPCsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+  const signalPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastSigIdRef = useRef(0);
+  const rtcConfigRef = useRef<RTCConfiguration>(RTC_CONFIG);
   const [camErrorMsg, setCamErrorMsg] = useState("");
   const [isLive, setIsLive] = useState(false);
   const [viewers, setViewers] = useState(0);
@@ -83,6 +89,9 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (chatTimerRef.current) clearInterval(chatTimerRef.current);
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+      if (signalPollRef.current) clearInterval(signalPollRef.current);
+      viewerPCsRef.current.forEach(pc => { try { pc.close(); } catch { /* ignore */ } });
+      viewerPCsRef.current.clear();
       const sid = streamIdRef.current;
       if (sid && user) {
         fetch(STREAMS_API, {
@@ -106,6 +115,115 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
     const sec = s % 60;
     if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
     return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  };
+
+  const sendSignal = async (toUser: string, type: string, payload: unknown) => {
+    if (!user) return;
+    const sid = streamIdRef.current;
+    if (!sid) return;
+    try {
+      await fetch(`${SIGNAL_API}?module=signal`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Id": user.id,
+          "X-User-Name": encodeURIComponent(user.name),
+        },
+        body: JSON.stringify({
+          room_id: `live_${sid}`,
+          to_user: toUser,
+          type,
+          payload,
+        }),
+      });
+    } catch (e) { void e; }
+  };
+
+  const handleViewerJoin = async (viewerId: string) => {
+    if (!streamRef.current) return;
+    if (viewerPCsRef.current.has(viewerId)) return;
+
+    const pc = new RTCPeerConnection(rtcConfigRef.current);
+    viewerPCsRef.current.set(viewerId, pc);
+
+    streamRef.current.getTracks().forEach(t => pc.addTrack(t, streamRef.current!));
+
+    pc.onicecandidate = (e) => {
+      if (e.candidate) sendSignal(viewerId, "live_ice", e.candidate.toJSON());
+    };
+
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === "disconnected" || pc.connectionState === "failed" || pc.connectionState === "closed") {
+        viewerPCsRef.current.delete(viewerId);
+        setViewers(viewerPCsRef.current.size);
+      }
+    };
+
+    try {
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      await sendSignal(viewerId, "live_offer", offer);
+      setViewers(viewerPCsRef.current.size);
+    } catch (e) {
+      console.error("[LiveStream] offer failed", e);
+    }
+  };
+
+  const handleSignal = async (sig: { id: number; from_user: string; type: string; payload: unknown }) => {
+    lastSigIdRef.current = sig.id;
+    if (sig.type === "viewer_join") {
+      await handleViewerJoin(sig.from_user);
+    } else if (sig.type === "live_answer") {
+      const pc = viewerPCsRef.current.get(sig.from_user);
+      if (pc) {
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(sig.payload as RTCSessionDescriptionInit));
+        } catch (e) { console.warn("[LiveStream] setRemote answer failed", e); }
+      }
+    } else if (sig.type === "viewer_ice") {
+      const pc = viewerPCsRef.current.get(sig.from_user);
+      if (pc) {
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(sig.payload as RTCIceCandidateInit));
+        } catch (e) { console.warn("[LiveStream] addIce failed", e); }
+      }
+    } else if (sig.type === "viewer_leave") {
+      const pc = viewerPCsRef.current.get(sig.from_user);
+      if (pc) {
+        try { pc.close(); } catch { /* ignore */ }
+        viewerPCsRef.current.delete(sig.from_user);
+        setViewers(viewerPCsRef.current.size);
+      }
+    } else if (sig.type === "live_chat" && sig.payload) {
+      const p = sig.payload as { name?: string; text?: string; color?: string };
+      if (p.text) {
+        setChat(prev => [...prev.slice(-30), {
+          id: Date.now() + Math.random(),
+          name: p.name || "Зритель",
+          text: p.text,
+          color: p.color || "#61d4f0",
+        }]);
+      }
+    } else if (sig.type === "live_like") {
+      setLikes(l => l + 1);
+    }
+  };
+
+  const startBroadcastSignaling = () => {
+    if (signalPollRef.current) clearInterval(signalPollRef.current);
+    lastSigIdRef.current = 0;
+    signalPollRef.current = setInterval(async () => {
+      if (!user || !streamIdRef.current) return;
+      try {
+        const res = await fetch(
+          `${SIGNAL_API}?module=signal&room_id=live_${streamIdRef.current}&since_id=${lastSigIdRef.current}`,
+          { headers: { "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) } }
+        );
+        const raw = await res.json();
+        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+        for (const sig of data.signals || []) await handleSignal(sig);
+      } catch (e) { void e; }
+    }, 1000);
   };
 
   const startLive = async () => {
@@ -138,17 +256,23 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
 
     setShowStartForm(false);
     setIsLive(true);
-    setViewers(Math.floor(Math.random() * 50) + 10);
+    setViewers(0);
     setSeconds(0);
+
+    try {
+      const ice = await fetchIceServers();
+      rtcConfigRef.current = {
+        iceServers: ice,
+        iceCandidatePoolSize: 10,
+        bundlePolicy: "max-bundle",
+        rtcpMuxPolicy: "require",
+      };
+    } catch { /* fallback */ }
+
+    startBroadcastSignaling();
     timerRef.current = setInterval(() => {
       setSeconds(s => s + 1);
-      setViewers(v => Math.max(0, v + Math.floor(Math.random() * 3 - 1)));
-      setLikes(l => l + Math.floor(Math.random() * 5));
     }, 1000);
-    chatTimerRef.current = setInterval(() => {
-      const msg = FAKE_VIEWERS[Math.floor(Math.random() * FAKE_VIEWERS.length)];
-      setChat(prev => [...prev.slice(-30), { id: Date.now(), name: msg.name, text: msg.text, color: msg.color }]);
-    }, 1800);
 
     heartbeatRef.current = setInterval(() => {
       const sid = streamIdRef.current;
@@ -175,6 +299,10 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (chatTimerRef.current) clearInterval(chatTimerRef.current);
     if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+    if (signalPollRef.current) clearInterval(signalPollRef.current);
+    viewerPCsRef.current.forEach(pc => { try { pc.close(); } catch { /* ignore */ } });
+    viewerPCsRef.current.clear();
+    setViewers(0);
     const sid = streamIdRef.current;
     if (sid && user) {
       fetch(STREAMS_API, {

@@ -1,10 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
+import { useAuth } from "@/context/AuthContext";
+import { fetchIceServers, RTC_CONFIG } from "@/lib/webrtc-config";
 
 const STREAMS_API = "https://functions.poehali.dev/54ce632b-903a-4de7-8f5f-e81fa2f42053";
+const SIGNAL_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
 interface LiveChannel {
   id: number;
+  user_id: string;
   handle: string;
   name: string;
   thumb: string;
@@ -34,6 +38,7 @@ interface Gift { id: number; emoji: string; x: number; }
 const GIFTS = ["🌹", "🎁", "💎", "🚀", "⭐", "🏆", "💰", "🎉"];
 
 const WatchStream = ({ channel, onBack }: { channel: LiveChannel; onBack: () => void }) => {
+  const { user } = useAuth();
   const [chat, setChat] = useState<ChatMsg[]>([]);
   const [gifts, setGifts] = useState<Gift[]>([]);
   const [liked, setLiked] = useState(false);
@@ -41,18 +46,126 @@ const WatchStream = ({ channel, onBack }: { channel: LiveChannel; onBack: () => 
   const [viewers, setViewers] = useState(channel.viewers);
   const [inputMsg, setInputMsg] = useState("");
   const [showGifts, setShowGifts] = useState(false);
+  const [connecting, setConnecting] = useState(true);
   const chatRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const pcRef = useRef<RTCPeerConnection | null>(null);
+  const lastSigIdRef = useRef(0);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pendingIceRef = useRef<RTCIceCandidateInit[]>([]);
+  const remoteSetRef = useRef(false);
+
+  const myId = user?.id || `guest_${Math.random().toString(36).slice(2, 10)}`;
+  const myName = user?.name || "Гость";
+
+  const sendSignal = async (type: string, payload: unknown) => {
+    try {
+      await fetch(`${SIGNAL_API}?module=signal`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Id": myId,
+          "X-User-Name": encodeURIComponent(myName),
+        },
+        body: JSON.stringify({
+          room_id: `live_${channel.id}`,
+          to_user: channel.user_id,
+          type,
+          payload,
+        }),
+      });
+    } catch (e) { void e; }
+  };
 
   useEffect(() => {
-    const chatTimer = setInterval(() => {
-      const msg = FAKE_CHAT[Math.floor(Math.random() * FAKE_CHAT.length)];
-      setChat((prev) => [...prev.slice(-40), { id: Date.now(), ...msg }]);
-    }, 1500);
-    const viewerTimer = setInterval(() => {
-      setViewers((v) => v + Math.floor(Math.random() * 6 - 2));
-    }, 2000);
-    return () => { clearInterval(chatTimer); clearInterval(viewerTimer); };
-  }, []);
+    let stopped = false;
+    const start = async () => {
+      let cfg: RTCConfiguration = RTC_CONFIG;
+      try {
+        const ice = await fetchIceServers();
+        cfg = { ...RTC_CONFIG, iceServers: ice };
+      } catch { /* fallback */ }
+
+      const pc = new RTCPeerConnection(cfg);
+      pcRef.current = pc;
+
+      pc.ontrack = (e) => {
+        if (videoRef.current && e.streams[0]) {
+          videoRef.current.srcObject = e.streams[0];
+          videoRef.current.play().catch(() => {});
+          setConnecting(false);
+        }
+      };
+
+      pc.onicecandidate = (e) => {
+        if (e.candidate) sendSignal("viewer_ice", e.candidate.toJSON());
+      };
+
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === "connected") setConnecting(false);
+      };
+
+      pollRef.current = setInterval(async () => {
+        if (stopped) return;
+        try {
+          const res = await fetch(
+            `${SIGNAL_API}?module=signal&room_id=live_${channel.id}&since_id=${lastSigIdRef.current}`,
+            { headers: { "X-User-Id": myId, "X-User-Name": encodeURIComponent(myName) } }
+          );
+          const raw = await res.json();
+          const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+          for (const sig of data.signals || []) {
+            lastSigIdRef.current = sig.id;
+            if (sig.type === "live_offer") {
+              try {
+                await pc.setRemoteDescription(new RTCSessionDescription(sig.payload as RTCSessionDescriptionInit));
+                remoteSetRef.current = true;
+                for (const c of pendingIceRef.current) {
+                  try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch { /* ignore */ }
+                }
+                pendingIceRef.current = [];
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                await sendSignal("live_answer", answer);
+              } catch (e) { console.warn("[Watch] offer handle failed", e); }
+            } else if (sig.type === "live_ice") {
+              const cand = sig.payload as RTCIceCandidateInit;
+              if (!remoteSetRef.current) {
+                pendingIceRef.current.push(cand);
+              } else {
+                try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch { /* ignore */ }
+              }
+            } else if (sig.type === "live_chat" && sig.payload) {
+              const p = sig.payload as { name?: string; text?: string; color?: string };
+              if (p.text) {
+                setChat(prev => [...prev.slice(-40), {
+                  id: Date.now() + Math.random(),
+                  name: p.name || "Зритель",
+                  text: p.text,
+                  color: p.color || "#61d4f0",
+                }]);
+              }
+            }
+          }
+        } catch (e) { void e; }
+      }, 1000);
+
+      await sendSignal("viewer_join", {});
+    };
+
+    start();
+
+    return () => {
+      stopped = true;
+      if (pollRef.current) clearInterval(pollRef.current);
+      sendSignal("viewer_leave", {}).catch(() => {});
+      if (pcRef.current) {
+        try { pcRef.current.close(); } catch { /* ignore */ }
+        pcRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [channel.id, channel.user_id]);
 
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
@@ -63,19 +176,33 @@ const WatchStream = ({ channel, onBack }: { channel: LiveChannel; onBack: () => 
     setGifts((prev) => [...prev, g]);
     setTimeout(() => setGifts((prev) => prev.filter((x) => x.id !== g.id)), 2500);
     setShowGifts(false);
+    sendSignal("live_like", {}).catch(() => {});
   };
 
   const sendMessage = () => {
-    if (!inputMsg.trim()) return;
-    setChat((prev) => [...prev.slice(-40), { id: Date.now(), name: "Вы", text: inputMsg.trim(), color: "#ffffff" }]);
+    const text = inputMsg.trim();
+    if (!text) return;
+    const color = "#61d4f0";
+    setChat((prev) => [...prev.slice(-40), { id: Date.now(), name: "Вы", text, color: "#ffffff" }]);
+    sendSignal("live_chat", { name: myName, text, color }).catch(() => {});
     setInputMsg("");
   };
+
+  void FAKE_CHAT;
+  void viewers;
+  void setViewers;
 
   return (
     <div className="relative w-full h-full bg-black flex flex-col overflow-hidden">
       <div className="absolute inset-0">
-        <img src={channel.thumb} className="w-full h-full object-cover opacity-60" alt="stream" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-black/50" />
+        <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover bg-black" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-black/30 pointer-events-none" />
+        {connecting && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60">
+            <div className="w-12 h-12 rounded-full border-2 border-white/20 border-t-[#fe2c55] animate-spin" />
+            <p className="text-white/70 text-sm">Подключение к эфиру...</p>
+          </div>
+        )}
       </div>
 
       {/* Floating gifts */}
@@ -196,6 +323,7 @@ const LiveList = () => {
           viewers: number;
         }) => ({
           id: s.id,
+          user_id: s.user_id,
           handle: s.user_name || s.user_id,
           name: s.user_name || "Эфир",
           thumb: s.thumb || s.user_avatar || "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/c96bc59d-e416-4e11-adf2-a308d67a562d.jpg",
