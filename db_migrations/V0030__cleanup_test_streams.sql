@@ -1,0 +1,1 @@
+UPDATE live_streams SET status = 'ended', ended_at = NOW() WHERE title = 'Test' OR user_id = 'anon';

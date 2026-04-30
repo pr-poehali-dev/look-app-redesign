@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
+import { useAuth } from "@/context/AuthContext";
+
+const STREAMS_API = "https://functions.poehali.dev/54ce632b-903a-4de7-8f5f-e81fa2f42053";
 
 const FAKE_VIEWERS = [
   { id: 1, name: "max_pro", text: "🔥🔥🔥 огонь!", color: "#fe2c55" },
@@ -20,7 +23,13 @@ interface ChatMsg { id: number; name: string; text: string; color: string; }
 interface Gift { id: number; emoji: string; x: number; }
 
 const LiveStream = ({ onClose }: { onClose: () => void }) => {
+  const { user } = useAuth();
   const [camState, setCamState] = useState<"idle" | "granted" | "denied">("idle");
+  const streamIdRef = useRef<number | null>(null);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [streamTitle, setStreamTitle] = useState("");
+  const [streamCategory, setStreamCategory] = useState("Общее");
+  const [showStartForm, setShowStartForm] = useState(false);
   const [camErrorMsg, setCamErrorMsg] = useState("");
   const [isLive, setIsLive] = useState(false);
   const [viewers, setViewers] = useState(0);
@@ -73,7 +82,22 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
       streamRef.current?.getTracks().forEach(t => t.stop());
       if (timerRef.current) clearInterval(timerRef.current);
       if (chatTimerRef.current) clearInterval(chatTimerRef.current);
+      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+      const sid = streamIdRef.current;
+      if (sid && user) {
+        fetch(STREAMS_API, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-User-Id": user.id,
+            "X-User-Name": encodeURIComponent(user.name),
+          },
+          body: JSON.stringify({ action: "stop", stream_id: sid }),
+          keepalive: true,
+        }).catch(() => {});
+      }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const formatTime = (s: number) => {
@@ -84,7 +108,35 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
     return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
   };
 
-  const startLive = () => {
+  const startLive = async () => {
+    if (!user) {
+      alert("Войди, чтобы запустить эфир");
+      return;
+    }
+    const title = streamTitle.trim() || `Эфир ${user.name}`;
+    try {
+      const res = await fetch(STREAMS_API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Id": user.id,
+          "X-User-Name": encodeURIComponent(user.name),
+        },
+        body: JSON.stringify({
+          action: "start",
+          title,
+          category: streamCategory,
+          user_avatar: user.avatar || "",
+        }),
+      });
+      const raw = await res.json();
+      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      if (data.stream_id) streamIdRef.current = data.stream_id;
+    } catch (e) {
+      console.error("[LiveStream] start failed", e);
+    }
+
+    setShowStartForm(false);
     setIsLive(true);
     setViewers(Math.floor(Math.random() * 50) + 10);
     setSeconds(0);
@@ -97,12 +149,45 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
       const msg = FAKE_VIEWERS[Math.floor(Math.random() * FAKE_VIEWERS.length)];
       setChat(prev => [...prev.slice(-30), { id: Date.now(), name: msg.name, text: msg.text, color: msg.color }]);
     }, 1800);
+
+    heartbeatRef.current = setInterval(() => {
+      const sid = streamIdRef.current;
+      if (!sid || !user) return;
+      fetch(STREAMS_API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Id": user.id,
+          "X-User-Name": encodeURIComponent(user.name),
+        },
+        body: JSON.stringify({
+          action: "heartbeat",
+          stream_id: sid,
+          viewers,
+          likes,
+        }),
+      }).catch(() => {});
+    }, 15000);
   };
 
   const stopLive = () => {
     setIsLive(false);
     if (timerRef.current) clearInterval(timerRef.current);
     if (chatTimerRef.current) clearInterval(chatTimerRef.current);
+    if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+    const sid = streamIdRef.current;
+    if (sid && user) {
+      fetch(STREAMS_API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Id": user.id,
+          "X-User-Name": encodeURIComponent(user.name),
+        },
+        body: JSON.stringify({ action: "stop", stream_id: sid }),
+      }).catch(() => {});
+    }
+    streamIdRef.current = null;
   };
 
   const flipCamera = async () => {
@@ -256,7 +341,7 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
         </div>
       </div>
 
-      {!isLive && (
+      {!isLive && !showStartForm && (
         <div className="relative z-20 flex-1 flex flex-col items-center justify-center gap-6 px-8">
           <div className="w-24 h-24 rounded-full bg-[#fe2c55]/20 border-2 border-[#fe2c55] flex items-center justify-center animate-pulse">
             <Icon name="Radio" size={40} className="text-[#fe2c55]" />
@@ -265,11 +350,50 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
             <h2 className="text-white font-bold text-2xl mb-2">Прямой эфир</h2>
             <p className="text-white/50 text-sm">Начни трансляцию — зрители уже ждут</p>
           </div>
-          <button onClick={startLive}
+          <button onClick={() => setShowStartForm(true)}
             className="w-full py-4 rounded-2xl bg-[#fe2c55] text-white font-bold text-lg active:scale-95 transition-all flex items-center justify-center gap-3">
             <Icon name="Radio" size={22} />
             Начать трансляцию
           </button>
+        </div>
+      )}
+
+      {!isLive && showStartForm && (
+        <div className="relative z-20 flex-1 flex flex-col items-center justify-center gap-4 px-6">
+          <div className="w-full max-w-sm bg-black/60 backdrop-blur-md rounded-2xl p-5 flex flex-col gap-3">
+            <p className="text-white font-bold text-lg">Настрой эфир</p>
+            <input
+              autoFocus
+              value={streamTitle}
+              onChange={(e) => setStreamTitle(e.target.value)}
+              placeholder="Название эфира..."
+              maxLength={80}
+              className="w-full bg-white/10 text-white placeholder-white/40 px-4 py-3 rounded-xl outline-none text-sm"
+            />
+            <select
+              value={streamCategory}
+              onChange={(e) => setStreamCategory(e.target.value)}
+              className="w-full bg-white/10 text-white px-4 py-3 rounded-xl outline-none text-sm appearance-none"
+            >
+              <option value="Общее">Общее</option>
+              <option value="Музыка">Музыка</option>
+              <option value="Игры">Игры</option>
+              <option value="Спорт">Спорт</option>
+              <option value="Путешествия">Путешествия</option>
+              <option value="Еда">Еда</option>
+              <option value="Юмор">Юмор</option>
+              <option value="Образование">Образование</option>
+            </select>
+            <button onClick={startLive}
+              className="w-full py-3.5 rounded-xl bg-[#fe2c55] text-white font-bold text-base active:scale-95 transition-all flex items-center justify-center gap-2">
+              <Icon name="Radio" size={18} />
+              В эфир
+            </button>
+            <button onClick={() => setShowStartForm(false)}
+              className="w-full py-2.5 rounded-xl text-white/60 text-sm">
+              Отмена
+            </button>
+          </div>
         </div>
       )}
 

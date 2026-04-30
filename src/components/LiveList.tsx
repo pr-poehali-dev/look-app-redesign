@@ -1,48 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 
-const LIVE_CHANNELS = [
-  {
-    id: 1,
-    handle: "dj_night",
-    name: "DJ Night Live",
-    thumb: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/c96bc59d-e416-4e11-adf2-a308d67a562d.jpg",
-    category: "Музыка",
-    viewers: 14320,
-    title: "Ночная вечеринка 🎧 Лучшие треки до утра!",
-    tags: ["музыка", "дискотека", "dj"],
-  },
-  {
-    id: 2,
-    handle: "cook_vika",
-    name: "Вика Готовит",
-    thumb: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/b3dc2950-63dc-4b14-bd01-440d0b8e7e82.jpg",
-    category: "Кулинария",
-    viewers: 3840,
-    title: "Готовим пасту карбонара — рецепт от бабушки 🍝",
-    tags: ["еда", "кулинария", "рецепты"],
-  },
-  {
-    id: 3,
-    handle: "gamer_hex",
-    name: "HEX Gaming",
-    thumb: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/45213a06-ddb6-4425-9410-cb3777726c55.jpg",
-    category: "Игры",
-    viewers: 28100,
-    title: "Ranked до Legendary — не сплю пока не выйду 💀",
-    tags: ["игры", "ranked", "стрим"],
-  },
-  {
-    id: 4,
-    handle: "travel_rus",
-    name: "Travel Rus",
-    thumb: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/a3325030-6571-46e9-845b-2a54062f9059.jpg",
-    category: "Путешествия",
-    viewers: 6750,
-    title: "Закат на Алтае — прямо сейчас 🏔️",
-    tags: ["природа", "алтай", "путешествия"],
-  },
-];
+const STREAMS_API = "https://functions.poehali.dev/54ce632b-903a-4de7-8f5f-e81fa2f42053";
+
+interface LiveChannel {
+  id: number;
+  handle: string;
+  name: string;
+  thumb: string;
+  category: string;
+  viewers: number;
+  title: string;
+  tags: string[];
+}
 
 const FAKE_CHAT = [
   { name: "alex99", text: "просто невероятно!", color: "#fe2c55" },
@@ -63,7 +33,7 @@ interface Gift { id: number; emoji: string; x: number; }
 
 const GIFTS = ["🌹", "🎁", "💎", "🚀", "⭐", "🏆", "💰", "🎉"];
 
-const WatchStream = ({ channel, onBack }: { channel: typeof LIVE_CHANNELS[0]; onBack: () => void }) => {
+const WatchStream = ({ channel, onBack }: { channel: LiveChannel; onBack: () => void }) => {
   const [chat, setChat] = useState<ChatMsg[]>([]);
   const [gifts, setGifts] = useState<Gift[]>([]);
   const [liked, setLiked] = useState(false);
@@ -207,13 +177,48 @@ const WatchStream = ({ channel, onBack }: { channel: typeof LIVE_CHANNELS[0]; on
 };
 
 const LiveList = () => {
-  const [watching, setWatching] = useState<typeof LIVE_CHANNELS[0] | null>(null);
+  const [watching, setWatching] = useState<LiveChannel | null>(null);
   const [activeCategory, setActiveCategory] = useState("Все");
+  const [channels, setChannels] = useState<LiveChannel[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const CATS = ["Все", "Игры", "Музыка", "Кулинария", "Путешествия"];
+  const CATS = ["Все", "Игры", "Музыка", "Кулинария", "Путешествия", "Спорт", "Юмор", "Образование", "Общее"];
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch(`${STREAMS_API}?action=list`);
+        const raw = await res.json();
+        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+        const list: LiveChannel[] = (data.streams || []).map((s: {
+          id: number; user_id: string; user_name: string; user_avatar: string;
+          title: string; category: string; thumb: string; tags: string[];
+          viewers: number;
+        }) => ({
+          id: s.id,
+          handle: s.user_name || s.user_id,
+          name: s.user_name || "Эфир",
+          thumb: s.thumb || s.user_avatar || "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/c96bc59d-e416-4e11-adf2-a308d67a562d.jpg",
+          category: s.category || "Общее",
+          viewers: s.viewers || 0,
+          title: s.title || "Прямой эфир",
+          tags: s.tags || [],
+        }));
+        setChannels(list);
+      } catch (e) {
+        console.error("[LiveList] load failed", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+    const t = setInterval(load, 10000);
+    return () => clearInterval(t);
+  }, []);
+
   const filtered = activeCategory === "Все"
-    ? LIVE_CHANNELS
-    : LIVE_CHANNELS.filter(ch => ch.category === activeCategory);
+    ? channels
+    : channels.filter(ch => ch.category === activeCategory);
 
   if (watching) return <WatchStream channel={watching} onBack={() => setWatching(null)} />;
 
@@ -224,7 +229,9 @@ const LiveList = () => {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-white font-bold text-xl">Прямые эфиры</h2>
-            <p className="text-white/40 text-xs mt-0.5">{LIVE_CHANNELS.length} трансляции сейчас</p>
+            <p className="text-white/40 text-xs mt-0.5">
+              {loading ? "Загрузка..." : `${channels.length} ${channels.length === 1 ? "трансляция" : channels.length < 5 ? "трансляции" : "трансляций"} сейчас`}
+            </p>
           </div>
           <div className="flex items-center gap-1.5 bg-[#fe2c55]/20 border border-[#fe2c55]/40 px-3 py-1.5 rounded-full">
             <div className="w-1.5 h-1.5 rounded-full bg-[#fe2c55] animate-pulse" />

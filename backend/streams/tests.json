@@ -1,0 +1,7 @@
+{
+  "tests": [
+    {"name": "List streams", "method": "GET", "path": "/?action=list", "expectedStatus": 200},
+    {"name": "Start stream", "method": "POST", "path": "/", "body": {"action": "start", "title": "Test", "category": "Общее"}, "expectedStatus": 200},
+    {"name": "OPTIONS CORS", "method": "OPTIONS", "path": "/", "expectedStatus": 200}
+  ]
+}
