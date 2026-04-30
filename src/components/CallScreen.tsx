@@ -24,6 +24,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller: isCalle
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [status, setStatus] = useState<"connecting" | "ringing" | "connected" | "ended">("connecting");
   const [quality, setQuality] = useState<"good" | "fair" | "poor" | "unknown">("unknown");
+  const [connectionWarning, setConnectionWarning] = useState(false);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -250,8 +251,17 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller: isCalle
 
   useEffect(() => {
     if (status !== "connected") return;
+    setConnectionWarning(false);
     const t = setInterval(() => setSeconds((s) => { secondsRef.current = s + 1; return s + 1; }), 1000);
     return () => clearInterval(t);
+  }, [status]);
+
+  useEffect(() => {
+    if (status === "connected" || status === "ended") return;
+    const warnTimer = setTimeout(() => {
+      if (status !== "connected") setConnectionWarning(true);
+    }, 15000);
+    return () => clearTimeout(warnTimer);
   }, [status]);
 
   useEffect(() => {
@@ -408,6 +418,14 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller: isCalle
           <Icon name={mode === "video" ? "Video" : "Phone"} size={12} />
           <span>{mode === "video" ? "Видеозвонок" : "Аудиозвонок"}</span>
         </div>
+        {connectionWarning && status !== "connected" && (
+          <div className="mt-3 mx-4 px-3 py-2 rounded-xl bg-yellow-500/15 border border-yellow-500/30 flex items-start gap-2 max-w-xs">
+            <Icon name="TriangleAlert" size={14} className="text-yellow-300 flex-shrink-0 mt-0.5" />
+            <p className="text-yellow-100/90 text-[11px] leading-tight">
+              Не удаётся установить соединение. Возможно, у одного из вас плохая сеть или провайдер блокирует звонки. Попробуй переключиться на Wi-Fi.
+            </p>
+          </div>
+        )}
         {status === "connected" && quality !== "unknown" && (
           <div className={`mt-2 flex items-center gap-1.5 text-xs ${
             quality === "good" ? "text-green-400" : quality === "fair" ? "text-yellow-400" : "text-red-400"
