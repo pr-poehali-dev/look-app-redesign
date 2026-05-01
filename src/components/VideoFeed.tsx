@@ -361,23 +361,25 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
   return (
     <div
       ref={containerRef}
-      className="w-full h-full overflow-y-scroll snap-y snap-mandatory"
+      className="w-full h-full overflow-y-scroll snap-y snap-mandatory flex justify-center"
       style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
     >
-      {!dbLoaded ? (
-        <div className="w-full flex items-center justify-center" style={{ height: "100%" }}>
-          <p className="text-white/40 text-sm">Загрузка...</p>
-        </div>
-      ) : filteredWithCounts.length > 0 ? filteredWithCounts.map((video, i) => (
-        <div key={`${video.id}-${i}`} className="w-full snap-start" style={{ height: "100%" }}>
-          <VideoCard video={video} isActive={activeIndex === i} />
-        </div>
-      )) : (
-        <div className="w-full flex flex-col items-center justify-center gap-3" style={{ height: "100%" }}>
-          <p className="text-white/40 text-sm">Видео пока нет</p>
-          <p className="text-white/20 text-xs">Нажми + чтобы загрузить первое</p>
-        </div>
-      )}
+      <div className="w-full md:w-auto md:h-full md:aspect-[9/16] md:max-w-[min(420px,calc(100vh*9/16))] relative">
+        {!dbLoaded ? (
+          <div className="w-full flex items-center justify-center" style={{ height: "100%" }}>
+            <p className="text-white/40 text-sm">Загрузка...</p>
+          </div>
+        ) : filteredWithCounts.length > 0 ? filteredWithCounts.map((video, i) => (
+          <div key={`${video.id}-${i}`} className="w-full snap-start md:rounded-2xl md:overflow-hidden" style={{ height: "100%" }}>
+            <VideoCard video={video} isActive={activeIndex === i} />
+          </div>
+        )) : (
+          <div className="w-full flex flex-col items-center justify-center gap-3" style={{ height: "100%" }}>
+            <p className="text-white/40 text-sm">Видео пока нет</p>
+            <p className="text-white/20 text-xs">Нажми + чтобы загрузить первое</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
