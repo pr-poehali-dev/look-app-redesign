@@ -369,7 +369,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
     <div className="relative w-full h-full">
       <div
         ref={containerRef}
-        className="absolute inset-0 mx-auto overflow-y-scroll snap-y snap-mandatory md:max-w-[440px]"
+        className="absolute inset-0 mx-auto overflow-y-scroll snap-y snap-mandatory md:max-w-[520px]"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {!dbLoaded ? (
@@ -391,7 +391,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
       {/* Desktop nav arrows — справа от центрированной ленты (после колонки кнопок) */}
       <div
         className="hidden md:flex flex-col gap-3 absolute top-1/2 -translate-y-1/2 z-40"
-        style={{ left: "calc(50% + 240px)" }}
+        style={{ left: "calc(50% + 280px)" }}
       >
         <button
           onClick={() => scrollByDir(-1)}
