@@ -364,7 +364,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
       className="w-full h-full overflow-y-scroll snap-y snap-mandatory flex justify-center"
       style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
     >
-      <div className="w-full md:w-auto md:h-full md:max-w-[min(500px,calc(100vh*9/16+80px))] relative">
+      <div className="w-full h-full md:max-w-[420px] relative">
         {!dbLoaded ? (
           <div className="w-full flex items-center justify-center" style={{ height: "100%" }}>
             <p className="text-white/40 text-sm">Загрузка...</p>
