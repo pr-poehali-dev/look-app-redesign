@@ -71,7 +71,7 @@ const Index = () => {
       </aside>
 
       {/* Main app area */}
-      <div className="relative flex-1 flex flex-col h-full overflow-hidden mx-auto md:max-w-none" style={{ maxWidth: 480 }}>
+      <div className="relative flex-1 flex flex-col h-full overflow-hidden mx-auto w-full max-w-[480px] md:max-w-none">
 
         {/* Live Stream overlay */}
         {showLive && (
