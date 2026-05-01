@@ -66,6 +66,8 @@ const PostFeed = () => {
         <StoryViewer stories={stories} startIndex={storyIndex} onClose={() => setStoryIndex(null)} />
       )}
 
+      <div className="md:max-w-[470px] md:mx-auto">
+
       {/* Stories row */}
       <div className="flex gap-4 px-3 py-3 overflow-x-scroll border-b border-white/8" style={{ scrollbarWidth: "none" }}>
         {/* "Your story" first */}
@@ -119,6 +121,7 @@ const PostFeed = () => {
       )}
 
       <div className="pb-24" />
+      </div>
     </div>
   );
 };
