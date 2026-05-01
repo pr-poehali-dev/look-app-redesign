@@ -150,7 +150,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
       </div>
 
       {/* Right side actions */}
-      <div className="absolute right-3 bottom-24 flex flex-col items-center gap-5 z-30 md:right-3 md:bottom-4 md:gap-3">
+      <div className="absolute right-3 bottom-24 flex flex-col items-center gap-5 z-30 md:right-3 md:bottom-32 md:gap-3">
         {/* Avatar */}
         <button
           className="relative mb-2"

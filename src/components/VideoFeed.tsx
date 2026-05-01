@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import VideoCard, { VideoData } from "./VideoCard";
+import Icon from "@/components/ui/icon";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
@@ -358,7 +359,14 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
     return () => container.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const scrollByDir = (dir: 1 | -1) => {
+    const c = containerRef.current;
+    if (!c) return;
+    c.scrollTo({ top: c.scrollTop + dir * c.clientHeight, behavior: "smooth" });
+  };
+
   return (
+    <div className="relative w-full h-full">
     <div
       ref={containerRef}
       className="w-full h-full overflow-y-scroll snap-y snap-mandatory flex justify-center"
@@ -380,6 +388,23 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
           </div>
         )}
       </div>
+    </div>
+
+      {/* Desktop nav arrows */}
+      <button
+        onClick={() => scrollByDir(-1)}
+        className="hidden md:flex absolute right-6 top-1/2 -translate-y-[60px] z-40 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md items-center justify-center transition-colors"
+        aria-label="Предыдущее"
+      >
+        <Icon name="ChevronUp" size={22} className="text-white" />
+      </button>
+      <button
+        onClick={() => scrollByDir(1)}
+        className="hidden md:flex absolute right-6 top-1/2 translate-y-[10px] z-40 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md items-center justify-center transition-colors"
+        aria-label="Следующее"
+      >
+        <Icon name="ChevronDown" size={22} className="text-white" />
+      </button>
     </div>
   );
 };
