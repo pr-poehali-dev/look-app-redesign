@@ -366,13 +366,12 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
   };
 
   return (
-    <div className="relative w-full h-full">
-    <div
-      ref={containerRef}
-      className="w-full h-full overflow-y-scroll snap-y snap-mandatory flex justify-center"
-      style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-    >
-      <div className="w-full h-full md:max-w-[420px] relative">
+    <div className="relative w-full h-full flex justify-center items-center">
+      <div
+        ref={containerRef}
+        className="w-full h-full overflow-y-scroll snap-y snap-mandatory md:max-w-[420px] md:flex-shrink-0"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
         {!dbLoaded ? (
           <div className="w-full flex items-center justify-center" style={{ height: "100%" }}>
             <p className="text-white/40 text-sm">Загрузка...</p>
@@ -388,10 +387,9 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
           </div>
         )}
       </div>
-    </div>
 
       {/* Desktop nav arrows — справа от ленты, вне видео */}
-      <div className="hidden md:flex flex-col gap-3 absolute top-1/2 -translate-y-1/2 z-40" style={{ left: "calc(50% + 230px)" }}>
+      <div className="hidden md:flex flex-col gap-3 ml-4 flex-shrink-0">
         <button
           onClick={() => scrollByDir(-1)}
           className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center justify-center transition-colors"
