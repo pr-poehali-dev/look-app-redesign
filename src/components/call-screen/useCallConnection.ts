@@ -147,19 +147,52 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
       pcRef.current = pc;
 
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-          video: mode === "video",
-        });
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error("getUserMedia_unsupported");
+        }
+        const isSecure = window.isSecureContext || location.hostname === "localhost" || location.hostname === "127.0.0.1";
+        if (!isSecure) {
+          throw new Error("insecure_context");
+        }
+
+        let stream: MediaStream | null = null;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: mode === "video",
+          });
+        } catch (err) {
+          if (mode === "video") {
+            console.warn("[CallScreen] video+audio failed, fallback to audio-only", err);
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          } else {
+            throw err;
+          }
+        }
         localStreamRef.current = stream;
-        stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+        stream.getTracks().forEach((t) => pc.addTrack(t, stream as MediaStream));
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
         }
         console.log("[CallScreen] getUserMedia ok", { tracks: stream.getTracks().length });
       } catch (e) {
         console.error("[CallScreen] getUserMedia FAILED", e);
-        alert(mode === "video" ? "Нет доступа к камере или микрофону. Разреши доступ в настройках браузера." : "Нет доступа к микрофону. Разреши доступ в настройках браузера.");
+        const err = e as Error;
+        let msg = "";
+        if (err.message === "insecure_context") {
+          msg = "Звонки работают только по защищённому соединению (https). Открой сайт через https:// или с другого устройства.";
+        } else if (err.message === "getUserMedia_unsupported") {
+          msg = "Этот браузер не поддерживает звонки. Попробуй Chrome, Safari или Firefox.";
+        } else if (err.name === "NotAllowedError" || err.name === "SecurityError") {
+          msg = "Доступ к микрофону заблокирован. Открой настройки сайта в браузере и разреши микрофон" + (mode === "video" ? " и камеру." : ".");
+        } else if (err.name === "NotFoundError" || err.name === "OverconstrainedError") {
+          msg = mode === "video" ? "Не найдена камера или микрофон. Подключи устройство и попробуй снова." : "Микрофон не найден. Подключи микрофон и попробуй снова.";
+        } else if (err.name === "NotReadableError" || err.name === "AbortError") {
+          msg = "Микрофон или камера заняты другим приложением. Закрой их и попробуй снова.";
+        } else {
+          msg = mode === "video" ? "Нет доступа к камере или микрофону. Разреши доступ в настройках браузера." : "Нет доступа к микрофону. Разреши доступ в настройках браузера.";
+        }
+        alert(msg);
         setStatus("ended");
         onEnd();
         return;

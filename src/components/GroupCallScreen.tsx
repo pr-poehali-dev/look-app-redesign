@@ -129,11 +129,48 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
       } catch (e) { void e; }
 
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: mode === "video" });
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error("getUserMedia_unsupported");
+        }
+        const isSecure = window.isSecureContext || location.hostname === "localhost" || location.hostname === "127.0.0.1";
+        if (!isSecure) {
+          throw new Error("insecure_context");
+        }
+        let stream: MediaStream | null = null;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: mode === "video" });
+        } catch (err) {
+          if (mode === "video") {
+            console.warn("[GroupCall] video+audio failed, fallback to audio-only", err);
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          } else {
+            throw err;
+          }
+        }
         if (!mounted) { stream.getTracks().forEach(t => t.stop()); return; }
         localStreamRef.current = stream;
         if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-      } catch (e) { void e; }
+      } catch (e) {
+        console.error("[GroupCall] getUserMedia FAILED", e);
+        const err = e as Error;
+        let msg = "";
+        if (err.message === "insecure_context") {
+          msg = "Звонки работают только по защищённому соединению (https). Открой сайт через https://.";
+        } else if (err.message === "getUserMedia_unsupported") {
+          msg = "Этот браузер не поддерживает звонки. Попробуй Chrome, Safari или Firefox.";
+        } else if (err.name === "NotAllowedError" || err.name === "SecurityError") {
+          msg = "Доступ к микрофону заблокирован. Открой настройки сайта в браузере и разреши микрофон" + (mode === "video" ? " и камеру." : ".");
+        } else if (err.name === "NotFoundError" || err.name === "OverconstrainedError") {
+          msg = mode === "video" ? "Не найдена камера или микрофон. Подключи устройство и попробуй снова." : "Микрофон не найден. Подключи микрофон и попробуй снова.";
+        } else if (err.name === "NotReadableError" || err.name === "AbortError") {
+          msg = "Микрофон или камера заняты другим приложением. Закрой их и попробуй снова.";
+        } else {
+          msg = "Нет доступа к микрофону. Разреши доступ в настройках браузера.";
+        }
+        alert(msg);
+        onEnd();
+        return;
+      }
 
       await sendSig(roomId, "g_join", { n: myName });
 
