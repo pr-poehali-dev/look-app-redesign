@@ -370,7 +370,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
             <p className="text-white/40 text-sm">Загрузка...</p>
           </div>
         ) : filteredWithCounts.length > 0 ? filteredWithCounts.map((video, i) => (
-          <div key={`${video.id}-${i}`} className="w-full snap-start md:rounded-2xl md:overflow-hidden" style={{ height: "100%" }}>
+          <div key={`${video.id}-${i}`} className="w-full snap-start md:rounded-2xl" style={{ height: "100%" }}>
             <VideoCard video={video} isActive={activeIndex === i} />
           </div>
         )) : (

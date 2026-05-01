@@ -74,7 +74,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
   const isVideo = video.isVideo ?? (video.image.includes('.mp4') || video.image.includes('.mov') || video.image.includes('.webm'));
 
   return (
-    <div className="relative w-full h-full flex-shrink-0 snap-start overflow-hidden bg-black">
+    <div className="relative w-full h-full flex-shrink-0 snap-start overflow-hidden md:overflow-visible bg-black md:rounded-2xl">
       {isVideo ? (
         <>
           <video
@@ -150,7 +150,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
       </div>
 
       {/* Right side actions */}
-      <div className="absolute right-3 bottom-24 flex flex-col items-center gap-5 z-30">
+      <div className="absolute right-3 bottom-24 flex flex-col items-center gap-5 z-30 md:right-[-72px] md:bottom-6 md:gap-4">
         {/* Avatar */}
         <button
           className="relative mb-2"
