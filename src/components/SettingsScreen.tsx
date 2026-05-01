@@ -40,12 +40,13 @@ const NOTIFICATIONS = [
 // Sub-screens
 const SavedScreen = ({ onBack }: { onBack: () => void }) => (
   <div className="h-full bg-gray-100 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-    <div className="flex items-center gap-3 px-4 pt-14 pb-4 bg-white border-b border-gray-100">
+    <div className="md:max-w-2xl md:mx-auto">
+    <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
       <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
-      <span className="flex-1 text-center text-black font-bold text-lg pr-7">Сохранённые</span>
+      <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Сохранённые</span>
     </div>
     {SAVED_ITEMS.length > 0 ? (
-      <div className="grid grid-cols-3 gap-px bg-gray-200 mt-2">
+      <div className="grid grid-cols-3 md:grid-cols-4 gap-px bg-gray-200 mt-2">
         {SAVED_ITEMS.map((item, i) => (
           <div key={i} className="relative aspect-square overflow-hidden bg-gray-200">
             <img src={item.img} alt="" className="w-full h-full object-cover" />
@@ -63,6 +64,7 @@ const SavedScreen = ({ onBack }: { onBack: () => void }) => (
       </div>
     )}
     <div className="pb-28" />
+    </div>
   </div>
 );
 
@@ -70,21 +72,23 @@ const LanguagesScreen = ({ onBack }: { onBack: () => void }) => {
   const [selected, setSelected] = useState("ru");
   return (
     <div className="h-full bg-gray-100 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-      <div className="flex items-center gap-3 px-4 pt-14 pb-4 bg-white border-b border-gray-100">
+      <div className="md:max-w-2xl md:mx-auto">
+      <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
         <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
-        <span className="flex-1 text-center text-black font-bold text-lg pr-7">Языки</span>
+        <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Языки</span>
       </div>
       <div className="mt-2">
         {LANGUAGES.map((lang) => (
           <button
             key={lang.code}
             onClick={() => setSelected(lang.code)}
-            className="w-full flex items-center gap-4 px-4 py-4 bg-white border-b border-gray-100"
+            className="w-full flex items-center gap-4 px-4 py-4 md:py-3 bg-white border-b border-gray-100"
           >
-            <span className="flex-1 text-black text-base text-left">{lang.label}</span>
+            <span className="flex-1 text-black text-base md:text-sm text-left">{lang.label}</span>
             {selected === lang.code && <Icon name="Check" size={20} className="text-[#8b5cf6]" />}
           </button>
         ))}
+      </div>
       </div>
     </div>
   );
@@ -94,9 +98,10 @@ const BlockedScreen = ({ onBack }: { onBack: () => void }) => {
   const [blocked, setBlocked] = useState(BLOCKED);
   return (
     <div className="h-full bg-gray-100 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-      <div className="flex items-center gap-3 px-4 pt-14 pb-4 bg-white border-b border-gray-100">
+      <div className="md:max-w-2xl md:mx-auto">
+      <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
         <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
-        <span className="flex-1 text-center text-black font-bold text-lg pr-7">Заблокированные</span>
+        <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Заблокированные</span>
       </div>
       <div className="mt-2">
         {blocked.length === 0 ? (
@@ -105,19 +110,20 @@ const BlockedScreen = ({ onBack }: { onBack: () => void }) => {
             <p className="text-gray-400 text-sm">Нет заблокированных пользователей</p>
           </div>
         ) : blocked.map((u) => (
-          <div key={u.name} className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-100">
-            <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+          <div key={u.name} className="flex items-center gap-3 px-4 py-3 md:py-2.5 bg-white border-b border-gray-100">
+            <div className="w-10 h-10 md:w-9 md:h-9 rounded-full overflow-hidden flex-shrink-0">
               <UserAvatar src={u.avatar} name={u.name} alt={u.name} />
             </div>
             <span className="flex-1 text-black text-sm font-medium">@{u.name}</span>
             <button
               onClick={() => setBlocked(b => b.filter(x => x.name !== u.name))}
-              className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-600"
+              className="px-3 py-1.5 md:py-1 rounded-lg border border-gray-300 text-sm md:text-xs text-gray-600"
             >
               Разблокировать
             </button>
           </div>
         ))}
+      </div>
       </div>
     </div>
   );
@@ -125,12 +131,13 @@ const BlockedScreen = ({ onBack }: { onBack: () => void }) => {
 
 const QrScreen = ({ onBack }: { onBack: () => void }) => (
   <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-    <div className="flex items-center gap-3 px-4 pt-14 pb-4 bg-white border-b border-gray-100">
+    <div className="md:max-w-2xl md:mx-auto">
+    <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
       <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
-      <span className="flex-1 text-center text-black font-bold text-lg pr-7">Мой QR-код</span>
+      <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Мой QR-код</span>
     </div>
-    <div className="flex flex-col items-center px-8 pt-10 gap-6">
-      <div className="w-56 h-56 rounded-2xl bg-white shadow-lg border border-gray-100 flex items-center justify-center p-4">
+    <div className="flex flex-col items-center px-8 pt-10 md:pt-6 gap-6 md:gap-4">
+      <div className="w-56 h-56 md:w-44 md:h-44 rounded-2xl bg-white shadow-lg border border-gray-100 flex items-center justify-center p-4">
         <div className="w-full h-full grid grid-cols-7 grid-rows-7 gap-0.5">
           {Array.from({ length: 49 }).map((_, i) => (
             <div
@@ -144,10 +151,11 @@ const QrScreen = ({ onBack }: { onBack: () => void }) => (
         <p className="text-black font-bold text-lg">@look_user</p>
         <p className="text-gray-400 text-sm mt-1">Отсканируй код чтобы найти меня в Look</p>
       </div>
-      <button className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[#8b5cf6] text-white font-semibold">
+      <button className="flex items-center gap-2 px-6 py-3 md:py-2.5 rounded-xl bg-[#8b5cf6] text-white font-semibold md:text-sm">
         <Icon name="Share2" size={18} className="text-white" />
         Поделиться QR-кодом
       </button>
+    </div>
     </div>
   </div>
 );
@@ -157,22 +165,24 @@ const NotificationsScreen = ({ onBack }: { onBack: () => void }) => {
   const toggle = (label: string) => setSettings(s => s.map(n => n.label === label ? { ...n, value: !n.value } : n));
   return (
     <div className="h-full bg-gray-100 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-      <div className="flex items-center gap-3 px-4 pt-14 pb-4 bg-white border-b border-gray-100">
+      <div className="md:max-w-2xl md:mx-auto">
+      <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
         <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
-        <span className="flex-1 text-center text-black font-bold text-lg pr-7">Уведомления</span>
+        <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Уведомления</span>
       </div>
       <div className="mt-2">
         {settings.map((n) => (
-          <div key={n.label} className="flex items-center gap-4 px-4 py-4 bg-white border-b border-gray-100">
-            <span className="flex-1 text-black text-base">{n.label}</span>
+          <div key={n.label} className="flex items-center gap-4 px-4 py-4 md:py-3 bg-white border-b border-gray-100">
+            <span className="flex-1 text-black text-base md:text-sm">{n.label}</span>
             <button
               onClick={() => toggle(n.label)}
-              className={`relative w-12 h-6 rounded-full transition-colors duration-200 ${n.value ? "bg-[#8b5cf6]" : "bg-gray-300"}`}
+              className={`relative w-12 h-6 md:w-10 md:h-5 rounded-full transition-colors duration-200 ${n.value ? "bg-[#8b5cf6]" : "bg-gray-300"}`}
             >
-              <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${n.value ? "translate-x-6" : "translate-x-0.5"}`} />
+              <div className={`absolute top-0.5 w-5 h-5 md:w-4 md:h-4 rounded-full bg-white shadow transition-transform duration-200 ${n.value ? "translate-x-6 md:translate-x-5" : "translate-x-0.5"}`} />
             </button>
           </div>
         ))}
+      </div>
       </div>
     </div>
   );
@@ -180,12 +190,14 @@ const NotificationsScreen = ({ onBack }: { onBack: () => void }) => {
 
 const TextScreen = ({ onBack, title, text }: { onBack: () => void; title: string; text: string }) => (
   <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-    <div className="flex items-center gap-3 px-4 pt-14 pb-4 bg-white border-b border-gray-100">
+    <div className="md:max-w-2xl md:mx-auto">
+    <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
       <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
-      <span className="flex-1 text-center text-black font-bold text-lg pr-7">{title}</span>
+      <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">{title}</span>
     </div>
-    <div className="px-4 py-6">
-      <p className="text-gray-600 text-sm leading-relaxed">{text}</p>
+    <div className="px-4 py-6 md:py-4">
+      <p className="text-gray-600 text-sm md:text-xs leading-relaxed">{text}</p>
+    </div>
     </div>
   </div>
 );
@@ -196,12 +208,13 @@ const SubscriptionScreen = ({ onBack }: { onBack: () => void }) => {
 
   return (
     <div className="h-full bg-gray-100 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-      <div className="flex items-center gap-3 px-4 pt-14 pb-4 bg-white border-b border-gray-100">
+      <div className="md:max-w-2xl md:mx-auto">
+      <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
         <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
-        <span className="flex-1 text-center text-black font-bold text-lg pr-7">Подписка</span>
+        <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Подписка</span>
       </div>
 
-      <div className="px-4 pt-6 flex flex-col gap-4">
+      <div className="px-4 pt-6 md:pt-4 flex flex-col gap-4 md:gap-3">
         {/* Бесплатный тариф */}
         <div className={`rounded-2xl border-2 p-5 bg-white ${current === "free" ? "border-[#8b5cf6]" : "border-gray-200"}`}>
           <div className="flex items-center justify-between mb-3">
@@ -280,6 +293,7 @@ const SubscriptionScreen = ({ onBack }: { onBack: () => void }) => {
       )}
 
       <div className="pb-28" />
+      </div>
     </div>
   );
 };
@@ -355,9 +369,9 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   );
 
   const Row = ({ icon, label, onPress }: { icon: string; label: string; onPress?: () => void }) => (
-    <button onClick={onPress} className="w-full flex items-center gap-4 px-4 py-4 bg-white border-b border-gray-100">
+    <button onClick={onPress} className="w-full flex items-center gap-4 px-4 py-4 md:py-3 bg-white border-b border-gray-100">
       <Icon name={icon as "Bookmark"} size={22} className="text-[#8b5cf6] flex-shrink-0" />
-      <span className="flex-1 text-black text-base text-left">{label}</span>
+      <span className="flex-1 text-black text-base md:text-sm text-left">{label}</span>
       <Icon name="ChevronRight" size={18} className="text-gray-400" />
     </button>
   );
@@ -370,11 +384,12 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
 
   return (
     <div className="h-full bg-gray-100 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-      <div className="flex items-center gap-3 px-4 pt-14 pb-4 bg-white border-b border-gray-100">
+      <div className="md:max-w-2xl md:mx-auto">
+      <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
         <button onClick={onBack} className="p-1">
           <Icon name="ArrowLeft" size={22} className="text-black" />
         </button>
-        <span className="flex-1 text-center text-black font-bold text-lg pr-7">Настройки</span>
+        <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Настройки</span>
       </div>
 
       {user?.email && emailVerified === false && (
@@ -452,13 +467,14 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
       <div>
         <Row icon="Info" label="Условия использования" onPress={() => setScreen("terms")} />
         <Row icon="Info" label="Политика конфиденциальности" onPress={() => setScreen("privacy")} />
-        <button className="w-full flex items-center gap-4 px-4 py-4 bg-white border-b border-gray-100">
+        <button className="w-full flex items-center gap-4 px-4 py-4 md:py-3 bg-white border-b border-gray-100">
           <Icon name="LogOut" size={22} className="text-[#8b5cf6] flex-shrink-0" />
-          <span className="flex-1 text-black text-base text-left">Выйти</span>
+          <span className="flex-1 text-black text-base md:text-sm text-left">Выйти</span>
         </button>
       </div>
 
       <div className="pb-28" />
+      </div>
     </div>
   );
 };
