@@ -12,10 +12,20 @@ interface Message {
   id: number;
   user_id: string;
   user_name: string;
-  type: "text" | "voice" | "image";
+  type: "text" | "voice" | "image" | "file" | "location" | "contact";
   content: string;
   time: string;
 }
+
+const EMOJIS = [
+  "😀","😃","😄","😁","😆","😅","🤣","😂","🙂","🙃","😉","😊","😇","🥰","😍","🤩",
+  "😘","😗","😚","😙","😋","😛","😜","🤪","😝","🤑","🤗","🤔","🤐","😐","😑","😶",
+  "😏","😒","🙄","😬","😮","😯","😴","🤤","😪","😵","🥳","😎","🤓","🧐","😕","😟",
+  "🙁","😮","😯","😲","😳","🥺","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣",
+  "😞","😓","😩","😫","🥱","🤬","😡","😠","🤯","😈","💀","💩","👻","👽","🤖","❤️",
+  "🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","💕","💞","💓","💗","💖","💘","👍",
+  "👎","👏","🙏","🤝","👌","✌️","🤞","🤟","🤘","🫶","💪","🔥","✨","🎉","🎊","🚀"
+];
 
 interface ChatRoomProps {
   chat: Chat;
@@ -40,6 +50,10 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const recTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const docRef = useRef<HTMLInputElement>(null);
+  const [showEmoji, setShowEmoji] = useState(false);
+  const [showContactPicker, setShowContactPicker] = useState(false);
+  const [contactList, setContactList] = useState<{ id: string; name: string; avatar?: string }[]>([]);
   const lastIdRef = useRef(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const typingPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -384,6 +398,73 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
     reader.onload = () => sendMsg(reader.result as string, "image");
     reader.readAsDataURL(file);
     setShowAttach(false);
+    e.target.value = "";
+  };
+
+  const handleDoc = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const MAX = 8 * 1024 * 1024;
+    if (file.size > MAX) {
+      showToast("Файл слишком большой (макс. 8 МБ)");
+      e.target.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const payload = JSON.stringify({
+        name: file.name,
+        size: file.size,
+        mime: file.type || "application/octet-stream",
+        data: reader.result as string,
+      });
+      sendMsg(payload, "file");
+    };
+    reader.readAsDataURL(file);
+    setShowAttach(false);
+    e.target.value = "";
+  };
+
+  const sendLocation = () => {
+    setShowAttach(false);
+    if (!navigator.geolocation) {
+      showToast("Геолокация недоступна");
+      return;
+    }
+    showToast("Определяем местоположение...");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        sendMsg(JSON.stringify({ lat: latitude, lng: longitude }), "location");
+      },
+      () => showToast("Не удалось получить координаты"),
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
+
+  const openContactPicker = async () => {
+    setShowAttach(false);
+    try {
+      const res = await fetch(`${API}?module=chat&action=all_users`, {
+        headers: { "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
+      });
+      const raw = await res.json();
+      const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
+      const users = (data.users || []).filter((u: { id: string }) => u.id !== MY_ID);
+      setContactList(users);
+      setShowContactPicker(true);
+    } catch {
+      showToast("Не удалось загрузить контакты");
+    }
+  };
+
+  const sendContact = (c: { id: string; name: string; avatar?: string }) => {
+    sendMsg(JSON.stringify({ id: c.id, name: c.name, avatar: c.avatar || "" }), "contact");
+    setShowContactPicker(false);
+  };
+
+  const insertEmoji = (e: string) => {
+    setInput((v) => v + e);
   };
 
   // Максимальный id, который прочитал любой собеседник (не я)
@@ -417,6 +498,72 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
           <div className="bg-[#1a1a1a] px-3 py-1.5 flex justify-end items-center gap-1.5">
             <span className="text-white/30 text-[10px]">{msg.time}</span>
             {isMe && <Ticks msg={msg} />}
+          </div>
+        </div>
+      );
+    }
+    if (msg.type === "file") {
+      let info: { name?: string; size?: number; mime?: string; data?: string } = {};
+      try { info = JSON.parse(msg.content); } catch { void 0; }
+      const sizeKb = info.size ? Math.max(1, Math.round(info.size / 1024)) : 0;
+      return (
+        <div className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl max-w-[78%] ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
+          <a
+            href={info.data || "#"}
+            download={info.name || "file"}
+            className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0"
+            onClick={(e) => { if (!info.data) e.preventDefault(); }}
+          >
+            <Icon name="FileText" size={18} className="text-white" />
+          </a>
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-sm font-medium truncate">{info.name || "Файл"}</p>
+            <div className="flex items-center gap-1.5">
+              <span className="text-white/60 text-[11px]">{sizeKb} КБ</span>
+              <span className="text-white/40 text-[10px]">·</span>
+              <span className="text-white/40 text-[10px]">{msg.time}</span>
+              {isMe && <Ticks msg={msg} />}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (msg.type === "location") {
+      let loc: { lat?: number; lng?: number } = {};
+      try { loc = JSON.parse(msg.content); } catch { void 0; }
+      const url = loc.lat && loc.lng ? `https://www.openstreetmap.org/?mlat=${loc.lat}&mlon=${loc.lng}#map=16/${loc.lat}/${loc.lng}` : "#";
+      return (
+        <a href={url} target="_blank" rel="noopener noreferrer" className={`block max-w-[70%] rounded-2xl overflow-hidden ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
+          <div className="h-28 bg-[#2a2a2a] flex items-center justify-center relative">
+            <Icon name="MapPin" size={32} className="text-[#fe2c55]" />
+          </div>
+          <div className="px-3 py-2">
+            <p className="text-white text-sm font-medium">Геолокация</p>
+            <p className="text-white/60 text-[11px]">{loc.lat?.toFixed(4)}, {loc.lng?.toFixed(4)}</p>
+            <div className="flex items-center justify-end gap-1.5 mt-1">
+              <span className="text-white/40 text-[10px]">{msg.time}</span>
+              {isMe && <Ticks msg={msg} />}
+            </div>
+          </div>
+        </a>
+      );
+    }
+    if (msg.type === "contact") {
+      let info: { id?: string; name?: string; avatar?: string } = {};
+      try { info = JSON.parse(msg.content); } catch { void 0; }
+      return (
+        <div className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl max-w-[78%] ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
+          <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+            <UserAvatar src={info.avatar} name={info.name || "?"} alt={info.name || ""} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-sm font-medium truncate">{info.name || "Контакт"}</p>
+            <div className="flex items-center gap-1.5">
+              <span className="text-white/60 text-[11px]">Контакт</span>
+              <span className="text-white/40 text-[10px]">·</span>
+              <span className="text-white/40 text-[10px]">{msg.time}</span>
+              {isMe && <Ticks msg={msg} />}
+            </div>
           </div>
         </div>
       );
@@ -514,6 +661,7 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   return (
     <div className="h-full flex flex-col overflow-hidden" style={{ backgroundColor: themeBg[chatTheme] || themeBg.default }}>
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImage} />
+      <input ref={docRef} type="file" className="hidden" onChange={handleDoc} />
 
       {/* Header */}
       <div className="flex items-center gap-3 px-3 pt-14 md:pt-3 pb-3 border-b border-white/8 bg-black">
@@ -645,14 +793,31 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
         <div ref={bottomRef} />
       </div>
 
+      {/* Emoji panel */}
+      {showEmoji && (
+        <div className="bg-[#111] border-t border-white/8 px-3 py-3 max-h-52 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+          <div className="grid grid-cols-8 gap-1.5">
+            {EMOJIS.map((e, i) => (
+              <button
+                key={i}
+                onClick={() => insertEmoji(e)}
+                className="w-9 h-9 flex items-center justify-center text-xl rounded-lg hover:bg-white/10 active:bg-white/20"
+              >
+                {e}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Attach panel */}
       {showAttach && (
         <div className="bg-[#111] border-t border-white/8 px-4 py-4 grid grid-cols-4 gap-4">
           {[
             { icon: "Image", label: "Фото", action: () => fileRef.current?.click() },
-            { icon: "FileText", label: "Файл", action: () => {} },
-            { icon: "MapPin", label: "Геолокация", action: () => {} },
-            { icon: "Contact", label: "Контакт", action: () => {} },
+            { icon: "FileText", label: "Файл", action: () => docRef.current?.click() },
+            { icon: "MapPin", label: "Геолокация", action: sendLocation },
+            { icon: "Contact", label: "Контакт", action: openContactPicker },
           ].map((item) => (
             <button key={item.label} onClick={item.action} className="flex flex-col items-center gap-2">
               <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
@@ -694,7 +859,7 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
               className="flex-1 bg-transparent text-white text-sm outline-none resize-none placeholder-white/30 max-h-32 leading-snug"
               style={{ scrollbarWidth: "none" }}
             />
-            <button className="text-white/40 flex-shrink-0 mb-0.5">
+            <button onClick={() => setShowEmoji((v) => !v)} className={`flex-shrink-0 mb-0.5 transition-colors ${showEmoji ? "text-[#fe2c55]" : "text-white/40"}`}>
               <Icon name="Smile" size={20} />
             </button>
           </div>
@@ -717,6 +882,37 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
           </button>
         )}
       </div>
+
+      {showContactPicker && (
+        <div className="fixed inset-0 z-[60] bg-black/80 flex items-end sm:items-center justify-center" onClick={() => setShowContactPicker(false)}>
+          <div className="bg-[#1a1a1a] w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-5 max-h-[70vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-white text-base font-semibold">Выбери контакт</p>
+              <button onClick={() => setShowContactPicker(false)} className="text-white/60">
+                <Icon name="X" size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto -mx-2" style={{ scrollbarWidth: "none" }}>
+              {contactList.length === 0 ? (
+                <p className="text-white/40 text-sm text-center py-8">Контактов нет</p>
+              ) : (
+                contactList.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => sendContact(c)}
+                    className="w-full flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-white/5 text-left"
+                  >
+                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                      <UserAvatar src={c.avatar} name={c.name} alt={c.name} />
+                    </div>
+                    <span className="text-white text-sm truncate">{c.name}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirmDelete !== null && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-6" onClick={() => setConfirmDelete(null)}>
