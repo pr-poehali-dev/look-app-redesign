@@ -7,14 +7,6 @@ import CallScreen from "./CallScreen";
 import CallHistoryScreen from "./CallHistoryScreen";
 import { useAuth } from "@/context/AuthContext";
 
-const AVATARS = [
-  "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/48f38c64-742e-458c-9f09-0013a0813b5f.jpg",
-  "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/5c280ad4-5edb-4bea-9ce4-5b7795d36707.jpg",
-  "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/0730a864-0860-4c86-8845-835a8c4a720e.jpg",
-  "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/85269bc0-d690-47bb-b96f-3b41f8103627.jpg",
-  "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/014c6ddd-1707-4449-afdd-e9012de11b20.jpg",
-];
-
 export interface Chat {
   id: string | number;
   type: "personal" | "group";
@@ -65,7 +57,7 @@ const MessagesScreen = () => {
         const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
         const dbChats: Chat[] = (data.chats || []).map((c: Chat) => ({
           ...c,
-          avatar: c.avatar || AVATARS[Math.floor(Math.random() * AVATARS.length)],
+          avatar: c.avatar || "",
           unread: 0,
         }));
         setChats(dbChats);
