@@ -98,7 +98,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
             </div>
           )}
           <button
-            className="absolute top-4 right-4 z-30 bg-black/40 rounded-full p-2 backdrop-blur-sm"
+            className="absolute top-4 left-4 z-30 bg-black/40 rounded-full p-2 backdrop-blur-sm"
             onClick={e => { e.stopPropagation(); setMuted(m => !m); }}
           >
             <Icon name={muted ? "VolumeX" : "Volume2"} size={20} className="text-white" />
