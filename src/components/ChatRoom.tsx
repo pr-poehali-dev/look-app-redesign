@@ -516,8 +516,8 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImage} />
 
       {/* Header */}
-      <div className="flex items-center gap-3 px-3 pt-14 pb-3 border-b border-white/8 bg-black">
-        <button onClick={onBack} className="text-white/60 hover:text-white transition-colors">
+      <div className="flex items-center gap-3 px-3 pt-14 md:pt-3 pb-3 border-b border-white/8 bg-black">
+        <button onClick={onBack} className="text-white/60 hover:text-white transition-colors md:hidden">
           <Icon name="ChevronLeft" size={26} className="text-white" />
         </button>
         <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 relative">

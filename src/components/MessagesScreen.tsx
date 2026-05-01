@@ -177,7 +177,6 @@ const MessagesScreen = () => {
     setOpenChat(chat);
   };
 
-  if (openChat) return <ChatRoom chat={openChat} onBack={() => { setOpenChat(null); loadChats(); }} />;
   if (tab === "communities") return <CommunitiesScreen onBack={() => setTab("chats")} />;
   if (tab === "calls") return (
     <CallHistoryScreen
@@ -191,8 +190,17 @@ const MessagesScreen = () => {
   );
 
   return (
-    <div className="h-full bg-black flex flex-col overflow-hidden">
-      <div className="flex items-center justify-between px-4 pt-14 pb-3">
+    <div className="h-full bg-black flex md:flex-row flex-col overflow-hidden">
+      {/* На мобиле: если открыт чат — показываем только его */}
+      {openChat && (
+        <div className="md:hidden absolute inset-0 z-40 bg-black">
+          <ChatRoom chat={openChat} onBack={() => { setOpenChat(null); loadChats(); }} />
+        </div>
+      )}
+
+      {/* Sidebar со списком чатов (на десктопе — фиксированная ширина) */}
+      <div className="flex flex-col h-full md:w-[380px] md:flex-shrink-0 md:border-r md:border-white/8 w-full overflow-hidden">
+      <div className="flex items-center justify-between px-4 pt-14 md:pt-4 pb-3">
         <h2 className="text-white font-bold text-xl">Чаты</h2>
         <div className="flex items-center gap-2">
           <button
@@ -302,7 +310,9 @@ const MessagesScreen = () => {
             <button
               key={String(chat.id)}
               onClick={() => setOpenChat(chat)}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 active:bg-white/8 transition-colors"
+              className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 active:bg-white/8 transition-colors ${
+                openChat && String(openChat.id) === String(chat.id) ? "md:bg-white/10" : ""
+              }`}
             >
               <div className="relative flex-shrink-0">
                 {chat.type === "group" && chat.avatars ? (
@@ -356,6 +366,34 @@ const MessagesScreen = () => {
           ))
         )}
         <div className="pb-28" />
+      </div>
+      </div>
+      {/* /Sidebar */}
+
+      {/* Десктоп: правая панель с открытым чатом или заглушкой */}
+      <div className="hidden md:flex flex-1 h-full bg-[#0a0a0a] flex-col">
+        {openChat ? (
+          <ChatRoom
+            key={String(openChat.id)}
+            chat={openChat}
+            onBack={() => { setOpenChat(null); loadChats(); }}
+          />
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-8">
+            <div className="w-32 h-32 rounded-full bg-white/5 flex items-center justify-center mb-6">
+              <Icon name="MessageCircle" size={56} className="text-white/30" />
+            </div>
+            <h3 className="text-white text-2xl font-light mb-3">Look для компьютера</h3>
+            <p className="text-white/50 text-sm leading-relaxed max-w-md">
+              Выберите чат, чтобы начать общение.<br />
+              Сообщения защищены сквозным шифрованием.
+            </p>
+            <div className="mt-8 flex items-center gap-2 text-white/30 text-xs">
+              <Icon name="Lock" size={12} />
+              <span>End-to-end encrypted</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {showNewChat && (
