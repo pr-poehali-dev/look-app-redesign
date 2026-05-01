@@ -390,21 +390,23 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
       </div>
     </div>
 
-      {/* Desktop nav arrows */}
-      <button
-        onClick={() => scrollByDir(-1)}
-        className="hidden md:flex absolute right-6 top-1/2 -translate-y-[60px] z-40 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md items-center justify-center transition-colors"
-        aria-label="Предыдущее"
-      >
-        <Icon name="ChevronUp" size={22} className="text-white" />
-      </button>
-      <button
-        onClick={() => scrollByDir(1)}
-        className="hidden md:flex absolute right-6 top-1/2 translate-y-[10px] z-40 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md items-center justify-center transition-colors"
-        aria-label="Следующее"
-      >
-        <Icon name="ChevronDown" size={22} className="text-white" />
-      </button>
+      {/* Desktop nav arrows — справа от ленты, вне видео */}
+      <div className="hidden md:flex flex-col gap-3 absolute top-1/2 -translate-y-1/2 z-40" style={{ left: "calc(50% + 230px)" }}>
+        <button
+          onClick={() => scrollByDir(-1)}
+          className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center justify-center transition-colors"
+          aria-label="Предыдущее"
+        >
+          <Icon name="ChevronUp" size={22} className="text-white" />
+        </button>
+        <button
+          onClick={() => scrollByDir(1)}
+          className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center justify-center transition-colors"
+          aria-label="Следующее"
+        >
+          <Icon name="ChevronDown" size={22} className="text-white" />
+        </button>
+      </div>
     </div>
   );
 };
