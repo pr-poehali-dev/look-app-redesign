@@ -48,6 +48,13 @@ const PostFeed = () => {
   }, [user]);
 
   const [storyIndex, setStoryIndex] = useState<number | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollByDir = (dir: 1 | -1) => {
+    const c = scrollRef.current;
+    if (!c) return;
+    c.scrollTo({ top: c.scrollTop + dir * c.clientHeight * 0.85, behavior: "smooth" });
+  };
 
   const counts = useBulkCounts("post", posts.map(p => p.id));
   const postsWithCounts = posts.map(p => ({
@@ -61,12 +68,13 @@ const PostFeed = () => {
   const stories: Story[] = storyUsers.map(p => ({ id: p.id, handle: p.handle, avatar: p.avatar, image: p.image }));
 
   return (
-    <div className="h-full overflow-y-scroll bg-black" style={{ scrollbarWidth: "none" }}>
+    <div className="relative h-full bg-black">
       {/* Story viewer */}
       {storyIndex !== null && (
         <StoryViewer stories={stories} startIndex={storyIndex} onClose={() => setStoryIndex(null)} />
       )}
 
+      <div ref={scrollRef} className="h-full overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
       <div className="md:max-w-[470px] md:mx-auto">
 
       {/* Stories row */}
@@ -120,6 +128,28 @@ const PostFeed = () => {
       )}
 
       <div className="pb-24" />
+      </div>
+      </div>
+
+      {/* Desktop nav arrows */}
+      <div
+        className="hidden md:flex flex-col gap-3 absolute top-1/2 -translate-y-1/2 z-40"
+        style={{ left: "calc(50% + 255px)" }}
+      >
+        <button
+          onClick={() => scrollByDir(-1)}
+          className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center justify-center transition-colors"
+          aria-label="Вверх"
+        >
+          <Icon name="ChevronUp" size={22} className="text-white" />
+        </button>
+        <button
+          onClick={() => scrollByDir(1)}
+          className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center justify-center transition-colors"
+          aria-label="Вниз"
+        >
+          <Icon name="ChevronDown" size={22} className="text-white" />
+        </button>
       </div>
     </div>
   );
