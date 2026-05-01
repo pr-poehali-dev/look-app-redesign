@@ -24,7 +24,7 @@ const Index = () => {
   const [showCamera, setShowCamera] = useState(false);
 
   return (
-    <div className="fixed inset-0 bg-black flex overflow-hidden">
+    <div className="fixed inset-0 bg-black md:bg-[#121212] flex overflow-hidden">
 
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-[240px] xl:w-[280px] h-full border-r border-white/8 bg-black flex-shrink-0 z-40">

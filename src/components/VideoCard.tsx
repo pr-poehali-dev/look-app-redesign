@@ -74,7 +74,11 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
   const isVideo = video.isVideo ?? (video.image.includes('.mp4') || video.image.includes('.mov') || video.image.includes('.webm'));
 
   return (
-    <div className="relative w-full h-full flex-shrink-0 snap-start overflow-hidden bg-black md:rounded-2xl">
+    <div className="relative w-full h-full flex-shrink-0 snap-start overflow-hidden bg-black md:bg-transparent md:overflow-visible md:flex md:gap-4 md:items-end md:pb-4">
+      {/* Video + info column */}
+      <div className="relative w-full h-full md:flex md:flex-col md:flex-1 md:h-full md:max-w-[360px] md:overflow-visible">
+      {/* Media area */}
+      <div className="relative w-full h-full md:flex-1 md:rounded-xl md:overflow-hidden md:bg-black">
       {isVideo ? (
         <>
           <video
@@ -109,10 +113,10 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         />
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none md:hidden" />
 
-      {/* Bottom left info */}
-      <div className="absolute bottom-20 left-4 z-10" style={{ right: '80px' }}>
+      {/* Bottom left info — mobile only (на десктопе вынесено под видео) */}
+      <div className="absolute bottom-20 left-4 z-10 md:hidden" style={{ right: '80px' }}>
         <div className="flex items-center gap-2 mb-3">
           <span className="font-bold text-white text-base">@{video.handle}</span>
           {!following && (
@@ -148,9 +152,54 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
           <span className="text-white/80 text-xs truncate max-w-[180px]">{video.song}</span>
         </div>
       </div>
+      </div>
 
-      {/* Right side actions */}
-      <div className="absolute right-3 bottom-24 flex flex-col items-center gap-5 z-30 md:right-3 md:bottom-32 md:gap-3">
+      {/* Desktop info under video (TikTok web style) */}
+      <div className="hidden md:block px-1 pt-3 pb-2">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-9 h-9 rounded-full overflow-hidden border border-white/10 flex-shrink-0">
+            <UserAvatar src={video.avatar} name={video.author || video.handle} alt={video.author} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-white text-sm truncate">@{video.handle}</span>
+              {!following ? (
+                <button
+                  onClick={() => setFollowing(true)}
+                  className="px-3 py-1 rounded-md bg-[#fe2c55] text-white text-xs font-semibold hover:bg-[#e0244a] transition-colors"
+                >
+                  Подписаться
+                </button>
+              ) : (
+                <span className="px-3 py-1 rounded-md bg-white/10 text-white text-xs font-semibold">
+                  Подписан
+                </span>
+              )}
+            </div>
+            {video.author && <span className="text-white/60 text-xs truncate block">{video.author}</span>}
+          </div>
+        </div>
+        {video.description && (() => {
+          const parts = video.description.split(/(#\S+)/g);
+          return (
+            <p className="text-white text-sm leading-snug mb-2 line-clamp-2">
+              {parts.map((part, i) =>
+                part.startsWith('#')
+                  ? <span key={i} className="text-[#61d4f0] font-medium">{part}</span>
+                  : part
+              )}
+            </p>
+          );
+        })()}
+        <div className="flex items-center gap-2">
+          <Icon name="Music" size={12} className="text-white/70" />
+          <span className="text-white/70 text-xs truncate">{video.song}</span>
+        </div>
+      </div>
+      </div>
+
+      {/* Right side actions — mobile (внутри видео) */}
+      <div className="absolute right-3 bottom-24 flex flex-col items-center gap-5 z-30 md:hidden">
         {/* Avatar */}
         <button
           className="relative mb-2"
@@ -242,6 +291,46 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
         <div className="w-10 h-10 rounded-full border-4 border-white/30 overflow-hidden animate-spin" style={{ animationDuration: "3s" }}>
           <UserAvatar src={video.avatar} name={video.author || video.handle} alt="disc" />
         </div>
+      </div>
+
+      {/* Desktop right actions — вне видео, как в TikTok web */}
+      <div className="hidden md:flex flex-col items-center gap-3 z-30 flex-shrink-0 pb-12">
+        <button
+          onClick={() => toggleLike()}
+          className="flex flex-col items-center gap-1"
+        >
+          <div className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition-colors">
+            <Icon name="Heart" size={24} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"} />
+          </div>
+          <span className="text-white/90 text-xs font-semibold">{formatCount(likeCount)}</span>
+        </button>
+        <button
+          onClick={() => setShowComments(true)}
+          className="flex flex-col items-center gap-1"
+        >
+          <div className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition-colors">
+            <Icon name="MessageCircle" size={24} className="text-white" />
+          </div>
+          <span className="text-white/90 text-xs font-semibold">{formatCount(commentCount)}</span>
+        </button>
+        <button
+          onClick={() => setSaved(s => !s)}
+          className="flex flex-col items-center gap-1"
+        >
+          <div className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition-colors">
+            <Icon name="Bookmark" size={22} className={saved ? "text-[#ffd700] fill-[#ffd700]" : "text-white"} />
+          </div>
+          <span className="text-white/90 text-xs font-semibold">Сохранить</span>
+        </button>
+        <button
+          onClick={() => setShowShare(true)}
+          className="flex flex-col items-center gap-1"
+        >
+          <div className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition-colors">
+            <Icon name="Send" size={22} className="text-white" />
+          </div>
+          <span className="text-white/90 text-xs font-semibold">{video.shares}</span>
+        </button>
       </div>
 
       {showShare && createPortal(
