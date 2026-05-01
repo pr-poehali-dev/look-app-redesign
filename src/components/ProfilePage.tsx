@@ -331,16 +331,17 @@ const ProfilePage = () => {
         );
       })()}
 
+      <div className="md:max-w-2xl md:mx-auto">
       {/* Avatar + stats */}
-      <div className="flex items-center gap-4 px-4 pt-14 pb-4">
+      <div className="flex items-center gap-4 px-4 pt-14 pb-4 md:px-3 md:pt-10 md:pb-3">
         <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
         <button
           onClick={() => avatarInputRef.current?.click()}
-          className="relative w-20 h-20 rounded-full flex-shrink-0 bg-gradient-to-br from-[#c084fc] to-[#8b5cf6] flex items-center justify-center overflow-hidden"
+          className="relative w-20 h-20 md:w-16 md:h-16 rounded-full flex-shrink-0 bg-gradient-to-br from-[#c084fc] to-[#8b5cf6] flex items-center justify-center overflow-hidden"
         >
           {user?.avatar
             ? <img src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
-            : <span className="text-white font-black text-3xl">{user?.name?.[0]?.toUpperCase() ?? "?"}</span>
+            : <span className="text-white font-black text-3xl md:text-2xl">{user?.name?.[0]?.toUpperCase() ?? "?"}</span>
           }
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
             {avatarLoading
@@ -357,13 +358,13 @@ const ProfilePage = () => {
             { value: "3", label: "Подписки", action: "following" },
           ].map((s, i) => (
             <div key={s.label} className="flex items-center">
-              {i > 0 && <div className="w-px h-8 bg-gray-200 mr-4" />}
+              {i > 0 && <div className="w-px h-8 md:h-6 bg-gray-200 mr-4 md:mr-3" />}
               <button
                 onClick={() => s.action && setShowScreen(s.action as "followers" | "following")}
                 className="flex flex-col items-center"
               >
-                <span className="text-black font-bold text-xl leading-tight">{s.value}</span>
-                <span className="text-gray-500 text-xs mt-0.5">{s.label}</span>
+                <span className="text-black font-bold text-xl md:text-base leading-tight">{s.value}</span>
+                <span className="text-gray-500 text-xs md:text-[11px] mt-0.5">{s.label}</span>
               </button>
             </div>
           ))}
@@ -371,26 +372,26 @@ const ProfilePage = () => {
       </div>
 
       {/* Name & bio */}
-      <div className="px-4 pb-4">
-        <p className="text-black font-bold text-lg leading-tight">{user?.name ?? ""}</p>
-        <p className="text-gray-500 text-sm mt-0.5">@{user?.handle ?? ""}</p>
+      <div className="px-4 pb-4 md:px-3 md:pb-3">
+        <p className="text-black font-bold text-lg md:text-base leading-tight">{user?.name ?? ""}</p>
+        <p className="text-gray-500 text-sm md:text-xs mt-0.5">@{user?.handle ?? ""}</p>
       </div>
 
       {/* Action buttons */}
-      <div className="flex gap-2 px-4 pb-4">
+      <div className="flex gap-2 px-4 pb-4 md:px-3 md:pb-3">
         <button
           onClick={() => setShowSettings(true)}
-          className="flex-1 py-2.5 rounded-xl bg-gray-100 text-black font-semibold text-sm"
+          className="flex-1 py-2.5 md:py-2 rounded-xl bg-gray-100 text-black font-semibold text-sm md:text-xs"
         >
           Настройки
         </button>
-        <button onClick={logout} className="w-12 py-2.5 rounded-xl bg-gray-100 flex items-center justify-center">
+        <button onClick={logout} className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gray-100 flex items-center justify-center">
           <Icon name="LogOut" size={18} className="text-red-500" />
         </button>
       </div>
 
       {/* Stories */}
-      <div className="flex gap-4 px-4 pb-4 overflow-x-scroll" style={{ scrollbarWidth: "none" }}>
+      <div className="flex gap-4 md:gap-3 px-4 md:px-3 pb-4 md:pb-3 overflow-x-scroll" style={{ scrollbarWidth: "none" }}>
         {/* Add story */}
         <input
           ref={storyInputRef}
@@ -408,8 +409,9 @@ const ProfilePage = () => {
           className="flex flex-col items-center gap-1 flex-shrink-0"
           style={{ touchAction: "manipulation" }}
         >
-          <div className="w-16 h-16 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
-            <Icon name="Plus" size={22} className="text-gray-400" />
+          <div className="w-16 h-16 md:w-14 md:h-14 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
+            <Icon name="Plus" size={22} className="text-gray-400 md:hidden" />
+            <Icon name="Plus" size={18} className="text-gray-400 hidden md:block" />
           </div>
           <span className="text-[10px] text-gray-400">Добавить</span>
         </button>
@@ -426,7 +428,7 @@ const ProfilePage = () => {
               className="flex flex-col items-center gap-1"
               style={{ touchAction: "manipulation" }}
             >
-              <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]">
+              <div className="w-16 h-16 md:w-14 md:h-14 rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]">
                 <div className="w-full h-full rounded-full overflow-hidden border-2 border-white bg-gray-100">
                   {s.type === "video"
                     ? <video src={s.url} className="w-full h-full object-cover" muted playsInline />
@@ -434,7 +436,7 @@ const ProfilePage = () => {
                   }
                 </div>
               </div>
-              <span className="text-[10px] text-gray-500 w-16 text-center truncate">{s.label || `История ${i + 1}`}</span>
+              <span className="text-[10px] text-gray-500 w-16 md:w-14 text-center truncate">{s.label || `История ${i + 1}`}</span>
             </button>
           </div>
         ))}
@@ -465,21 +467,21 @@ const ProfilePage = () => {
       <div className="flex border-b border-gray-200">
         <button
           onClick={() => setTab("videos")}
-          className={`flex-1 flex items-center justify-center py-3 border-b-2 transition-all ${
+          className={`flex-1 flex items-center justify-center py-3 md:py-2 border-b-2 transition-all ${
             tab === "videos" ? "border-[#8b5cf6]" : "border-transparent"
           }`}
         >
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${tab === "videos" ? "bg-[#8b5cf6]" : "bg-gray-200"}`}>
+          <div className={`w-8 h-8 md:w-7 md:h-7 rounded-lg flex items-center justify-center ${tab === "videos" ? "bg-[#8b5cf6]" : "bg-gray-200"}`}>
             <Icon name="Play" size={16} className={tab === "videos" ? "text-white" : "text-gray-400"} />
           </div>
         </button>
         <button
           onClick={() => setTab("posts")}
-          className={`flex-1 flex items-center justify-center py-3 border-b-2 transition-all ${
+          className={`flex-1 flex items-center justify-center py-3 md:py-2 border-b-2 transition-all ${
             tab === "posts" ? "border-[#8b5cf6]" : "border-transparent"
           }`}
         >
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${tab === "posts" ? "bg-[#8b5cf6]" : "bg-gray-200"}`}>
+          <div className={`w-8 h-8 md:w-7 md:h-7 rounded-lg flex items-center justify-center ${tab === "posts" ? "bg-[#8b5cf6]" : "bg-gray-200"}`}>
             <Icon name="LayoutGrid" size={16} className={tab === "posts" ? "text-white" : "text-gray-400"} />
           </div>
         </button>
@@ -496,12 +498,12 @@ const ProfilePage = () => {
               <p className="text-sm text-gray-400">Нет загруженных видео</p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-px bg-gray-100">
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-px bg-gray-100">
               {videos.map((item, i) => (
                 <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200 cursor-pointer" onClick={() => setMediaViewer({ tab: "video", index: i })}>
                   <video src={item.url} className="w-full h-full object-cover" muted playsInline />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="bg-black/40 rounded-full p-2">
+                    <div className="bg-black/40 rounded-full p-2 md:p-1.5">
                       <Icon name="Play" size={16} className="text-white" />
                     </div>
                   </div>
@@ -521,7 +523,7 @@ const ProfilePage = () => {
               <p className="text-sm text-gray-400">Нет загруженных фото</p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-px bg-gray-100">
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-px bg-gray-100">
               {photos.map((item, i) => (
                 <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200 cursor-pointer" onClick={() => setMediaViewer({ tab: "image", index: i })}>
                   <img src={item.url} alt="" className="w-full h-full object-cover" />
@@ -533,6 +535,7 @@ const ProfilePage = () => {
       )}
 
       <div className="pb-28" />
+      </div>
     </div>
   );
 };
