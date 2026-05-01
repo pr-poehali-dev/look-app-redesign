@@ -7,6 +7,7 @@ import LiveList from "@/components/LiveList";
 import ProfilePage from "@/components/ProfilePage";
 import CameraScreen from "@/components/CameraScreen";
 import MessagesScreen from "@/components/MessagesScreen";
+import { useUnread } from "@/context/UnreadContext";
 
 const TABS = [
   { id: "home", icon: "Home", label: "Главная" },
@@ -22,6 +23,7 @@ const Index = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const [showLive, setShowLive] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const { totalUnread } = useUnread();
 
   return (
     <div className="fixed inset-0 bg-black md:bg-[#121212] flex overflow-hidden">
@@ -52,11 +54,20 @@ const Index = () => {
                     </div>
                   </div>
                 ) : (
-                  <Icon
-                    name={tab.icon as "Home"}
-                    size={26}
-                    className={active ? "text-white" : "text-white/80"}
-                  />
+                  <div className="relative">
+                    <Icon
+                      name={tab.icon as "Home"}
+                      size={26}
+                      className={active ? "text-white" : "text-white/80"}
+                    />
+                    {tab.id === "messages" && totalUnread > 0 && (
+                      <div className="absolute -top-1 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#fe2c55] flex items-center justify-center">
+                        <span className="text-white text-[10px] font-bold leading-none">
+                          {totalUnread > 99 ? "99+" : totalUnread}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 )}
                 <span className={`text-base ${active ? "text-white font-bold" : "text-white/90"}`}>
                   {isAdd ? "Создать" : tab.label}
@@ -156,11 +167,20 @@ const Index = () => {
                   </div>
                 ) : (
                   <>
-                    <Icon
-                      name={tab.icon as "Home"}
-                      size={24}
-                      className={activeTab === tab.id ? "text-white" : "text-white/50"}
-                    />
+                    <div className="relative">
+                      <Icon
+                        name={tab.icon as "Home"}
+                        size={24}
+                        className={activeTab === tab.id ? "text-white" : "text-white/50"}
+                      />
+                      {tab.id === "messages" && totalUnread > 0 && (
+                        <div className="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-[#fe2c55] flex items-center justify-center">
+                          <span className="text-white text-[9px] font-bold leading-none">
+                            {totalUnread > 99 ? "99+" : totalUnread}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                     {tab.label && (
                       <span className={`text-[10px] font-medium ${activeTab === tab.id ? "text-white" : "text-white/50"}`}>
                         {tab.label}

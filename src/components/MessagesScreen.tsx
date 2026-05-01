@@ -6,6 +6,7 @@ import CommunitiesScreen from "./CommunitiesScreen";
 import CallScreen from "./CallScreen";
 import CallHistoryScreen from "./CallHistoryScreen";
 import { useAuth } from "@/context/AuthContext";
+import { useUnread } from "@/context/UnreadContext";
 
 export interface Chat {
   id: string | number;
@@ -46,6 +47,7 @@ const MessagesScreen = () => {
   const [onlineMenu, setOnlineMenu] = useState<AppUser | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { user } = useAuth();
+  const { refresh: refreshUnread } = useUnread();
 
   const loadChats = () => {
     if (!user) return;
@@ -58,9 +60,10 @@ const MessagesScreen = () => {
         const dbChats: Chat[] = (data.chats || []).map((c: Chat) => ({
           ...c,
           avatar: c.avatar || "",
-          unread: 0,
+          unread: c.unread || 0,
         }));
         setChats(dbChats);
+        refreshUnread();
       })
       .catch(() => setChats([]))
       .finally(() => setLoading(false));

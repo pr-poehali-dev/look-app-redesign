@@ -166,7 +166,16 @@ def handler(event: dict, context) -> dict:
                         "m.user_name, m.type, m.content, m.created_at, "
                         "u.online_at > NOW() - INTERVAL '30 seconds', "
                         "t.name, "
-                        "au.name, au.avatar "
+                        "au.name, au.avatar, "
+                        "(SELECT COUNT(*) FROM sa_messages sm "
+                        "  WHERE sm.chat_id = c.id AND sm.user_id != %s "
+                        "  AND sm.id > COALESCE("
+                        "    (SELECT last_read_id FROM sa_message_reads "
+                        "      WHERE chat_id = c.id AND user_id = %s), 0) "
+                        "  AND sm.id > COALESCE("
+                        "    (SELECT cleared_until_id FROM chat_settings "
+                        "      WHERE chat_id = c.id AND user_id = %s), 0)"
+                        ") AS unread_count "
                         "FROM sa_chats c "
                         "JOIN sa_chat_members cm ON cm.chat_id = c.id AND cm.user_id = %s "
                         "AND (c.name IS NULL OR c.name != '__merged__') "
@@ -186,7 +195,7 @@ def handler(event: dict, context) -> dict:
                         "  WHERE cm2.chat_id = c.id AND cm2.user_id != %s LIMIT 1"
                         ") "
                         "ORDER BY COALESCE(m.created_at, c.created_at) DESC",
-                        (user_id, user_id, user_id, user_id)
+                        (user_id, user_id, user_id, user_id, user_id, user_id, user_id)
                     )
                     rows = cur.fetchall()
                     chats = []
@@ -225,7 +234,8 @@ def handler(event: dict, context) -> dict:
                             'id': r[0], 'type': r[1], 'name': display_name,
                             'avatar': display_avatar, 'lastMsg': last_msg, 'time': time_str,
                             'online': bool(r[8]),
-                            'typing': r[9] or ''
+                            'typing': r[9] or '',
+                            'unread': int(r[12]) if r[12] else 0
                         })
                     conn.commit()
                     return {'statusCode': 200, 'headers': headers,

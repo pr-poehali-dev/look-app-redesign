@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { UserMediaProvider } from "./context/UserMediaContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { UnreadProvider } from "./context/UnreadContext";
 import AuthScreen from "./components/AuthScreen";
 import ResetPasswordScreen from "./components/ResetPasswordScreen";
 import CallScreen from "./components/CallScreen";
@@ -295,6 +296,7 @@ const AppContent = () => {
 
   return (
     <UserMediaProvider userId={user.id} token={token}>
+      <UnreadProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
@@ -355,6 +357,7 @@ const AppContent = () => {
           </div>
         </div>
       )}
+      </UnreadProvider>
     </UserMediaProvider>
   );
 };
