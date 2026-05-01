@@ -132,7 +132,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
           await handleSignal(pc, sig);
         }
       } catch (e) { void e; }
-    }, 1000);
+    }, 1500);
   };
 
   useEffect(() => {

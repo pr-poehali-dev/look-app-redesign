@@ -286,11 +286,15 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
     lastIdRef.current = 0;
     lastSentReadRef.current = 0;
     fetchMessages();
-    pollRef.current = setInterval(fetchMessages, 2000);
+    const safeRun = (fn: () => void) => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      fn();
+    };
+    pollRef.current = setInterval(() => safeRun(fetchMessages), 4000);
     fetchTyping();
-    typingPollRef.current = setInterval(fetchTyping, 3000);
+    typingPollRef.current = setInterval(() => safeRun(fetchTyping), 6000);
     fetchReads();
-    readPollRef.current = setInterval(fetchReads, 3000);
+    readPollRef.current = setInterval(() => safeRun(fetchReads), 6000);
     fetchSettings();
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);

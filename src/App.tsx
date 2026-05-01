@@ -191,7 +191,7 @@ const AppContent = () => {
           }
         }
       } catch (e) { void e; }
-    }, 1500);
+    }, 3000);
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
       if (autoTimeoutRef.current) clearTimeout(autoTimeoutRef.current);
