@@ -1,4 +1,4 @@
-import { RefObject } from "react";
+import { RefObject, useState } from "react";
 
 interface CallBackgroundProps {
   mode: "audio" | "video";
@@ -9,13 +9,16 @@ interface CallBackgroundProps {
 }
 
 const CallBackground = ({ mode, avatar, cameraOff, remoteVideoRef, localVideoRef }: CallBackgroundProps) => {
+  const [imgFailed, setImgFailed] = useState(false);
   return (
     <>
       <div className="absolute inset-0">
         {mode === "video" ? (
           <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
+        ) : avatar && !imgFailed ? (
+          <img src={avatar} onError={() => setImgFailed(true)} className="w-full h-full object-cover" alt="" />
         ) : (
-          <img src={avatar} className="w-full h-full object-cover" alt="" />
+          <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-950" />
         )}
         <div className={`absolute inset-0 ${mode === "video" ? "bg-black/40" : "bg-black/75 backdrop-blur-xl"}`} />
       </div>

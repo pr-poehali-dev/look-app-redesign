@@ -1,4 +1,5 @@
 import Icon from "@/components/ui/icon";
+import UserAvatar from "@/components/ui/user-avatar";
 import { CallStatus, CallQuality } from "./useCallConnection";
 
 interface CallHeaderProps {
@@ -25,7 +26,7 @@ const CallHeader = ({ name, avatar, mode, status, quality, connectionWarning, se
   return (
     <div className="relative z-20 flex flex-col items-center pt-20 pb-6">
       <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/30 shadow-2xl mb-4">
-        <img src={avatar} className="w-full h-full object-cover" alt={name} />
+        <UserAvatar src={avatar} name={name} alt={name} />
       </div>
       <h2 className="text-white font-bold text-2xl mb-1">{name}</h2>
       <p className="text-white/60 text-sm">

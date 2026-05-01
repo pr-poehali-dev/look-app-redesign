@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
+import UserAvatar from "@/components/ui/user-avatar";
 import { useAuth } from "@/context/AuthContext";
 
 interface SettingsScreenProps {
@@ -105,7 +106,9 @@ const BlockedScreen = ({ onBack }: { onBack: () => void }) => {
           </div>
         ) : blocked.map((u) => (
           <div key={u.name} className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-100">
-            <img src={u.avatar} className="w-10 h-10 rounded-full object-cover" alt={u.name} />
+            <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+              <UserAvatar src={u.avatar} name={u.name} alt={u.name} />
+            </div>
             <span className="flex-1 text-black text-sm font-medium">@{u.name}</span>
             <button
               onClick={() => setBlocked(b => b.filter(x => x.name !== u.name))}

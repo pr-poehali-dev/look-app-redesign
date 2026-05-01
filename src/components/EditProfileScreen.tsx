@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import Icon from "@/components/ui/icon";
+import UserAvatar from "@/components/ui/user-avatar";
 
 interface EditProfileScreenProps {
   onBack: () => void;
@@ -41,8 +42,8 @@ const EditProfileScreen = ({ onBack, profile, onSave }: EditProfileScreenProps) 
       {/* Avatar */}
       <div className="flex flex-col items-center py-8 bg-white mt-2">
         <div className="relative">
-          <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-[#c084fc] to-[#8b5cf6]">
-            <img src={avatar} alt="avatar" className="w-full h-full object-cover" />
+          <div className="w-24 h-24 rounded-full overflow-hidden">
+            <UserAvatar src={avatar} name={name} alt="avatar" />
           </div>
           <button
             onClick={() => fileRef.current?.click()}

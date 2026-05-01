@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
+import UserAvatar from "@/components/ui/user-avatar";
 import { Story } from "./PostFeedTypes";
 
 const StoryViewer = ({ stories, startIndex, onClose }: { stories: Story[]; startIndex: number; onClose: () => void }) => {
@@ -60,7 +61,7 @@ const StoryViewer = ({ stories, startIndex, onClose }: { stories: Story[]; start
       {/* Header */}
       <div className="flex items-center gap-2 px-3 pb-3 z-10">
         <div className="w-8 h-8 rounded-full overflow-hidden border border-white/40">
-          <img src={story.avatar} className="w-full h-full object-cover" />
+          <UserAvatar src={story.avatar} name={story.handle} alt={story.handle} />
         </div>
         <span className="text-white font-semibold text-sm">{story.handle}</span>
         <span className="text-white/40 text-xs">сейчас</span>

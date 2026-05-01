@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
+import UserAvatar from "@/components/ui/user-avatar";
 import { useAuth } from "@/context/AuthContext";
 import { useUserMedia } from "@/context/UserMediaContext";
 import StoryViewer from "./post-feed/StoryViewer";
@@ -88,10 +89,8 @@ const PostFeed = () => {
           style={{ touchAction: "manipulation" }}
         >
           <div className="w-[62px] h-[62px] rounded-full border-2 border-white/20 flex items-center justify-center relative overflow-hidden">
-            {user?.avatar
-              ? <img src={user.avatar} className="w-full h-full object-cover opacity-70" />
-              : <div className="w-full h-full bg-white/10" />
-            }
+            <UserAvatar src={user?.avatar} name={user?.name || user?.username} alt="Ваша история" />
+
             <div className="absolute bottom-0 right-0 w-5 h-5 bg-[#0095f6] rounded-full flex items-center justify-center border-2 border-black">
               <Icon name="Plus" size={11} className="text-white" />
             </div>
@@ -102,7 +101,7 @@ const PostFeed = () => {
           <button key={post.id} onClick={() => setStoryIndex(i)} className="flex flex-col items-center gap-1 flex-shrink-0">
             <div className="w-[62px] h-[62px] rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]">
               <div className="w-full h-full rounded-full overflow-hidden border-2 border-black">
-                <img src={post.avatar} alt={post.handle} className="w-full h-full object-cover" />
+                <UserAvatar src={post.avatar} name={post.handle} alt={post.handle} />
               </div>
             </div>
             <span className="text-white/80 text-[10px] w-16 text-center truncate">{post.handle}</span>

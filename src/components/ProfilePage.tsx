@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import Icon from "@/components/ui/icon";
+import UserAvatar from "@/components/ui/user-avatar";
 import SettingsScreen from "./SettingsScreen";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
@@ -30,7 +31,9 @@ const UserListScreen = ({ title, users, onBack }: { title: string; users: typeof
       <div>
         {users.map((u) => (
           <div key={u.handle} className="flex items-center gap-3 px-4 py-3 border-b border-gray-50">
-            <img src={u.avatar} className="w-11 h-11 rounded-full object-cover flex-shrink-0" alt={u.name} />
+            <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
+              <UserAvatar src={u.avatar} name={u.name} alt={u.name} />
+            </div>
             <div className="flex-1 min-w-0">
               <p className="text-black font-semibold text-sm">{u.name}</p>
               <p className="text-gray-400 text-xs">@{u.handle}</p>
@@ -123,7 +126,9 @@ const StoryViewer = ({ stories, startIndex, onClose }: { stories: Story[]; start
 
       {/* Header */}
       <div className="absolute top-14 left-4 right-4 flex items-center gap-3 z-10">
-        <img src={AVATAR} className="w-8 h-8 rounded-full object-cover border-2 border-white" alt="" />
+        <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white flex-shrink-0">
+          <UserAvatar src={AVATAR} name={story.label} alt={story.label} />
+        </div>
         <span className="text-white font-semibold text-sm flex-1">{story.label}</span>
         <button onClick={onClose} className="p-1"><Icon name="X" size={22} className="text-white" /></button>
       </div>
