@@ -377,8 +377,10 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
             <p className="text-white/40 text-sm">Загрузка...</p>
           </div>
         ) : filteredWithCounts.length > 0 ? filteredWithCounts.map((video, i) => (
-          <div key={`${video.id}-${i}`} className="w-full snap-start" style={{ height: "100%" }}>
-            <VideoCard video={video} isActive={activeIndex === i} />
+          <div key={`${video.id}-${i}`} className="w-full snap-start flex md:items-center md:justify-center" style={{ height: "100%" }}>
+            <div className="w-full md:h-[min(100%,720px)] h-full">
+              <VideoCard video={video} isActive={activeIndex === i} />
+            </div>
           </div>
         )) : (
           <div className="w-full flex flex-col items-center justify-center gap-3" style={{ height: "100%" }}>
