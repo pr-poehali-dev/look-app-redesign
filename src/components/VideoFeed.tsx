@@ -366,10 +366,10 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
   };
 
   return (
-    <div className="relative w-full h-full flex justify-center items-center">
+    <div className="relative w-full h-full">
       <div
         ref={containerRef}
-        className="w-full h-full overflow-y-scroll snap-y snap-mandatory md:max-w-[420px] md:flex-shrink-0"
+        className="absolute inset-0 mx-auto overflow-y-scroll snap-y snap-mandatory md:max-w-[420px]"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {!dbLoaded ? (
@@ -388,8 +388,11 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
         )}
       </div>
 
-      {/* Desktop nav arrows — справа от ленты, вне видео */}
-      <div className="hidden md:flex flex-col gap-3 ml-4 flex-shrink-0">
+      {/* Desktop nav arrows — справа от центрированной ленты */}
+      <div
+        className="hidden md:flex flex-col gap-3 absolute top-1/2 -translate-y-1/2 z-40"
+        style={{ left: "calc(50% + 226px)" }}
+      >
         <button
           onClick={() => scrollByDir(-1)}
           className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center justify-center transition-colors"
