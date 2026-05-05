@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, lazy, Suspense } from "react";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { Chat } from "./MessagesScreen";
 import CallScreen from "./CallScreen";
-import GroupCallScreen from "./GroupCallScreen";
+
+const GroupCallScreenSfu = lazy(() => import("./GroupCallScreenSfu"));
 import { useAuth } from "@/context/AuthContext";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
@@ -33,9 +34,10 @@ interface ChatRoomProps {
 }
 
 const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const MY_ID = user?.id || "anon";
   const MY_NAME = user?.name || "Пользователь";
+  const MY_TOKEN = token || "";
   const rawChatId = String(chat.id);
   const chatId = rawChatId.startsWith("mock_") || rawChatId.startsWith("chat_") || rawChatId.startsWith("dm_") || rawChatId.startsWith("community_")
     ? rawChatId
@@ -637,14 +639,17 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
 
   if (call && isGroup) {
     return (
-      <GroupCallScreen
-        roomId={`gcall_${String(chat.id)}`}
-        roomName={chat.name}
-        mode={call}
-        myId={MY_ID}
-        myName={MY_NAME}
-        onEnd={() => setCall(null)}
-      />
+      <Suspense fallback={<div className="fixed inset-0 z-50 bg-zinc-950 flex items-center justify-center text-white/60">Подключение...</div>}>
+        <GroupCallScreenSfu
+          roomId={`gcall_${String(chat.id)}`}
+          roomName={chat.name}
+          mode={call}
+          myId={MY_ID}
+          myName={MY_NAME}
+          token={MY_TOKEN}
+          onEnd={() => setCall(null)}
+        />
+      </Suspense>
     );
   }
 
