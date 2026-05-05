@@ -1,0 +1,16 @@
+{
+  "name": "visov-signaling",
+  "version": "1.0.0",
+  "description": "WebRTC signaling server for Visov",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5",
+    "cors": "^2.8.5",
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5"
+  }
+}

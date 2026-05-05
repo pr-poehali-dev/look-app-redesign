@@ -1,0 +1,17 @@
+{
+  "name": "visov-sfu",
+  "version": "1.0.0",
+  "description": "Mediasoup SFU server for Visov",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5",
+    "cors": "^2.8.5",
+    "mediasoup": "^3.14.7",
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5"
+  }
+}
