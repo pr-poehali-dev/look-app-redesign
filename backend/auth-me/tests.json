@@ -1,0 +1,27 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "GET без X-User-Id возвращает 401",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 401,
+      "expectedBody": {"ok": false},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "GET с X-User-Id возвращает данные",
+      "method": "GET",
+      "path": "/",
+      "headers": {"X-User-Id": "test_auth_me_user", "X-User-Name": "Test User"},
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true, "id": "test_auth_me_user"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
