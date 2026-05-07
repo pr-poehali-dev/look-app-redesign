@@ -43,33 +43,17 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
 
   const load = useCallback(async () => {
     if (!targetId) return;
-    const cacheKey = `comments_cache_${targetType}_${targetId}`;
-    const CACHE_TTL = 30_000;
-
-    const mapList = (raw: { id: number; name: string; handle?: string; text: string; time?: string }[]): CommentItem[] =>
-      raw.map(c => ({ id: c.id, name: c.name, handle: c.handle, text: c.text, time: formatRelative(c.time) }));
-
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        const { ts, comments: rawList } = JSON.parse(cached);
-        if (Date.now() - ts < CACHE_TTL) {
-          const list = mapList(rawList);
-          setComments(list);
-          setCount(prev => Math.max(prev, list.length));
-          setLoaded(true);
-          return;
-        }
-      }
-    } catch { /* ignore */ }
-
     setLoading(true);
     try {
       const res = await fetch(`${COMMENTS_URL}?target_type=${targetType}&target_id=${encodeURIComponent(String(targetId))}`);
       const data = await res.json();
-      const rawList = data.comments || [];
-      try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), comments: rawList })); } catch { /* ignore */ }
-      const list = mapList(rawList);
+      const list: CommentItem[] = (data.comments || []).map((c: { id: number; name: string; handle?: string; text: string; time?: string }) => ({
+        id: c.id,
+        name: c.name,
+        handle: c.handle,
+        text: c.text,
+        time: formatRelative(c.time),
+      }));
       setComments(list);
       setCount(prev => Math.max(prev, list.length));
       setLoaded(true);
@@ -134,7 +118,6 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
           text: data.comment.text,
           time: formatRelative(data.comment.time),
         } : c));
-        try { sessionStorage.removeItem(`comments_cache_${targetType}_${targetId}`); } catch { /* ignore */ }
       }
     } catch {
       // оставляем оптимистичный

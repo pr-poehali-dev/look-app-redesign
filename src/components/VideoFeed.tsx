@@ -298,46 +298,25 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
     const url = activeCategory && activeCategory !== "all"
       ? `${GET_VIDEOS_URL}?type=video&category=${activeCategory}`
       : `${GET_VIDEOS_URL}?type=video`;
-    const cacheKey = `videos_cache_${activeCategory || 'all'}`;
-    const CACHE_TTL = 60_000;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mapVideos = (videos: any[]) => videos.map((v: any) => ({
-      id: v.id + 10000,
-      image: v.url,
-      isVideo: v.type === 'video',
-      author: v.author || "Автор",
-      handle: v.handle || "user",
-      description: v.description || "",
-      song: "Look — Original Sound",
-      likes: v.likes || "0",
-      comments: v.comments || "0",
-      shares: v.shares || "0",
-      category: v.category || "all",
-      avatar: v.avatar || "",
-    }));
-
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        const { ts, videos } = JSON.parse(cached);
-        if (Date.now() - ts < CACHE_TTL) {
-          setDbVideos(mapVideos(videos));
-          setDbLoaded(true);
-          setActiveIndex(0);
-          if (containerRef.current) containerRef.current.scrollTop = 0;
-          return;
-        }
-      }
-    } catch { /* ignore */ }
-
     fetch(url)
       .then(r => r.json())
       .then(raw => {
         const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
-        const videos = data.videos || [];
-        try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), videos })); } catch { /* ignore */ }
-        setDbVideos(mapVideos(videos));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setDbVideos((data.videos || []).map((v: any) => ({
+          id: v.id + 10000,
+          image: v.url,
+          isVideo: v.type === 'video',
+          author: v.author || "Автор",
+          handle: v.handle || "user",
+          description: v.description || "",
+          song: "Look — Original Sound",
+          likes: v.likes || "0",
+          comments: v.comments || "0",
+          shares: v.shares || "0",
+          category: v.category || "all",
+          avatar: v.avatar || "",
+        })));
         setActiveIndex(0);
         if (containerRef.current) containerRef.current.scrollTop = 0;
       })

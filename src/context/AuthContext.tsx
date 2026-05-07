@@ -36,18 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const saved = localStorage.getItem("auth_token");
-    const cachedUser = localStorage.getItem("user_cache");
     if (!saved) { setLoading(false); return; }
-
-    if (cachedUser) {
-      try {
-        const u = JSON.parse(cachedUser);
-        setUser(u);
-        setToken(saved);
-        setLoading(false);
-      } catch { /* ignore */ }
-    }
-
     fetch(AUTH_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -56,20 +45,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .then(r => r.json())
       .then(raw => {
         const data = parseBody(raw);
-        if (data.user) {
-          setUser(data.user);
-          setToken(saved);
-          localStorage.setItem("user_cache", JSON.stringify(data.user));
-        } else if (data.error) {
-          localStorage.removeItem("auth_token");
-          localStorage.removeItem("user_cache");
-          setUser(null);
-          setToken(null);
-        }
+        if (data.user) { setUser(data.user); setToken(saved); }
+        else localStorage.removeItem("auth_token");
       })
-      .catch(() => {
-        // сеть/CORS упала — оставляем кэшированного юзера если был
-      })
+      .catch(() => localStorage.removeItem("auth_token"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -86,7 +65,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(data.token);
     localStorage.setItem("auth_token", data.token);
     localStorage.setItem("user_id", data.user.id);
-    localStorage.setItem("user_cache", JSON.stringify(data.user));
     return null;
   };
 
@@ -103,7 +81,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(data.token);
     localStorage.setItem("auth_token", data.token);
     localStorage.setItem("user_id", data.user.id);
-    localStorage.setItem("user_cache", JSON.stringify(data.user));
     return null;
   };
 
@@ -112,7 +89,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(newToken);
     localStorage.setItem("auth_token", newToken);
     localStorage.setItem("user_id", newUser.id);
-    localStorage.setItem("user_cache", JSON.stringify(newUser));
   };
 
   const logout = () => {
@@ -120,7 +96,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(null);
     localStorage.removeItem("auth_token");
     localStorage.removeItem("user_id");
-    localStorage.removeItem("user_cache");
   };
 
   const updateUser = (u: Partial<AppUser>) => {
