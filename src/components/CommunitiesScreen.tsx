@@ -1,10 +1,9 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
 import ChatRoom from "./ChatRoom";
+import GroupCallScreen from "./GroupCallScreen";
 import { Chat } from "./MessagesScreen";
-
-const GroupCallScreenSfu = lazy(() => import("./GroupCallScreenSfu"));
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 const CATEGORIES = ["Все", "Фото", "Путешествия", "Спорт", "Игры", "Еда", "Музыка"];
@@ -23,7 +22,7 @@ interface Community {
 interface Props { onBack: () => void; }
 
 const CommunitiesScreen = ({ onBack }: Props) => {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const [communities, setCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("Все");
@@ -101,17 +100,14 @@ const CommunitiesScreen = ({ onBack }: Props) => {
   };
 
   if (groupCall) return (
-    <Suspense fallback={<div className="fixed inset-0 z-50 bg-zinc-950 flex items-center justify-center text-white/60">Подключение...</div>}>
-      <GroupCallScreenSfu
-        roomId={`gcall_${groupCall.communityId}`}
-        roomName={groupCall.name}
-        mode={groupCall.mode}
-        myId={user?.id || "anon"}
-        myName={user?.name || "Пользователь"}
-        token={token || ""}
-        onEnd={() => setGroupCall(null)}
-      />
-    </Suspense>
+    <GroupCallScreen
+      roomId={`gcall_${groupCall.communityId}`}
+      roomName={groupCall.name}
+      mode={groupCall.mode}
+      myId={user?.id || "anon"}
+      myName={user?.name || "Пользователь"}
+      onEnd={() => setGroupCall(null)}
+    />
   );
 
   if (openChat) return (
