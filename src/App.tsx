@@ -119,24 +119,20 @@ const AppContent = () => {
 
   const stopRingtone = () => {
     if (ringtoneRef.current) { clearInterval(ringtoneRef.current); ringtoneRef.current = null; }
-    // Мгновенно глушим звук через master gain, потом останавливаем все осцилляторы
-    if (masterGainRef.current && audioCtxRef.current) {
-      try {
-        masterGainRef.current.gain.cancelScheduledValues(audioCtxRef.current.currentTime);
-        masterGainRef.current.gain.setValueAtTime(0, audioCtxRef.current.currentTime);
-      } catch (e) { void e; }
+    // Самое надёжное — суспендим И закрываем КАЖДЫЙ когда-либо созданный AudioContext.
+    // suspend() мгновенно глушит ВСЕ запланированные на будущее осцилляторы,
+    // а close() освобождает ресурсы.
+    for (const ctx of allCtxRef.current) {
+      try { ctx.suspend().catch(() => {}); } catch (e) { void e; }
+      try { ctx.close().catch(() => {}); } catch (e) { void e; }
     }
     for (const osc of oscillatorsRef.current) {
-      try { osc.stop(); } catch (e) { void e; }
+      try { osc.stop(0); } catch (e) { void e; }
       try { osc.disconnect(); } catch (e) { void e; }
     }
     oscillatorsRef.current = [];
     masterGainRef.current = null;
     audioCtxRef.current = null;
-    // Закрываем все когда-либо созданные контексты — иногда playRingtone успевает создать новый, а старый продолжает играть
-    for (const ctx of allCtxRef.current) {
-      try { ctx.close().catch(() => {}); } catch (e) { void e; }
-    }
     allCtxRef.current = [];
     if ("vibrate" in navigator) {
       try { navigator.vibrate(0); } catch (e) { void e; }

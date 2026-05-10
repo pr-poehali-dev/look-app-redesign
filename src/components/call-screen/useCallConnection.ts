@@ -229,7 +229,14 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
       };
 
       pc.onicecandidate = (e) => {
-        if (e.candidate) sendSignal("ice", e.candidate.toJSON());
+        if (e.candidate) {
+          // Лог для диагностики: видим тип кандидата (host/srflx/relay) и адрес TURN
+          const c = e.candidate;
+          console.log("[CallScreen] local ICE", c.type, c.protocol, c.address || c.candidate?.split(" ")[4], "via", c.relatedAddress || "-");
+          sendSignal("ice", c.toJSON());
+        } else {
+          console.log("[CallScreen] ICE gathering done");
+        }
       };
 
       pc.onconnectionstatechange = () => {
