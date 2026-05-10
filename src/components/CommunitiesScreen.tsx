@@ -309,13 +309,14 @@ const CommunitiesScreen = ({ onBack }: Props) => {
                     </button>
                   </>
                 )}
-                {com.is_admin && (
+                {(com.is_admin || (user && com.creator_id === user.id)) && (
                   <button
                     onClick={() => handleDelete(com)}
-                    className="w-9 h-9 rounded-xl bg-red-500/15 flex items-center justify-center hover:bg-red-500/25 transition-colors"
+                    className="px-3 h-9 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-center gap-1.5 hover:bg-red-500/30 transition-colors"
                     title="Удалить сообщество"
                   >
-                    <Icon name="Trash2" size={16} className="text-red-400" />
+                    <Icon name="Trash2" size={14} className="text-red-400" />
+                    <span className="text-red-400 text-xs font-bold">Удалить</span>
                   </button>
                 )}
               </div>
