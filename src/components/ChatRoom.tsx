@@ -62,7 +62,7 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   const [reads, setReads] = useState<Record<string, number>>({});
   const readPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSentReadRef = useRef(0);
-  const [peerInfo, setPeerInfo] = useState<{ name?: string; avatar?: string; online?: boolean } | null>(null);
+  const [peerInfo, setPeerInfo] = useState<{ id?: string; name?: string; avatar?: string; online?: boolean } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -332,7 +332,7 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
         const raw = await res.json();
         const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
         const found = (data.users || []).find((u: { id: string }) => u.id === peerId);
-        if (found) setPeerInfo({ name: found.name, avatar: found.avatar, online: found.online });
+        if (found) setPeerInfo({ id: found.id, name: found.name, avatar: found.avatar, online: found.online });
       } catch (e) { void e; }
     };
     load();
@@ -607,9 +607,10 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   const displayAvatar = !isGroup && peerInfo?.avatar ? peerInfo.avatar : chat.avatar;
   const displayOnline = !isGroup && peerInfo ? !!peerInfo.online : chat.online;
 
-  // Извлечь peerId для DM-чата формата dm_<id1>_<id2>
+  // Извлечь peerId для DM-чата (используем нормализованный chatId, не сырой chat.id)
   const getPeerId = (): string => {
-    const cid = String(chat.id);
+    if (peerInfo?.id) return peerInfo.id;
+    const cid = chatId;
     if (cid.startsWith("dm_")) {
       const rest = cid.slice(3);
       if (rest.startsWith(MY_ID + "_")) return rest.slice(MY_ID.length + 1);
@@ -620,22 +621,26 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   };
 
   const startCall = async (mode: "audio" | "video") => {
-    if (!isGroup) {
-      const peerId = getPeerId();
-      const roomId = `call_${[MY_ID, peerId].sort().join("_")}`;
-      try {
-        await fetch(`${API}?module=signal`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
-          body: JSON.stringify({
-            room_id: `incoming_${peerId}`,
-            to_user: peerId,
-            type: "call_invite",
-            payload: { callerId: MY_ID, callerName: MY_NAME, mode, roomId },
-          }),
-        });
-      } catch (e) { void e; }
+    if (isGroup) {
+      setCall(mode);
+      return;
     }
+    const peerId = getPeerId();
+    if (!peerId || peerId === MY_ID || peerId === chatId) {
+      alert("Не удалось определить собеседника для звонка");
+      return;
+    }
+    const roomId = `call_${[MY_ID, peerId].sort().join("_")}`;
+    fetch(`${API}?module=signal`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
+      body: JSON.stringify({
+        room_id: `incoming_${peerId}`,
+        to_user: peerId,
+        type: "call_invite",
+        payload: { callerId: MY_ID, callerName: MY_NAME, mode, roomId },
+      }),
+    }).catch((e) => { console.error("[ChatRoom] call_invite failed", e); });
     setCall(mode);
   };
 
