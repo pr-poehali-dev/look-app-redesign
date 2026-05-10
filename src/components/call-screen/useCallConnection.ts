@@ -80,20 +80,27 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
       const offerDesc = sig.payload as RTCSessionDescriptionInit;
       const sdp = offerDesc?.sdp || "";
       if (sdp && sdp === lastRemoteSdpRef.current) {
+        console.log("[CallScreen] skip duplicate offer (same SDP)");
         return;
       }
       if (pc.signalingState !== "stable" && pc.signalingState !== "have-remote-offer") {
         console.log("[CallScreen] skip offer in state", pc.signalingState);
         return;
       }
-      console.log("[CallScreen] got offer");
-      await pc.setRemoteDescription(new RTCSessionDescription(offerDesc));
+      console.log("[CallScreen] got offer, sdpLen=", sdp.length);
       lastRemoteSdpRef.current = sdp;
-      remoteSetRef.current = true;
-      await flushPendingIce(pc);
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      await sendSignal("answer", answer);
+      try {
+        await pc.setRemoteDescription(new RTCSessionDescription(offerDesc));
+        remoteSetRef.current = true;
+        await flushPendingIce(pc);
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        console.log("[CallScreen] sending answer");
+        await sendSignal("answer", answer);
+      } catch (err) {
+        console.error("[CallScreen] offer handling failed", err);
+        lastRemoteSdpRef.current = "";
+      }
     } else if (sig.type === "answer") {
       if (pc.signalingState !== "have-local-offer") {
         console.log("[CallScreen] skip duplicate answer in state", pc.signalingState);
@@ -176,7 +183,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         for (const sig of data.signals || []) {
           await handleSignal(pc, sig);
         }
-      } catch (e) { void e; }
+      } catch (e) { console.warn("[CallScreen] poll error", e); }
     }, 3000);
   };
 
