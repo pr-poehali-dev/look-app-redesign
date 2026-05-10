@@ -51,6 +51,10 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const lastRemoteSdpRef = useRef<string>("");
   const sessionStartAtRef = useRef<number>(0);
   const sessionFromUserRef = useRef<string>("");
+  const offerAppliedRef = useRef<boolean>(false);
+  const answerAppliedRef = useRef<boolean>(false);
+  const iceOutboxRef = useRef<RTCIceCandidateInit[]>([]);
+  const iceFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const sendSignal = async (type: string, payload: unknown) => {
     if (endedRef.current && type !== "end") return;
@@ -61,6 +65,35 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         body: JSON.stringify({ room_id: roomId, to_user: peerId, type, payload }),
       });
     } catch (e) { void e; }
+  };
+
+  const flushIceOutbox = async () => {
+    if (iceFlushTimerRef.current) {
+      clearTimeout(iceFlushTimerRef.current);
+      iceFlushTimerRef.current = null;
+    }
+    if (iceOutboxRef.current.length === 0) return;
+    const batch = iceOutboxRef.current;
+    iceOutboxRef.current = [];
+    if (endedRef.current) return;
+    try {
+      await fetch(`${API}?module=signal`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": myId },
+        body: JSON.stringify({
+          room_id: roomId,
+          to_user: peerId,
+          type: "ice_batch",
+          payload: batch,
+        }),
+      });
+    } catch (e) { void e; }
+  };
+
+  const queueIce = (candidate: RTCIceCandidateInit) => {
+    iceOutboxRef.current.push(candidate);
+    if (iceFlushTimerRef.current) return;
+    iceFlushTimerRef.current = setTimeout(() => { flushIceOutbox(); }, 300);
   };
 
   const flushPendingIce = async (pc: RTCPeerConnection) => {
@@ -77,17 +110,18 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
     processedSigIdsRef.current.add(sig.id);
     if (endedRef.current || pc.signalingState === "closed") return;
     if (sig.type === "offer") {
-      const offerDesc = sig.payload as RTCSessionDescriptionInit;
-      const sdp = offerDesc?.sdp || "";
-      if (sdp && sdp === lastRemoteSdpRef.current) {
-        console.log("[CallScreen] skip duplicate offer (same SDP)");
+      if (offerAppliedRef.current) {
+        console.log("[CallScreen] skip offer — already applied in this session");
         return;
       }
+      const offerDesc = sig.payload as RTCSessionDescriptionInit;
+      const sdp = offerDesc?.sdp || "";
       if (pc.signalingState !== "stable" && pc.signalingState !== "have-remote-offer") {
         console.log("[CallScreen] skip offer in state", pc.signalingState);
         return;
       }
       console.log("[CallScreen] got offer, sdpLen=", sdp.length);
+      offerAppliedRef.current = true;
       lastRemoteSdpRef.current = sdp;
       try {
         await pc.setRemoteDescription(new RTCSessionDescription(offerDesc));
@@ -99,25 +133,36 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         await sendSignal("answer", answer);
       } catch (err) {
         console.error("[CallScreen] offer handling failed", err);
+        offerAppliedRef.current = false;
         lastRemoteSdpRef.current = "";
       }
     } else if (sig.type === "answer") {
+      if (answerAppliedRef.current) {
+        console.log("[CallScreen] skip answer — already applied");
+        return;
+      }
       if (pc.signalingState !== "have-local-offer") {
         console.log("[CallScreen] skip duplicate answer in state", pc.signalingState);
         return;
       }
       console.log("[CallScreen] got answer");
-      await pc.setRemoteDescription(new RTCSessionDescription(sig.payload as RTCSessionDescriptionInit));
-      remoteSetRef.current = true;
-      await flushPendingIce(pc);
-      answeredRef.current = true;
-      if (noAnswerTimerRef.current) { clearTimeout(noAnswerTimerRef.current); noAnswerTimerRef.current = null; }
-      if (callIdRef.current) {
-        fetch(`${API}?module=calls`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-User-Id": myId },
-          body: JSON.stringify({ action: "answer", call_id: callIdRef.current }),
-        }).catch(() => {});
+      answerAppliedRef.current = true;
+      try {
+        await pc.setRemoteDescription(new RTCSessionDescription(sig.payload as RTCSessionDescriptionInit));
+        remoteSetRef.current = true;
+        await flushPendingIce(pc);
+        answeredRef.current = true;
+        if (noAnswerTimerRef.current) { clearTimeout(noAnswerTimerRef.current); noAnswerTimerRef.current = null; }
+        if (callIdRef.current) {
+          fetch(`${API}?module=calls`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-User-Id": myId },
+            body: JSON.stringify({ action: "answer", call_id: callIdRef.current }),
+          }).catch(() => {});
+        }
+      } catch (err) {
+        console.error("[CallScreen] answer handling failed", err);
+        answerAppliedRef.current = false;
       }
     } else if (sig.type === "ice") {
       if (pc.signalingState === "closed") return;
@@ -126,6 +171,16 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         pendingIceRef.current.push(cand);
       } else {
         try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch (e) { console.warn("[CallScreen] ICE add failed", e); }
+      }
+    } else if (sig.type === "ice_batch") {
+      if (pc.signalingState === "closed") return;
+      const cands = (sig.payload as RTCIceCandidateInit[]) || [];
+      for (const cand of cands) {
+        if (!remoteSetRef.current) {
+          pendingIceRef.current.push(cand);
+        } else {
+          try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch (e) { console.warn("[CallScreen] ICE add failed", e); }
+        }
       }
     } else if (sig.type === "end" || sig.type === "call_declined") {
       if (endedRef.current) return;
@@ -193,6 +248,9 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
     const start = async () => {
       sessionStartAtRef.current = Date.now();
       sessionFromUserRef.current = "";
+      offerAppliedRef.current = false;
+      answerAppliedRef.current = false;
+      iceOutboxRef.current = [];
       console.log("[CallScreen] start", { myId, peerId, roomId, isCaller: isCaller.current, mode });
       setStatus("connecting");
 
@@ -290,12 +348,12 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
 
       pc.onicecandidate = (e) => {
         if (e.candidate) {
-          // Лог для диагностики: видим тип кандидата (host/srflx/relay) и адрес TURN
           const c = e.candidate;
           console.log("[CallScreen] local ICE", c.type, c.protocol, c.address || c.candidate?.split(" ")[4], "via", c.relatedAddress || "-");
-          sendSignal("ice", c.toJSON());
+          queueIce(c.toJSON());
         } else {
           console.log("[CallScreen] ICE gathering done");
+          flushIceOutbox();
         }
       };
 
@@ -362,6 +420,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
       endedRef.current = true;
       if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
       if (noAnswerTimerRef.current) clearTimeout(noAnswerTimerRef.current);
+      if (iceFlushTimerRef.current) { clearTimeout(iceFlushTimerRef.current); iceFlushTimerRef.current = null; }
       pcRef.current?.close();
       localStreamRef.current?.getTracks().forEach((t) => t.stop());
     };
