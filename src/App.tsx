@@ -68,11 +68,15 @@ const AppContent = () => {
   const oscillatorsRef = useRef<OscillatorNode[]>([]);
   const ringtoneRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const allCtxRef = useRef<AudioContext[]>([]);
 
   const playRingtone = () => {
+    // Гарантированно глушим всё, что играло до этого
+    stopRingtone();
     try {
       const ctx = new AudioContext();
       audioCtxRef.current = ctx;
+      allCtxRef.current.push(ctx);
       const masterGain = ctx.createGain();
       masterGain.gain.value = 1;
       masterGain.connect(ctx.destination);
@@ -128,11 +132,12 @@ const AppContent = () => {
     }
     oscillatorsRef.current = [];
     masterGainRef.current = null;
-    if (audioCtxRef.current) {
-      const ctx = audioCtxRef.current;
-      audioCtxRef.current = null;
-      ctx.close().catch(() => {});
+    audioCtxRef.current = null;
+    // Закрываем все когда-либо созданные контексты — иногда playRingtone успевает создать новый, а старый продолжает играть
+    for (const ctx of allCtxRef.current) {
+      try { ctx.close().catch(() => {}); } catch (e) { void e; }
     }
+    allCtxRef.current = [];
     if ("vibrate" in navigator) {
       try { navigator.vibrate(0); } catch (e) { void e; }
     }
