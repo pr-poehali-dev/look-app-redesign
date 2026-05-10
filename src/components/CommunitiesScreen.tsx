@@ -114,17 +114,25 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
 
   const handleJoin = async (com: Community) => {
     if (!user) return;
-    if (com.type === "closed" && !com.joined) {
-      alert("Заявка на вступление отправлена! Администратор рассмотрит её.");
-      return;
-    }
     const action = com.joined ? "leave" : "join";
-    await fetch(`${API}?module=community`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
-      body: JSON.stringify({ action, community_id: com.id }),
-    });
-    setCommunities(prev => prev.map(c => c.id === com.id ? { ...c, joined: !c.joined, members: c.members + (c.joined ? -1 : 1) } : c));
+    try {
+      const res = await fetch(`${API}?module=community`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
+        body: JSON.stringify({ action, community_id: com.id }),
+      });
+      const raw = await res.json();
+      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      if (data.pending) {
+        alert("Заявка отправлена. Админ её рассмотрит.");
+        return;
+      }
+      if (data.ok) {
+        setCommunities(prev => prev.map(c => c.id === com.id ? { ...c, joined: !c.joined, members: c.members + (c.joined ? -1 : 1) } : c));
+      }
+    } catch {
+      alert("Не удалось выполнить действие. Проверь интернет.");
+    }
   };
 
   const handleCreate = async () => {

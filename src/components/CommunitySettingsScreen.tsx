@@ -9,6 +9,14 @@ interface ContactUser {
   online: boolean;
 }
 
+interface JoinRequest {
+  id: number;
+  user_id: string;
+  user_name: string;
+  avatar: string;
+  created_at: string | null;
+}
+
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 const CATEGORIES = ["Фото", "Путешествия", "Спорт", "Игры", "Еда", "Музыка", "Другое"];
 
@@ -49,6 +57,10 @@ const CommunitySettingsScreen = ({ community, onBack, onUpdated, onDeleted }: Pr
   const [inviteSearch, setInviteSearch] = useState("");
   const [inviting, setInviting] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [showRequests, setShowRequests] = useState(false);
+  const [requests, setRequests] = useState<JoinRequest[]>([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const inviteLink = `${window.location.origin}/?community=${community.id}`;
@@ -132,6 +144,63 @@ const CommunitySettingsScreen = ({ community, onBack, onUpdated, onDeleted }: Pr
   );
 
   const isOwner = user && community.creator_id === user.id;
+
+  const loadRequests = async () => {
+    if (!user || !isOwner) return;
+    setRequestsLoading(true);
+    try {
+      const res = await fetch(`${API}?module=community`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
+        body: JSON.stringify({ action: "list_requests", community_id: community.id }),
+      });
+      const raw = await res.json();
+      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      const list: JoinRequest[] = data.requests || [];
+      setRequests(list);
+      setPendingCount(list.length);
+    } catch {
+      // тихо
+    } finally {
+      setRequestsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOwner && type === "closed") loadRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOwner, type]);
+
+  useEffect(() => {
+    if (showRequests) loadRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showRequests]);
+
+  const decideRequest = async (uid: string, approve: boolean) => {
+    if (!user) return;
+    try {
+      const res = await fetch(`${API}?module=community`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
+        body: JSON.stringify({
+          action: approve ? "approve_request" : "reject_request",
+          community_id: community.id,
+          user_id: uid,
+        }),
+      });
+      const raw = await res.json();
+      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      if (data.ok) {
+        setRequests((prev) => prev.filter((r) => r.user_id !== uid));
+        setPendingCount((p) => Math.max(0, p - 1));
+        if (approve) onUpdated({ members: community.members + 1 });
+      } else {
+        alert("Не удалось обработать заявку");
+      }
+    } catch {
+      alert("Не удалось обработать заявку. Проверь интернет.");
+    }
+  };
 
   const handlePickImage = () => fileRef.current?.click();
 
@@ -361,6 +430,29 @@ const CommunitySettingsScreen = ({ community, onBack, onUpdated, onDeleted }: Pr
           )}
         </div>
 
+        {isOwner && type === "closed" && (
+          <div className="flex flex-col gap-1.5 mt-2">
+            <label className="text-white/50 text-xs font-semibold uppercase tracking-wide">Заявки на вступление</label>
+            <button
+              onClick={() => setShowRequests(true)}
+              className="flex items-center justify-between bg-[#111] rounded-xl border border-white/10 p-3 hover:bg-white/5 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#8b5cf6]/20 flex items-center justify-center">
+                  <Icon name="UserCheck" size={18} className="text-[#8b5cf6]" />
+                </div>
+                <div className="text-left">
+                  <div className="text-white font-bold text-sm">
+                    {pendingCount > 0 ? `${pendingCount} ${pendingCount === 1 ? "заявка" : pendingCount < 5 ? "заявки" : "заявок"}` : "Нет заявок"}
+                  </div>
+                  <div className="text-white/50 text-xs">Принять или отклонить</div>
+                </div>
+              </div>
+              <Icon name="ChevronRight" size={18} className="text-white/40" />
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-col gap-1.5 mt-2">
           <label className="text-white/50 text-xs font-semibold uppercase tracking-wide">Статистика</label>
           <div className="bg-[#111] rounded-xl border border-white/10 p-3 flex items-center gap-3">
@@ -462,6 +554,60 @@ const CommunitySettingsScreen = ({ community, onBack, onUpdated, onDeleted }: Pr
               >
                 {inviting ? "Приглашаем..." : selectedIds.length > 0 ? `Пригласить (${selectedIds.length})` : "Выбери друзей"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRequests && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center">
+          <div className="w-full max-w-md bg-[#111] rounded-t-3xl sm:rounded-3xl border border-white/10 flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/10">
+              <div>
+                <h3 className="text-white font-bold text-base">Заявки на вступление</h3>
+                <p className="text-white/40 text-xs">Ожидают: {requests.length}</p>
+              </div>
+              <button
+                onClick={() => setShowRequests(false)}
+                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
+              >
+                <Icon name="X" size={16} className="text-white" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-2 pb-4" style={{ scrollbarWidth: "none" }}>
+              {requestsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="w-6 h-6 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : requests.length === 0 ? (
+                <div className="text-center py-12 text-white/40 text-sm">Пока нет заявок</div>
+              ) : (
+                requests.map((r) => (
+                  <div key={r.id} className="flex items-center gap-3 px-3 py-2.5">
+                    {r.avatar ? (
+                      <img src={r.avatar} className="w-10 h-10 rounded-full object-cover" alt={r.user_name} />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center text-white text-sm font-bold">
+                        {r.user_name.slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                    <span className="flex-1 text-white text-sm truncate">{r.user_name}</span>
+                    <button
+                      onClick={() => decideRequest(r.user_id, true)}
+                      className="px-3 py-1.5 rounded-lg bg-[#fe2c55] text-white text-xs font-semibold"
+                    >
+                      Принять
+                    </button>
+                    <button
+                      onClick={() => decideRequest(r.user_id, false)}
+                      className="px-3 py-1.5 rounded-lg bg-white/10 text-white text-xs font-semibold"
+                    >
+                      Отклонить
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

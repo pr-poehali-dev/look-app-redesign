@@ -458,7 +458,7 @@ def handler(event: dict, context) -> dict:
                         "MAX(CASE WHEN cm.user_id = %s THEN 1 ELSE 0 END) as is_member "
                         "FROM communities c "
                         "LEFT JOIN community_members cm ON cm.community_id = c.id "
-                        "WHERE c.creator_id <> 'system' "
+                        "WHERE c.creator_id <> 'system' AND COALESCE(c.is_hidden, FALSE) = FALSE "
                         "GROUP BY c.id, c.name, c.description, c.type, c.category, c.img, c.creator_id "
                         "ORDER BY c.created_at DESC",
                         (user_id,)
@@ -499,18 +499,30 @@ def handler(event: dict, context) -> dict:
 
                 if post_action == 'join':
                     com_id = body.get('community_id')
-                    cur.execute("SELECT type, name FROM communities WHERE id = %s", (com_id,))
+                    cur.execute("SELECT type, name FROM communities WHERE id = %s AND COALESCE(is_hidden, FALSE) = FALSE", (com_id,))
                     row = cur.fetchone()
                     if not row:
                         conn.commit()
                         return {'statusCode': 404, 'headers': headers, 'body': json.dumps({'error': 'not found'})}
+                    com_type = row[0]
                     com_name_for_chat = row[1]
+
+                    if com_type == 'closed':
+                        cur.execute(
+                            "INSERT INTO community_join_requests (community_id, user_id, user_name) "
+                            "VALUES (%s, %s, %s) "
+                            "ON CONFLICT (community_id, user_id) DO UPDATE SET status = 'pending', created_at = NOW(), decided_at = NULL, decided_by = NULL",
+                            (com_id, user_id, user_name)
+                        )
+                        conn.commit()
+                        return {'statusCode': 200, 'headers': headers,
+                                'body': json.dumps({'ok': True, 'joined': False, 'pending': True})}
+
                     cur.execute(
                         "INSERT INTO community_members (community_id, user_id, user_name) VALUES (%s, %s, %s) "
                         "ON CONFLICT DO NOTHING",
                         (com_id, user_id, user_name)
                     )
-                    # Гарантируем существование группового чата сообщества и членства в нём
                     cur.execute(
                         "INSERT INTO sa_chats (id, type, name) VALUES (%s, 'group', %s) "
                         "ON CONFLICT (id) DO NOTHING",
@@ -523,6 +535,79 @@ def handler(event: dict, context) -> dict:
                     )
                     conn.commit()
                     return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True, 'joined': True})}
+
+                elif post_action == 'list_requests':
+                    com_id = body.get('community_id')
+                    if not com_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'community_id required'})}
+                    cur.execute("SELECT creator_id FROM communities WHERE id = %s", (com_id,))
+                    c_row = cur.fetchone()
+                    if not c_row or c_row[0] != user_id:
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers, 'body': json.dumps({'error': 'forbidden'})}
+                    cur.execute(
+                        "SELECT r.id, r.user_id, r.user_name, r.created_at, "
+                        "COALESCE(au.avatar, '') "
+                        "FROM community_join_requests r "
+                        "LEFT JOIN app_users au ON au.id = r.user_id "
+                        "WHERE r.community_id = %s AND r.status = 'pending' "
+                        "ORDER BY r.created_at ASC",
+                        (com_id,)
+                    )
+                    rows = cur.fetchall()
+                    requests = [{'id': r[0], 'user_id': r[1], 'user_name': r[2],
+                                 'created_at': r[3].isoformat() if r[3] else None,
+                                 'avatar': r[4]} for r in rows]
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'requests': requests})}
+
+                elif post_action == 'approve_request' or post_action == 'reject_request':
+                    com_id = body.get('community_id')
+                    target_user = body.get('user_id')
+                    if not com_id or not target_user:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'community_id and user_id required'})}
+                    cur.execute("SELECT creator_id, name FROM communities WHERE id = %s", (com_id,))
+                    c_row = cur.fetchone()
+                    if not c_row or c_row[0] != user_id:
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers, 'body': json.dumps({'error': 'forbidden'})}
+                    com_name_for_chat = c_row[1]
+
+                    new_status = 'approved' if post_action == 'approve_request' else 'rejected'
+                    cur.execute(
+                        "UPDATE community_join_requests SET status = %s, decided_at = NOW(), decided_by = %s "
+                        "WHERE community_id = %s AND user_id = %s AND status = 'pending' "
+                        "RETURNING user_name",
+                        (new_status, user_id, com_id, target_user)
+                    )
+                    upd = cur.fetchone()
+                    if not upd:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers, 'body': json.dumps({'error': 'request not found'})}
+
+                    if new_status == 'approved':
+                        target_name = upd[0]
+                        cur.execute(
+                            "INSERT INTO community_members (community_id, user_id, user_name) VALUES (%s, %s, %s) "
+                            "ON CONFLICT DO NOTHING",
+                            (com_id, target_user, target_name)
+                        )
+                        cur.execute(
+                            "INSERT INTO sa_chats (id, type, name) VALUES (%s, 'group', %s) "
+                            "ON CONFLICT (id) DO NOTHING",
+                            (com_id, com_name_for_chat)
+                        )
+                        cur.execute(
+                            "INSERT INTO sa_chat_members (chat_id, user_id) VALUES (%s, %s) "
+                            "ON CONFLICT DO NOTHING",
+                            (com_id, target_user)
+                        )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True, 'status': new_status})}
 
                 elif post_action == 'leave':
                     com_id = body.get('community_id')
