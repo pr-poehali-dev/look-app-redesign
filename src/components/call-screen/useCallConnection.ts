@@ -317,8 +317,34 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
 
   useEffect(() => {
     if (status === "connected" || status === "ended") return;
-    const warnTimer = setTimeout(() => {
-      if (status !== "connected") setConnectionWarning(true);
+    const warnTimer = setTimeout(async () => {
+      if (status !== "connected") {
+        setConnectionWarning(true);
+        // Диагностика: какие ICE-кандидаты собрались, какая пара выбрана
+        const pc = pcRef.current;
+        if (pc) {
+          try {
+            const stats = await pc.getStats();
+            const local: string[] = [];
+            const remote: string[] = [];
+            const pairs: string[] = [];
+            stats.forEach((r) => {
+              if (r.type === "local-candidate") local.push(`${r.candidateType}/${r.protocol}/${r.address || r.ip || "?"}`);
+              if (r.type === "remote-candidate") remote.push(`${r.candidateType}/${r.protocol}/${r.address || r.ip || "?"}`);
+              if (r.type === "candidate-pair") pairs.push(`pair state=${r.state} nominated=${r.nominated} bytes=${r.bytesSent || 0}/${r.bytesReceived || 0}`);
+            });
+            console.error("[CallScreen] DIAGNOSTIC TIMEOUT", {
+              connectionState: pc.connectionState,
+              iceConnectionState: pc.iceConnectionState,
+              iceGatheringState: pc.iceGatheringState,
+              signalingState: pc.signalingState,
+              local,
+              remote,
+              pairs,
+            });
+          } catch (e) { console.error("[CallScreen] diag failed", e); }
+        }
+      }
     }, 15000);
     return () => clearTimeout(warnTimer);
   }, [status]);
