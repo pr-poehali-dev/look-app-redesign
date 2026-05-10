@@ -435,6 +435,19 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: mode === "video" });
         await pc.setLocalDescription(offer);
         await sendSignal("offer", offer);
+        // Resend offer at 5s and 12s if no answer (callee might have missed it or had a transient error)
+        const resendOffer = async () => {
+          if (answeredRef.current || endedRef.current) return;
+          try {
+            const desc = pc.localDescription;
+            if (desc) {
+              console.log("[CallScreen] resending offer (no answer yet)");
+              await sendSignal("offer", { type: desc.type, sdp: desc.sdp });
+            }
+          } catch (e) { console.warn("[CallScreen] resend offer failed", e); }
+        };
+        setTimeout(resendOffer, 5000);
+        setTimeout(resendOffer, 12000);
         noAnswerTimerRef.current = setTimeout(() => {
           if (!answeredRef.current) {
             setEndReason("Собеседник не отвечает");
