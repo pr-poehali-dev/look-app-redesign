@@ -502,15 +502,27 @@ def handler(event: dict, context) -> dict:
 
                 if post_action == 'join':
                     com_id = body.get('community_id')
-                    cur.execute("SELECT type FROM communities WHERE id = %s", (com_id,))
+                    cur.execute("SELECT type, name FROM communities WHERE id = %s", (com_id,))
                     row = cur.fetchone()
                     if not row:
                         conn.commit()
                         return {'statusCode': 404, 'headers': headers, 'body': json.dumps({'error': 'not found'})}
+                    com_name_for_chat = row[1]
                     cur.execute(
                         "INSERT INTO community_members (community_id, user_id, user_name) VALUES (%s, %s, %s) "
                         "ON CONFLICT DO NOTHING",
                         (com_id, user_id, user_name)
+                    )
+                    # Гарантируем существование группового чата сообщества и членства в нём
+                    cur.execute(
+                        "INSERT INTO sa_chats (id, type, name) VALUES (%s, 'group', %s) "
+                        "ON CONFLICT (id) DO NOTHING",
+                        (com_id, com_name_for_chat)
+                    )
+                    cur.execute(
+                        "INSERT INTO sa_chat_members (chat_id, user_id) VALUES (%s, %s) "
+                        "ON CONFLICT DO NOTHING",
+                        (com_id, user_id)
                     )
                     conn.commit()
                     return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True, 'joined': True})}
@@ -548,6 +560,15 @@ def handler(event: dict, context) -> dict:
                     cur.execute(
                         "INSERT INTO community_members (community_id, user_id, user_name, role) VALUES (%s, %s, %s, 'admin')",
                         (new_id, user_id, user_name)
+                    )
+                    # Создаём групповой чат сообщества с тем же id и добавляем создателя
+                    cur.execute(
+                        "INSERT INTO sa_chats (id, type, name) VALUES (%s, 'group', %s)",
+                        (new_id, com_name)
+                    )
+                    cur.execute(
+                        "INSERT INTO sa_chat_members (chat_id, user_id) VALUES (%s, %s)",
+                        (new_id, user_id)
                     )
                     conn.commit()
                     return {'statusCode': 200, 'headers': headers,

@@ -6,7 +6,7 @@ import GroupCallScreen from "./GroupCallScreen";
 import { Chat } from "./MessagesScreen";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
-const CATEGORIES = ["Все", "Фото", "Путешествия", "Спорт", "Игры", "Еда", "Музыка"];
+const CATEGORIES = ["Все", "Фото", "Путешествия", "Спорт", "Игры", "Еда", "Музыка", "Другое"];
 
 interface Community {
   id: string;
@@ -100,7 +100,7 @@ const CommunitiesScreen = ({ onBack }: Props) => {
 
   const openCommunityChat = (com: Community) => {
     const chat: Chat = {
-      id: `community_${com.id}`,
+      id: com.id,
       type: "group",
       name: com.name,
       avatar: com.img || "",
