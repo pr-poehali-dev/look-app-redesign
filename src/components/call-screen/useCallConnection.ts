@@ -141,6 +141,23 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
     const start = async () => {
       console.log("[CallScreen] start", { myId, peerId, roomId, isCaller: isCaller.current, mode });
       setStatus("connecting");
+
+      // Сбрасываем «хвост» старых сигналов прошлых попыток звонка в этой же комнате,
+      // иначе callee сразу получит end/call_declined от прошлого сеанса и звонок мгновенно закроется.
+      try {
+        const r = await fetch(
+          `${API}?module=signal&room_id=${roomId}&since_id=0`,
+          { headers: { "X-User-Id": myId } }
+        );
+        const raw = await r.json();
+        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+        const sigs = data.signals || [];
+        if (sigs.length > 0) {
+          lastSigIdRef.current = Math.max(...sigs.map((s: { id: number }) => s.id));
+          console.log("[CallScreen] skipped", sigs.length, "stale signals, since_id =", lastSigIdRef.current);
+        }
+      } catch (e) { void e; }
+
       const cfg = await getRtcConfig().catch(() => RTC_CONFIG);
       console.log("[CallScreen] iceServers count =", (cfg.iceServers || []).length);
       pc = new RTCPeerConnection(cfg);
