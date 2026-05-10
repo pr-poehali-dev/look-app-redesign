@@ -46,8 +46,11 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const remoteSetRef = useRef(false);
   const processedSigIdsRef = useRef<Set<number>>(new Set());
   const lastIceRestartAtRef = useRef(0);
+  const endedRef = useRef(false);
+  const lastRemoteSdpRef = useRef<string>("");
 
   const sendSignal = async (type: string, payload: unknown) => {
+    if (endedRef.current && type !== "end") return;
     try {
       await fetch(`${API}?module=signal`, {
         method: "POST",
@@ -69,13 +72,20 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
     lastSigIdRef.current = sig.id;
     if (processedSigIdsRef.current.has(sig.id)) return;
     processedSigIdsRef.current.add(sig.id);
+    if (endedRef.current || pc.signalingState === "closed") return;
     if (sig.type === "offer") {
+      const offerDesc = sig.payload as RTCSessionDescriptionInit;
+      const sdp = offerDesc?.sdp || "";
+      if (sdp && sdp === lastRemoteSdpRef.current) {
+        return;
+      }
       if (pc.signalingState !== "stable" && pc.signalingState !== "have-remote-offer") {
         console.log("[CallScreen] skip offer in state", pc.signalingState);
         return;
       }
       console.log("[CallScreen] got offer");
-      await pc.setRemoteDescription(new RTCSessionDescription(sig.payload as RTCSessionDescriptionInit));
+      await pc.setRemoteDescription(new RTCSessionDescription(offerDesc));
+      lastRemoteSdpRef.current = sdp;
       remoteSetRef.current = true;
       await flushPendingIce(pc);
       const answer = await pc.createAnswer();
@@ -100,6 +110,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         }).catch(() => {});
       }
     } else if (sig.type === "ice") {
+      if (pc.signalingState === "closed") return;
       const cand = sig.payload as RTCIceCandidateInit;
       if (!remoteSetRef.current) {
         pendingIceRef.current.push(cand);
@@ -107,6 +118,8 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch (e) { console.warn("[CallScreen] ICE add failed", e); }
       }
     } else if (sig.type === "end" || sig.type === "call_declined") {
+      if (endedRef.current) return;
+      endedRef.current = true;
       console.log("[CallScreen] received", sig.type, "— closing call");
       if (noAnswerTimerRef.current) { clearTimeout(noAnswerTimerRef.current); noAnswerTimerRef.current = null; }
       if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
@@ -156,6 +169,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
 
       // Сбрасываем «хвост» старых сигналов прошлых попыток звонка в этой же комнате,
       // иначе callee сразу получит end/call_declined от прошлого сеанса и звонок мгновенно закроется.
+      // Также помечаем все ID как обработанные, чтобы даже если пришли заново — игнор.
       try {
         const r = await fetch(
           `${API}?module=signal&room_id=${roomId}&since_id=0`,
@@ -165,7 +179,12 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
         const sigs = data.signals || [];
         if (sigs.length > 0) {
-          lastSigIdRef.current = Math.max(...sigs.map((s: { id: number }) => s.id));
+          let maxId = 0;
+          for (const s of sigs as { id: number }[]) {
+            processedSigIdsRef.current.add(s.id);
+            if (s.id > maxId) maxId = s.id;
+          }
+          lastSigIdRef.current = maxId;
           console.log("[CallScreen] skipped", sigs.length, "stale signals, since_id =", lastSigIdRef.current);
         }
       } catch (e) { void e; }
@@ -310,7 +329,8 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
     start();
 
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      endedRef.current = true;
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
       if (noAnswerTimerRef.current) clearTimeout(noAnswerTimerRef.current);
       pcRef.current?.close();
       localStreamRef.current?.getTracks().forEach((t) => t.stop());
@@ -392,6 +412,8 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   }, [status]);
 
   const hangup = () => {
+    if (endedRef.current) { onEnd(); return; }
+    endedRef.current = true;
     if (noAnswerTimerRef.current) { clearTimeout(noAnswerTimerRef.current); noAnswerTimerRef.current = null; }
     sendSignal("end", {});
     if (!answeredRef.current && isCaller.current) {
