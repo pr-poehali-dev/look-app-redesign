@@ -564,6 +564,45 @@ def handler(event: dict, context) -> dict:
                     return {'statusCode': 200, 'headers': headers,
                             'body': json.dumps({'ok': True, 'deleted': True})}
 
+                elif post_action == 'invite':
+                    com_id = body.get('community_id')
+                    invites = body.get('user_ids') or []
+                    if not com_id or not isinstance(invites, list) or not invites:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'community_id and user_ids required'})}
+                    cur.execute("SELECT creator_id FROM communities WHERE id = %s", (com_id,))
+                    row = cur.fetchone()
+                    if not row:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers,
+                                'body': json.dumps({'error': 'not found'})}
+                    # Любой участник может пригласить (упрощённо)
+                    added = 0
+                    for uid in invites[:50]:
+                        if not uid or not isinstance(uid, str):
+                            continue
+                        cur.execute(
+                            "SELECT name FROM app_users WHERE id = %s",
+                            (uid,)
+                        )
+                        u_row = cur.fetchone()
+                        u_name = u_row[0] if u_row else 'Пользователь'
+                        cur.execute(
+                            "INSERT INTO community_members (community_id, user_id, user_name) "
+                            "VALUES (%s, %s, %s) ON CONFLICT DO NOTHING",
+                            (com_id, uid, u_name)
+                        )
+                        cur.execute(
+                            "INSERT INTO sa_chat_members (chat_id, user_id) "
+                            "VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                            (com_id, uid)
+                        )
+                        added += 1
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True, 'added': added})}
+
                 elif post_action == 'update':
                     com_id = body.get('community_id')
                     if not com_id:
