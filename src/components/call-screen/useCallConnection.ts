@@ -48,6 +48,8 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const lastIceRestartAtRef = useRef(0);
   const endedRef = useRef(false);
   const lastRemoteSdpRef = useRef<string>("");
+  const sessionStartAtRef = useRef<number>(0);
+  const sessionFromUserRef = useRef<string>("");
 
   const sendSignal = async (type: string, payload: unknown) => {
     if (endedRef.current && type !== "end") return;
@@ -119,8 +121,20 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
       }
     } else if (sig.type === "end" || sig.type === "call_declined") {
       if (endedRef.current) return;
+      const sigAny = sig as { from_user?: string };
+      const fromUser = sigAny.from_user || "?";
+      const ageMs = Date.now() - sessionStartAtRef.current;
+      console.log("[CallScreen] received", sig.type, "from", fromUser, "ageMs=", ageMs, "myId=", myId, "peerId=", peerId);
+      if (fromUser === myId) {
+        console.log("[CallScreen] ignoring own", sig.type, "echo");
+        return;
+      }
+      if (ageMs < 2000) {
+        console.log("[CallScreen] ignoring early", sig.type, "(stale from previous session)");
+        return;
+      }
       endedRef.current = true;
-      console.log("[CallScreen] received", sig.type, "— closing call");
+      console.log("[CallScreen] closing call due to", sig.type);
       if (noAnswerTimerRef.current) { clearTimeout(noAnswerTimerRef.current); noAnswerTimerRef.current = null; }
       if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
       try { pcRef.current?.close(); } catch (e) { void e; }
@@ -164,6 +178,8 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
     let pc: RTCPeerConnection;
 
     const start = async () => {
+      sessionStartAtRef.current = Date.now();
+      sessionFromUserRef.current = "";
       console.log("[CallScreen] start", { myId, peerId, roomId, isCaller: isCaller.current, mode });
       setStatus("connecting");
 
