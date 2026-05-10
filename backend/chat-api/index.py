@@ -1,5 +1,6 @@
 import json
 import os
+import random
 import psycopg2
 
 SEED_COMMUNITIES = [
@@ -561,6 +562,12 @@ def handler(event: dict, context) -> dict:
                     "VALUES (%s, %s, %s, %s, %s)",
                     (room_id, user_id, to_user, sig_type, json.dumps(payload))
                 )
+                # Probabilistic cleanup: ~2% chance per insert deletes signals older than 5 minutes.
+                # Keeps signaling table small without slowing down hot path.
+                if random.random() < 0.02:
+                    cur.execute(
+                        "DELETE FROM sa_signaling WHERE created_at < NOW() - INTERVAL '5 minutes'"
+                    )
                 conn.commit()
                 return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True})}
 
