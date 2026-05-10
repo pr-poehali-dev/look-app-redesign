@@ -242,8 +242,10 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   };
 
   const startPoll = (pc: RTCPeerConnection) => {
-    pollRef.current = setInterval(async () => {
-      try {
+    const pollOnce = async () => {
+      let pageCount = 0;
+      while (pageCount < 10) {
+        pageCount++;
         const res = await fetch(
           `${API}?module=signal&room_id=${roomId}&since_id=${lastSigIdRef.current}`,
           { headers: { "X-User-Id": myId } }
@@ -251,15 +253,18 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         const raw = await res.json();
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
         const sigs = data.signals || [];
-        if (sigs.length > 0) {
-          const types = sigs.map((s: { type: string; from_user?: string }) => `${s.type}<-${s.from_user || "?"}`).join(",");
-          console.log("[CallScreen] poll got", sigs.length, "signals:", types, "since=", lastSigIdRef.current);
-        }
+        if (sigs.length === 0) break;
+        const types = sigs.map((s: { type: string; from_user?: string }) => `${s.type}<-${s.from_user || "?"}`).join(",");
+        console.log("[CallScreen] poll got", sigs.length, "signals:", types, "since=", lastSigIdRef.current);
         for (const sig of sigs) {
           await handleSignal(pc, sig);
         }
-      } catch (e) { console.warn("[CallScreen] poll error", e); }
-    }, 3000);
+        if (sigs.length < 50) break;
+      }
+    };
+    pollRef.current = setInterval(() => {
+      pollOnce().catch((e) => console.warn("[CallScreen] poll error", e));
+    }, 1500);
   };
 
   useEffect(() => {
@@ -278,22 +283,28 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
       // иначе callee сразу получит end/call_declined от прошлого сеанса и звонок мгновенно закроется.
       // Также помечаем все ID как обработанные, чтобы даже если пришли заново — игнор.
       try {
-        const r = await fetch(
-          `${API}?module=signal&room_id=${roomId}&since_id=0`,
-          { headers: { "X-User-Id": myId } }
-        );
-        const raw = await r.json();
-        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-        const sigs = data.signals || [];
-        if (sigs.length > 0) {
-          let maxId = 0;
+        // Прочитываем ВСЕ старые сигналы (бэкенд возвращает по 50 за раз),
+        // чтобы lastSigIdRef стоял на самом свежем id в комнате до старта звонка.
+        let totalSkipped = 0;
+        for (let i = 0; i < 30; i++) {
+          const r = await fetch(
+            `${API}?module=signal&room_id=${roomId}&since_id=${lastSigIdRef.current}`,
+            { headers: { "X-User-Id": myId } }
+          );
+          const raw = await r.json();
+          const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+          const sigs = data.signals || [];
+          if (sigs.length === 0) break;
+          let maxId = lastSigIdRef.current;
           for (const s of sigs as { id: number }[]) {
             processedSigIdsRef.current.add(s.id);
             if (s.id > maxId) maxId = s.id;
           }
           lastSigIdRef.current = maxId;
-          console.log("[CallScreen] skipped", sigs.length, "stale signals, since_id =", lastSigIdRef.current);
+          totalSkipped += sigs.length;
+          if (sigs.length < 50) break;
         }
+        console.log("[CallScreen] cleared", totalSkipped, "stale signals, since_id =", lastSigIdRef.current);
       } catch (e) { void e; }
 
       const cfg = await getRtcConfig().catch(() => RTC_CONFIG);
