@@ -283,12 +283,12 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
       // иначе callee сразу получит end/call_declined от прошлого сеанса и звонок мгновенно закроется.
       // Также помечаем все ID как обработанные, чтобы даже если пришли заново — игнор.
       try {
-        // Прочитываем ВСЕ старые сигналы (бэкенд возвращает по 50 за раз),
-        // чтобы lastSigIdRef стоял на самом свежем id в комнате до старта звонка.
+        // Быстрая очистка stale-сигналов: тянем максимум 8 страниц по 50 = 400 шт.
+        // Если в комнате накопилось больше — игнорируем, polling догребёт.
         let totalSkipped = 0;
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 8; i++) {
           const r = await fetch(
-            `${API}?module=signal&room_id=${roomId}&since_id=${lastSigIdRef.current}`,
+            `${API}?module=signal&room_id=${roomId}&since_id=${lastSigIdRef.current}&max_age_seconds=600`,
             { headers: { "X-User-Id": myId } }
           );
           const raw = await r.json();
@@ -435,7 +435,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: mode === "video" });
         await pc.setLocalDescription(offer);
         await sendSignal("offer", offer);
-        // Resend offer at 5s and 12s if no answer (callee might have missed it or had a transient error)
+        // Resend offer aggressively if no answer — callee might still be clearing stale signals
         const resendOffer = async () => {
           if (answeredRef.current || endedRef.current) return;
           try {
@@ -446,8 +446,10 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
             }
           } catch (e) { console.warn("[CallScreen] resend offer failed", e); }
         };
+        setTimeout(resendOffer, 2000);
         setTimeout(resendOffer, 5000);
-        setTimeout(resendOffer, 12000);
+        setTimeout(resendOffer, 9000);
+        setTimeout(resendOffer, 14000);
         noAnswerTimerRef.current = setTimeout(() => {
           if (!answeredRef.current) {
             setEndReason("Собеседник не отвечает");
