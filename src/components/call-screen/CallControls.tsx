@@ -24,7 +24,10 @@ const CallControls = ({
   hangup,
 }: CallControlsProps) => {
   return (
-    <div className="relative z-20 pb-16 px-8">
+    <div
+      className="relative z-20 px-8"
+      style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 32px)" }}
+    >
       <div className="flex items-center justify-around mb-8">
         <button onClick={toggleMute} className="flex flex-col items-center gap-2">
           <div className={`w-14 h-14 rounded-full flex items-center justify-center ${muted ? "bg-white" : "bg-white/20"}`}>

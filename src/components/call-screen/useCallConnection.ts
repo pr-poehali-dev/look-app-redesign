@@ -26,6 +26,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const [status, setStatus] = useState<CallStatus>("connecting");
   const [quality, setQuality] = useState<CallQuality>("unknown");
   const [connectionWarning, setConnectionWarning] = useState(false);
+  const [endReason, setEndReason] = useState<string>("");
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -153,8 +154,13 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
           }),
         }).catch(() => {});
       }
+      let reason = "";
+      if (sig.type === "call_declined") reason = "Собеседник отклонил звонок";
+      else if (!answeredRef.current) reason = "Собеседник не ответил";
+      else reason = "Собеседник завершил звонок";
+      setEndReason(reason);
       setStatus("ended");
-      onEnd();
+      setTimeout(() => onEnd(), 1500);
     }
   };
 
@@ -335,6 +341,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         await sendSignal("offer", offer);
         noAnswerTimerRef.current = setTimeout(() => {
           if (!answeredRef.current) {
+            setEndReason("Собеседник не отвечает");
             setStatus("ended");
             hangup();
           }
@@ -430,6 +437,15 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const hangup = () => {
     if (endedRef.current) { onEnd(); return; }
     endedRef.current = true;
+    const ageMs = Date.now() - sessionStartAtRef.current;
+    console.log("[CallScreen] hangup() called", {
+      isCaller: isCaller.current,
+      answered: answeredRef.current,
+      ageMs,
+      myId,
+      peerId,
+      callerStack: new Error().stack?.split("\n").slice(1, 4).join(" | "),
+    });
     if (noAnswerTimerRef.current) { clearTimeout(noAnswerTimerRef.current); noAnswerTimerRef.current = null; }
     sendSignal("end", {});
     if (!answeredRef.current && isCaller.current) {
@@ -506,6 +522,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
     status,
     quality,
     connectionWarning,
+    endReason,
     localVideoRef,
     remoteVideoRef,
     remoteAudioRef,

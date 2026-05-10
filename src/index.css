@@ -52,12 +52,47 @@
     font-family: "Golos Text", sans-serif;
     background-color: var(--dark-bg);
     overflow-x: hidden;
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  /* iOS Safari fix: textarea/input не должны зумиться при фокусе */
+  @supports (-webkit-touch-callout: none) {
+    input,
+    textarea,
+    select {
+      font-size: 16px;
+    }
   }
 
   h1,
   h2,
   h3 {
     font-family: "Oswald", sans-serif;
+  }
+}
+
+@layer utilities {
+  .h-screen-safe {
+    height: 100vh;
+    height: 100dvh;
+  }
+  .min-h-screen-safe {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
   }
 }
 

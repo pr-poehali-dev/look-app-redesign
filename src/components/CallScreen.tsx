@@ -22,6 +22,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller }: CallS
     status,
     quality,
     connectionWarning,
+    endReason,
     localVideoRef,
     remoteVideoRef,
     remoteAudioRef,
@@ -33,7 +34,15 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller }: CallS
   } = useCallConnection({ name, mode, myId, peerId, onEnd, isCaller });
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden" style={{ maxWidth: 480, margin: "0 auto" }}>
+    <div
+      className="fixed inset-0 z-50 flex flex-col overflow-hidden"
+      style={{
+        maxWidth: 480,
+        margin: "0 auto",
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}
+    >
       <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
 
       <CallBackground
@@ -54,7 +63,13 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller }: CallS
         seconds={seconds}
       />
 
-      <div className="flex-1" />
+      <div className="flex-1 flex items-center justify-center px-6">
+        {endReason && (
+          <div className="px-4 py-2 rounded-full bg-black/60 backdrop-blur-sm border border-white/10">
+            <p className="text-white/90 text-sm text-center">{endReason}</p>
+          </div>
+        )}
+      </div>
 
       <CallControls
         mode={mode}

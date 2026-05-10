@@ -320,7 +320,10 @@ const AppContent = () => {
       )}
 
       {incomingCall && (
-        <div className="fixed inset-0 z-[9999] flex items-end justify-center pb-16 px-4">
+        <div
+          className="fixed inset-0 z-[9999] flex items-end justify-center px-4"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 64px)" }}
+        >
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
           <div className="relative w-full max-w-sm bg-zinc-900 rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
             <div className="px-6 pt-8 pb-6 flex flex-col items-center gap-4">

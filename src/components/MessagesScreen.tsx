@@ -227,7 +227,7 @@ const MessagesScreen = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Поиск..."
-            className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/30"
+            className="flex-1 bg-transparent text-white text-base outline-none placeholder-white/30"
           />
         </div>
       </div>

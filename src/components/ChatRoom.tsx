@@ -753,7 +753,7 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Поиск по сообщениям..."
-            className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/30"
+            className="flex-1 bg-transparent text-white text-base outline-none placeholder-white/30"
           />
           <button onClick={() => { setShowSearch(false); setSearchQuery(""); }} className="text-white/60 text-xs">
             <Icon name="X" size={18} />
@@ -864,7 +864,7 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
               placeholder="Сообщение..."
               rows={1}
-              className="flex-1 bg-transparent text-white text-sm outline-none resize-none placeholder-white/30 max-h-32 leading-snug"
+              className="flex-1 bg-transparent text-white text-base outline-none resize-none placeholder-white/30 max-h-32 leading-snug"
               style={{ scrollbarWidth: "none" }}
             />
             <button onClick={() => setShowEmoji((v) => !v)} className={`flex-shrink-0 mb-0.5 transition-colors ${showEmoji ? "text-[#fe2c55]" : "text-white/40"}`}>
