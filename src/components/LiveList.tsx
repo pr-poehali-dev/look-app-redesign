@@ -153,7 +153,7 @@ const WatchStream = ({ channel, onBack }: { channel: LiveChannel; onBack: () => 
             }
           }
         } catch (e) { void e; }
-      }, 1000);
+      }, 3000);
 
       console.log("[Watch] viewer_join → streamer", { streamId: channel.id, streamer: channel.user_id, myId });
       await sendSignal("viewer_join", {});

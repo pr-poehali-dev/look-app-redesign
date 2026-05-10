@@ -182,7 +182,7 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
           const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
           for (const sig of data.signals || []) await handleSig(sig);
         } catch (e) { void e; }
-      }, 1000);
+      }, 3000);
 
       timerRef.current = setInterval(() => setSeconds(s => s + 1), 1000);
     };

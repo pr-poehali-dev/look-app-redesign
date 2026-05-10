@@ -241,7 +241,7 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
         for (const sig of data.signals || []) await handleSignal(sig);
       } catch (e) { void e; }
-    }, 1000);
+    }, 3000);
   };
 
   const startLive = async () => {
