@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
 import ChatRoom from "./ChatRoom";
 import GroupCallScreen from "./GroupCallScreen";
+import CommunitySettingsScreen from "./CommunitySettingsScreen";
 import { Chat } from "./MessagesScreen";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
@@ -36,6 +37,7 @@ const CommunitiesScreen = ({ onBack }: Props) => {
   const [creating, setCreating] = useState(false);
   const [openChat, setOpenChat] = useState<Chat | null>(null);
   const [groupCall, setGroupCall] = useState<{ communityId: string; name: string; mode: "audio" | "video" } | null>(null);
+  const [settingsCom, setSettingsCom] = useState<Community | null>(null);
 
   const loadCommunities = () => {
     if (!user) return;
@@ -153,6 +155,21 @@ const CommunitiesScreen = ({ onBack }: Props) => {
     <ChatRoom chat={openChat} onBack={() => { setOpenChat(null); }} />
   );
 
+  if (settingsCom) return (
+    <CommunitySettingsScreen
+      community={settingsCom}
+      onBack={() => setSettingsCom(null)}
+      onUpdated={(patch) => {
+        setCommunities(prev => prev.map(c => c.id === settingsCom.id ? { ...c, ...patch } : c));
+        setSettingsCom(prev => prev ? { ...prev, ...patch } : prev);
+      }}
+      onDeleted={() => {
+        setCommunities(prev => prev.filter(c => c.id !== settingsCom.id));
+        setSettingsCom(null);
+      }}
+    />
+  );
+
   const filtered = communities.filter(c => category === "Все" || c.category === category);
 
   return (
@@ -234,7 +251,10 @@ const CommunitiesScreen = ({ onBack }: Props) => {
           </div>
         ) : filtered.map(com => (
           <div key={com.id} className="bg-[#111] rounded-2xl overflow-hidden border border-white/8">
-            <div className="relative h-24">
+            <div
+              className="relative h-24 cursor-pointer"
+              onClick={() => setSettingsCom(com)}
+            >
               {com.img ? (
                 <img src={com.img} className="w-full h-full object-cover opacity-70" alt={com.name} />
               ) : (
@@ -311,12 +331,11 @@ const CommunitiesScreen = ({ onBack }: Props) => {
                 )}
                 {(com.is_admin || (user && com.creator_id === user.id)) && (
                   <button
-                    onClick={() => handleDelete(com)}
-                    className="px-3 h-9 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-center gap-1.5 hover:bg-red-500/30 transition-colors"
-                    title="Удалить сообщество"
+                    onClick={() => setSettingsCom(com)}
+                    className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors"
+                    title="Настройки сообщества"
                   >
-                    <Icon name="Trash2" size={14} className="text-red-400" />
-                    <span className="text-red-400 text-xs font-bold">Удалить</span>
+                    <Icon name="Settings" size={16} className="text-white/70" />
                   </button>
                 )}
               </div>

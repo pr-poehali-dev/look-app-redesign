@@ -1,7 +1,10 @@
 import json
 import os
 import random
+import base64
+import time
 import psycopg2
+import boto3
 
 SEED_COMMUNITIES = [
     ('com_photo_ru', 'Фотографы России', 'Делимся снимками, лайфхаками и вдохновением', 'open', 'Фото', 'https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/dbf882bc-5b07-4604-a1fa-628313ce915f.jpg'),
@@ -560,6 +563,87 @@ def handler(event: dict, context) -> dict:
                     conn.commit()
                     return {'statusCode': 200, 'headers': headers,
                             'body': json.dumps({'ok': True, 'deleted': True})}
+
+                elif post_action == 'update':
+                    com_id = body.get('community_id')
+                    if not com_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'community_id required'})}
+                    cur.execute("SELECT creator_id FROM communities WHERE id = %s", (com_id,))
+                    row = cur.fetchone()
+                    if not row:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers,
+                                'body': json.dumps({'error': 'not found'})}
+                    if row[0] != user_id:
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers,
+                                'body': json.dumps({'error': 'only creator can edit'})}
+
+                    updates = []
+                    values = []
+                    new_name = body.get('name')
+                    if new_name is not None:
+                        new_name = new_name.strip()[:80]
+                        if not new_name:
+                            conn.commit()
+                            return {'statusCode': 400, 'headers': headers,
+                                    'body': json.dumps({'error': 'name required'})}
+                        updates.append("name = %s")
+                        values.append(new_name)
+                    if 'description' in body:
+                        updates.append("description = %s")
+                        values.append((body.get('description') or '').strip()[:500])
+                    if 'type' in body:
+                        new_type = body.get('type')
+                        if new_type in ('open', 'closed'):
+                            updates.append("type = %s")
+                            values.append(new_type)
+                    if 'category' in body:
+                        updates.append("category = %s")
+                        values.append((body.get('category') or 'Другое').strip()[:40])
+                    if 'img' in body:
+                        new_img = body.get('img')
+                        # Поддержка base64-загрузки в S3
+                        if new_img and isinstance(new_img, str) and new_img.startswith('data:'):
+                            try:
+                                header_b64, b64data = new_img.split(',', 1)
+                                content_type_part = header_b64.split(';')[0].replace('data:', '') or 'image/png'
+                                ext = content_type_part.split('/')[-1] or 'png'
+                                if ext == 'jpeg':
+                                    ext = 'jpg'
+                                file_bytes = base64.b64decode(b64data)
+                                s3 = boto3.client(
+                                    's3',
+                                    endpoint_url='https://bucket.poehali.dev',
+                                    aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                                    aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
+                                )
+                                key = f"communities/{com_id}/cover_{int(time.time())}.{ext}"
+                                s3.put_object(Bucket='files', Key=key, Body=file_bytes,
+                                              ContentType=content_type_part)
+                                new_img = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
+                            except Exception as _e:
+                                conn.commit()
+                                return {'statusCode': 500, 'headers': headers,
+                                        'body': json.dumps({'error': 'upload failed'})}
+                        updates.append("img = %s")
+                        values.append(new_img or '')
+
+                    if not updates:
+                        conn.commit()
+                        return {'statusCode': 200, 'headers': headers,
+                                'body': json.dumps({'ok': True, 'updated': False})}
+
+                    values.append(com_id)
+                    cur.execute(f"UPDATE communities SET {', '.join(updates)} WHERE id = %s", values)
+                    # Синхронизируем имя в чате
+                    if new_name:
+                        cur.execute("UPDATE sa_chats SET name = %s WHERE id = %s", (new_name, com_id))
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True, 'updated': True})}
 
                 elif post_action == 'create':
                     com_name = (body.get('name') or 'Сообщество').strip()[:80]
