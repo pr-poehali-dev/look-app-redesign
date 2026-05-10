@@ -17,6 +17,8 @@ interface Community {
   img: string;
   members: number;
   joined: boolean;
+  is_admin?: boolean;
+  creator_id?: string;
 }
 
 interface Props { onBack: () => void; }
@@ -95,6 +97,30 @@ const CommunitiesScreen = ({ onBack }: Props) => {
       alert("Не удалось создать сообщество. Проверь интернет.");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleDelete = async (com: Community) => {
+    if (!user) return;
+    if (!confirm(`Удалить сообщество «${com.name}»? Это действие нельзя отменить.`)) return;
+    try {
+      const res = await fetch(`${API}?module=community`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
+        body: JSON.stringify({ action: "delete", community_id: com.id }),
+      });
+      const raw = await res.json();
+      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      if (data.ok) {
+        setCommunities(prev => prev.filter(c => c.id !== com.id));
+      } else {
+        alert(data.error === "only creator can delete"
+          ? "Удалить сообщество может только создатель"
+          : "Не удалось удалить сообщество");
+      }
+    } catch (e) {
+      console.error("[Communities] delete failed", e);
+      alert("Не удалось удалить сообщество. Проверь интернет.");
     }
   };
 
@@ -219,11 +245,16 @@ const CommunitiesScreen = ({ onBack }: Props) => {
                 <Icon name={com.type === "open" ? "Globe" : "Lock"} size={10} className="text-white/70" />
                 <span className="text-white/70 text-[10px]">{com.type === "open" ? "Открытое" : "Закрытое"}</span>
               </div>
-              {com.joined && (
+              {com.is_admin ? (
+                <div className="absolute top-2 left-2 bg-amber-500 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <Icon name="Crown" size={10} className="text-white" />
+                  <span className="text-white text-[10px] font-bold">Админ</span>
+                </div>
+              ) : com.joined ? (
                 <div className="absolute top-2 left-2 bg-[#fe2c55] px-2 py-0.5 rounded-full">
                   <span className="text-white text-[10px] font-bold">Участник</span>
                 </div>
-              )}
+              ) : null}
               <div className="absolute bottom-2 left-3">
                 <span className="text-white/50 text-[10px] bg-black/40 px-2 py-0.5 rounded-full">{com.category}</span>
               </div>
@@ -239,20 +270,31 @@ const CommunitiesScreen = ({ onBack }: Props) => {
               <p className="text-white/50 text-xs mb-3 leading-snug">{com.description}</p>
 
               <div className="flex gap-2">
-                <button
-                  onClick={() => handleJoin(com)}
-                  className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${com.joined ? "bg-white/10 text-white/60" : "bg-[#fe2c55] text-white"}`}
-                >
-                  {com.joined ? "Выйти" : com.type === "closed" ? "Подать заявку" : "Вступить"}
-                </button>
+                {com.is_admin ? (
+                  <button
+                    onClick={() => openCommunityChat(com)}
+                    className="flex-1 py-2 rounded-xl text-sm font-bold bg-[#fe2c55] text-white"
+                  >
+                    Открыть чат
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleJoin(com)}
+                    className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${com.joined ? "bg-white/10 text-white/60" : "bg-[#fe2c55] text-white"}`}
+                  >
+                    {com.joined ? "Выйти" : com.type === "closed" ? "Подать заявку" : "Вступить"}
+                  </button>
+                )}
+                {com.joined && !com.is_admin && (
+                  <button
+                    onClick={() => openCommunityChat(com)}
+                    className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center"
+                  >
+                    <Icon name="MessageCircle" size={16} className="text-white/60" />
+                  </button>
+                )}
                 {com.joined && (
                   <>
-                    <button
-                      onClick={() => openCommunityChat(com)}
-                      className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center"
-                    >
-                      <Icon name="MessageCircle" size={16} className="text-white/60" />
-                    </button>
                     <button
                       onClick={() => setGroupCall({ communityId: com.id, name: com.name, mode: "audio" })}
                       className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center"
@@ -266,6 +308,15 @@ const CommunitiesScreen = ({ onBack }: Props) => {
                       <Icon name="Video" size={16} className="text-[#00a2ff]" />
                     </button>
                   </>
+                )}
+                {com.is_admin && (
+                  <button
+                    onClick={() => handleDelete(com)}
+                    className="w-9 h-9 rounded-xl bg-red-500/15 flex items-center justify-center hover:bg-red-500/25 transition-colors"
+                    title="Удалить сообщество"
+                  >
+                    <Icon name="Trash2" size={16} className="text-red-400" />
+                  </button>
                 )}
               </div>
             </div>

@@ -443,35 +443,29 @@ def handler(event: dict, context) -> dict:
         # ── COMMUNITIES MODULE ───────────────────────────────────────
         elif module == 'community':
             import uuid as _uuid
-
-            # Seed default communities if empty
-            cur.execute("SELECT COUNT(*) FROM communities")
-            if cur.fetchone()[0] == 0:
-                for com in SEED_COMMUNITIES:
-                    cur.execute(
-                        "INSERT INTO communities (id, name, description, type, category, img, creator_id) "
-                        "VALUES (%s, %s, %s, %s, %s, %s, 'system')",
-                        com
-                    )
+            # Сидовые/системные сообщества скрыты из выдачи — оставляем только реальные пользовательские
 
             if method == 'GET':
                 action = params.get('action', 'list')
 
                 if action == 'list':
                     cur.execute(
-                        "SELECT c.id, c.name, c.description, c.type, c.category, c.img, "
+                        "SELECT c.id, c.name, c.description, c.type, c.category, c.img, c.creator_id, "
                         "COUNT(DISTINCT cm.user_id) as member_count, "
                         "MAX(CASE WHEN cm.user_id = %s THEN 1 ELSE 0 END) as is_member "
                         "FROM communities c "
                         "LEFT JOIN community_members cm ON cm.community_id = c.id "
-                        "GROUP BY c.id, c.name, c.description, c.type, c.category, c.img "
-                        "ORDER BY c.created_at ASC",
+                        "WHERE c.creator_id <> 'system' "
+                        "GROUP BY c.id, c.name, c.description, c.type, c.category, c.img, c.creator_id "
+                        "ORDER BY c.created_at DESC",
                         (user_id,)
                     )
                     rows = cur.fetchall()
                     communities = [
                         {'id': r[0], 'name': r[1], 'description': r[2], 'type': r[3],
-                         'category': r[4], 'img': r[5], 'members': r[6], 'joined': bool(r[7])}
+                         'category': r[4], 'img': r[5], 'creator_id': r[6],
+                         'members': r[7], 'joined': bool(r[8]),
+                         'is_admin': r[6] == user_id}
                         for r in rows
                     ]
                     conn.commit()
@@ -535,6 +529,37 @@ def handler(event: dict, context) -> dict:
                     )
                     conn.commit()
                     return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True, 'joined': False})}
+
+                elif post_action == 'delete':
+                    com_id = body.get('community_id')
+                    if not com_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'community_id required'})}
+                    # Проверяем, что текущий пользователь — создатель
+                    cur.execute("SELECT creator_id FROM communities WHERE id = %s", (com_id,))
+                    row = cur.fetchone()
+                    if not row:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers,
+                                'body': json.dumps({'error': 'not found'})}
+                    if row[0] != user_id:
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers,
+                                'body': json.dumps({'error': 'only creator can delete'})}
+                    # Мягкое удаление: переводим в системные (скрываются из выдачи) и помечаем имя
+                    cur.execute(
+                        "UPDATE communities SET creator_id = 'system', name = '[Удалено] ' || name "
+                        "WHERE id = %s",
+                        (com_id,)
+                    )
+                    cur.execute(
+                        "UPDATE community_members SET role = 'left' WHERE community_id = %s",
+                        (com_id,)
+                    )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True, 'deleted': True})}
 
                 elif post_action == 'create':
                     com_name = (body.get('name') or 'Сообщество').strip()[:80]
