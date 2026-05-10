@@ -44,6 +44,8 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const noAnswerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingIceRef = useRef<RTCIceCandidateInit[]>([]);
   const remoteSetRef = useRef(false);
+  const processedSigIdsRef = useRef<Set<number>>(new Set());
+  const lastIceRestartAtRef = useRef(0);
 
   const sendSignal = async (type: string, payload: unknown) => {
     try {
@@ -65,7 +67,13 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
 
   const handleSignal = async (pc: RTCPeerConnection, sig: { id: number; type: string; payload: unknown }) => {
     lastSigIdRef.current = sig.id;
+    if (processedSigIdsRef.current.has(sig.id)) return;
+    processedSigIdsRef.current.add(sig.id);
     if (sig.type === "offer") {
+      if (pc.signalingState !== "stable" && pc.signalingState !== "have-remote-offer") {
+        console.log("[CallScreen] skip offer in state", pc.signalingState);
+        return;
+      }
       console.log("[CallScreen] got offer");
       await pc.setRemoteDescription(new RTCSessionDescription(sig.payload as RTCSessionDescriptionInit));
       remoteSetRef.current = true;
@@ -74,6 +82,10 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
       await pc.setLocalDescription(answer);
       await sendSignal("answer", answer);
     } else if (sig.type === "answer") {
+      if (pc.signalingState !== "have-local-offer") {
+        console.log("[CallScreen] skip duplicate answer in state", pc.signalingState);
+        return;
+      }
       console.log("[CallScreen] got answer");
       await pc.setRemoteDescription(new RTCSessionDescription(sig.payload as RTCSessionDescriptionInit));
       remoteSetRef.current = true;
@@ -239,28 +251,26 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         }
       };
 
+      const tryIceRestart = () => {
+        const now = Date.now();
+        if (now - lastIceRestartAtRef.current < 5000) return;
+        lastIceRestartAtRef.current = now;
+        try { (pc as RTCPeerConnection & { restartIce?: () => void }).restartIce?.(); } catch (e) { void e; }
+        pc.createOffer({ iceRestart: true })
+          .then((o) => pc.setLocalDescription(o).then(() => sendSignal("offer", o)))
+          .catch(() => {});
+      };
+
       pc.onconnectionstatechange = () => {
         console.log("[CallScreen] connectionState =", pc.connectionState);
         if (pc.connectionState === "connected") setStatus("connected");
-        if (pc.connectionState === "failed") {
-          if (isCaller.current) {
-            try { (pc as RTCPeerConnection & { restartIce?: () => void }).restartIce?.(); } catch (e) { void e; }
-            pc.createOffer({ iceRestart: true })
-              .then((o) => pc.setLocalDescription(o).then(() => sendSignal("offer", o)))
-              .catch(() => setStatus("ended"));
-          }
-        }
+        if (pc.connectionState === "failed" && isCaller.current) tryIceRestart();
       };
 
       pc.oniceconnectionstatechange = () => {
         console.log("[CallScreen] iceConnectionState =", pc.iceConnectionState);
         if (pc.iceConnectionState === "disconnected") setQuality("poor");
-        if (pc.iceConnectionState === "failed" && isCaller.current) {
-          try { (pc as RTCPeerConnection & { restartIce?: () => void }).restartIce?.(); } catch (e) { void e; }
-          pc.createOffer({ iceRestart: true })
-            .then((o) => pc.setLocalDescription(o).then(() => sendSignal("offer", o)))
-            .catch(() => {});
-        }
+        if (pc.iceConnectionState === "failed" && isCaller.current) tryIceRestart();
       };
 
       pc.onicegatheringstatechange = () => {
