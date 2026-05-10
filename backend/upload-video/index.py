@@ -59,14 +59,16 @@ def handler(event: dict, context) -> dict:
 
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO videos (url, author, handle, description, hashtags, category, type, user_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
-        (cdn_url, author, handle, description, hashtags, category, media_type, user_id)
-    )
-    video_id = cur.fetchone()[0]
-    conn.commit()
-    cur.close()
-    conn.close()
+    try:
+        cur.execute(
+            "INSERT INTO videos (url, author, handle, description, hashtags, category, type, user_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+            (cdn_url, author, handle, description, hashtags, category, media_type, user_id)
+        )
+        video_id = cur.fetchone()[0]
+        conn.commit()
+    finally:
+        cur.close()
+        conn.close()
 
     return {
         'statusCode': 200,

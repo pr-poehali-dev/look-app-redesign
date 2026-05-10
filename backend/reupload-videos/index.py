@@ -29,75 +29,75 @@ def handler(event: dict, context) -> dict:
     schema = os.environ['MAIN_DB_SCHEMA']
     pg = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = pg.cursor()
+    try:
+        cur.execute(f"""
+            SELECT id, url, thumbnail FROM {schema}.videos
+            WHERE url LIKE 'https://short-video.ru%%'
+            ORDER BY id
+            LIMIT 5
+        """)
+        rows = cur.fetchall()
 
-    cur.execute(f"""
-        SELECT id, url, thumbnail FROM {schema}.videos
-        WHERE url LIKE 'https://short-video.ru%%'
-        ORDER BY id
-        LIMIT 5
-    """)
-    rows = cur.fetchall()
+        if not rows:
+            return {
+                'statusCode': 200,
+                'headers': {'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'done': True, 'message': 'Все видео перекачаны'})
+            }
 
-    if not rows:
-        cur.close()
-        pg.close()
-        return {
-            'statusCode': 200,
-            'headers': {'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'done': True, 'message': 'Все видео перекачаны'})
-        }
-
-    s3 = boto3.client(
-        's3',
-        endpoint_url='https://bucket.poehali.dev',
-        aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
-        aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
-    )
-    access_key = os.environ['AWS_ACCESS_KEY_ID']
-
-    processed = 0
-    failed = []
-
-    for row in rows:
-        vid_id, url, thumbnail = row
-
-        try:
-            r = requests.get(url, headers=HEADERS, timeout=25, allow_redirects=True)
-            r.raise_for_status()
-            content_type = r.headers.get('Content-Type', 'video/mp4')
-            ext = url.split('.')[-1].split('?')[0][:4] or 'mp4'
-            key = f"videos/{uuid.uuid4()}.{ext}"
-            s3.put_object(Bucket='files', Key=key, Body=r.content, ContentType=content_type)
-            new_url = f"https://cdn.poehali.dev/projects/{access_key}/bucket/{key}"
-        except Exception as e:
-            failed.append({'id': vid_id, 'error': str(e)[:200]})
-            cur.execute(f"UPDATE {schema}.videos SET url = 'failed:' || url WHERE id = %s", (vid_id,))
-            pg.commit()
-            continue
-
-        new_thumbnail = thumbnail
-        if thumbnail and thumbnail.startswith('https://short-video.ru'):
-            try:
-                rt = requests.get(thumbnail, headers=HEADERS, timeout=10, allow_redirects=True)
-                rt.raise_for_status()
-                tkey = f"thumbnails/{uuid.uuid4()}.jpg"
-                s3.put_object(Bucket='files', Key=tkey, Body=rt.content, ContentType='image/jpeg')
-                new_thumbnail = f"https://cdn.poehali.dev/projects/{access_key}/bucket/{tkey}"
-            except Exception:
-                pass
-
-        cur.execute(
-            f"UPDATE {schema}.videos SET url = %s, thumbnail = %s WHERE id = %s",
-            (new_url, new_thumbnail, vid_id)
+        s3 = boto3.client(
+            's3',
+            endpoint_url='https://bucket.poehali.dev',
+            aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+            aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
         )
-        pg.commit()
-        processed += 1
+        access_key = os.environ['AWS_ACCESS_KEY_ID']
 
-    cur.execute(f"SELECT COUNT(*) FROM {schema}.videos WHERE url LIKE 'https://short-video.ru%%'")
-    remaining = cur.fetchone()[0]
+        processed = 0
+        failed = []
 
-    cur.close()
-    pg.close()
+        for row in rows:
+            vid_id, url, thumbnail = row
+
+            try:
+                r = requests.get(url, headers=HEADERS, timeout=25, allow_redirects=True)
+                r.raise_for_status()
+                content_type = r.headers.get('Content-Type', 'video/mp4')
+                ext = url.split('.')[-1].split('?')[0][:4] or 'mp4'
+                key = f"videos/{uuid.uuid4()}.{ext}"
+                s3.put_object(Bucket='files', Key=key, Body=r.content, ContentType=content_type)
+                new_url = f"https://cdn.poehali.dev/projects/{access_key}/bucket/{key}"
+            except Exception as e:
+                failed.append({'id': vid_id, 'error': str(e)[:200]})
+                cur.execute(f"UPDATE {schema}.videos SET url = 'failed:' || url WHERE id = %s", (vid_id,))
+                pg.commit()
+                continue
+
+            new_thumbnail = thumbnail
+            if thumbnail and thumbnail.startswith('https://short-video.ru'):
+                try:
+                    rt = requests.get(thumbnail, headers=HEADERS, timeout=10, allow_redirects=True)
+                    rt.raise_for_status()
+                    tkey = f"thumbnails/{uuid.uuid4()}.jpg"
+                    s3.put_object(Bucket='files', Key=tkey, Body=rt.content, ContentType='image/jpeg')
+                    new_thumbnail = f"https://cdn.poehali.dev/projects/{access_key}/bucket/{tkey}"
+                except Exception:
+                    pass
+
+            cur.execute(
+                f"UPDATE {schema}.videos SET url = %s, thumbnail = %s WHERE id = %s",
+                (new_url, new_thumbnail, vid_id)
+            )
+            pg.commit()
+            processed += 1
+
+        cur.execute(f"SELECT COUNT(*) FROM {schema}.videos WHERE url LIKE 'https://short-video.ru%%'")
+        remaining = cur.fetchone()[0]
+    finally:
+        try: cur.close()
+        except Exception: pass
+        try: pg.close()
+        except Exception: pass
 
     return {
         'statusCode': 200,

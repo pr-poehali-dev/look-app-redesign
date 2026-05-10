@@ -574,12 +574,6 @@ def handler(event: dict, context) -> dict:
                     return {'statusCode': 400, 'headers': headers,
                             'body': json.dumps({'error': 'room_id required'})}
 
-                import random
-                if random.randint(1, 20) == 1:
-                    cur.execute(
-                        "DELETE FROM sa_signaling WHERE created_at < NOW() - INTERVAL '5 minutes'"
-                    )
-
                 if max_age:
                     cur.execute(
                         "SELECT id, from_user, type, payload FROM sa_signaling "

@@ -22,32 +22,33 @@ def handler(event: dict, context) -> dict:
 
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
-
-    schema = os.environ['MAIN_DB_SCHEMA']
-    base_select = (
-        f"SELECT v.id, v.url, v.author, v.handle, v.description, v.hashtags, "
-        f"v.category, v.type, v.likes, v.comments, v.shares, v.created_at, "
-        f"lu.profile_photo "
-        f"FROM {schema}.videos v "
-        f"LEFT JOIN {schema}.legacy_posts lp ON lp.migrated_to_video_id = v.id "
-        f"LEFT JOIN {schema}.legacy_users lu ON lu.id = lp.user_id "
-        f"WHERE v.type = %s AND (v.hidden IS NULL OR v.hidden = FALSE) "
-    )
-
-    if category and category != 'all':
-        cur.execute(
-            base_select + "AND v.category = %s ORDER BY v.created_at DESC LIMIT 50",
-            (media_type, category)
-        )
-    else:
-        cur.execute(
-            base_select + "ORDER BY v.created_at DESC LIMIT 50",
-            (media_type,)
+    try:
+        schema = os.environ['MAIN_DB_SCHEMA']
+        base_select = (
+            f"SELECT v.id, v.url, v.author, v.handle, v.description, v.hashtags, "
+            f"v.category, v.type, v.likes, v.comments, v.shares, v.created_at, "
+            f"lu.profile_photo "
+            f"FROM {schema}.videos v "
+            f"LEFT JOIN {schema}.legacy_posts lp ON lp.migrated_to_video_id = v.id "
+            f"LEFT JOIN {schema}.legacy_users lu ON lu.id = lp.user_id "
+            f"WHERE v.type = %s AND (v.hidden IS NULL OR v.hidden = FALSE) "
         )
 
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
+        if category and category != 'all':
+            cur.execute(
+                base_select + "AND v.category = %s ORDER BY v.created_at DESC LIMIT 50",
+                (media_type, category)
+            )
+        else:
+            cur.execute(
+                base_select + "ORDER BY v.created_at DESC LIMIT 50",
+                (media_type,)
+            )
+
+        rows = cur.fetchall()
+    finally:
+        cur.close()
+        conn.close()
 
     videos = []
     for r in rows:

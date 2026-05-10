@@ -148,139 +148,123 @@ def handler(event: dict, context) -> dict:
 
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
-
-    if action == 'request':
-        email = (body.get('email') or '').strip().lower()
-        origin = (body.get('origin') or '').strip().rstrip('/')
-        if not email:
-            cur.close(); conn.close()
-            return err('Введи email')
-        cur.execute("SELECT id FROM app_users WHERE email=%s", (email,))
-        row = cur.fetchone()
-        if not row:
-            cur.close(); conn.close()
+    try:
+        if action == 'request':
+            email = (body.get('email') or '').strip().lower()
+            origin = (body.get('origin') or '').strip().rstrip('/')
+            if not email:
+                return err('Введи email')
+            cur.execute("SELECT id FROM app_users WHERE email=%s", (email,))
+            row = cur.fetchone()
+            if not row:
+                return ok({'sent': True})
+            user_id = row[0]
+            token = pysecrets.token_urlsafe(32)
+            expires = datetime.utcnow() + timedelta(hours=1)
+            cur.execute(
+                "INSERT INTO password_reset_tokens (token, user_id, email, expires_at) VALUES (%s, %s, %s, %s)",
+                (token, user_id, email, expires)
+            )
+            conn.commit()
+            base = origin or 'https://visov.ru'
+            reset_link = f"{base}/?reset_token={token}"
+            _send_reset(email, reset_link)
             return ok({'sent': True})
-        user_id = row[0]
-        token = pysecrets.token_urlsafe(32)
-        expires = datetime.utcnow() + timedelta(hours=1)
-        cur.execute(
-            "INSERT INTO password_reset_tokens (token, user_id, email, expires_at) VALUES (%s, %s, %s, %s)",
-            (token, user_id, email, expires)
-        )
-        conn.commit()
-        cur.close(); conn.close()
-        base = origin or 'https://visov.ru'
-        reset_link = f"{base}/?reset_token={token}"
-        _send_reset(email, reset_link)
-        return ok({'sent': True})
 
-    if action == 'confirm':
-        token = (body.get('token') or '').strip()
-        new_password = body.get('password') or ''
-        if not token or not new_password:
-            cur.close(); conn.close()
-            return err('token и password обязательны')
-        if len(new_password) < 6:
-            cur.close(); conn.close()
-            return err('Пароль минимум 6 символов')
-        cur.execute(
-            "SELECT user_id, expires_at, used FROM password_reset_tokens WHERE token=%s",
-            (token,)
-        )
-        row = cur.fetchone()
-        if not row:
-            cur.close(); conn.close()
-            return err('Ссылка недействительна', 400)
-        user_id, expires_at, used = row
-        if used:
-            cur.close(); conn.close()
-            return err('Ссылка уже использована', 400)
-        if expires_at < datetime.utcnow():
-            cur.close(); conn.close()
-            return err('Срок действия ссылки истёк', 400)
-        new_token = pysecrets.token_hex(32)
-        cur.execute(
-            "UPDATE app_users SET password_hash=%s, token=%s WHERE id=%s",
-            (hash_pw(new_password), new_token, user_id)
-        )
-        cur.execute("UPDATE password_reset_tokens SET used=TRUE WHERE token=%s", (token,))
-        conn.commit()
-        cur.close(); conn.close()
-        return ok({'reset': True})
+        if action == 'confirm':
+            token = (body.get('token') or '').strip()
+            new_password = body.get('password') or ''
+            if not token or not new_password:
+                return err('token и password обязательны')
+            if len(new_password) < 6:
+                return err('Пароль минимум 6 символов')
+            cur.execute(
+                "SELECT user_id, expires_at, used FROM password_reset_tokens WHERE token=%s",
+                (token,)
+            )
+            row = cur.fetchone()
+            if not row:
+                return err('Ссылка недействительна', 400)
+            user_id, expires_at, used = row
+            if used:
+                return err('Ссылка уже использована', 400)
+            if expires_at < datetime.utcnow():
+                return err('Срок действия ссылки истёк', 400)
+            new_token = pysecrets.token_hex(32)
+            cur.execute(
+                "UPDATE app_users SET password_hash=%s, token=%s WHERE id=%s",
+                (hash_pw(new_password), new_token, user_id)
+            )
+            cur.execute("UPDATE password_reset_tokens SET used=TRUE WHERE token=%s", (token,))
+            conn.commit()
+            return ok({'reset': True})
 
-    if action == 'verify':
-        token = (body.get('token') or '').strip()
-        if not token:
-            cur.close(); conn.close()
-            return err('token required')
-        cur.execute(
-            "SELECT email, expires_at, used FROM password_reset_tokens WHERE token=%s",
-            (token,)
-        )
-        row = cur.fetchone()
-        cur.close(); conn.close()
-        if not row:
-            return err('Ссылка недействительна', 400)
-        email, expires_at, used = row
-        if used:
-            return err('Ссылка уже использована', 400)
-        if expires_at < datetime.utcnow():
-            return err('Срок действия ссылки истёк', 400)
-        return ok({'valid': True, 'email': email})
+        if action == 'verify':
+            token = (body.get('token') or '').strip()
+            if not token:
+                return err('token required')
+            cur.execute(
+                "SELECT email, expires_at, used FROM password_reset_tokens WHERE token=%s",
+                (token,)
+            )
+            row = cur.fetchone()
+            if not row:
+                return err('Ссылка недействительна', 400)
+            email, expires_at, used = row
+            if used:
+                return err('Ссылка уже использована', 400)
+            if expires_at < datetime.utcnow():
+                return err('Срок действия ссылки истёк', 400)
+            return ok({'valid': True, 'email': email})
 
-    if action == 'verify_send':
-        email = (body.get('email') or '').strip().lower()
-        origin = (body.get('origin') or '').strip().rstrip('/')
-        if not email:
-            cur.close(); conn.close()
-            return err('email required')
-        cur.execute("SELECT id, name, email_verified FROM app_users WHERE email=%s", (email,))
-        row = cur.fetchone()
-        if not row:
-            cur.close(); conn.close()
+        if action == 'verify_send':
+            email = (body.get('email') or '').strip().lower()
+            origin = (body.get('origin') or '').strip().rstrip('/')
+            if not email:
+                return err('email required')
+            cur.execute("SELECT id, name, email_verified FROM app_users WHERE email=%s", (email,))
+            row = cur.fetchone()
+            if not row:
+                return ok({'sent': True})
+            user_id, name, verified = row
+            if verified:
+                return ok({'sent': True, 'already': True})
+            token = pysecrets.token_urlsafe(32)
+            expires = datetime.utcnow() + timedelta(hours=24)
+            cur.execute(
+                "INSERT INTO email_verify_tokens (token, user_id, email, expires_at) VALUES (%s, %s, %s, %s)",
+                (token, user_id, email, expires)
+            )
+            conn.commit()
+            base = origin or 'https://visov.ru'
+            verify_link = f"{base}/?verify_token={token}"
+            _send_verify(email, name or '', verify_link)
             return ok({'sent': True})
-        user_id, name, verified = row
-        if verified:
-            cur.close(); conn.close()
-            return ok({'sent': True, 'already': True})
-        token = pysecrets.token_urlsafe(32)
-        expires = datetime.utcnow() + timedelta(hours=24)
-        cur.execute(
-            "INSERT INTO email_verify_tokens (token, user_id, email, expires_at) VALUES (%s, %s, %s, %s)",
-            (token, user_id, email, expires)
-        )
-        conn.commit()
-        cur.close(); conn.close()
-        base = origin or 'https://visov.ru'
-        verify_link = f"{base}/?verify_token={token}"
-        _send_verify(email, name or '', verify_link)
-        return ok({'sent': True})
 
-    if action == 'verify_email':
-        token = (body.get('token') or '').strip()
-        if not token:
-            cur.close(); conn.close()
-            return err('token required')
-        cur.execute(
-            "SELECT user_id, email, expires_at, used FROM email_verify_tokens WHERE token=%s",
-            (token,)
-        )
-        row = cur.fetchone()
-        if not row:
-            cur.close(); conn.close()
-            return err('Ссылка недействительна', 400)
-        user_id, email, expires_at, used = row
-        if used:
-            cur.close(); conn.close()
-            return err('Ссылка уже использована', 400)
-        if expires_at < datetime.utcnow():
-            cur.close(); conn.close()
-            return err('Срок действия ссылки истёк', 400)
-        cur.execute("UPDATE app_users SET email_verified=TRUE WHERE id=%s", (user_id,))
-        cur.execute("UPDATE email_verify_tokens SET used=TRUE WHERE token=%s", (token,))
-        conn.commit()
-        cur.close(); conn.close()
-        return ok({'verified': True, 'email': email})
+        if action == 'verify_email':
+            token = (body.get('token') or '').strip()
+            if not token:
+                return err('token required')
+            cur.execute(
+                "SELECT user_id, email, expires_at, used FROM email_verify_tokens WHERE token=%s",
+                (token,)
+            )
+            row = cur.fetchone()
+            if not row:
+                return err('Ссылка недействительна', 400)
+            user_id, email, expires_at, used = row
+            if used:
+                return err('Ссылка уже использована', 400)
+            if expires_at < datetime.utcnow():
+                return err('Срок действия ссылки истёк', 400)
+            cur.execute("UPDATE app_users SET email_verified=TRUE WHERE id=%s", (user_id,))
+            cur.execute("UPDATE email_verify_tokens SET used=TRUE WHERE token=%s", (token,))
+            conn.commit()
+            return ok({'verified': True, 'email': email})
 
-    cur.close(); conn.close()
-    return err('Unknown action')
+        return err('Unknown action')
+    finally:
+        try: cur.close()
+        except Exception: pass
+        try: conn.close()
+        except Exception: pass
