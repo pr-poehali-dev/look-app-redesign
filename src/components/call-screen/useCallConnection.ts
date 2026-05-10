@@ -59,12 +59,27 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const sendSignal = async (type: string, payload: unknown) => {
     if (endedRef.current && type !== "end") return;
     try {
-      await fetch(`${API}?module=signal`, {
+      const res = await fetch(`${API}?module=signal`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-User-Id": myId },
         body: JSON.stringify({ room_id: roomId, to_user: peerId, type, payload }),
       });
-    } catch (e) { void e; }
+      console.log("[CallScreen] sendSignal", type, "to=", peerId, "status=", res.status);
+      if (!res.ok && (type === "offer" || type === "answer")) {
+        for (let i = 0; i < 3; i++) {
+          await new Promise((r) => setTimeout(r, 500));
+          try {
+            const r2 = await fetch(`${API}?module=signal`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "X-User-Id": myId },
+              body: JSON.stringify({ room_id: roomId, to_user: peerId, type, payload }),
+            });
+            console.log("[CallScreen] sendSignal RETRY", type, "attempt", i + 1, "status=", r2.status);
+            if (r2.ok) break;
+          } catch (e) { void e; }
+        }
+      }
+    } catch (e) { console.warn("[CallScreen] sendSignal error", type, e); }
   };
 
   const flushIceOutbox = async () => {
@@ -235,7 +250,12 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         );
         const raw = await res.json();
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-        for (const sig of data.signals || []) {
+        const sigs = data.signals || [];
+        if (sigs.length > 0) {
+          const types = sigs.map((s: { type: string; from_user?: string }) => `${s.type}<-${s.from_user || "?"}`).join(",");
+          console.log("[CallScreen] poll got", sigs.length, "signals:", types, "since=", lastSigIdRef.current);
+        }
+        for (const sig of sigs) {
           await handleSignal(pc, sig);
         }
       } catch (e) { console.warn("[CallScreen] poll error", e); }
