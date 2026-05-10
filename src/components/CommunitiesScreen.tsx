@@ -22,9 +22,13 @@ interface Community {
   creator_id?: string;
 }
 
-interface Props { onBack: () => void; }
+interface Props {
+  onBack: () => void;
+  initialCommunityId?: string | null;
+  onInitialConsumed?: () => void;
+}
 
-const CommunitiesScreen = ({ onBack }: Props) => {
+const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Props) => {
   const { user } = useAuth();
   const [communities, setCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,6 +58,59 @@ const CommunitiesScreen = ({ onBack }: Props) => {
   };
 
   useEffect(() => { loadCommunities(); }, [user]);
+
+  const [invitedConsumed, setInvitedConsumed] = useState(false);
+  useEffect(() => {
+    if (!initialCommunityId || invitedConsumed || loading || !user) return;
+    const com = communities.find(c => c.id === initialCommunityId);
+    if (!com) {
+      // Сообщество не найдено или скрыто
+      setInvitedConsumed(true);
+      onInitialConsumed?.();
+      alert("Сообщество не найдено или больше недоступно");
+      return;
+    }
+    setInvitedConsumed(true);
+    onInitialConsumed?.();
+
+    const enterChat = (target: Community) => {
+      setOpenChat({
+        id: target.id,
+        type: "group",
+        name: target.name,
+        avatar: target.img || "",
+        lastMsg: "",
+        time: "сейчас",
+        unread: 0,
+        online: false,
+      });
+    };
+
+    if (com.joined) {
+      enterChat(com);
+      return;
+    }
+
+    if (com.type === "open") {
+      // Авто-вступление в открытое сообщество
+      fetch(`${API}?module=community`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
+        body: JSON.stringify({ action: "join", community_id: com.id }),
+      })
+        .then(() => {
+          setCommunities(prev => prev.map(c => c.id === com.id ? { ...c, joined: true, members: c.members + 1 } : c));
+          enterChat({ ...com, joined: true });
+        })
+        .catch(() => {
+          alert("Не удалось присоединиться. Попробуй ещё раз.");
+        });
+    } else {
+      // Закрытое — открываем настройки/инфо, где можно подать заявку
+      setSettingsCom(com);
+      alert(`«${com.name}» — закрытое сообщество. Подай заявку на вступление.`);
+    }
+  }, [initialCommunityId, communities, loading, user, invitedConsumed, onInitialConsumed]);
 
   const handleJoin = async (com: Community) => {
     if (!user) return;

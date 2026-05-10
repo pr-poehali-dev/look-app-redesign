@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import VideoFeed, { CATEGORIES } from "@/components/VideoFeed";
 import PostFeed from "@/components/PostFeed";
@@ -19,11 +19,25 @@ const TABS = [
 ];
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState("home");
+  const initialCommunityFromUrl = (() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("community");
+  })();
+  const [activeTab, setActiveTab] = useState(initialCommunityFromUrl ? "messages" : "home");
   const [activeCategory, setActiveCategory] = useState("all");
   const [showLive, setShowLive] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [pendingCommunityId, setPendingCommunityId] = useState<string | null>(initialCommunityFromUrl);
   const { totalUnread } = useUnread();
+
+  useEffect(() => {
+    // Подчищаем параметр из URL после применения, чтобы не сработал при обычной навигации
+    if (initialCommunityFromUrl && typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("community");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [initialCommunityFromUrl]);
 
   return (
     <div className="fixed inset-0 bg-black md:bg-[#121212] flex overflow-hidden">
@@ -144,7 +158,12 @@ const Index = () => {
           {activeTab === "feed" && <PostFeed />}
 
           {activeTab === "live" && <LiveList />}
-          {activeTab === "messages" && <MessagesScreen />}
+          {activeTab === "messages" && (
+            <MessagesScreen
+              initialCommunityId={pendingCommunityId}
+              onCommunityConsumed={() => setPendingCommunityId(null)}
+            />
+          )}
           {activeTab === "profile" && <ProfilePage />}
         </div>
 

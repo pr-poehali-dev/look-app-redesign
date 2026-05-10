@@ -33,8 +33,13 @@ const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958
 
 type Tab = "chats" | "communities" | "calls";
 
-const MessagesScreen = () => {
-  const [tab, setTab] = useState<Tab>("chats");
+interface MessagesScreenProps {
+  initialCommunityId?: string | null;
+  onCommunityConsumed?: () => void;
+}
+
+const MessagesScreen = ({ initialCommunityId, onCommunityConsumed }: MessagesScreenProps = {}) => {
+  const [tab, setTab] = useState<Tab>(initialCommunityId ? "communities" : "chats");
   const [openChat, setOpenChat] = useState<Chat | null>(null);
   const [search, setSearch] = useState("");
   const [chats, setChats] = useState<Chat[]>([]);
@@ -172,7 +177,13 @@ const MessagesScreen = () => {
     setOpenChat(chat);
   };
 
-  if (tab === "communities") return <CommunitiesScreen onBack={() => setTab("chats")} />;
+  if (tab === "communities") return (
+    <CommunitiesScreen
+      onBack={() => setTab("chats")}
+      initialCommunityId={initialCommunityId}
+      onInitialConsumed={onCommunityConsumed}
+    />
+  );
   if (tab === "calls") return (
     <CallHistoryScreen
       onBack={() => setTab("chats")}
