@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getGuestId } from "@/lib/guestId";
+import { fetchLikeCount } from "@/lib/likesBatch";
 
 const COMMENTS_URL = "https://functions.poehali.dev/4ceed9c1-422c-484e-806e-b3cc8af8b9ec";
 
@@ -17,17 +18,11 @@ export const useLikes = (targetType: LikeTargetType, targetId: string | number, 
   useEffect(() => {
     if (!targetId) return;
     let cancelled = false;
-    fetch(`${COMMENTS_URL}?action=likes&target_type=${targetType}&target_id=${encodeURIComponent(String(targetId))}`, {
-      headers: { "X-User-Id": userId },
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (cancelled) return;
-        if (typeof data.count === "number") setCount(prev => Math.max(prev, data.count));
-        if (typeof data.liked === "boolean") setLiked(data.liked);
-        setReady(true);
-      })
-      .catch(() => setReady(true));
+    fetchLikeCount(targetType, String(targetId)).then((cnt) => {
+      if (cancelled) return;
+      setCount((prev) => Math.max(prev, cnt));
+      setReady(true);
+    });
     return () => { cancelled = true; };
   }, [targetType, targetId, userId]);
 

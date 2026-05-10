@@ -40,16 +40,11 @@ export const fetchIceServers = async (): Promise<RTCIceServer[]> => {
 
 export const getRtcConfig = async (): Promise<RTCConfiguration> => {
   const iceServers = await fetchIceServers();
-  // ВРЕМЕННО: принудительно гоняем медиа только через TURN (relay).
-  // Это поможет понять, работает ли вообще TURN-сервер.
-  // Если соединение установится — TURN ок, проблема была в host-кандидатах.
-  // Если не установится — TURN не пропускает медиа (firewall/relay-ip в coturn).
   return {
     iceServers,
     iceCandidatePoolSize: 10,
     bundlePolicy: "max-bundle",
     rtcpMuxPolicy: "require",
-    iceTransportPolicy: "relay",
   };
 };
 
