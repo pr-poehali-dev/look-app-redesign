@@ -317,8 +317,10 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
       return;
     }
     const peerId = (() => {
-      const parts = chatId.slice(3).split("_");
-      return parts.find((p) => p && p !== MY_ID) || "";
+      const rest = chatId.slice(3);
+      if (rest.startsWith(MY_ID + "_")) return rest.slice(MY_ID.length + 1);
+      if (rest.endsWith("_" + MY_ID)) return rest.slice(0, rest.length - MY_ID.length - 1);
+      return "";
     })();
     if (!peerId) return;
 
@@ -609,8 +611,10 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   const getPeerId = (): string => {
     const cid = String(chat.id);
     if (cid.startsWith("dm_")) {
-      const parts = cid.slice(3).split("_");
-      return parts.find(p => p && p !== MY_ID) || cid;
+      const rest = cid.slice(3);
+      if (rest.startsWith(MY_ID + "_")) return rest.slice(MY_ID.length + 1);
+      if (rest.endsWith("_" + MY_ID)) return rest.slice(0, rest.length - MY_ID.length - 1);
+      return cid;
     }
     return cid;
   };
