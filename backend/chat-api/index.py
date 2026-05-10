@@ -635,14 +635,20 @@ def handler(event: dict, context) -> dict:
                         conn.commit()
                         return {'statusCode': 403, 'headers': headers,
                                 'body': json.dumps({'error': 'only creator can delete'})}
-                    # Мягкое удаление: переводим в системные (скрываются из выдачи) и помечаем имя
+                    # Мягкое удаление: скрываем сообщество, помечаем имя, прячем чат у всех участников
                     cur.execute(
-                        "UPDATE communities SET creator_id = 'system', name = '[Удалено] ' || name "
+                        "UPDATE communities SET creator_id = 'system', is_hidden = TRUE, "
+                        "name = CASE WHEN name LIKE '[Удалено]%%' THEN name ELSE '[Удалено] ' || name END "
                         "WHERE id = %s",
                         (com_id,)
                     )
                     cur.execute(
                         "UPDATE community_members SET role = 'left' WHERE community_id = %s",
+                        (com_id,)
+                    )
+                    # Прячем сам групповой чат сообщества — фронт фильтрует чаты по name != '__merged__'
+                    cur.execute(
+                        "UPDATE sa_chats SET name = '__merged__' WHERE id = %s",
                         (com_id,)
                     )
                     conn.commit()
