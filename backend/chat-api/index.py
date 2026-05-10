@@ -449,7 +449,7 @@ def handler(event: dict, context) -> dict:
             if cur.fetchone()[0] == 0:
                 for com in SEED_COMMUNITIES:
                     cur.execute(
-                        "INSERT INTO communities (id, name, description, type, category, img, created_by) "
+                        "INSERT INTO communities (id, name, description, type, category, img, creator_id) "
                         "VALUES (%s, %s, %s, %s, %s, %s, 'system')",
                         com
                     )
@@ -525,13 +525,23 @@ def handler(event: dict, context) -> dict:
                     return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True, 'joined': False})}
 
                 elif post_action == 'create':
-                    com_name = body.get('name', 'Сообщество')
-                    com_desc = body.get('description', '')
-                    com_type = body.get('type', 'open')
-                    com_category = body.get('category', 'Другое')
+                    com_name = (body.get('name') or 'Сообщество').strip()[:80]
+                    com_desc = (body.get('description') or '').strip()[:500]
+                    com_type = body.get('type') or 'open'
+                    com_category = body.get('category') or 'Другое'
+                    if com_type not in ('open', 'closed'):
+                        com_type = 'open'
+                    if not com_name:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'name required'})}
+                    if user_id in ('anon', '', None):
+                        conn.commit()
+                        return {'statusCode': 401, 'headers': headers,
+                                'body': json.dumps({'error': 'login required'})}
                     new_id = 'com_' + str(_uuid.uuid4())[:8]
                     cur.execute(
-                        "INSERT INTO communities (id, name, description, type, category, created_by) "
+                        "INSERT INTO communities (id, name, description, type, category, creator_id) "
                         "VALUES (%s, %s, %s, %s, %s, %s)",
                         (new_id, com_name, com_desc, com_type, com_category, user_id)
                     )

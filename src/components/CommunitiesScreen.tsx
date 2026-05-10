@@ -69,20 +69,33 @@ const CommunitiesScreen = ({ onBack }: Props) => {
   const handleCreate = async () => {
     if (!newName.trim() || !user) return;
     setCreating(true);
-    const res = await fetch(`${API}?module=community`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
-      body: JSON.stringify({ action: "create", name: newName.trim(), description: newDesc, type: newType, category: newCategory }),
-    });
-    const raw = await res.json();
-    const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-    if (data.ok) {
-      await loadCommunities();
-      setShowCreate(false);
-      setNewName("");
-      setNewDesc("");
+    try {
+      const res = await fetch(`${API}?module=community`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
+        body: JSON.stringify({ action: "create", name: newName.trim(), description: newDesc, type: newType, category: newCategory }),
+      });
+      const raw = await res.json();
+      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      if (data.ok) {
+        await loadCommunities();
+        setShowCreate(false);
+        setNewName("");
+        setNewDesc("");
+      } else {
+        const errMsg = data.error === "login required"
+          ? "Нужно войти в аккаунт, чтобы создать сообщество"
+          : data.error === "name required"
+          ? "Укажи название сообщества"
+          : "Не удалось создать сообщество. Попробуй ещё раз.";
+        alert(errMsg);
+      }
+    } catch (e) {
+      console.error("[Communities] create failed", e);
+      alert("Не удалось создать сообщество. Проверь интернет.");
+    } finally {
+      setCreating(false);
     }
-    setCreating(false);
   };
 
   const openCommunityChat = (com: Community) => {
