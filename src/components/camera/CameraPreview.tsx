@@ -156,6 +156,31 @@ const CameraPreview = ({
 
           <div className="bg-black/90 px-4 pt-4 pb-10 flex flex-col gap-3 md:w-[420px] md:flex-shrink-0 md:overflow-y-auto md:py-6 md:border-l md:border-white/10">
 
+            {/* Превью поста (только ПК) */}
+            <div className="hidden md:block bg-zinc-900/60 border border-white/10 rounded-2xl p-3 mb-1">
+              <p className="text-white/40 text-[10px] mb-2 font-semibold uppercase tracking-wider">Так увидят твой пост</p>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#8b5cf6] to-[#fe2c55]" />
+                <span className="text-white text-xs font-semibold">ты</span>
+              </div>
+              <div className="rounded-xl overflow-hidden bg-black aspect-square mb-2">
+                {uploadedMedia.type === "image" ? (
+                  <img src={uploadedMedia.url} className="w-full h-full object-cover" alt="preview" />
+                ) : (
+                  <video src={uploadedMedia.url} className="w-full h-full object-cover" muted playsInline autoPlay loop />
+                )}
+              </div>
+              {description && (
+                <p className="text-white/80 text-xs leading-snug whitespace-pre-wrap break-words">{description}</p>
+              )}
+              {chips.length > 0 && (
+                <p className="text-[#0095f6] text-xs mt-1 break-words">
+                  {chips.map(t => "#" + t).join(" ")}
+                </p>
+              )}
+            </div>
+
+
             {/* Описание */}
             <div>
               <p className="text-white/60 text-xs mb-2 font-medium">Описание</p>
