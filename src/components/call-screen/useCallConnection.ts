@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { RTC_CONFIG, getRtcConfig } from "@/lib/webrtc-config";
+import { HQ_AUDIO_CONSTRAINTS, applyAudioTrackTuning, boostOpusInSdp, tuneAudioSenders } from "@/lib/audioConstraints";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
@@ -143,7 +144,9 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         remoteSetRef.current = true;
         await flushPendingIce(pc);
         const answer = await pc.createAnswer();
+        if (answer.sdp) answer.sdp = boostOpusInSdp(answer.sdp);
         await pc.setLocalDescription(answer);
+        await tuneAudioSenders(pc);
         console.log("[CallScreen] sending answer");
         await sendSignal("answer", answer);
       } catch (err) {
@@ -324,17 +327,18 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         let stream: MediaStream | null = null;
         try {
           stream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
+            audio: HQ_AUDIO_CONSTRAINTS,
             video: mode === "video",
           });
         } catch (err) {
           if (mode === "video") {
             console.warn("[CallScreen] video+audio failed, fallback to audio-only", err);
-            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            stream = await navigator.mediaDevices.getUserMedia({ audio: HQ_AUDIO_CONSTRAINTS, video: false });
           } else {
             throw err;
           }
         }
+        applyAudioTrackTuning(stream);
         localStreamRef.current = stream;
         stream.getTracks().forEach((t) => pc.addTrack(t, stream as MediaStream));
         if (localVideoRef.current) {
@@ -433,7 +437,9 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
           if (data.call_id) callIdRef.current = data.call_id;
         } catch (e) { void e; }
         const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: mode === "video" });
+        if (offer.sdp) offer.sdp = boostOpusInSdp(offer.sdp);
         await pc.setLocalDescription(offer);
+        await tuneAudioSenders(pc);
         await sendSignal("offer", offer);
         // Resend offer aggressively if no answer — callee might still be clearing stale signals
         const resendOffer = async () => {

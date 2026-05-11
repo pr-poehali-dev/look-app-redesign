@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { RTC_CONFIG, fetchIceServers } from "@/lib/webrtc-config";
+import { HQ_AUDIO_CONSTRAINTS, applyAudioTrackTuning, boostOpusInSdp, tuneAudioSenders } from "@/lib/audioConstraints";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
@@ -86,7 +87,9 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
     if (sig.type === "g_join") {
       const pc = getOrCreatePC(fid, fname);
       const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: mode === "video" });
+      if (offer.sdp) offer.sdp = boostOpusInSdp(offer.sdp);
       await pc.setLocalDescription(offer);
+      await tuneAudioSenders(pc);
       await sendSig(fid, "g_offer", { sdp: offer, n: myName });
       setStatus("connected");
     } else if (sig.type === "g_offer") {
@@ -94,7 +97,9 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
       if (pc.signalingState !== "stable") return;
       await pc.setRemoteDescription(new RTCSessionDescription(sig.payload.sdp as RTCSessionDescriptionInit));
       const answer = await pc.createAnswer();
+      if (answer.sdp) answer.sdp = boostOpusInSdp(answer.sdp);
       await pc.setLocalDescription(answer);
+      await tuneAudioSenders(pc);
       await sendSig(fid, "g_answer", { sdp: answer, n: myName });
     } else if (sig.type === "g_answer") {
       const entry = peersMapRef.current.get(fid);
@@ -138,16 +143,17 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
         }
         let stream: MediaStream | null = null;
         try {
-          stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: mode === "video" });
+          stream = await navigator.mediaDevices.getUserMedia({ audio: HQ_AUDIO_CONSTRAINTS, video: mode === "video" });
         } catch (err) {
           if (mode === "video") {
             console.warn("[GroupCall] video+audio failed, fallback to audio-only", err);
-            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            stream = await navigator.mediaDevices.getUserMedia({ audio: HQ_AUDIO_CONSTRAINTS, video: false });
           } else {
             throw err;
           }
         }
         if (!mounted) { stream.getTracks().forEach(t => t.stop()); return; }
+        applyAudioTrackTuning(stream);
         localStreamRef.current = stream;
         if (localVideoRef.current) localVideoRef.current.srcObject = stream;
       } catch (e) {

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SfuClient, RemoteStream } from '@/lib/webrtc';
+import { HQ_AUDIO_CONSTRAINTS, applyAudioTrackTuning } from '@/lib/audioConstraints';
 
 type Options = {
   userId: string;
@@ -32,7 +33,7 @@ export function useSfuCall({ userId, token, roomId, mode, enabled }: Options) {
     const start = async () => {
       try {
         const constraints: MediaStreamConstraints = {
-          audio: true,
+          audio: HQ_AUDIO_CONSTRAINTS,
           video: mode === 'video' ? { width: 1280, height: 720 } : false,
         };
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -40,6 +41,7 @@ export function useSfuCall({ userId, token, roomId, mode, enabled }: Options) {
           stream.getTracks().forEach((t) => t.stop());
           return;
         }
+        applyAudioTrackTuning(stream);
         localStreamRef.current = stream;
         setLocalStream(stream);
 
