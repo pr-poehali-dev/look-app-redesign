@@ -57,8 +57,12 @@ const AuthScreen = () => {
     <div className="fixed inset-0 bg-black flex flex-col" style={{ maxWidth: 480, margin: "0 auto" }}>
       {/* Logo area */}
       <div className="flex-1 flex flex-col items-center justify-center px-8 gap-2">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center mb-2">
-          <span className="text-white font-black text-2xl">L</span>
+        <div className="w-16 h-16 rounded-2xl overflow-hidden mb-2 shadow-lg">
+          <img
+            src="https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/6e2b4daf-d869-42fe-b869-1673ee5b4608.jpg"
+            alt="Look"
+            className="w-full h-full object-cover"
+          />
         </div>
         <h1 className="text-white font-black text-3xl">Look</h1>
         <p className="text-white/50 text-sm">Смотри. Делись. Будь собой.</p>
