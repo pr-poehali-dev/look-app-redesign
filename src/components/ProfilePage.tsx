@@ -1,10 +1,10 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import SettingsScreen from "./SettingsScreen";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
-import { useFollowingList } from "@/hooks/useFollowing";
+import { useFollowingList, useFollowerCount } from "@/hooks/useFollowing";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
 import { getAuthor } from "@/data/authors";
 
@@ -268,6 +268,8 @@ const ProfilePage = () => {
   const { userVideos: stories, removeMedia, addMedia } = useUserMedia();
   const { user, token, logout, updateUser } = useAuth();
   const followingHandles = useFollowingList();
+  const followersCount = useFollowerCount(user?.handle || "");
+  const [followersList, setFollowersList] = useState<UserItem[]>([]);
   const videoIds = useMemo(() => stories.filter(s => s.type === "video").map(s => s.id), [stories]);
   const { likes: bulkLikes } = useBulkCounts("video", videoIds);
   const totalLikes = useMemo(
@@ -281,6 +283,21 @@ const ProfilePage = () => {
     }),
     [followingHandles]
   );
+
+  const loadFollowers = useCallback(() => {
+    if (!user?.handle) { setFollowersList([]); return; }
+    fetch(`https://functions.poehali.dev/791bdb8d-0cb7-40b2-8a0c-e4a84b213fbc?action=list_followers&handle=${encodeURIComponent(user.handle)}`)
+      .then(r => r.json())
+      .then(raw => {
+        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+        const items: UserItem[] = (data.followers || []).map((id: string) => {
+          const a = getAuthor(id);
+          return { handle: id, name: a.name || id, avatar: a.avatar || "" };
+        });
+        setFollowersList(items);
+      })
+      .catch(() => setFollowersList([]));
+  }, [user?.handle]);
   const [viewingStory, setViewingStory] = useState<number | null>(null);
   const [mediaViewer, setMediaViewer] = useState<{ tab: "video" | "image"; index: number } | null>(null);
   const [avatarLoading, setAvatarLoading] = useState(false);
@@ -314,7 +331,7 @@ const ProfilePage = () => {
   };
 
   if (showSettings) return <SettingsScreen onBack={() => setShowSettings(false)} />;
-  if (showScreen === "followers") return <UserListScreen title="Подписчики" users={[]} onBack={() => setShowScreen(null)} emptyText="Пока нет подписчиков" />;
+  if (showScreen === "followers") return <UserListScreen title="Подписчики" users={followersList} onBack={() => setShowScreen(null)} emptyText="Пока нет подписчиков" />;
   if (showScreen === "following") return <UserListScreen title="Подписки" users={followingUsers} onBack={() => setShowScreen(null)} emptyText="Ты пока ни на кого не подписан" />;
 
   return (
@@ -362,13 +379,17 @@ const ProfilePage = () => {
         <div className="flex flex-1 justify-around">
           {[
             { value: String(totalLikes), label: "Лайки", action: null },
-            { value: "0", label: "Подписчики", action: "followers" },
+            { value: String(followersCount), label: "Подписчики", action: "followers" },
             { value: String(followingHandles.length), label: "Подписки", action: "following" },
           ].map((s, i) => (
             <div key={s.label} className="flex items-center">
               {i > 0 && <div className="w-px h-8 md:h-6 bg-gray-200 mr-4 md:mr-3" />}
               <button
-                onClick={() => s.action && setShowScreen(s.action as "followers" | "following")}
+                onClick={() => {
+                  if (!s.action) return;
+                  if (s.action === "followers") loadFollowers();
+                  setShowScreen(s.action as "followers" | "following");
+                }}
                 className="flex flex-col items-center"
               >
                 <span className="text-black font-bold text-xl md:text-base leading-tight">{s.value}</span>

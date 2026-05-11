@@ -45,7 +45,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .then(r => r.json())
       .then(raw => {
         const data = parseBody(raw);
-        if (data.user) { setUser(data.user); setToken(saved); }
+        if (data.user) {
+          setUser(data.user);
+          setToken(saved);
+          localStorage.setItem("user_id", data.user.id);
+        }
         else localStorage.removeItem("auth_token");
       })
       .catch(() => localStorage.removeItem("auth_token"))

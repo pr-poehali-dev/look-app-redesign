@@ -1,4 +1,5 @@
 {
+  "follows": "https://functions.poehali.dev/791bdb8d-0cb7-40b2-8a0c-e4a84b213fbc",
   "auth-me": "https://functions.poehali.dev/aa92a65b-92cc-4c07-a255-6e18811805bd",
   "streams": "https://functions.poehali.dev/54ce632b-903a-4de7-8f5f-e81fa2f42053",
   "ice-servers": "https://functions.poehali.dev/53c7b2af-c5ea-4c37-bc28-154737d35d87",
