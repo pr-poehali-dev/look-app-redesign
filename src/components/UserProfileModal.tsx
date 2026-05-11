@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { getAuthor } from "@/data/authors";
-import { useFollowing } from "@/hooks/useFollowing";
+import { useFollowing, useFollowerCount } from "@/hooks/useFollowing";
 
 interface Props {
   handle: string;
@@ -13,6 +13,7 @@ interface Props {
 const UserProfileModal = ({ handle, onClose }: Props) => {
   const data = getAuthor(handle);
   const { following, toggle: toggleFollow } = useFollowing(handle);
+  const realFollowers = useFollowerCount(handle);
   const [tab, setTab] = useState<"grid" | "tagged">("grid");
   const [openedItem, setOpenedItem] = useState<number | null>(null);
 
@@ -61,7 +62,7 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
               <p className="text-gray-500 text-xs">постов</p>
             </button>
             <button className="active:opacity-60">
-              <p className="text-black font-bold text-base">{data.followers}</p>
+              <p className="text-black font-bold text-base">{realFollowers > 0 ? realFollowers : data.followers}</p>
               <p className="text-gray-500 text-xs">подписчиков</p>
             </button>
             <button className="active:opacity-60">

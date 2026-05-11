@@ -139,17 +139,25 @@ export const useFollowerCount = (handle: string): number => {
   useEffect(() => {
     if (!handle) return;
     let cancelled = false;
-    const userId = getUserId();
-    fetch(`${FOLLOWS_URL}?action=counts&handle=${encodeURIComponent(handle)}`, {
-      headers: userId ? { "X-User-Id": userId } : {},
-    })
-      .then(r => r.json())
-      .then(raw => {
-        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-        if (!cancelled && typeof data.followers === "number") setCount(data.followers);
+    const fetchCount = () => {
+      const userId = getUserId();
+      fetch(`${FOLLOWS_URL}?action=counts&handle=${encodeURIComponent(handle)}`, {
+        headers: userId ? { "X-User-Id": userId } : {},
       })
-      .catch(() => {});
-    return () => { cancelled = true; };
+        .then(r => r.json())
+        .then(raw => {
+          const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+          if (!cancelled && typeof data.followers === "number") setCount(data.followers);
+        })
+        .catch(() => {});
+    };
+    fetchCount();
+    const onChange = () => fetchCount();
+    window.addEventListener(EVENT_NAME, onChange);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(EVENT_NAME, onChange);
+    };
   }, [handle]);
   return count;
 };
