@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
 import { fetchIceServers, RTC_CONFIG } from "@/lib/webrtc-config";
+import LiveStreamCameraPrompt from "./live-stream/LiveStreamCameraPrompt";
+import LiveStreamStartForm from "./live-stream/LiveStreamStartForm";
+import LiveStreamHeader from "./live-stream/LiveStreamHeader";
+import LiveStreamOverlay from "./live-stream/LiveStreamOverlay";
 
 const STREAMS_API = "https://functions.poehali.dev/54ce632b-903a-4de7-8f5f-e81fa2f42053";
 const SIGNAL_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
@@ -18,8 +21,7 @@ const FAKE_VIEWERS = [
   { id: 9, name: "pro_gamer_x", text: "лайк поставил 👍", color: "#fe2c55" },
   { id: 10, name: "sun_rise", text: "топ контент!", color: "#a78bfa" },
 ];
-
-const GIFTS = ["🌹", "🎁", "💎", "🚀", "⭐", "🏆", "💰", "🎉"];
+void FAKE_VIEWERS;
 
 interface ChatMsg { id: number; name: string; text: string; color: string; }
 interface Gift { id: number; emoji: string; x: number; }
@@ -374,65 +376,24 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
   // ── Экран 1: запрос камеры через кнопку (работает в любом браузере) ──
   if (camState === "idle") {
     return (
-      <div className="relative w-full h-full bg-black flex flex-col items-center justify-center px-8">
-        <button onClick={onClose} className="absolute top-12 right-4 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-          <Icon name="X" size={18} className="text-white" />
-        </button>
-        <div className="text-6xl mb-6">📸</div>
-        <h2 className="text-white font-bold text-2xl mb-3 text-center">Прямой эфир</h2>
-        <p className="text-white/50 text-sm text-center mb-8 leading-relaxed">
-          Нажми кнопку — браузер спросит разрешение на камеру. Выбери <span className="text-white font-semibold">«Разрешить»</span>.
-        </p>
-        <button
-          onClick={() => startCamera("user")}
-          className="w-full py-4 rounded-2xl bg-[#fe2c55] text-white font-bold text-lg active:scale-95 transition-all flex items-center justify-center gap-3"
-        >
-          <Icon name="Camera" size={22} />
-          Включить камеру
-        </button>
-        <button onClick={onClose} className="mt-4 text-white/30 text-sm">Отмена</button>
-      </div>
+      <LiveStreamCameraPrompt
+        camState="idle"
+        camErrorMsg={camErrorMsg}
+        onClose={onClose}
+        onStart={() => startCamera("user")}
+      />
     );
   }
 
   // ── Экран 2: камера заблокирована ──
   if (camState === "denied") {
     return (
-      <div className="relative w-full h-full bg-black flex flex-col overflow-y-auto px-6 pt-16 pb-8">
-        <button onClick={onClose} className="absolute top-12 right-4 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-          <Icon name="X" size={18} className="text-white" />
-        </button>
-        <div className="text-5xl mb-3 text-center">🔒</div>
-        <h2 className="text-white font-bold text-xl mb-1 text-center">Нет доступа к камере</h2>
-        {camErrorMsg && (
-          <p className="text-red-400 text-xs font-mono text-center mb-3 break-all">{camErrorMsg}</p>
-        )}
-        <p className="text-white/50 text-sm text-center mb-6 leading-relaxed">
-          Браузер заблокировал камеру. Попробуй открыть сайт в Google Chrome — там всё работает.
-        </p>
-        <div className="bg-white/5 rounded-2xl p-4 mb-3 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shrink-0 text-2xl">🌐</div>
-          <div>
-            <p className="text-white font-semibold text-sm mb-0.5">Открой в Google Chrome</p>
-            <p className="text-white/50 text-xs">Скопируй ссылку и вставь в Chrome.</p>
-          </div>
-        </div>
-        <button
-          onClick={() => { navigator.clipboard.writeText(window.location.href).catch(() => {}); }}
-          className="w-full py-3 rounded-2xl bg-white/10 text-white text-sm font-medium active:scale-95 transition-all mb-4 flex items-center justify-center gap-2"
-        >
-          <Icon name="Copy" size={16} className="text-white/60" />
-          Скопировать ссылку
-        </button>
-        <div className="w-full h-px bg-white/10 mb-4" />
-        <button
-          onClick={() => startCamera("user")}
-          className="w-full py-4 rounded-2xl bg-[#fe2c55] text-white font-bold text-base active:scale-95 transition-all mb-3"
-        >
-          Попробовать снова
-        </button>
-        <button onClick={onClose} className="text-white/30 text-sm text-center">Закрыть</button>
-      </div>
+      <LiveStreamCameraPrompt
+        camState="denied"
+        camErrorMsg={camErrorMsg}
+        onClose={onClose}
+        onStart={() => startCamera("user")}
+      />
     );
   }
 
@@ -464,148 +425,42 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
         </div>
       ))}
 
-      <div className="relative z-20 flex items-center justify-between px-4 pt-12 pb-3">
-        <div className="flex items-center gap-2">
-          {isLive && (
-            <div className="flex items-center gap-1.5 bg-[#fe2c55] px-2.5 py-1 rounded-md">
-              <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-              <span className="text-white text-xs font-bold tracking-wide">LIVE</span>
-            </div>
-          )}
-          {isLive && (
-            <div className="flex items-center gap-1 bg-black/40 backdrop-blur-sm px-2.5 py-1 rounded-md">
-              <Icon name="Eye" size={12} className="text-white/70" />
-              <span className="text-white text-xs font-semibold">{viewers.toLocaleString()}</span>
-            </div>
-          )}
-          {isLive && (
-            <div className="bg-black/40 backdrop-blur-sm px-2.5 py-1 rounded-md">
-              <span className="text-white/80 text-xs font-mono">{formatTime(seconds)}</span>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={flipCamera} disabled={flipping}
-            className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform">
-            <Icon name="RefreshCw" size={16} className={`text-white ${flipping ? "animate-spin" : ""}`} />
-          </button>
-          <button onClick={onClose}
-            className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-            <Icon name="X" size={18} className="text-white" />
-          </button>
-        </div>
-      </div>
+      <LiveStreamHeader
+        isLive={isLive}
+        viewers={viewers}
+        seconds={seconds}
+        flipping={flipping}
+        formatTime={formatTime}
+        onFlip={flipCamera}
+        onClose={onClose}
+      />
 
-      {!isLive && !showStartForm && (
-        <div className="relative z-20 flex-1 flex flex-col items-center justify-center gap-6 px-8">
-          <div className="w-24 h-24 rounded-full bg-[#fe2c55]/20 border-2 border-[#fe2c55] flex items-center justify-center animate-pulse">
-            <Icon name="Radio" size={40} className="text-[#fe2c55]" />
-          </div>
-          <div className="text-center">
-            <h2 className="text-white font-bold text-2xl mb-2">Прямой эфир</h2>
-            <p className="text-white/50 text-sm">Начни трансляцию — зрители уже ждут</p>
-          </div>
-          <button onClick={() => setShowStartForm(true)}
-            className="w-full py-4 rounded-2xl bg-[#fe2c55] text-white font-bold text-lg active:scale-95 transition-all flex items-center justify-center gap-3">
-            <Icon name="Radio" size={22} />
-            Начать трансляцию
-          </button>
-        </div>
-      )}
-
-      {!isLive && showStartForm && (
-        <div className="relative z-20 flex-1 flex flex-col items-center justify-center gap-4 px-6">
-          <div className="w-full max-w-sm bg-black/60 backdrop-blur-md rounded-2xl p-5 flex flex-col gap-3">
-            <p className="text-white font-bold text-lg">Настрой эфир</p>
-            <input
-              autoFocus
-              value={streamTitle}
-              onChange={(e) => setStreamTitle(e.target.value)}
-              placeholder="Название эфира..."
-              maxLength={80}
-              className="w-full bg-white/10 text-white placeholder-white/40 px-4 py-3 rounded-xl outline-none text-sm"
-            />
-            <select
-              value={streamCategory}
-              onChange={(e) => setStreamCategory(e.target.value)}
-              className="w-full bg-white/10 text-white px-4 py-3 rounded-xl outline-none text-sm appearance-none"
-            >
-              <option value="Общее">Общее</option>
-              <option value="Музыка">Музыка</option>
-              <option value="Игры">Игры</option>
-              <option value="Спорт">Спорт</option>
-              <option value="Путешествия">Путешествия</option>
-              <option value="Еда">Еда</option>
-              <option value="Юмор">Юмор</option>
-              <option value="Образование">Образование</option>
-            </select>
-            <button onClick={startLive}
-              className="w-full py-3.5 rounded-xl bg-[#fe2c55] text-white font-bold text-base active:scale-95 transition-all flex items-center justify-center gap-2">
-              <Icon name="Radio" size={18} />
-              В эфир
-            </button>
-            <button onClick={() => setShowStartForm(false)}
-              className="w-full py-2.5 rounded-xl text-white/60 text-sm">
-              Отмена
-            </button>
-          </div>
-        </div>
+      {!isLive && (
+        <LiveStreamStartForm
+          showStartForm={showStartForm}
+          streamTitle={streamTitle}
+          streamCategory={streamCategory}
+          onTitleChange={setStreamTitle}
+          onCategoryChange={setStreamCategory}
+          onOpenForm={() => setShowStartForm(true)}
+          onCancelForm={() => setShowStartForm(false)}
+          onStartLive={startLive}
+        />
       )}
 
       {isLive && (
-        <>
-          <div className="absolute right-4 top-1/3 z-20 flex flex-col items-center gap-1">
-            <div className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center">
-              <Icon name="Heart" size={20} className="text-[#fe2c55] fill-[#fe2c55]" />
-            </div>
-            <span className="text-white text-xs font-bold">{likes.toLocaleString()}</span>
-          </div>
-
-          <div ref={chatRef}
-            className="relative z-20 flex-1 overflow-y-scroll px-3 flex flex-col justify-end gap-1 pb-2"
-            style={{ scrollbarWidth: "none" }}>
-            {chat.map(msg => (
-              <div key={msg.id} className="flex items-start gap-1.5">
-                <span className="text-xs font-bold shrink-0" style={{ color: msg.color }}>{msg.name}</span>
-                <span className="text-white/80 text-xs leading-tight">{msg.text}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="relative z-20 px-3 pb-8 flex flex-col gap-3">
-            {showGifts && (
-              <div className="bg-black/70 backdrop-blur-md rounded-2xl p-3 grid grid-cols-4 gap-3">
-                {GIFTS.map(g => (
-                  <button key={g} onClick={() => sendGift(g)}
-                    className="aspect-square rounded-xl bg-white/10 flex items-center justify-center text-2xl active:scale-90 transition-all">
-                    {g}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              <div className="flex-1 flex items-center gap-2 bg-black/50 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2.5">
-                <input type="text" value={inputMsg} onChange={e => setInputMsg(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && sendMessage()}
-                  placeholder="Написать комментарий..."
-                  className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/30" />
-                {inputMsg && (
-                  <button onClick={sendMessage}>
-                    <Icon name="Send" size={16} className="text-[#61d4f0]" />
-                  </button>
-                )}
-              </div>
-              <button onClick={() => setShowGifts(v => !v)}
-                className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 flex items-center justify-center">
-                <span className="text-lg">🎁</span>
-              </button>
-              <button onClick={stopLive}
-                className="px-4 h-10 rounded-full bg-[#fe2c55]/90 flex items-center justify-center">
-                <span className="text-white text-xs font-bold">Стоп</span>
-              </button>
-            </div>
-          </div>
-        </>
+        <LiveStreamOverlay
+          likes={likes}
+          chat={chat}
+          chatRef={chatRef}
+          showGifts={showGifts}
+          inputMsg={inputMsg}
+          onInputChange={setInputMsg}
+          onSendMessage={sendMessage}
+          onToggleGifts={() => setShowGifts(v => !v)}
+          onSendGift={sendGift}
+          onStopLive={stopLive}
+        />
       )}
 
       <style>{`
