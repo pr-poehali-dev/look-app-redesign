@@ -85,9 +85,11 @@ export const tuneAudioSenders = async (pc: RTCPeerConnection | null | undefined)
         params.encodings = [{}];
       }
       params.encodings.forEach(enc => {
-        enc.maxBitrate = isMobile() ? 48000 : 64000;
+        // Низкий битрейт для устойчивости на плохом интернете
+        enc.maxBitrate = isMobile() ? 16000 : 24000;
         enc.priority = 'high';
         enc.networkPriority = 'high';
+        enc.adaptivePtime = true;
       });
       await sender.setParameters(params).catch(() => {});
     }
@@ -100,7 +102,8 @@ export const boostOpusInSdp = (sdp: string): string => {
   if (!sdp) return sdp;
   try {
     const mobile = isMobile();
-    const bitrate = mobile ? '48000' : '64000';
+    // Для слабого интернета — узкополосный, но устойчивый Opus с FEC и DTX
+    const bitrate = mobile ? '16000' : '24000';
     return sdp.replace(/a=fmtp:(\d+) ([^\r\n]*opus[^\r\n]*)/gi, (_match, pt, rest) => {
       let updated = rest;
       const set = (key: string, value: string) => {
@@ -110,14 +113,15 @@ export const boostOpusInSdp = (sdp: string): string => {
           updated += `;${key}=${value}`;
         }
       };
-      set('stereo', mobile ? '0' : '1');
-      set('sprop-stereo', mobile ? '0' : '1');
+      set('stereo', '0');
+      set('sprop-stereo', '0');
       set('maxaveragebitrate', bitrate);
-      set('maxplaybackrate', '48000');
+      set('maxplaybackrate', '16000');
       set('useinbandfec', '1');
-      set('usedtx', '0');
+      set('usedtx', '1');
       set('cbr', '0');
-      set('minptime', '10');
+      set('minptime', '60');
+      set('ptime', '60');
       return `a=fmtp:${pt} ${updated}`;
     });
   } catch {
