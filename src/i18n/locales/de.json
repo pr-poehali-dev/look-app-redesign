@@ -1,0 +1,82 @@
+{
+  "common": {
+    "back": "Zurück",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "close": "Schließen",
+    "ok": "OK",
+    "yes": "Ja",
+    "no": "Nein",
+    "loading": "Lädt...",
+    "search": "Suche",
+    "send": "Senden",
+    "settings": "Einstellungen",
+    "profile": "Profil",
+    "logout": "Abmelden",
+    "login": "Anmelden",
+    "register": "Registrieren",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "username": "Benutzername",
+    "confirm": "Bestätigen"
+  },
+  "nav": {
+    "home": "Startseite",
+    "search": "Suche",
+    "create": "Erstellen",
+    "messages": "Nachrichten",
+    "profile": "Profil",
+    "communities": "Communities"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "account": "Konto",
+    "saved": "Gespeichert",
+    "languages": "Sprachen",
+    "blocked": "Blockiert",
+    "qrCode": "Mein QR-Code",
+    "notifications": "Benachrichtigungen",
+    "privacy": "Privatsphäre",
+    "help": "Hilfe",
+    "about": "Über",
+    "selectLanguage": "Sprache wählen",
+    "languageChanged": "Sprache geändert",
+    "noBlocked": "Keine blockierten Nutzer",
+    "unblock": "Entsperren",
+    "noSaved": "Keine gespeicherten Videos",
+    "qrShare": "QR-Code teilen",
+    "qrDescription": "Scanne den Code, um mich auf Look zu finden",
+    "notif": {
+      "likes": "Likes",
+      "comments": "Kommentare",
+      "newFollowers": "Neue Follower",
+      "mentions": "Erwähnungen",
+      "lives": "Live-Streams",
+      "messages": "Nachrichten"
+    }
+  },
+  "profile": {
+    "edit": "Profil bearbeiten",
+    "followers": "Follower",
+    "following": "Folge ich",
+    "likes": "Likes",
+    "follow": "Folgen",
+    "unfollow": "Entfolgen",
+    "message": "Nachricht",
+    "share": "Teilen"
+  },
+  "auth": {
+    "welcome": "Willkommen",
+    "signIn": "Anmelden",
+    "signUp": "Registrieren",
+    "forgotPassword": "Passwort vergessen?",
+    "resetPassword": "Passwort zurücksetzen",
+    "noAccount": "Kein Konto?",
+    "hasAccount": "Hast du schon ein Konto?",
+    "createAccount": "Konto erstellen",
+    "continueWith": "Weiter mit",
+    "agreeTerms": "Mit der Registrierung stimmst du den Bedingungen zu"
+  }
+}

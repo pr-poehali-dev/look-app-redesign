@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { useAuth } from "@/context/AuthContext";
+import { SUPPORTED_LANGUAGES } from "@/i18n";
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -14,14 +16,7 @@ const SAVED_ITEMS = [
   { img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/85269bc0-d690-47bb-b96f-3b41f8103627.jpg", views: 621 },
 ];
 
-const LANGUAGES = [
-  { code: "ru", label: "Русский", active: true },
-  { code: "en", label: "English", active: false },
-  { code: "de", label: "Deutsch", active: false },
-  { code: "fr", label: "Français", active: false },
-  { code: "es", label: "Español", active: false },
-  { code: "zh", label: "中文", active: false },
-];
+const LANGUAGES = SUPPORTED_LANGUAGES;
 
 const BLOCKED = [
   { name: "spam_user_99", avatar: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/48f38c64-742e-458c-9f09-0013a0813b5f.jpg" },
@@ -69,19 +64,31 @@ const SavedScreen = ({ onBack }: { onBack: () => void }) => (
 );
 
 const LanguagesScreen = ({ onBack }: { onBack: () => void }) => {
-  const [selected, setSelected] = useState("ru");
+  const { t, i18n } = useTranslation();
+  const [selected, setSelected] = useState(i18n.language?.split("-")[0] || "ru");
+
+  const handleSelect = (code: string) => {
+    setSelected(code);
+    i18n.changeLanguage(code);
+    try {
+      localStorage.setItem("app_lang", code);
+    } catch {
+      // ignore
+    }
+  };
+
   return (
     <div className="h-full bg-gray-100 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
       <div className="md:max-w-2xl md:mx-auto">
       <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
         <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
-        <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Языки</span>
+        <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">{t("settings.languages")}</span>
       </div>
       <div className="mt-2">
         {LANGUAGES.map((lang) => (
           <button
             key={lang.code}
-            onClick={() => setSelected(lang.code)}
+            onClick={() => handleSelect(lang.code)}
             className="w-full flex items-center gap-4 px-4 py-4 md:py-3 bg-white border-b border-gray-100"
           >
             <span className="flex-1 text-black text-base md:text-sm text-left">{lang.label}</span>

@@ -1,0 +1,82 @@
+{
+  "common": {
+    "back": "返回",
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "close": "关闭",
+    "ok": "确定",
+    "yes": "是",
+    "no": "否",
+    "loading": "加载中...",
+    "search": "搜索",
+    "send": "发送",
+    "settings": "设置",
+    "profile": "个人资料",
+    "logout": "退出",
+    "login": "登录",
+    "register": "注册",
+    "email": "邮箱",
+    "password": "密码",
+    "username": "用户名",
+    "confirm": "确认"
+  },
+  "nav": {
+    "home": "首页",
+    "search": "搜索",
+    "create": "创建",
+    "messages": "消息",
+    "profile": "我的",
+    "communities": "社区"
+  },
+  "settings": {
+    "title": "设置",
+    "account": "账号",
+    "saved": "已保存",
+    "languages": "语言",
+    "blocked": "已屏蔽",
+    "qrCode": "我的二维码",
+    "notifications": "通知",
+    "privacy": "隐私",
+    "help": "帮助",
+    "about": "关于",
+    "selectLanguage": "选择语言",
+    "languageChanged": "语言已更改",
+    "noBlocked": "没有被屏蔽的用户",
+    "unblock": "取消屏蔽",
+    "noSaved": "没有已保存的视频",
+    "qrShare": "分享二维码",
+    "qrDescription": "扫描二维码在 Look 上找到我",
+    "notif": {
+      "likes": "点赞",
+      "comments": "评论",
+      "newFollowers": "新粉丝",
+      "mentions": "提及",
+      "lives": "直播",
+      "messages": "消息"
+    }
+  },
+  "profile": {
+    "edit": "编辑资料",
+    "followers": "粉丝",
+    "following": "关注",
+    "likes": "点赞",
+    "follow": "关注",
+    "unfollow": "取消关注",
+    "message": "消息",
+    "share": "分享"
+  },
+  "auth": {
+    "welcome": "欢迎",
+    "signIn": "登录",
+    "signUp": "注册",
+    "forgotPassword": "忘记密码？",
+    "resetPassword": "重置密码",
+    "noAccount": "没有账号？",
+    "hasAccount": "已有账号？",
+    "createAccount": "创建账号",
+    "continueWith": "继续使用",
+    "agreeTerms": "注册即表示您同意条款"
+  }
+}

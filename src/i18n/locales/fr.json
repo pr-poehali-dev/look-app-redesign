@@ -1,0 +1,82 @@
+{
+  "common": {
+    "back": "Retour",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "close": "Fermer",
+    "ok": "OK",
+    "yes": "Oui",
+    "no": "Non",
+    "loading": "Chargement...",
+    "search": "Recherche",
+    "send": "Envoyer",
+    "settings": "Paramètres",
+    "profile": "Profil",
+    "logout": "Déconnexion",
+    "login": "Connexion",
+    "register": "S'inscrire",
+    "email": "Email",
+    "password": "Mot de passe",
+    "username": "Nom d'utilisateur",
+    "confirm": "Confirmer"
+  },
+  "nav": {
+    "home": "Accueil",
+    "search": "Recherche",
+    "create": "Créer",
+    "messages": "Messages",
+    "profile": "Profil",
+    "communities": "Communautés"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "account": "Compte",
+    "saved": "Enregistrés",
+    "languages": "Langues",
+    "blocked": "Bloqués",
+    "qrCode": "Mon QR code",
+    "notifications": "Notifications",
+    "privacy": "Confidentialité",
+    "help": "Aide",
+    "about": "À propos",
+    "selectLanguage": "Choisir la langue",
+    "languageChanged": "Langue modifiée",
+    "noBlocked": "Aucun utilisateur bloqué",
+    "unblock": "Débloquer",
+    "noSaved": "Aucune vidéo enregistrée",
+    "qrShare": "Partager le QR code",
+    "qrDescription": "Scanne le code pour me trouver sur Look",
+    "notif": {
+      "likes": "J'aime",
+      "comments": "Commentaires",
+      "newFollowers": "Nouveaux abonnés",
+      "mentions": "Mentions",
+      "lives": "Directs",
+      "messages": "Messages"
+    }
+  },
+  "profile": {
+    "edit": "Modifier le profil",
+    "followers": "Abonnés",
+    "following": "Abonnements",
+    "likes": "J'aime",
+    "follow": "Suivre",
+    "unfollow": "Ne plus suivre",
+    "message": "Message",
+    "share": "Partager"
+  },
+  "auth": {
+    "welcome": "Bienvenue",
+    "signIn": "Se connecter",
+    "signUp": "S'inscrire",
+    "forgotPassword": "Mot de passe oublié ?",
+    "resetPassword": "Réinitialiser le mot de passe",
+    "noAccount": "Pas de compte ?",
+    "hasAccount": "Vous avez déjà un compte ?",
+    "createAccount": "Créer un compte",
+    "continueWith": "Continuer avec",
+    "agreeTerms": "En vous inscrivant, vous acceptez les conditions"
+  }
+}

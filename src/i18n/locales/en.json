@@ -1,0 +1,82 @@
+{
+  "common": {
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "ok": "OK",
+    "yes": "Yes",
+    "no": "No",
+    "loading": "Loading...",
+    "search": "Search",
+    "send": "Send",
+    "settings": "Settings",
+    "profile": "Profile",
+    "logout": "Log out",
+    "login": "Log in",
+    "register": "Sign up",
+    "email": "Email",
+    "password": "Password",
+    "username": "Username",
+    "confirm": "Confirm"
+  },
+  "nav": {
+    "home": "Home",
+    "search": "Search",
+    "create": "Create",
+    "messages": "Messages",
+    "profile": "Profile",
+    "communities": "Communities"
+  },
+  "settings": {
+    "title": "Settings",
+    "account": "Account",
+    "saved": "Saved",
+    "languages": "Languages",
+    "blocked": "Blocked",
+    "qrCode": "My QR code",
+    "notifications": "Notifications",
+    "privacy": "Privacy",
+    "help": "Help",
+    "about": "About",
+    "selectLanguage": "Select language",
+    "languageChanged": "Language changed",
+    "noBlocked": "No blocked users",
+    "unblock": "Unblock",
+    "noSaved": "No saved videos",
+    "qrShare": "Share QR code",
+    "qrDescription": "Scan the code to find me on Look",
+    "notif": {
+      "likes": "Likes",
+      "comments": "Comments",
+      "newFollowers": "New followers",
+      "mentions": "Mentions",
+      "lives": "Live streams",
+      "messages": "Messages"
+    }
+  },
+  "profile": {
+    "edit": "Edit profile",
+    "followers": "Followers",
+    "following": "Following",
+    "likes": "Likes",
+    "follow": "Follow",
+    "unfollow": "Unfollow",
+    "message": "Message",
+    "share": "Share"
+  },
+  "auth": {
+    "welcome": "Welcome",
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "forgotPassword": "Forgot password?",
+    "resetPassword": "Reset password",
+    "noAccount": "No account?",
+    "hasAccount": "Already have an account?",
+    "createAccount": "Create account",
+    "continueWith": "Continue with",
+    "agreeTerms": "By signing up, you agree to the terms"
+  }
+}

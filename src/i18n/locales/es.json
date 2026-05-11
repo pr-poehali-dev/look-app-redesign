@@ -1,0 +1,82 @@
+{
+  "common": {
+    "back": "Atrás",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "ok": "OK",
+    "yes": "Sí",
+    "no": "No",
+    "loading": "Cargando...",
+    "search": "Buscar",
+    "send": "Enviar",
+    "settings": "Ajustes",
+    "profile": "Perfil",
+    "logout": "Cerrar sesión",
+    "login": "Iniciar sesión",
+    "register": "Registrarse",
+    "email": "Correo",
+    "password": "Contraseña",
+    "username": "Usuario",
+    "confirm": "Confirmar"
+  },
+  "nav": {
+    "home": "Inicio",
+    "search": "Buscar",
+    "create": "Crear",
+    "messages": "Mensajes",
+    "profile": "Perfil",
+    "communities": "Comunidades"
+  },
+  "settings": {
+    "title": "Ajustes",
+    "account": "Cuenta",
+    "saved": "Guardados",
+    "languages": "Idiomas",
+    "blocked": "Bloqueados",
+    "qrCode": "Mi código QR",
+    "notifications": "Notificaciones",
+    "privacy": "Privacidad",
+    "help": "Ayuda",
+    "about": "Acerca de",
+    "selectLanguage": "Selecciona idioma",
+    "languageChanged": "Idioma cambiado",
+    "noBlocked": "Sin usuarios bloqueados",
+    "unblock": "Desbloquear",
+    "noSaved": "Sin videos guardados",
+    "qrShare": "Compartir QR",
+    "qrDescription": "Escanea el código para encontrarme en Look",
+    "notif": {
+      "likes": "Me gusta",
+      "comments": "Comentarios",
+      "newFollowers": "Nuevos seguidores",
+      "mentions": "Menciones",
+      "lives": "En vivo",
+      "messages": "Mensajes"
+    }
+  },
+  "profile": {
+    "edit": "Editar perfil",
+    "followers": "Seguidores",
+    "following": "Siguiendo",
+    "likes": "Me gusta",
+    "follow": "Seguir",
+    "unfollow": "Dejar de seguir",
+    "message": "Mensaje",
+    "share": "Compartir"
+  },
+  "auth": {
+    "welcome": "Bienvenido",
+    "signIn": "Iniciar sesión",
+    "signUp": "Registrarse",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "resetPassword": "Restablecer contraseña",
+    "noAccount": "¿No tienes cuenta?",
+    "hasAccount": "¿Ya tienes cuenta?",
+    "createAccount": "Crear cuenta",
+    "continueWith": "Continuar con",
+    "agreeTerms": "Al registrarte, aceptas los términos"
+  }
+}

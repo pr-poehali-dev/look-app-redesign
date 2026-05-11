@@ -1,0 +1,82 @@
+{
+  "common": {
+    "back": "Назад",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "close": "Закрыть",
+    "ok": "ОК",
+    "yes": "Да",
+    "no": "Нет",
+    "loading": "Загрузка...",
+    "search": "Поиск",
+    "send": "Отправить",
+    "settings": "Настройки",
+    "profile": "Профиль",
+    "logout": "Выйти",
+    "login": "Войти",
+    "register": "Регистрация",
+    "email": "Email",
+    "password": "Пароль",
+    "username": "Имя пользователя",
+    "confirm": "Подтвердить"
+  },
+  "nav": {
+    "home": "Главная",
+    "search": "Поиск",
+    "create": "Создать",
+    "messages": "Сообщения",
+    "profile": "Профиль",
+    "communities": "Сообщества"
+  },
+  "settings": {
+    "title": "Настройки",
+    "account": "Аккаунт",
+    "saved": "Сохранённые",
+    "languages": "Языки",
+    "blocked": "Заблокированные",
+    "qrCode": "Мой QR-код",
+    "notifications": "Уведомления",
+    "privacy": "Приватность",
+    "help": "Помощь",
+    "about": "О приложении",
+    "selectLanguage": "Выберите язык",
+    "languageChanged": "Язык изменён",
+    "noBlocked": "Нет заблокированных пользователей",
+    "unblock": "Разблокировать",
+    "noSaved": "Нет сохранённых видео",
+    "qrShare": "Поделиться QR-кодом",
+    "qrDescription": "Отсканируй код чтобы найти меня в Look",
+    "notif": {
+      "likes": "Лайки",
+      "comments": "Комментарии",
+      "newFollowers": "Новые подписчики",
+      "mentions": "Упоминания",
+      "lives": "Прямые эфиры",
+      "messages": "Сообщения"
+    }
+  },
+  "profile": {
+    "edit": "Редактировать профиль",
+    "followers": "Подписчики",
+    "following": "Подписки",
+    "likes": "Лайки",
+    "follow": "Подписаться",
+    "unfollow": "Отписаться",
+    "message": "Сообщение",
+    "share": "Поделиться"
+  },
+  "auth": {
+    "welcome": "Добро пожаловать",
+    "signIn": "Вход",
+    "signUp": "Регистрация",
+    "forgotPassword": "Забыли пароль?",
+    "resetPassword": "Сбросить пароль",
+    "noAccount": "Нет аккаунта?",
+    "hasAccount": "Уже есть аккаунт?",
+    "createAccount": "Создать аккаунт",
+    "continueWith": "Продолжить с",
+    "agreeTerms": "Регистрируясь, вы соглашаетесь с условиями"
+  }
+}
