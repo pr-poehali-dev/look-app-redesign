@@ -230,8 +230,12 @@ const AppContent = () => {
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center">
-          <span className="text-white font-black text-xl">L</span>
+        <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg">
+          <img
+            src="https://static.rustore.ru/imgproxy/vs3_tA6Fiyv_VxNKTcByf1sXvc4-Qy2G_VlA-uzDgTs/preset:web_app_icon_62/plain/https://static.rustore.ru/2025/9/16/49/apk/2063656157/content/ICON/586db88b-5139-4dc5-b8f4-5a7e07f892ba.png@webp"
+            alt="Look"
+            className="w-full h-full object-cover"
+          />
         </div>
       </div>
     );
