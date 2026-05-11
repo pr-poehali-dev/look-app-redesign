@@ -59,7 +59,7 @@ const AuthScreen = () => {
       <div className="flex-1 flex flex-col items-center justify-center px-8 gap-2">
         <div className="w-16 h-16 rounded-2xl overflow-hidden mb-2 shadow-lg">
           <img
-            src="https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/6e2b4daf-d869-42fe-b869-1673ee5b4608.jpg"
+            src="https://static.rustore.ru/imgproxy/vs3_tA6Fiyv_VxNKTcByf1sXvc4-Qy2G_VlA-uzDgTs/preset:web_app_icon_62/plain/https://static.rustore.ru/2025/9/16/49/apk/2063656157/content/ICON/586db88b-5139-4dc5-b8f4-5a7e07f892ba.png@webp"
             alt="Look"
             className="w-full h-full object-cover"
           />
