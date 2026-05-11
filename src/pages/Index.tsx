@@ -7,6 +7,7 @@ import LiveList from "@/components/LiveList";
 import ProfilePage from "@/components/ProfilePage";
 import CameraScreen from "@/components/CameraScreen";
 import MessagesScreen from "@/components/MessagesScreen";
+import UserProfileModal from "@/components/UserProfileModal";
 import { useUnread } from "@/context/UnreadContext";
 
 const TABS = [
@@ -29,7 +30,17 @@ const Index = () => {
   const [showLive, setShowLive] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [pendingCommunityId, setPendingCommunityId] = useState<string | null>(initialCommunityFromUrl);
+  const [profileHandle, setProfileHandle] = useState<string | null>(null);
   const { totalUnread } = useUnread();
+
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { handle?: string };
+      if (detail?.handle) setProfileHandle(detail.handle);
+    };
+    window.addEventListener("open-user-profile", onOpen);
+    return () => window.removeEventListener("open-user-profile", onOpen);
+  }, []);
 
   useEffect(() => {
     // Подчищаем параметр из URL после применения, чтобы не сработал при обычной навигации
@@ -241,6 +252,9 @@ const Index = () => {
           </div>
         </div>
       </div>
+      {profileHandle && (
+        <UserProfileModal handle={profileHandle} onClose={() => setProfileHandle(null)} />
+      )}
     </div>
   );
 };
