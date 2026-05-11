@@ -27,6 +27,37 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
   const [cameraOff, setCameraOff] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [status, setStatus] = useState<"connecting" | "connected">("connecting");
+  const [speakerOn, setSpeakerOn] = useState(true);
+  const audioElsRef = useRef<Set<HTMLMediaElement>>(new Set());
+
+  const registerAudioEl = useCallback((el: HTMLMediaElement | null, on: boolean) => {
+    if (!el) return;
+    if (on) {
+      audioElsRef.current.add(el);
+      el.volume = speakerOn ? 1 : 0.45;
+    } else {
+      audioElsRef.current.delete(el);
+    }
+  }, [speakerOn]);
+
+  const toggleSpeaker = async () => {
+    const next = !speakerOn;
+    setSpeakerOn(next);
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const outs = devices.filter(d => d.kind === "audiooutput");
+      const speaker = outs.find(d => /speaker|speakerphone|default/i.test(d.label)) || outs[0];
+      const earpiece = outs.find(d => /earpiece|receiver|handset|internal|телефон/i.test(d.label));
+      const target = next ? speaker : (earpiece || speaker);
+      for (const el of audioElsRef.current) {
+        el.volume = next ? 1 : 0.45;
+        const anyEl = el as HTMLMediaElement & { setSinkId?: (id: string) => Promise<void> };
+        if (target && typeof anyEl.setSinkId === "function") {
+          await anyEl.setSinkId(target.deviceId).catch(() => {});
+        }
+      }
+    } catch (e) { void e; }
+  };
 
   const localStreamRef = useRef<MediaStream | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -246,7 +277,7 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
               <span className="text-white text-[11px]">Вы</span>
             </div>
           </div>
-          {peers.map(peer => <RemoteVideoTile key={peer.id} peer={peer} stream={peer.stream} />)}
+          {peers.map(peer => <RemoteVideoTile key={peer.id} peer={peer} stream={peer.stream} onElement={registerAudioEl} />)}
           {peers.length === 0 && (
             <div className="col-span-2 flex items-center justify-center py-10">
               <p className="text-white/25 text-sm">Ожидание участников...</p>
@@ -256,7 +287,7 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
       ) : (
         <div className="flex-1 flex flex-wrap gap-5 px-6 pt-8 content-start">
           <AudioBubble name={`${myName} (Вы)`} muted={muted} />
-          {peers.map(p => <AudioBubble key={p.id} name={p.name} muted={false} stream={p.stream} />)}
+          {peers.map(p => <AudioBubble key={p.id} name={p.name} muted={false} stream={p.stream} onElement={registerAudioEl} />)}
           {peers.length === 0 && (
             <p className="w-full text-center text-white/25 text-sm mt-6">Ожидание участников...</p>
           )}
@@ -269,6 +300,12 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
           className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${muted ? "bg-red-500/20 border border-red-500/40" : "bg-white/10"}`}
         >
           <Icon name={muted ? "MicOff" : "Mic"} size={22} className={muted ? "text-red-400" : "text-white"} />
+        </button>
+        <button
+          onClick={toggleSpeaker}
+          className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${speakerOn ? "bg-white/90" : "bg-white/10"}`}
+        >
+          <Icon name={speakerOn ? "Volume2" : "VolumeX"} size={22} className={speakerOn ? "text-black" : "text-white"} />
         </button>
         {mode === "video" && (
           <button
@@ -286,14 +323,16 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
   );
 };
 
-const RemoteVideoTile = ({ peer, stream }: { peer: PeerEntry; stream: MediaStream | null }) => {
+const RemoteVideoTile = ({ peer, stream, onElement }: { peer: PeerEntry; stream: MediaStream | null; onElement?: (el: HTMLMediaElement | null, on: boolean) => void }) => {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     if (ref.current) {
       ref.current.srcObject = stream;
       tuneRemoteAudioElement(ref.current);
+      onElement?.(ref.current, true);
     }
-  }, [stream]);
+    return () => { if (ref.current) onElement?.(ref.current, false); };
+  }, [stream, onElement]);
   return (
     <div className="relative rounded-2xl overflow-hidden bg-zinc-900 aspect-video">
       <video ref={ref} autoPlay playsInline className="w-full h-full object-cover" />
@@ -311,15 +350,17 @@ const RemoteVideoTile = ({ peer, stream }: { peer: PeerEntry; stream: MediaStrea
   );
 };
 
-const AudioBubble = ({ name, muted, stream }: { name: string; muted: boolean; stream?: MediaStream | null }) => {
+const AudioBubble = ({ name, muted, stream, onElement }: { name: string; muted: boolean; stream?: MediaStream | null; onElement?: (el: HTMLMediaElement | null, on: boolean) => void }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   useEffect(() => {
     if (audioRef.current && stream) {
       audioRef.current.srcObject = stream;
       tuneRemoteAudioElement(audioRef.current);
       audioRef.current.play().catch(() => {});
+      onElement?.(audioRef.current, true);
     }
-  }, [stream]);
+    return () => { if (audioRef.current) onElement?.(audioRef.current, false); };
+  }, [stream, onElement]);
   return (
     <div className="flex flex-col items-center gap-2 w-20">
       {stream && <audio ref={audioRef} autoPlay playsInline className="hidden" />}
