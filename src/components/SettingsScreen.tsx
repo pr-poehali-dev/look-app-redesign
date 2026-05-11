@@ -75,6 +75,7 @@ const LanguagesScreen = ({ onBack }: { onBack: () => void }) => {
     } catch {
       // ignore
     }
+    window.dispatchEvent(new CustomEvent("app-lang-change", { detail: code }));
   };
 
   return (

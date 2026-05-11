@@ -12,6 +12,7 @@ import { UnreadProvider } from "./context/UnreadContext";
 import AuthScreen from "./components/AuthScreen";
 import ResetPasswordScreen from "./components/ResetPasswordScreen";
 import CallScreen from "./components/CallScreen";
+import AutoTranslator from "./components/AutoTranslator";
 import Icon from "@/components/ui/icon";
 
 const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
@@ -375,6 +376,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <AutoTranslator />
       <AuthProvider>
         <AppContent />
       </AuthProvider>
