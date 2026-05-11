@@ -140,7 +140,6 @@ const PostCard = ({ post }: { post: Post }) => {
           <div className="bg-zinc-900 rounded-t-3xl overflow-hidden pb-8" onClick={e => e.stopPropagation()}>
             {[
               { icon: "Bookmark", label: saved ? "Убрать из сохранённых" : "Сохранить", action: () => { setSaved(v => !v); setShowMenu(false); } },
-              { icon: "UserMinus", label: "Отписаться", action: () => setShowMenu(false) },
               { icon: "BellOff", label: "Выключить уведомления", action: () => setShowMenu(false) },
               { icon: "Link", label: "Скопировать ссылку", action: () => { navigator.clipboard.writeText(window.location.href).catch(() => {}); setShowMenu(false); } },
               { icon: "Share2", label: "Поделиться", action: () => { setShowMenu(false); setShowShare(true); } },
