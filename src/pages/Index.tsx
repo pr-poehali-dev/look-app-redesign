@@ -25,6 +25,7 @@ const Index = () => {
   })();
   const [activeTab, setActiveTab] = useState(initialCommunityFromUrl ? "messages" : "home");
   const [activeCategory, setActiveCategory] = useState("all");
+  const [mobileCatOpen, setMobileCatOpen] = useState(false);
   const [showLive, setShowLive] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [pendingCommunityId, setPendingCommunityId] = useState<string | null>(initialCommunityFromUrl);
@@ -120,23 +121,59 @@ const Index = () => {
             </button>
           </div>
           {activeTab === "home" && (
-            <div className="pointer-events-auto overflow-x-scroll scrollbar-none px-4 pb-2" style={{ scrollbarWidth: "none" }}>
-              <div className="flex gap-2 w-max">
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setActiveCategory(cat.id)}
-                    className={`px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                      activeCategory === cat.id
-                        ? "bg-white text-black"
-                        : "bg-white/10 text-white/70 hover:bg-white/20"
-                    }`}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
+            <>
+              {/* Десктоп: горизонтальный список категорий */}
+              <div className="hidden md:block pointer-events-auto overflow-x-scroll scrollbar-none px-4 pb-2" style={{ scrollbarWidth: "none" }}>
+                <div className="flex gap-2 w-max">
+                  {CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setActiveCategory(cat.id)}
+                      className={`px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                        activeCategory === cat.id
+                          ? "bg-white text-black"
+                          : "bg-white/10 text-white/70 hover:bg-white/20"
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+
+              {/* Мобайл: только текущая категория, по тапу — раскрывается вниз */}
+              <div className="md:hidden pointer-events-auto px-4 pb-2 relative">
+                <button
+                  onClick={() => setMobileCatOpen((v) => !v)}
+                  className="px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap bg-white text-black flex items-center gap-1"
+                >
+                  {CATEGORIES.find((c) => c.id === activeCategory)?.label || "Все"}
+                  <Icon name={mobileCatOpen ? "ChevronUp" : "ChevronDown"} size={14} />
+                </button>
+                {mobileCatOpen && (
+                  <div className="absolute left-4 right-4 top-full mt-1 bg-black/90 backdrop-blur rounded-2xl p-2 max-h-[60vh] overflow-y-auto z-40 border border-white/10">
+                    <div className="flex flex-wrap gap-2">
+                      {CATEGORIES.map((cat) => (
+                        <button
+                          key={cat.id}
+                          onClick={() => {
+                            setActiveCategory(cat.id);
+                            setMobileCatOpen(false);
+                          }}
+                          className={`px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                            activeCategory === cat.id
+                              ? "bg-white text-black"
+                              : "bg-white/10 text-white/80 hover:bg-white/20"
+                          }`}
+                        >
+                          {cat.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
 
