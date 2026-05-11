@@ -36,14 +36,11 @@ const PostCard = ({ post }: { post: Post }) => {
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5">
         <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: post.handle } }))}
-            className="w-8 h-8 rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] active:scale-95 transition-transform"
-          >
+          <div className="w-8 h-8 rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]">
             <div className="w-full h-full rounded-full overflow-hidden border-2 border-black">
               <UserAvatar src={post.avatar} name={post.author || post.handle} alt={post.author} />
             </div>
-          </button>
+          </div>
           <div>
             <div className="flex items-center gap-1.5">
               <button
