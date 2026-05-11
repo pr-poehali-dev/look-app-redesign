@@ -1,3 +1,6 @@
+const isMobile = () => typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+const isIOS = () => typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
 export const HQ_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   echoCancellation: true,
   noiseSuppression: true,
@@ -5,6 +8,23 @@ export const HQ_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   channelCount: 1,
   sampleRate: 48000,
   sampleSize: 16,
+  ...(isMobile()
+    ? {
+        latency: 0.01,
+      }
+    : {}),
+  // Vendor-prefixed hints (Chrome/Android)
+  ...({
+    googEchoCancellation: true,
+    googEchoCancellation2: true,
+    googAutoGainControl: true,
+    googAutoGainControl2: true,
+    googNoiseSuppression: true,
+    googNoiseSuppression2: true,
+    googHighpassFilter: true,
+    googTypingNoiseDetection: true,
+    googAudioMirroring: false,
+  } as MediaTrackConstraints),
 };
 
 export const applyAudioTrackTuning = (stream: MediaStream | null | undefined) => {
@@ -18,6 +38,43 @@ export const applyAudioTrackTuning = (stream: MediaStream | null | undefined) =>
   });
 };
 
+let audioCtxUnlocked = false;
+export const unlockMobileAudio = async () => {
+  if (audioCtxUnlocked) return;
+  try {
+    const Ctx = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    if (ctx.state === 'suspended') await ctx.resume();
+    const buffer = ctx.createBuffer(1, 1, 22050);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.start(0);
+    audioCtxUnlocked = true;
+  } catch {
+    /* noop */
+  }
+};
+
+export const tuneRemoteAudioElement = (el: HTMLAudioElement | HTMLVideoElement | null | undefined) => {
+  if (!el) return;
+  try {
+    el.volume = 1;
+    el.muted = false;
+    (el as HTMLAudioElement).autoplay = true;
+    el.setAttribute('playsinline', 'true');
+    el.setAttribute('webkit-playsinline', 'true');
+    if (isIOS() && 'sinkId' in el) {
+      // Force speaker output on iOS PWA when supported
+      const anyEl = el as HTMLAudioElement & { setSinkId?: (id: string) => Promise<void> };
+      anyEl.setSinkId?.('').catch(() => {});
+    }
+  } catch {
+    /* noop */
+  }
+};
+
 export const tuneAudioSenders = async (pc: RTCPeerConnection | null | undefined) => {
   if (!pc) return;
   try {
@@ -28,7 +85,7 @@ export const tuneAudioSenders = async (pc: RTCPeerConnection | null | undefined)
         params.encodings = [{}];
       }
       params.encodings.forEach(enc => {
-        enc.maxBitrate = 64000;
+        enc.maxBitrate = isMobile() ? 48000 : 64000;
         enc.priority = 'high';
         enc.networkPriority = 'high';
       });
@@ -42,6 +99,8 @@ export const tuneAudioSenders = async (pc: RTCPeerConnection | null | undefined)
 export const boostOpusInSdp = (sdp: string): string => {
   if (!sdp) return sdp;
   try {
+    const mobile = isMobile();
+    const bitrate = mobile ? '48000' : '64000';
     return sdp.replace(/a=fmtp:(\d+) ([^\r\n]*opus[^\r\n]*)/gi, (_match, pt, rest) => {
       let updated = rest;
       const set = (key: string, value: string) => {
@@ -51,12 +110,14 @@ export const boostOpusInSdp = (sdp: string): string => {
           updated += `;${key}=${value}`;
         }
       };
-      set('stereo', '1');
-      set('sprop-stereo', '1');
-      set('maxaveragebitrate', '64000');
+      set('stereo', mobile ? '0' : '1');
+      set('sprop-stereo', mobile ? '0' : '1');
+      set('maxaveragebitrate', bitrate);
       set('maxplaybackrate', '48000');
       set('useinbandfec', '1');
       set('usedtx', '0');
+      set('cbr', '0');
+      set('minptime', '10');
       return `a=fmtp:${pt} ${updated}`;
     });
   } catch {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { RTC_CONFIG, getRtcConfig } from "@/lib/webrtc-config";
-import { HQ_AUDIO_CONSTRAINTS, applyAudioTrackTuning, boostOpusInSdp, tuneAudioSenders } from "@/lib/audioConstraints";
+import { HQ_AUDIO_CONSTRAINTS, applyAudioTrackTuning, boostOpusInSdp, tuneAudioSenders, unlockMobileAudio, tuneRemoteAudioElement } from "@/lib/audioConstraints";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
@@ -339,6 +339,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
           }
         }
         applyAudioTrackTuning(stream);
+        unlockMobileAudio();
         localStreamRef.current = stream;
         stream.getTracks().forEach((t) => pc.addTrack(t, stream as MediaStream));
         if (localVideoRef.current) {
@@ -372,9 +373,12 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         const remoteStream = e.streams[0];
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = remoteStream;
+          tuneRemoteAudioElement(remoteVideoRef.current);
         }
         if (remoteAudioRef.current) {
           remoteAudioRef.current.srcObject = remoteStream;
+          tuneRemoteAudioElement(remoteAudioRef.current);
+          unlockMobileAudio();
           const playPromise = remoteAudioRef.current.play();
           if (playPromise) playPromise.catch((err) => console.warn("[CallScreen] audio play failed", err));
         }

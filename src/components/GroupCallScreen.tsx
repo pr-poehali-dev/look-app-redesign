@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { RTC_CONFIG, fetchIceServers } from "@/lib/webrtc-config";
-import { HQ_AUDIO_CONSTRAINTS, applyAudioTrackTuning, boostOpusInSdp, tuneAudioSenders } from "@/lib/audioConstraints";
+import { HQ_AUDIO_CONSTRAINTS, applyAudioTrackTuning, boostOpusInSdp, tuneAudioSenders, unlockMobileAudio, tuneRemoteAudioElement } from "@/lib/audioConstraints";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
@@ -154,6 +154,7 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
         }
         if (!mounted) { stream.getTracks().forEach(t => t.stop()); return; }
         applyAudioTrackTuning(stream);
+        unlockMobileAudio();
         localStreamRef.current = stream;
         if (localVideoRef.current) localVideoRef.current.srcObject = stream;
       } catch (e) {
@@ -255,7 +256,7 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
       ) : (
         <div className="flex-1 flex flex-wrap gap-5 px-6 pt-8 content-start">
           <AudioBubble name={`${myName} (Вы)`} muted={muted} />
-          {peers.map(p => <AudioBubble key={p.id} name={p.name} muted={false} />)}
+          {peers.map(p => <AudioBubble key={p.id} name={p.name} muted={false} stream={p.stream} />)}
           {peers.length === 0 && (
             <p className="w-full text-center text-white/25 text-sm mt-6">Ожидание участников...</p>
           )}
@@ -287,7 +288,12 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
 
 const RemoteVideoTile = ({ peer, stream }: { peer: PeerEntry; stream: MediaStream | null }) => {
   const ref = useRef<HTMLVideoElement>(null);
-  useEffect(() => { if (ref.current) ref.current.srcObject = stream; }, [stream]);
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.srcObject = stream;
+      tuneRemoteAudioElement(ref.current);
+    }
+  }, [stream]);
   return (
     <div className="relative rounded-2xl overflow-hidden bg-zinc-900 aspect-video">
       <video ref={ref} autoPlay playsInline className="w-full h-full object-cover" />
@@ -305,18 +311,29 @@ const RemoteVideoTile = ({ peer, stream }: { peer: PeerEntry; stream: MediaStrea
   );
 };
 
-const AudioBubble = ({ name, muted }: { name: string; muted: boolean }) => (
-  <div className="flex flex-col items-center gap-2 w-20">
-    <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-[#fe2c55]/30 to-[#8b5cf6]/30 border border-white/10 flex items-center justify-center">
-      <span className="text-white font-bold text-xl">{name.charAt(0).toUpperCase()}</span>
-      {muted && (
-        <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center border-2 border-black">
-          <Icon name="MicOff" size={10} className="text-white" />
-        </div>
-      )}
+const AudioBubble = ({ name, muted, stream }: { name: string; muted: boolean; stream?: MediaStream | null }) => {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  useEffect(() => {
+    if (audioRef.current && stream) {
+      audioRef.current.srcObject = stream;
+      tuneRemoteAudioElement(audioRef.current);
+      audioRef.current.play().catch(() => {});
+    }
+  }, [stream]);
+  return (
+    <div className="flex flex-col items-center gap-2 w-20">
+      {stream && <audio ref={audioRef} autoPlay playsInline className="hidden" />}
+      <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-[#fe2c55]/30 to-[#8b5cf6]/30 border border-white/10 flex items-center justify-center">
+        <span className="text-white font-bold text-xl">{name.charAt(0).toUpperCase()}</span>
+        {muted && (
+          <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center border-2 border-black">
+            <Icon name="MicOff" size={10} className="text-white" />
+          </div>
+        )}
+      </div>
+      <span className="text-white/50 text-[10px] text-center truncate w-full">{name}</span>
     </div>
-    <span className="text-white/50 text-[10px] text-center truncate w-full">{name}</span>
-  </div>
-);
+  );
+};
 
 export default GroupCallScreen;
