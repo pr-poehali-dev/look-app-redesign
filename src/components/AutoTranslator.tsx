@@ -1,15 +1,35 @@
 import { useEffect } from "react";
 
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    google?: any;
-    googleTranslateElementInit?: () => void;
-  }
-}
+const SUPPORTED = new Set(["en", "de", "fr", "es", "zh"]);
+const CACHE_KEY = "mm_translate_cache_v1";
 
-const GT_LANG_MAP: Record<string, string> = {
-  ru: "ru",
+type Cache = Record<string, Record<string, string>>;
+
+const loadCache = (): Cache => {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+};
+
+const saveCache = (cache: Cache) => {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // ignore quota errors
+  }
+};
+
+const cache: Cache = loadCache();
+let saveTimer: number | null = null;
+const scheduleSave = () => {
+  if (saveTimer) window.clearTimeout(saveTimer);
+  saveTimer = window.setTimeout(() => saveCache(cache), 500);
+};
+
+const TARGET_LANG_MAP: Record<string, string> = {
   en: "en",
   de: "de",
   fr: "fr",
@@ -17,108 +37,151 @@ const GT_LANG_MAP: Record<string, string> = {
   zh: "zh-CN",
 };
 
-const setGoogleTranslateCookie = (lang: string) => {
-  const value = `/ru/${lang}`;
-  const expires = new Date();
-  expires.setFullYear(expires.getFullYear() + 1);
-  const opts = `expires=${expires.toUTCString()};path=/`;
-  document.cookie = `googtrans=${value};${opts}`;
-  const host = window.location.hostname;
-  if (host && host !== "localhost") {
-    document.cookie = `googtrans=${value};${opts};domain=${host}`;
-    const parts = host.split(".");
-    if (parts.length >= 2) {
-      const root = parts.slice(-2).join(".");
-      document.cookie = `googtrans=${value};${opts};domain=.${root}`;
+const translateText = async (text: string, target: string): Promise<string> => {
+  const trimmed = text.trim();
+  if (!trimmed) return text;
+  if (!cache[target]) cache[target] = {};
+  if (cache[target][trimmed]) return text.replace(trimmed, cache[target][trimmed]);
+
+  try {
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(trimmed)}&langpair=ru|${TARGET_LANG_MAP[target] || target}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const translated = data?.responseData?.translatedText as string | undefined;
+    if (translated && typeof translated === "string") {
+      cache[target][trimmed] = translated;
+      scheduleSave();
+      return text.replace(trimmed, translated);
     }
+  } catch {
+    // ignore network errors
+  }
+  return text;
+};
+
+const SKIP_TAGS = new Set([
+  "SCRIPT", "STYLE", "NOSCRIPT", "IFRAME", "INPUT", "TEXTAREA", "CODE", "PRE",
+]);
+
+const collectTextNodes = (root: Node): Text[] => {
+  const result: Text[] = [];
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode: (node) => {
+      const parent = node.parentElement;
+      if (!parent) return NodeFilter.FILTER_REJECT;
+      if (SKIP_TAGS.has(parent.tagName)) return NodeFilter.FILTER_REJECT;
+      if (parent.closest("[data-no-translate]")) return NodeFilter.FILTER_REJECT;
+      const text = node.nodeValue?.trim();
+      if (!text) return NodeFilter.FILTER_REJECT;
+      if (!/[А-Яа-яЁё]/.test(text)) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+  let n: Node | null;
+  while ((n = walker.nextNode())) result.push(n as Text);
+  return result;
+};
+
+let activeLang = "ru";
+let translating = false;
+
+const translateNode = async (node: Text, target: string) => {
+  const original = node.nodeValue;
+  if (!original) return;
+  const trimmed = original.trim();
+  if (!trimmed) return;
+  if (cache[target]?.[trimmed]) {
+    node.nodeValue = original.replace(trimmed, cache[target][trimmed]);
+    return;
+  }
+  const result = await translateText(original, target);
+  if (result !== original && node.nodeValue === original) {
+    node.nodeValue = result;
   }
 };
 
-const removeGoogleTranslateCookie = () => {
-  const expired = "expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
-  document.cookie = `googtrans=;${expired}`;
-  const host = window.location.hostname;
-  if (host && host !== "localhost") {
-    document.cookie = `googtrans=;${expired};domain=${host}`;
-    const parts = host.split(".");
-    if (parts.length >= 2) {
-      const root = parts.slice(-2).join(".");
-      document.cookie = `googtrans=;${expired};domain=.${root}`;
+const translatePage = async (target: string) => {
+  if (target === "ru" || translating) return;
+  translating = true;
+  try {
+    const nodes = collectTextNodes(document.body);
+    const batchSize = 6;
+    for (let i = 0; i < nodes.length; i += batchSize) {
+      const batch = nodes.slice(i, i + batchSize);
+      await Promise.all(batch.map((n) => translateNode(n, target)));
     }
+  } finally {
+    translating = false;
   }
 };
 
-const loadGoogleTranslate = () => {
-  if (!document.getElementById("google_translate_element")) {
-    const div = document.createElement("div");
-    div.id = "google_translate_element";
-    div.style.display = "none";
-    document.body.appendChild(div);
-  }
-
-  if (document.getElementById("google-translate-script")) return;
-
-  window.googleTranslateElementInit = () => {
-    if (!window.google?.translate?.TranslateElement) return;
-    new window.google.translate.TranslateElement(
-      {
-        pageLanguage: "ru",
-        includedLanguages: "en,de,fr,es,zh-CN,ru",
-        autoDisplay: false,
-        layout: 0,
-      },
-      "google_translate_element"
-    );
-  };
-
-  const script = document.createElement("script");
-  script.id = "google-translate-script";
-  script.src =
-    "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-  script.async = true;
-  document.body.appendChild(script);
+const setupObserver = (target: string) => {
+  const observer = new MutationObserver((mutations) => {
+    if (activeLang === "ru") return;
+    const newNodes: Text[] = [];
+    for (const m of mutations) {
+      m.addedNodes.forEach((added) => {
+        if (added.nodeType === Node.TEXT_NODE) {
+          const text = (added as Text).nodeValue?.trim();
+          if (text && /[А-Яа-яЁё]/.test(text)) newNodes.push(added as Text);
+        } else if (added.nodeType === Node.ELEMENT_NODE) {
+          newNodes.push(...collectTextNodes(added));
+        }
+      });
+      if (m.type === "characterData" && m.target.nodeType === Node.TEXT_NODE) {
+        const t = (m.target as Text).nodeValue?.trim();
+        if (t && /[А-Яа-яЁё]/.test(t)) newNodes.push(m.target as Text);
+      }
+    }
+    if (newNodes.length === 0) return;
+    (async () => {
+      const batchSize = 6;
+      for (let i = 0; i < newNodes.length; i += batchSize) {
+        const batch = newNodes.slice(i, i + batchSize);
+        await Promise.all(batch.map((n) => translateNode(n, target)));
+      }
+    })();
+  });
+  observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+  return observer;
 };
 
-const hideGoogleUI = () => {
-  if (document.getElementById("gt-style")) return;
-  const style = document.createElement("style");
-  style.id = "gt-style";
-  style.textContent = `
-    .goog-te-banner-frame, .skiptranslate, #goog-gt-tt, .goog-te-balloon-frame { display: none !important; }
-    body { top: 0 !important; position: static !important; }
-    .goog-tooltip, .goog-tooltip:hover { display: none !important; }
-    .goog-text-highlight { background: none !important; box-shadow: none !important; }
-    #google_translate_element { display: none !important; }
-    iframe.goog-te-menu-frame { display: none !important; }
-    font[style] { background: transparent !important; box-shadow: none !important; }
-  `;
-  document.head.appendChild(style);
-};
+let currentObserver: MutationObserver | null = null;
 
-const applyLanguage = (code: string) => {
-  const gtLang = GT_LANG_MAP[code] || "ru";
-  if (gtLang === "ru") {
-    removeGoogleTranslateCookie();
-  } else {
-    setGoogleTranslateCookie(gtLang);
+const applyLanguage = async (code: string) => {
+  activeLang = code;
+  if (currentObserver) {
+    currentObserver.disconnect();
+    currentObserver = null;
   }
-  setTimeout(() => window.location.reload(), 50);
+
+  if (code === "ru" || !SUPPORTED.has(code)) {
+    if (sessionStorage.getItem("had_translation") === "1") {
+      sessionStorage.removeItem("had_translation");
+      window.location.reload();
+    }
+    return;
+  }
+
+  sessionStorage.setItem("had_translation", "1");
+  await translatePage(code);
+  currentObserver = setupObserver(code);
 };
 
 export const AutoTranslator = () => {
   useEffect(() => {
-    hideGoogleUI();
-
     const stored = localStorage.getItem("app_lang") || "ru";
-    const gtLang = GT_LANG_MAP[stored] || "ru";
-
-    if (gtLang !== "ru") {
-      setGoogleTranslateCookie(gtLang);
-      loadGoogleTranslate();
+    if (stored !== "ru" && SUPPORTED.has(stored)) {
+      applyLanguage(stored);
     }
 
     const handleCustom = (e: Event) => {
       const detail = (e as CustomEvent<string>).detail || "ru";
+      try {
+        localStorage.setItem("app_lang", detail);
+      } catch {
+        // ignore
+      }
       applyLanguage(detail);
     };
 
