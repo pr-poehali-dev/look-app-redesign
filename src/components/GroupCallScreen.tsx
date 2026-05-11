@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { RTC_CONFIG, fetchIceServers } from "@/lib/webrtc-config";
 import { HQ_AUDIO_CONSTRAINTS, applyAudioTrackTuning, boostOpusInSdp, tuneAudioSenders, unlockMobileAudio, tuneRemoteAudioElement } from "@/lib/audioConstraints";
+import { useSpeakingDetector } from "@/hooks/useSpeakingDetector";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
@@ -28,7 +29,9 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
   const [seconds, setSeconds] = useState(0);
   const [status, setStatus] = useState<"connecting" | "connected">("connecting");
   const [speakerOn, setSpeakerOn] = useState(true);
+  const [myStream, setMyStream] = useState<MediaStream | null>(null);
   const audioElsRef = useRef<Set<HTMLMediaElement>>(new Set());
+  const mySpeaking = useSpeakingDetector(muted ? null : myStream);
 
   const registerAudioEl = useCallback((el: HTMLMediaElement | null, on: boolean) => {
     if (!el) return;
@@ -187,6 +190,7 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
         applyAudioTrackTuning(stream);
         unlockMobileAudio();
         localStreamRef.current = stream;
+        setMyStream(stream);
         if (localVideoRef.current) localVideoRef.current.srcObject = stream;
       } catch (e) {
         console.error("[GroupCall] getUserMedia FAILED", e);
@@ -264,7 +268,7 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
 
       {mode === "video" ? (
         <div className="flex-1 p-1 grid gap-1 overflow-hidden" style={{ gridTemplateColumns: cols, alignContent: "start" }}>
-          <div className="relative rounded-2xl overflow-hidden bg-zinc-900 aspect-video">
+          <div className={`relative rounded-2xl overflow-hidden bg-zinc-900 aspect-video transition-all ${mySpeaking ? "ring-[3px] ring-[#22c55e] shadow-[0_0_20px_rgba(34,197,94,0.5)]" : ""}`}>
             <video ref={localVideoRef} autoPlay muted playsInline className={`w-full h-full object-cover ${cameraOff ? "opacity-0" : ""}`} />
             {cameraOff && (
               <div className="absolute inset-0 flex items-center justify-center">
@@ -273,7 +277,8 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
                 </div>
               </div>
             )}
-            <div className="absolute bottom-1.5 left-2 bg-black/60 px-2 py-0.5 rounded-full">
+            <div className={`absolute bottom-1.5 left-2 px-2 py-0.5 rounded-full flex items-center gap-1 ${mySpeaking ? "bg-[#22c55e]" : "bg-black/60"}`}>
+              {mySpeaking && <Icon name="Mic" size={10} className="text-white" />}
               <span className="text-white text-[11px]">Вы</span>
             </div>
           </div>
@@ -286,7 +291,7 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
         </div>
       ) : (
         <div className="flex-1 flex flex-wrap gap-5 px-6 pt-8 content-start">
-          <AudioBubble name={`${myName} (Вы)`} muted={muted} />
+          <AudioBubble name={`${myName} (Вы)`} muted={muted} speaking={mySpeaking} />
           {peers.map(p => <AudioBubble key={p.id} name={p.name} muted={false} stream={p.stream} onElement={registerAudioEl} />)}
           {peers.length === 0 && (
             <p className="w-full text-center text-white/25 text-sm mt-6">Ожидание участников...</p>
@@ -325,6 +330,7 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
 
 const RemoteVideoTile = ({ peer, stream, onElement }: { peer: PeerEntry; stream: MediaStream | null; onElement?: (el: HTMLMediaElement | null, on: boolean) => void }) => {
   const ref = useRef<HTMLVideoElement>(null);
+  const speaking = useSpeakingDetector(stream);
   useEffect(() => {
     if (ref.current) {
       ref.current.srcObject = stream;
@@ -334,7 +340,7 @@ const RemoteVideoTile = ({ peer, stream, onElement }: { peer: PeerEntry; stream:
     return () => { if (ref.current) onElement?.(ref.current, false); };
   }, [stream, onElement]);
   return (
-    <div className="relative rounded-2xl overflow-hidden bg-zinc-900 aspect-video">
+    <div className={`relative rounded-2xl overflow-hidden bg-zinc-900 aspect-video transition-all ${speaking ? "ring-[3px] ring-[#22c55e] shadow-[0_0_20px_rgba(34,197,94,0.5)]" : ""}`}>
       <video ref={ref} autoPlay playsInline className="w-full h-full object-cover" />
       {!stream && (
         <div className="absolute inset-0 flex items-center justify-center">
@@ -343,15 +349,18 @@ const RemoteVideoTile = ({ peer, stream, onElement }: { peer: PeerEntry; stream:
           </div>
         </div>
       )}
-      <div className="absolute bottom-1.5 left-2 bg-black/60 px-2 py-0.5 rounded-full">
+      <div className={`absolute bottom-1.5 left-2 px-2 py-0.5 rounded-full flex items-center gap-1 ${speaking ? "bg-[#22c55e]" : "bg-black/60"}`}>
+        {speaking && <Icon name="Mic" size={10} className="text-white" />}
         <span className="text-white text-[11px]">{peer.name}</span>
       </div>
     </div>
   );
 };
 
-const AudioBubble = ({ name, muted, stream, onElement }: { name: string; muted: boolean; stream?: MediaStream | null; onElement?: (el: HTMLMediaElement | null, on: boolean) => void }) => {
+const AudioBubble = ({ name, muted, stream, onElement, speaking: speakingProp }: { name: string; muted: boolean; stream?: MediaStream | null; onElement?: (el: HTMLMediaElement | null, on: boolean) => void; speaking?: boolean }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const detected = useSpeakingDetector(speakingProp === undefined ? stream : null);
+  const speaking = speakingProp !== undefined ? speakingProp : detected;
   useEffect(() => {
     if (audioRef.current && stream) {
       audioRef.current.srcObject = stream;
@@ -364,7 +373,9 @@ const AudioBubble = ({ name, muted, stream, onElement }: { name: string; muted: 
   return (
     <div className="flex flex-col items-center gap-2 w-20">
       {stream && <audio ref={audioRef} autoPlay playsInline className="hidden" />}
-      <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-[#fe2c55]/30 to-[#8b5cf6]/30 border border-white/10 flex items-center justify-center">
+      <div
+        className={`relative w-16 h-16 rounded-full bg-gradient-to-br from-[#fe2c55]/30 to-[#8b5cf6]/30 flex items-center justify-center transition-all duration-150 ${speaking ? "ring-[3px] ring-[#22c55e] scale-105 shadow-[0_0_20px_rgba(34,197,94,0.6)]" : "border border-white/10"}`}
+      >
         <span className="text-white font-bold text-xl">{name.charAt(0).toUpperCase()}</span>
         {muted && (
           <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center border-2 border-black">
@@ -372,7 +383,7 @@ const AudioBubble = ({ name, muted, stream, onElement }: { name: string; muted: 
           </div>
         )}
       </div>
-      <span className="text-white/50 text-[10px] text-center truncate w-full">{name}</span>
+      <span className={`text-[10px] text-center truncate w-full ${speaking ? "text-[#22c55e]" : "text-white/50"}`}>{name}</span>
     </div>
   );
 };
