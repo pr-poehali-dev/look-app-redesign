@@ -31,6 +31,7 @@ const Index = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [pendingCommunityId, setPendingCommunityId] = useState<string | null>(initialCommunityFromUrl);
   const [profileHandle, setProfileHandle] = useState<string | null>(null);
+  const [pendingDirectHandle, setPendingDirectHandle] = useState<string | null>(null);
   const { totalUnread } = useUnread();
 
   useEffect(() => {
@@ -38,8 +39,10 @@ const Index = () => {
       const detail = (e as CustomEvent).detail as { handle?: string };
       if (detail?.handle) setProfileHandle(detail.handle);
     };
-    const onMessage = () => {
+    const onMessage = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { handle?: string };
       setProfileHandle(null);
+      if (detail?.handle) setPendingDirectHandle(detail.handle);
       setActiveTab("messages");
     };
     window.addEventListener("open-user-profile", onOpen);
@@ -210,6 +213,8 @@ const Index = () => {
             <MessagesScreen
               initialCommunityId={pendingCommunityId}
               onCommunityConsumed={() => setPendingCommunityId(null)}
+              initialDirectHandle={pendingDirectHandle}
+              onDirectConsumed={() => setPendingDirectHandle(null)}
             />
           )}
           {activeTab === "profile" && <ProfilePage />}

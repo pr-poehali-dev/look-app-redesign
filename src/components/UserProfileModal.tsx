@@ -3,35 +3,16 @@ import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { getAuthor } from "@/data/authors";
+import { useFollowing } from "@/hooks/useFollowing";
 
 interface Props {
   handle: string;
   onClose: () => void;
 }
 
-const FOLLOWING_KEY = "following_handles_v1";
-
-const readFollowing = (): string[] => {
-  try {
-    const raw = localStorage.getItem(FOLLOWING_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-};
-
-const writeFollowing = (list: string[]) => {
-  try {
-    localStorage.setItem(FOLLOWING_KEY, JSON.stringify(list));
-    window.dispatchEvent(new CustomEvent("following-change"));
-  } catch {
-    // ignore
-  }
-};
-
 const UserProfileModal = ({ handle, onClose }: Props) => {
   const data = getAuthor(handle);
-  const [following, setFollowing] = useState(() => readFollowing().includes(handle));
+  const { following, toggle: toggleFollow } = useFollowing(handle);
   const [tab, setTab] = useState<"grid" | "tagged">("grid");
   const [openedItem, setOpenedItem] = useState<number | null>(null);
 
@@ -49,17 +30,6 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
       window.removeEventListener("keydown", onKey);
     };
   }, [onClose, openedItem]);
-
-  const toggleFollow = () => {
-    const list = readFollowing();
-    if (list.includes(handle)) {
-      writeFollowing(list.filter(h => h !== handle));
-      setFollowing(false);
-    } else {
-      writeFollowing([handle, ...list]);
-      setFollowing(true);
-    }
-  };
 
   const openMessage = () => {
     onClose();

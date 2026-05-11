@@ -36,9 +36,11 @@ type Tab = "chats" | "communities" | "calls";
 interface MessagesScreenProps {
   initialCommunityId?: string | null;
   onCommunityConsumed?: () => void;
+  initialDirectHandle?: string | null;
+  onDirectConsumed?: () => void;
 }
 
-const MessagesScreen = ({ initialCommunityId, onCommunityConsumed }: MessagesScreenProps = {}) => {
+const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirectHandle, onDirectConsumed }: MessagesScreenProps = {}) => {
   const [tab, setTab] = useState<Tab>(initialCommunityId ? "communities" : "chats");
   const [openChat, setOpenChat] = useState<Chat | null>(null);
   const [search, setSearch] = useState("");
@@ -101,6 +103,30 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed }: MessagesScr
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
     };
   }, [user]);
+
+  useEffect(() => {
+    if (!initialDirectHandle || !user) return;
+    let cancelled = false;
+    import("@/data/authors").then(({ getAuthor }) => {
+      if (cancelled) return;
+      const author = getAuthor(initialDirectHandle);
+      const peerId = `handle_${initialDirectHandle}`;
+      const chat: Chat = {
+        id: `dm_${[user.id, peerId].sort().join("_")}`,
+        type: "personal",
+        name: author.name || initialDirectHandle,
+        avatar: author.avatar || "",
+        lastMsg: "",
+        time: "сейчас",
+        unread: 0,
+        online: false,
+      };
+      setTab("chats");
+      setOpenChat(chat);
+      onDirectConsumed?.();
+    });
+    return () => { cancelled = true; };
+  }, [initialDirectHandle, user]);
 
   const handleCreateChat = async () => {
     if (!newChatName.trim() || !user) return;

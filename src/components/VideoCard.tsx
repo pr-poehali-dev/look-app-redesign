@@ -5,6 +5,7 @@ import UserAvatar from "@/components/ui/user-avatar";
 import { useComments } from "@/hooks/useComments";
 import { useLikes } from "@/hooks/useLikes";
 import { useSavedItem } from "@/hooks/useSaved";
+import { useFollowing } from "@/hooks/useFollowing";
 
 export interface VideoData {
   id: number;
@@ -31,7 +32,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
     title: video.description,
     handle: video.handle,
   });
-  const [following, setFollowing] = useState(false);
+  const { following, toggle: toggleFollow } = useFollowing(video.handle);
   const [paused, setPaused] = useState(false);
   const [showPauseIcon, setShowPauseIcon] = useState(false);
   const [muted, setMuted] = useState(true);
@@ -127,18 +128,20 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
           >
             @{video.handle}
           </button>
-          {!following && (
+          {!following ? (
             <button
-              onClick={() => setFollowing(true)}
+              onClick={toggleFollow}
               className="px-3 py-0.5 rounded-full border border-white text-white text-xs font-semibold hover:bg-white hover:text-black transition-all"
             >
               Подписаться
             </button>
-          )}
-          {following && (
-            <span className="px-3 py-0.5 rounded-full bg-white/20 text-white text-xs font-semibold">
+          ) : (
+            <button
+              onClick={toggleFollow}
+              className="px-3 py-0.5 rounded-full bg-white/20 text-white text-xs font-semibold"
+            >
               Вы подписаны
-            </span>
+            </button>
           )}
         </div>
         {video.description && (() => {
@@ -167,8 +170,8 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
         {/* Avatar */}
         <button
           className="relative mb-2"
-          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setFollowing(f => !f); }}
-          onClick={() => setFollowing(f => !f)}
+          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); toggleFollow(); }}
+          onClick={toggleFollow}
           style={{ touchAction: "manipulation" }}
         >
           <div className={`w-12 h-12 rounded-full overflow-hidden border-2 ${following ? "border-[#fe2c55]" : "border-white"}`}>
@@ -261,7 +264,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
       <div className="hidden md:flex flex-col items-center gap-3 z-30 flex-shrink-0 justify-end pb-6">
         {/* Avatar */}
         <button
-          onClick={() => setFollowing(f => !f)}
+          onClick={toggleFollow}
           className="relative mb-2"
         >
           <div className={`w-12 h-12 rounded-full overflow-hidden border-2 ${following ? "border-[#fe2c55]" : "border-white"}`}>

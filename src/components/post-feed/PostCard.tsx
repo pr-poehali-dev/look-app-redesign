@@ -6,6 +6,7 @@ import { Post, formatLikes } from "./PostFeedTypes";
 import { useComments } from "@/hooks/useComments";
 import { useLikes } from "@/hooks/useLikes";
 import { useSavedItem } from "@/hooks/useSaved";
+import { useFollowing } from "@/hooks/useFollowing";
 
 const PostCard = ({ post }: { post: Post }) => {
   const { saved, toggle: toggleSaved } = useSavedItem("post", post.id, {
@@ -13,7 +14,7 @@ const PostCard = ({ post }: { post: Post }) => {
     title: post.caption,
     handle: post.handle,
   });
-  const [following, setFollowing] = useState(false);
+  const { following, toggle: toggleFollow } = useFollowing(post.handle);
   const [expanded, setExpanded] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showShare, setShowShare] = useState(false);
@@ -43,23 +44,18 @@ const PostCard = ({ post }: { post: Post }) => {
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: post.handle } }))}
-                className="text-white font-semibold text-[13px] active:opacity-70"
-              >
-                {post.handle}
-              </button>
+              <span className="text-white font-semibold text-[13px]">{post.handle}</span>
               <Icon name="BadgeCheck" size={12} className="text-[#61d4f0]" />
               {!following ? (
                 <button
-                  onClick={() => setFollowing(true)}
+                  onClick={toggleFollow}
                   className="ml-1 px-2 py-0.5 rounded-full bg-[#fe2c55] text-white text-[11px] font-semibold leading-none active:scale-95 transition-transform"
                 >
                   Подписаться
                 </button>
               ) : (
                 <button
-                  onClick={() => setFollowing(false)}
+                  onClick={toggleFollow}
                   className="ml-1 px-2 py-0.5 rounded-full bg-white/10 text-white text-[11px] font-semibold leading-none active:scale-95 transition-transform"
                 >
                   Вы подписаны
