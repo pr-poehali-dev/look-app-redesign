@@ -121,7 +121,12 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
       {/* Bottom left info — внутри видео */}
       <div className="absolute bottom-20 left-4 z-10" style={{ right: '80px' }}>
         <div className="flex items-center gap-2 mb-3">
-          <span className="font-bold text-white text-base">@{video.handle}</span>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: video.handle } }))}
+            className="font-bold text-white text-base active:opacity-70"
+          >
+            @{video.handle}
+          </button>
           {!following && (
             <button
               onClick={() => setFollowing(true)}

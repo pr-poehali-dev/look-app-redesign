@@ -38,8 +38,16 @@ const Index = () => {
       const detail = (e as CustomEvent).detail as { handle?: string };
       if (detail?.handle) setProfileHandle(detail.handle);
     };
+    const onMessage = () => {
+      setProfileHandle(null);
+      setActiveTab("messages");
+    };
     window.addEventListener("open-user-profile", onOpen);
-    return () => window.removeEventListener("open-user-profile", onOpen);
+    window.addEventListener("open-direct-message", onMessage);
+    return () => {
+      window.removeEventListener("open-user-profile", onOpen);
+      window.removeEventListener("open-direct-message", onMessage);
+    };
   }, []);
 
   useEffect(() => {

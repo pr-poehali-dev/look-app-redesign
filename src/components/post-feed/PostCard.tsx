@@ -36,14 +36,22 @@ const PostCard = ({ post }: { post: Post }) => {
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: post.handle } }))}
+            className="w-8 h-8 rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] active:scale-95 transition-transform"
+          >
             <div className="w-full h-full rounded-full overflow-hidden border-2 border-black">
               <UserAvatar src={post.avatar} name={post.author || post.handle} alt={post.author} />
             </div>
-          </div>
+          </button>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-white font-semibold text-[13px]">{post.handle}</span>
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: post.handle } }))}
+                className="text-white font-semibold text-[13px] active:opacity-70"
+              >
+                {post.handle}
+              </button>
               <Icon name="BadgeCheck" size={12} className="text-[#61d4f0]" />
               {!following ? (
                 <button
