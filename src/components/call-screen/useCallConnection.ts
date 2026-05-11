@@ -634,7 +634,29 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
     setCameraOff((v) => !v);
   };
 
-  const toggleSpeaker = () => setSpeakerOn((v) => !v);
+  const toggleSpeaker = async () => {
+    const next = !speakerOn;
+    setSpeakerOn(next);
+    const audioEl = remoteAudioRef.current;
+    const videoEl = remoteVideoRef.current;
+    try {
+      if (audioEl) {
+        audioEl.volume = next ? 1 : 0.45;
+        const anyEl = audioEl as HTMLAudioElement & { setSinkId?: (id: string) => Promise<void> };
+        if (typeof anyEl.setSinkId === "function") {
+          try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const outs = devices.filter((d) => d.kind === "audiooutput");
+            const speaker = outs.find((d) => /speaker|speakerphone|default/i.test(d.label)) || outs[0];
+            const earpiece = outs.find((d) => /earpiece|receiver|handset|internal|телефон/i.test(d.label));
+            const target = next ? speaker : (earpiece || speaker);
+            if (target) await anyEl.setSinkId(target.deviceId).catch(() => {});
+          } catch (e) { void e; }
+        }
+      }
+      if (videoEl) videoEl.volume = next ? 1 : 0.45;
+    } catch (e) { void e; }
+  };
 
   return {
     seconds,
