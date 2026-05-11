@@ -139,8 +139,8 @@ const CameraPreview = ({
 
       {/* Uploaded media preview */}
       {uploadedMedia && (
-        <div className="absolute inset-0 z-30 bg-black flex flex-col md:flex-row md:overflow-hidden">
-          <div className="relative flex-1 md:flex-[1.4] md:min-h-0">
+        <div className="absolute inset-0 z-30 bg-black flex flex-col md:flex-row md:overflow-hidden overflow-y-auto md:overflow-y-hidden">
+          <div className="relative w-full h-[38vh] flex-shrink-0 md:h-auto md:flex-[1.4] md:min-h-0">
             {uploadedMedia.type === "image" ? (
               <img src={uploadedMedia.url} className="w-full h-full object-contain" alt="preview" />
             ) : (
@@ -148,13 +148,13 @@ const CameraPreview = ({
             )}
             <button
               onClick={onCloseMedia}
-              className="absolute top-14 left-5 md:top-5 md:left-5 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center"
+              className="absolute top-4 left-4 md:top-5 md:left-5 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center"
             >
               <Icon name="X" size={20} className="text-white" />
             </button>
           </div>
 
-          <div className="bg-black/90 px-4 pt-4 pb-10 flex flex-col gap-3 md:w-[420px] md:flex-shrink-0 md:overflow-y-auto md:py-6 md:border-l md:border-white/10">
+          <div className="bg-black/90 px-4 pt-4 pb-[max(28px,env(safe-area-inset-bottom))] flex flex-col gap-3 md:w-[420px] md:flex-shrink-0 md:overflow-y-auto md:py-6 md:border-l md:border-white/10">
 
             {/* Превью поста (только ПК) */}
             <div className="hidden md:block bg-zinc-900/60 border border-white/10 rounded-2xl p-3 mb-1">
