@@ -4,17 +4,11 @@ import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { useAuth } from "@/context/AuthContext";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
+import { useSavedList } from "@/hooks/useSaved";
 
 interface SettingsScreenProps {
   onBack: () => void;
 }
-
-const SAVED_ITEMS = [
-  { img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/d5398fcc-427a-4d1c-963f-7e6f079a7ba6.jpg", views: 142 },
-  { img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/5c280ad4-5edb-4bea-9ce4-5b7795d36707.jpg", views: 389 },
-  { img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/c8b8bf7c-7db9-4624-b5fd-0c96115cd5aa.jpg", views: 256 },
-  { img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/85269bc0-d690-47bb-b96f-3b41f8103627.jpg", views: 621 },
-];
 
 const LANGUAGES = SUPPORTED_LANGUAGES;
 
@@ -33,35 +27,47 @@ const NOTIFICATIONS = [
 ];
 
 // Sub-screens
-const SavedScreen = ({ onBack }: { onBack: () => void }) => (
-  <div className="h-full bg-gray-100 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-    <div className="md:max-w-2xl md:mx-auto">
-    <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
-      <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
-      <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Сохранённые</span>
-    </div>
-    {SAVED_ITEMS.length > 0 ? (
-      <div className="grid grid-cols-3 md:grid-cols-4 gap-px bg-gray-200 mt-2">
-        {SAVED_ITEMS.map((item, i) => (
-          <div key={i} className="relative aspect-square overflow-hidden bg-gray-200">
-            <img src={item.img} alt="" className="w-full h-full object-cover" />
-            <div className="absolute bottom-1.5 right-1.5 flex items-center gap-0.5">
-              <Icon name="Play" size={10} className="text-white drop-shadow" />
-              <span className="text-white text-[10px] font-semibold drop-shadow">{item.views}</span>
-            </div>
-          </div>
-        ))}
+const SavedScreen = ({ onBack }: { onBack: () => void }) => {
+  const items = useSavedList();
+  return (
+    <div className="h-full bg-gray-100 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
+      <div className="md:max-w-2xl md:mx-auto">
+      <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
+        <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
+        <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Сохранённые</span>
       </div>
-    ) : (
-      <div className="flex flex-col items-center justify-center mt-20 gap-3">
-        <Icon name="Bookmark" size={48} className="text-gray-300" />
-        <p className="text-gray-400 text-sm">Нет сохранённых видео</p>
+      {items.length > 0 ? (
+        <div className="grid grid-cols-3 md:grid-cols-4 gap-px bg-gray-200 mt-2">
+          {items.map(item => {
+            const isVideo = item.type === "video" || /\.(mp4|mov|webm)(\?|$)/i.test(item.image);
+            return (
+              <div key={`${item.type}:${item.id}`} className="relative aspect-square overflow-hidden bg-gray-200">
+                {isVideo ? (
+                  <video src={item.image} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                ) : (
+                  <img src={item.image} alt="" className="w-full h-full object-cover" />
+                )}
+                <div className="absolute bottom-1.5 right-1.5 flex items-center gap-0.5">
+                  <Icon name={item.type === "video" ? "Play" : "Image"} size={10} className="text-white drop-shadow" />
+                  {item.handle && (
+                    <span className="text-white text-[10px] font-semibold drop-shadow">@{item.handle}</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center mt-20 gap-3">
+          <Icon name="Bookmark" size={48} className="text-gray-300" />
+          <p className="text-gray-400 text-sm">Нет сохранённых видео</p>
+        </div>
+      )}
+      <div className="pb-28" />
       </div>
-    )}
-    <div className="pb-28" />
     </div>
-  </div>
-);
+  );
+};
 
 const LanguagesScreen = ({ onBack }: { onBack: () => void }) => {
   const { t, i18n } = useTranslation();

@@ -5,9 +5,14 @@ import UserAvatar from "@/components/ui/user-avatar";
 import { Post, formatLikes } from "./PostFeedTypes";
 import { useComments } from "@/hooks/useComments";
 import { useLikes } from "@/hooks/useLikes";
+import { useSavedItem } from "@/hooks/useSaved";
 
 const PostCard = ({ post }: { post: Post }) => {
-  const [saved, setSaved] = useState(false);
+  const { saved, toggle: toggleSaved } = useSavedItem("post", post.id, {
+    image: post.image,
+    title: post.caption,
+    handle: post.handle,
+  });
   const [following, setFollowing] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -88,7 +93,7 @@ const PostCard = ({ post }: { post: Post }) => {
             <Icon name="Send" size={24} className="text-white" style={{ transform: "rotate(-20deg)" }} />
           </button>
         </div>
-        <button onClick={() => setSaved(v => !v)} className="active:scale-90 transition-transform">
+        <button onClick={toggleSaved} className="active:scale-90 transition-transform">
           <Icon
             name="Bookmark"
             size={26}
@@ -139,7 +144,8 @@ const PostCard = ({ post }: { post: Post }) => {
         <div className="fixed inset-0 z-[9999] flex flex-col justify-end" onClick={() => setShowMenu(false)}>
           <div className="bg-zinc-900 rounded-t-3xl overflow-hidden pb-8" onClick={e => e.stopPropagation()}>
             {[
-              { icon: "Bookmark", label: saved ? "Убрать из сохранённых" : "Сохранить", action: () => { setSaved(v => !v); setShowMenu(false); } },
+              { icon: "Bookmark", label: saved ? "Убрать из сохранённых" : "Сохранить", action: () => { toggleSaved(); setShowMenu(false); } },
+              { icon: "User", label: "Перейти в профиль", action: () => { setShowMenu(false); window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: post.handle } })); } },
               { icon: "BellOff", label: "Выключить уведомления", action: () => setShowMenu(false) },
               { icon: "Link", label: "Скопировать ссылку", action: () => { navigator.clipboard.writeText(window.location.href).catch(() => {}); setShowMenu(false); } },
               { icon: "Share2", label: "Поделиться", action: () => { setShowMenu(false); setShowShare(true); } },

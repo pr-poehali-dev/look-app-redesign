@@ -4,6 +4,7 @@ import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { useComments } from "@/hooks/useComments";
 import { useLikes } from "@/hooks/useLikes";
+import { useSavedItem } from "@/hooks/useSaved";
 
 export interface VideoData {
   id: number;
@@ -25,7 +26,11 @@ interface VideoCardProps {
 }
 
 const VideoCard = ({ video, isActive }: VideoCardProps) => {
-  const [saved, setSaved] = useState(false);
+  const { saved, toggle: toggleSaved } = useSavedItem("video", video.id, {
+    image: video.image,
+    title: video.description,
+    handle: video.handle,
+  });
   const [following, setFollowing] = useState(false);
   const [paused, setPaused] = useState(false);
   const [showPauseIcon, setShowPauseIcon] = useState(false);
@@ -217,8 +222,8 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
 
         {/* Bookmark */}
         <button
-          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setSaved(s => !s); }}
-          onClick={() => setSaved(s => !s)}
+          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); toggleSaved(); }}
+          onClick={toggleSaved}
           className="flex flex-col items-center gap-1"
           style={{ touchAction: "manipulation" }}
         >
@@ -293,7 +298,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
         </button>
 
         {/* Bookmark */}
-        <button onClick={() => setSaved(s => !s)} className="flex flex-col items-center gap-1">
+        <button onClick={toggleSaved} className="flex flex-col items-center gap-1">
           <div className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition-colors">
             <Icon name="Bookmark" size={24} className={saved ? "text-[#ffd700] fill-[#ffd700]" : "text-white"} />
           </div>
