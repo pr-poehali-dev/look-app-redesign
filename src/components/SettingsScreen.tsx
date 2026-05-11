@@ -4,7 +4,8 @@ import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { useAuth } from "@/context/AuthContext";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
-import { useSavedList } from "@/hooks/useSaved";
+import { useSavedList, SavedItem } from "@/hooks/useSaved";
+import SavedItemViewer from "@/components/SavedItemViewer";
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -29,6 +30,7 @@ const NOTIFICATIONS = [
 // Sub-screens
 const SavedScreen = ({ onBack }: { onBack: () => void }) => {
   const items = useSavedList();
+  const [opened, setOpened] = useState<SavedItem | null>(null);
   return (
     <div className="h-full bg-gray-100 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
       <div className="md:max-w-2xl md:mx-auto">
@@ -41,7 +43,11 @@ const SavedScreen = ({ onBack }: { onBack: () => void }) => {
           {items.map(item => {
             const isVideo = item.type === "video" || /\.(mp4|mov|webm)(\?|$)/i.test(item.image);
             return (
-              <div key={`${item.type}:${item.id}`} className="relative aspect-square overflow-hidden bg-gray-200">
+              <button
+                key={`${item.type}:${item.id}`}
+                onClick={() => setOpened(item)}
+                className="relative aspect-square overflow-hidden bg-gray-200 active:opacity-80"
+              >
                 {isVideo ? (
                   <video src={item.image} className="w-full h-full object-cover" muted playsInline preload="metadata" />
                 ) : (
@@ -53,7 +59,7 @@ const SavedScreen = ({ onBack }: { onBack: () => void }) => {
                     <span className="text-white text-[10px] font-semibold drop-shadow">@{item.handle}</span>
                   )}
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -65,6 +71,7 @@ const SavedScreen = ({ onBack }: { onBack: () => void }) => {
       )}
       <div className="pb-28" />
       </div>
+      {opened && <SavedItemViewer item={opened} onClose={() => setOpened(null)} />}
     </div>
   );
 };
