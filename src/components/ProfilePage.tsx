@@ -1,52 +1,46 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import SettingsScreen from "./SettingsScreen";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
+import { useFollowingList } from "@/hooks/useFollowing";
+import { useBulkCounts } from "@/hooks/useBulkCounts";
+import { getAuthor } from "@/data/authors";
 
 const AVATAR = "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/014c6ddd-1707-4449-afdd-e9012de11b20.jpg";
 
-const FOLLOWERS = [
-  { name: "Аня Смирнова", handle: "anya_dance", avatar: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/d5398fcc-427a-4d1c-963f-7e6f079a7ba6.jpg" },
-  { name: "Макс Паркур", handle: "max_parkour", avatar: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/5c280ad4-5edb-4bea-9ce4-5b7795d36707.jpg" },
-  { name: "Кофе и уют", handle: "cozy_coffee", avatar: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/0730a864-0860-4c86-8845-835a8c4a720e.jpg" },
-  { name: "Travel Rus", handle: "travel_rus", avatar: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/c8b8bf7c-7db9-4624-b5fd-0c96115cd5aa.jpg" },
-];
+interface UserItem { name: string; handle: string; avatar: string }
 
-const FOLLOWING = [
-  { name: "DJ Макс", handle: "dj_max_official", avatar: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/c96bc59d-e416-4e11-adf2-a308d67a562d.jpg" },
-  { name: "ФитнесПро", handle: "fit_pro", avatar: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/5b90e1a9-665b-4e6c-9184-2edf68db2e91.jpg" },
-  { name: "GameZone", handle: "gamezone_tv", avatar: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/45213a06-ddb6-4425-9410-cb3777726c55.jpg" },
-];
-
-const UserListScreen = ({ title, users, onBack }: { title: string; users: typeof FOLLOWERS; onBack: () => void }) => {
-  const [followed, setFollowed] = useState<string[]>([]);
+const UserListScreen = ({ title, users, onBack, emptyText }: { title: string; users: UserItem[]; onBack: () => void; emptyText: string }) => {
   return (
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
       <div className="flex items-center gap-3 px-4 pt-14 pb-4 bg-white border-b border-gray-100">
         <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
         <span className="flex-1 text-center text-black font-bold text-lg pr-7">{title}</span>
       </div>
-      <div>
-        {users.map((u) => (
-          <div key={u.handle} className="flex items-center gap-3 px-4 py-3 border-b border-gray-50">
-            <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
-              <UserAvatar src={u.avatar} name={u.name} alt={u.name} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-black font-semibold text-sm">{u.name}</p>
-              <p className="text-gray-400 text-xs">@{u.handle}</p>
-            </div>
-            <button
-              onClick={() => setFollowed(f => f.includes(u.handle) ? f.filter(x => x !== u.handle) : [...f, u.handle])}
-              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${followed.includes(u.handle) ? "bg-gray-100 text-gray-500" : "bg-[#8b5cf6] text-white"}`}
-            >
-              {followed.includes(u.handle) ? "Подписан" : "Подписаться"}
-            </button>
+      {users.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
+          <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+            <Icon name="Users" size={28} className="text-gray-400" />
           </div>
-        ))}
-      </div>
+          <p className="text-gray-500 text-sm">{emptyText}</p>
+        </div>
+      ) : (
+        <div>
+          {users.map((u) => (
+            <div key={u.handle} className="flex items-center gap-3 px-4 py-3 border-b border-gray-50">
+              <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
+                <UserAvatar src={u.avatar} name={u.name} alt={u.name} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-black font-semibold text-sm">{u.name}</p>
+                <p className="text-gray-400 text-xs">@{u.handle}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -273,6 +267,20 @@ const ProfilePage = () => {
   const [showScreen, setShowScreen] = useState<"followers" | "following" | null>(null);
   const { userVideos: stories, removeMedia, addMedia } = useUserMedia();
   const { user, token, logout, updateUser } = useAuth();
+  const followingHandles = useFollowingList();
+  const videoIds = useMemo(() => stories.filter(s => s.type === "video").map(s => s.id), [stories]);
+  const { likes: bulkLikes } = useBulkCounts("video", videoIds);
+  const totalLikes = useMemo(
+    () => videoIds.reduce((sum, id) => sum + (bulkLikes[String(id)] || 0), 0),
+    [videoIds, bulkLikes]
+  );
+  const followingUsers: UserItem[] = useMemo(
+    () => followingHandles.map(h => {
+      const a = getAuthor(h);
+      return { handle: h, name: a.name || h, avatar: a.avatar || "" };
+    }),
+    [followingHandles]
+  );
   const [viewingStory, setViewingStory] = useState<number | null>(null);
   const [mediaViewer, setMediaViewer] = useState<{ tab: "video" | "image"; index: number } | null>(null);
   const [avatarLoading, setAvatarLoading] = useState(false);
@@ -306,8 +314,8 @@ const ProfilePage = () => {
   };
 
   if (showSettings) return <SettingsScreen onBack={() => setShowSettings(false)} />;
-  if (showScreen === "followers") return <UserListScreen title="Подписчики" users={FOLLOWERS} onBack={() => setShowScreen(null)} />;
-  if (showScreen === "following") return <UserListScreen title="Подписки" users={FOLLOWING} onBack={() => setShowScreen(null)} />;
+  if (showScreen === "followers") return <UserListScreen title="Подписчики" users={[]} onBack={() => setShowScreen(null)} emptyText="Пока нет подписчиков" />;
+  if (showScreen === "following") return <UserListScreen title="Подписки" users={followingUsers} onBack={() => setShowScreen(null)} emptyText="Ты пока ни на кого не подписан" />;
 
   return (
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
@@ -353,9 +361,9 @@ const ProfilePage = () => {
 
         <div className="flex flex-1 justify-around">
           {[
-            { value: "7", label: "Лайки", action: null },
-            { value: "4", label: "Подписчики", action: "followers" },
-            { value: "3", label: "Подписки", action: "following" },
+            { value: String(totalLikes), label: "Лайки", action: null },
+            { value: "0", label: "Подписчики", action: "followers" },
+            { value: String(followingHandles.length), label: "Подписки", action: "following" },
           ].map((s, i) => (
             <div key={s.label} className="flex items-center">
               {i > 0 && <div className="w-px h-8 md:h-6 bg-gray-200 mr-4 md:mr-3" />}
