@@ -8,6 +8,7 @@ import { useLikes } from "@/hooks/useLikes";
 
 const PostCard = ({ post }: { post: Post }) => {
   const [saved, setSaved] = useState(false);
+  const [following, setFollowing] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showShare, setShowShare] = useState(false);
@@ -36,9 +37,24 @@ const PostCard = ({ post }: { post: Post }) => {
             </div>
           </div>
           <div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <span className="text-white font-semibold text-[13px]">{post.handle}</span>
               <Icon name="BadgeCheck" size={12} className="text-[#61d4f0]" />
+              {!following ? (
+                <button
+                  onClick={() => setFollowing(true)}
+                  className="ml-1 px-2 py-0.5 rounded-full bg-[#fe2c55] text-white text-[11px] font-semibold leading-none active:scale-95 transition-transform"
+                >
+                  Подписаться
+                </button>
+              ) : (
+                <button
+                  onClick={() => setFollowing(false)}
+                  className="ml-1 px-2 py-0.5 rounded-full bg-white/10 text-white text-[11px] font-semibold leading-none active:scale-95 transition-transform"
+                >
+                  Вы подписаны
+                </button>
+              )}
             </div>
             {post.location && (
               <span className="text-white/40 text-[11px]">{post.location}</span>
