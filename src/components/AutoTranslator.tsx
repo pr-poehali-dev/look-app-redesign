@@ -17,6 +17,9 @@ const GT_LANG_MAP: Record<string, string> = {
   zh: "zh-CN",
 };
 
+let gtReady = false;
+let gtReadyPromise: Promise<void> | null = null;
+
 const setGoogleTranslateCookie = (lang: string) => {
   const value = `/ru/${lang}`;
   const expires = new Date();
@@ -46,26 +49,78 @@ const removeGoogleTranslateCookie = () => {
   }
 };
 
-const loadGoogleTranslate = () => {
-  if (document.getElementById("google-translate-script")) return;
-  window.googleTranslateElementInit = () => {
-    if (!window.google?.translate?.TranslateElement) return;
-    new window.google.translate.TranslateElement(
-      {
-        pageLanguage: "ru",
-        includedLanguages: "en,de,fr,es,zh-CN,ru",
-        autoDisplay: false,
-        layout: 0,
-      },
-      "google_translate_element"
-    );
-  };
-  const script = document.createElement("script");
-  script.id = "google-translate-script";
-  script.src =
-    "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-  script.async = true;
-  document.body.appendChild(script);
+const ensureGoogleTranslate = (): Promise<void> => {
+  if (gtReady) return Promise.resolve();
+  if (gtReadyPromise) return gtReadyPromise;
+
+  gtReadyPromise = new Promise<void>((resolve) => {
+    if (!document.getElementById("google_translate_element")) {
+      const div = document.createElement("div");
+      div.id = "google_translate_element";
+      div.style.display = "none";
+      document.body.appendChild(div);
+    }
+
+    window.googleTranslateElementInit = () => {
+      if (!window.google?.translate?.TranslateElement) return;
+      new window.google.translate.TranslateElement(
+        {
+          pageLanguage: "ru",
+          includedLanguages: "en,de,fr,es,zh-CN,ru",
+          autoDisplay: false,
+          layout: 0,
+        },
+        "google_translate_element"
+      );
+
+      const waitForSelect = () => {
+        const select = document.querySelector<HTMLSelectElement>(
+          ".goog-te-combo"
+        );
+        if (select) {
+          gtReady = true;
+          resolve();
+        } else {
+          setTimeout(waitForSelect, 100);
+        }
+      };
+      waitForSelect();
+    };
+
+    if (!document.getElementById("google-translate-script")) {
+      const script = document.createElement("script");
+      script.id = "google-translate-script";
+      script.src =
+        "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  });
+
+  return gtReadyPromise;
+};
+
+const applyLanguage = async (code: string) => {
+  const gtLang = GT_LANG_MAP[code] || "ru";
+
+  if (gtLang === "ru") {
+    removeGoogleTranslateCookie();
+    const select = document.querySelector<HTMLSelectElement>(".goog-te-combo");
+    if (select) {
+      select.value = "";
+      select.dispatchEvent(new Event("change"));
+    }
+    return;
+  }
+
+  setGoogleTranslateCookie(gtLang);
+  await ensureGoogleTranslate();
+
+  const select = document.querySelector<HTMLSelectElement>(".goog-te-combo");
+  if (select) {
+    select.value = gtLang;
+    select.dispatchEvent(new Event("change"));
+  }
 };
 
 const hideGoogleUI = () => {
@@ -78,6 +133,7 @@ const hideGoogleUI = () => {
     .goog-tooltip, .goog-tooltip:hover { display: none !important; }
     .goog-text-highlight { background: none !important; box-shadow: none !important; }
     #google_translate_element { display: none !important; }
+    iframe.goog-te-menu-frame { display: none !important; }
   `;
   document.head.appendChild(style);
 };
@@ -86,52 +142,28 @@ export const AutoTranslator = () => {
   useEffect(() => {
     hideGoogleUI();
 
-    if (!document.getElementById("google_translate_element")) {
-      const div = document.createElement("div");
-      div.id = "google_translate_element";
-      div.style.display = "none";
-      document.body.appendChild(div);
+    const stored = localStorage.getItem("app_lang") || "ru";
+    if (stored !== "ru") {
+      applyLanguage(stored);
     }
 
-    const stored = localStorage.getItem("app_lang");
-    const lang = stored && GT_LANG_MAP[stored] ? GT_LANG_MAP[stored] : null;
-
-    if (lang && lang !== "ru") {
-      setGoogleTranslateCookie(lang);
-      loadGoogleTranslate();
-    } else {
-      removeGoogleTranslateCookie();
-    }
+    const handleCustom = (e: Event) => {
+      const detail = (e as CustomEvent<string>).detail || "ru";
+      applyLanguage(detail);
+    };
 
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "app_lang") {
-        const next = e.newValue && GT_LANG_MAP[e.newValue] ? GT_LANG_MAP[e.newValue] : "ru";
-        if (next === "ru") {
-          removeGoogleTranslateCookie();
-        } else {
-          setGoogleTranslateCookie(next);
-        }
-        window.location.reload();
+        applyLanguage(e.newValue || "ru");
       }
     };
 
-    const handleCustom = (e: Event) => {
-      const detail = (e as CustomEvent<string>).detail;
-      const next = detail && GT_LANG_MAP[detail] ? GT_LANG_MAP[detail] : "ru";
-      if (next === "ru") {
-        removeGoogleTranslateCookie();
-      } else {
-        setGoogleTranslateCookie(next);
-      }
-      window.location.reload();
-    };
-
-    window.addEventListener("storage", handleStorage);
     window.addEventListener("app-lang-change", handleCustom);
+    window.addEventListener("storage", handleStorage);
 
     return () => {
-      window.removeEventListener("storage", handleStorage);
       window.removeEventListener("app-lang-change", handleCustom);
+      window.removeEventListener("storage", handleStorage);
     };
   }, []);
 
