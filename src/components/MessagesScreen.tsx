@@ -111,6 +111,15 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
     };
   }, [user]);
 
+  // Авто-обновление списка чатов каждые 5 сек — чтобы удалённые чаты пропадали почти мгновенно
+  useEffect(() => {
+    if (!user) return;
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible" && !openChat) loadChats();
+    }, 5000);
+    return () => clearInterval(id);
+  }, [user, openChat]);
+
   useEffect(() => {
     if (!initialDirectHandle || !user) return;
     let cancelled = false;
