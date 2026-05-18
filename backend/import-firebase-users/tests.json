@@ -1,0 +1,26 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "POST without users array",
+      "method": "POST",
+      "path": "/",
+      "body": {},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "users array required"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "POST invalid JSON",
+      "method": "POST",
+      "path": "/",
+      "body": "not json",
+      "expectedStatus": 400
+    }
+  ]
+}

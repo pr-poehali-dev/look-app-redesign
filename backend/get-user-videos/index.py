@@ -7,6 +7,8 @@ import uuid
 import urllib.request
 import boto3
 import psycopg2
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
 
 HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -18,6 +20,25 @@ def ok(data): return {'statusCode': 200, 'headers': HEADERS, 'body': json.dumps(
 def err(msg, code=400): return {'statusCode': code, 'headers': HEADERS, 'body': json.dumps({'error': msg}, ensure_ascii=False)}
 def get_conn(): return psycopg2.connect(os.environ['DATABASE_URL'])
 def hash_pw(p): return hashlib.sha256(p.encode()).hexdigest()
+
+def verify_firebase_scrypt(password: str, salt_b64: str, expected_hash_b64: str) -> bool:
+    """Проверка пароля Firebase SCRYPT (modified): scrypt → AES-256-CTR(signer_key)."""
+    try:
+        signer_key = base64.b64decode(os.environ['FIREBASE_SCRYPT_SIGNER_KEY'])
+        salt_separator = base64.b64decode(os.environ['FIREBASE_SCRYPT_SALT_SEPARATOR'])
+        salt = base64.b64decode(salt_b64)
+        expected = base64.b64decode(expected_hash_b64)
+        derived = hashlib.scrypt(password.encode('utf-8'), salt=salt + salt_separator,
+                                 n=1 << 14, r=8, p=1, dklen=64, maxmem=1024 * 1024 * 1024)
+        key = derived[:32]
+        iv = b'\x00' * 16
+        cipher = Cipher(algorithms.AES(key), modes.CTR(iv), backend=default_backend())
+        encryptor = cipher.encryptor()
+        result = encryptor.update(signer_key) + encryptor.finalize()
+        return secrets.compare_digest(result, expected)
+    except Exception as e:
+        print(f'firebase scrypt verify error: {e}')
+        return False
 def get_s3(): return boto3.client('s3', endpoint_url='https://bucket.poehali.dev',
     aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
     aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
@@ -77,14 +98,23 @@ def handler(event: dict, context) -> dict:
                 return err('Введи email и пароль')
             conn = get_conn(); cur = conn.cursor()
             try:
-                cur.execute("SELECT id,name,handle,email,avatar,token FROM app_users WHERE email=%s AND password_hash=%s",
-                    (email, hash_pw(password)))
+                cur.execute("SELECT id,name,handle,email,avatar,token,password_hash,firebase_hash,firebase_salt FROM app_users WHERE email=%s",
+                    (email,))
                 row = cur.fetchone()
+                if not row:
+                    return err('Неверный email или пароль', 401)
+                uid, name, handle, em, avatar, token, pw_hash, fb_hash, fb_salt = row
+                if pw_hash == hash_pw(password):
+                    pass
+                elif fb_hash and fb_salt and verify_firebase_scrypt(password, fb_salt, fb_hash):
+                    cur.execute("UPDATE app_users SET password_hash=%s, firebase_hash=NULL, firebase_salt=NULL WHERE id=%s",
+                                (hash_pw(password), uid))
+                    conn.commit()
+                else:
+                    return err('Неверный email или пароль', 401)
             finally:
                 cur.close(); conn.close()
-            if not row:
-                return err('Неверный email или пароль', 401)
-            return ok({'token': row[5], 'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'email': row[3], 'avatar': row[4]}})
+            return ok({'token': token, 'user': {'id': uid, 'name': name, 'handle': handle, 'email': em, 'avatar': avatar}})
 
         if action == 'me':
             token = body.get('token') or ''
