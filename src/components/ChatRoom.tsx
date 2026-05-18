@@ -127,17 +127,17 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const deleteChat = async () => {
     setConfirmDeleteChat(false);
     try {
-      // Удаляем оба возможных ID — сырой (как в списке) и нормализованный (как в БД для DM)
+      // Удаляем чат у всех участников. Шлём оба возможных ID — сырой (как в списке) и нормализованный (как в БД для DM)
       await fetch(`${API}?module=chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
-        body: JSON.stringify({ action: "delete_chat", chat_id: chatId }),
+        body: JSON.stringify({ action: "delete_chat", chat_id: chatId, for_all: true }),
       }).catch(() => {});
       if (String(chat.id) !== chatId) {
         await fetch(`${API}?module=chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
-          body: JSON.stringify({ action: "delete_chat", chat_id: String(chat.id) }),
+          body: JSON.stringify({ action: "delete_chat", chat_id: String(chat.id), for_all: true }),
         }).catch(() => {});
       }
       showToast("Чат удалён");
@@ -1164,7 +1164,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
               <Icon name="Trash2" size={18} className="text-[#fe2c55]" />
               <p className="text-white text-base font-semibold">Удалить чат?</p>
             </div>
-            <p className="text-white/50 text-sm mb-5">Чат «{displayName}» исчезнет из списка. Это действие нельзя отменить.</p>
+            <p className="text-white/50 text-sm mb-5">Чат «{displayName}» исчезнет у всех участников вместе со всей перепиской. Это действие нельзя отменить.</p>
             <div className="flex gap-2">
               <button onClick={() => setConfirmDeleteChat(false)} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm">Отмена</button>
               <button onClick={deleteChat} className="flex-1 py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold">Удалить</button>
