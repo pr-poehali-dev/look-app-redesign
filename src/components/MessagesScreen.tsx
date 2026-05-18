@@ -52,7 +52,15 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
   const [allUsers, setAllUsers] = useState<AppUser[]>([]);
   const [activeCall, setActiveCall] = useState<{ user: { id: string; name: string }; mode: "audio" | "video" } | null>(null);
   const [onlineMenu, setOnlineMenu] = useState<AppUser | null>(null);
+  const [userSearch, setUserSearch] = useState("");
+  const usersStripRef = useRef<HTMLDivElement | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const scrollUsers = (dir: 1 | -1) => {
+    const el = usersStripRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * Math.max(200, el.clientWidth * 0.7), behavior: "smooth" });
+  };
   const { user } = useAuth();
   const { refresh: refreshUnread } = useUnread();
 
@@ -275,24 +283,67 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
             <span className="text-white/40 text-xs font-medium">Пользователи</span>
             <span className="text-white/25 text-xs">{allUsers.filter(u => u.online).length} онлайн · {allUsers.length} всего</span>
-          </div>
-          <div className="flex gap-3 overflow-x-scroll" style={{ scrollbarWidth: "none" }}>
-            {allUsers.map((u) => (
-              <div
-                key={u.id}
-                className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer active:scale-95 transition-transform"
-                onClick={() => setOnlineMenu(onlineMenu?.id === u.id ? null : u)}
-              >
-                <div className="relative">
-                  <div className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-colors ${onlineMenu?.id === u.id ? "border-[#fe2c55]" : "border-white/10"} ${!u.online ? "opacity-60" : ""}`}>
-                    <UserAvatar src={u.avatar} name={u.name} alt={u.name} />
-                  </div>
-                  <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-black ${u.online ? "bg-green-400" : "bg-white/30"}`} />
-                </div>
-                <span className={`text-[10px] w-12 text-center truncate ${u.online ? "text-white/70" : "text-white/40"}`}>{u.name.split(" ")[0]}</span>
+            <div className="ml-auto flex items-center gap-1.5">
+              <div className="relative">
+                <Icon name="Search" size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-white/30" />
+                <input
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  placeholder="Поиск"
+                  className="bg-white/8 text-white/80 placeholder-white/30 text-[11px] rounded-full pl-6 pr-2 py-1 w-24 focus:w-36 focus:outline-none focus:bg-white/12 transition-all"
+                />
               </div>
-            ))}
+            </div>
           </div>
+          {(() => {
+            const filteredUsers = userSearch.trim()
+              ? allUsers.filter(u => u.name.toLowerCase().includes(userSearch.trim().toLowerCase()))
+              : allUsers;
+            return (
+              <div className="relative group">
+                <button
+                  type="button"
+                  onClick={() => scrollUsers(-1)}
+                  className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-black/60 backdrop-blur items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  aria-label="Прокрутить влево"
+                >
+                  <Icon name="ChevronLeft" size={16} className="text-white" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollUsers(1)}
+                  className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-black/60 backdrop-blur items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  aria-label="Прокрутить вправо"
+                >
+                  <Icon name="ChevronRight" size={16} className="text-white" />
+                </button>
+                <div
+                  ref={usersStripRef}
+                  className="flex gap-3 overflow-x-auto scroll-smooth"
+                  style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
+                >
+                  {filteredUsers.length === 0 && (
+                    <div className="text-white/30 text-xs py-3">Никого не найдено</div>
+                  )}
+                  {filteredUsers.map((u) => (
+                    <div
+                      key={u.id}
+                      className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer active:scale-95 transition-transform"
+                      onClick={() => setOnlineMenu(onlineMenu?.id === u.id ? null : u)}
+                    >
+                      <div className="relative">
+                        <div className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-colors ${onlineMenu?.id === u.id ? "border-[#fe2c55]" : "border-white/10"} ${!u.online ? "opacity-60" : ""}`}>
+                          <UserAvatar src={u.avatar} name={u.name} alt={u.name} />
+                        </div>
+                        <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-black ${u.online ? "bg-green-400" : "bg-white/30"}`} />
+                      </div>
+                      <span className={`text-[10px] w-12 text-center truncate ${u.online ? "text-white/70" : "text-white/40"}`}>{u.name.split(" ")[0]}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {onlineMenu && (
             <div className="mt-3 bg-white/8 rounded-2xl overflow-hidden border border-white/10">
