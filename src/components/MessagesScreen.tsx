@@ -296,9 +296,10 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
             </div>
           </div>
           {(() => {
-            const filteredUsers = userSearch.trim()
+            const base = userSearch.trim()
               ? allUsers.filter(u => u.name.toLowerCase().includes(userSearch.trim().toLowerCase()))
               : allUsers;
+            const filteredUsers = [...base].sort((a, b) => Number(b.online) - Number(a.online));
             return (
               <div className="relative group">
                 <button
