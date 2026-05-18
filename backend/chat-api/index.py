@@ -359,6 +359,44 @@ def handler(event: dict, context) -> dict:
                     return {'statusCode': 200, 'headers': headers,
                             'body': json.dumps({'ok': True, 'cleared_until': max_id, 'for_all': for_all})}
 
+                if post_action == 'delete_chat':
+                    chat_id = body.get('chat_id')
+                    if not chat_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'chat_id required'})}
+                    # Удаляю себя из чата + помечаю все сообщения прочитанными/скрытыми для меня (cleared_until = max)
+                    cur.execute(
+                        "SELECT COALESCE(MAX(id), 0) FROM sa_messages WHERE chat_id = %s",
+                        (chat_id,)
+                    )
+                    max_id = int(cur.fetchone()[0] or 0)
+                    cur.execute(
+                        "INSERT INTO chat_settings (user_id, chat_id, cleared_until_id, updated_at) "
+                        "VALUES (%s, %s, %s, NOW()) "
+                        "ON CONFLICT (user_id, chat_id) DO UPDATE "
+                        "SET cleared_until_id = EXCLUDED.cleared_until_id, updated_at = NOW()",
+                        (user_id, chat_id, max_id)
+                    )
+                    cur.execute(
+                        "DELETE FROM sa_chat_members WHERE chat_id = %s AND user_id = %s",
+                        (chat_id, user_id)
+                    )
+                    # Если членов не осталось — удаляем чат целиком вместе с сообщениями и метаданными
+                    cur.execute(
+                        "SELECT COUNT(*) FROM sa_chat_members WHERE chat_id = %s",
+                        (chat_id,)
+                    )
+                    remaining = int(cur.fetchone()[0] or 0)
+                    if remaining == 0:
+                        cur.execute("DELETE FROM sa_messages WHERE chat_id = %s", (chat_id,))
+                        cur.execute("DELETE FROM sa_message_reads WHERE chat_id = %s", (chat_id,))
+                        cur.execute("DELETE FROM chat_settings WHERE chat_id = %s", (chat_id,))
+                        cur.execute("DELETE FROM sa_chats WHERE id = %s", (chat_id,))
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True, 'remaining_members': remaining})}
+
                 if post_action == 'delete_message':
                     msg_id = body.get('message_id')
                     if not msg_id:

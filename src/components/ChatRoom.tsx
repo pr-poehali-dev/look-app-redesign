@@ -81,6 +81,7 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   const [chatTheme, setChatTheme] = useState<string>("default");
   const [showMedia, setShowMedia] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [confirmDeleteChat, setConfirmDeleteChat] = useState(false);
   const [toast, setToast] = useState("");
 
   const startLongPress = (msgId: number) => {
@@ -119,6 +120,21 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
       showToast("Все сообщения прочитаны");
     } else {
       showToast("Нет сообщений");
+    }
+  };
+
+  const deleteChat = async () => {
+    setConfirmDeleteChat(false);
+    try {
+      await fetch(`${API}?module=chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
+        body: JSON.stringify({ action: "delete_chat", chat_id: chatId }),
+      });
+      showToast("Чат удалён");
+      setTimeout(() => onBack(), 400);
+    } catch {
+      showToast("Не удалось удалить");
     }
   };
 
@@ -740,6 +756,11 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
                       <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); setConfirmClear(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Очистить чат</button>
                       <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); exportChat(); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Экспорт чата</button>
                       <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); addToHomescreen(); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Добавить иконку на экран</button>
+                      <div className="my-1 h-px bg-white/8" />
+                      <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); setConfirmDeleteChat(true); }} className="w-full text-left px-4 py-3 text-[#fe2c55] text-sm hover:bg-white/5 flex items-center gap-2">
+                        <Icon name="Trash2" size={15} />
+                        <span>Удалить чат</span>
+                      </button>
                     </>
                   )}
                 </div>
@@ -1118,6 +1139,23 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
               <button onClick={() => setConfirmClear(false)} className="w-full py-2.5 rounded-xl text-white/60 text-sm">
                 Отмена
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Удалить чат */}
+      {confirmDeleteChat && (
+        <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center px-6" onClick={() => setConfirmDeleteChat(false)}>
+          <div className="bg-[#1a1a1a] rounded-2xl p-5 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 mb-2">
+              <Icon name="Trash2" size={18} className="text-[#fe2c55]" />
+              <p className="text-white text-base font-semibold">Удалить чат?</p>
+            </div>
+            <p className="text-white/50 text-sm mb-5">Чат «{displayName}» исчезнет из списка. Это действие нельзя отменить.</p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmDeleteChat(false)} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm">Отмена</button>
+              <button onClick={deleteChat} className="flex-1 py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold">Удалить</button>
             </div>
           </div>
         </div>
