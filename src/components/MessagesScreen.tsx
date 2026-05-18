@@ -356,7 +356,22 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
                             </div>
                           )}
                         </div>
-                        <span className={`text-[10px] w-12 text-center truncate ${unread > 0 ? "text-white font-medium" : u.online ? "text-white/70" : "text-white/40"}`}>{u.name.split(" ")[0]}</span>
+                        <span className={`text-[10px] w-12 text-center truncate ${unread > 0 ? "text-white font-medium" : u.online ? "text-white/70" : "text-white/40"}`}>
+                          {(() => {
+                            const firstName = u.name.split(" ")[0];
+                            const q = search.trim();
+                            if (!q) return firstName;
+                            const idx = firstName.toLowerCase().indexOf(q.toLowerCase());
+                            if (idx < 0) return firstName;
+                            return (
+                              <>
+                                {firstName.slice(0, idx)}
+                                <span className="bg-[#fe2c55]/30 text-white rounded px-0.5">{firstName.slice(idx, idx + q.length)}</span>
+                                {firstName.slice(idx + q.length)}
+                              </>
+                            );
+                          })()}
+                        </span>
                       </div>
                     );
                   })}
