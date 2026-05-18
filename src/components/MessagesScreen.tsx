@@ -296,10 +296,26 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
             </div>
           </div>
           {(() => {
+            const unreadByUser: Record<string, number> = {};
+            if (user) {
+              for (const c of chats) {
+                if (c.type !== "personal" || !c.unread) continue;
+                const cid = String(c.id);
+                if (!cid.startsWith("dm_")) continue;
+                const parts = cid.slice(3).split("_");
+                const peerId = parts.find(p => p && p !== user.id);
+                if (peerId) unreadByUser[peerId] = (unreadByUser[peerId] || 0) + c.unread;
+              }
+            }
             const base = userSearch.trim()
               ? allUsers.filter(u => u.name.toLowerCase().includes(userSearch.trim().toLowerCase()))
               : allUsers;
-            const filteredUsers = [...base].sort((a, b) => Number(b.online) - Number(a.online));
+            const filteredUsers = [...base].sort((a, b) => {
+              const ua = unreadByUser[a.id] || 0;
+              const ub = unreadByUser[b.id] || 0;
+              if (ua !== ub) return ub - ua;
+              return Number(b.online) - Number(a.online);
+            });
             return (
               <div className="relative group">
                 <button
@@ -326,21 +342,29 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
                   {filteredUsers.length === 0 && (
                     <div className="text-white/30 text-xs py-3">Никого не найдено</div>
                   )}
-                  {filteredUsers.map((u) => (
-                    <div
-                      key={u.id}
-                      className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer active:scale-95 transition-transform"
-                      onClick={() => setOnlineMenu(onlineMenu?.id === u.id ? null : u)}
-                    >
-                      <div className="relative">
-                        <div className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-colors ${onlineMenu?.id === u.id ? "border-[#fe2c55]" : "border-white/10"} ${!u.online ? "opacity-60" : ""}`}>
-                          <UserAvatar src={u.avatar} name={u.name} alt={u.name} />
+                  {filteredUsers.map((u) => {
+                    const unread = unreadByUser[u.id] || 0;
+                    return (
+                      <div
+                        key={u.id}
+                        className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer active:scale-95 transition-transform"
+                        onClick={() => setOnlineMenu(onlineMenu?.id === u.id ? null : u)}
+                      >
+                        <div className="relative">
+                          <div className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-colors ${onlineMenu?.id === u.id ? "border-[#fe2c55]" : unread > 0 ? "border-[#fe2c55]/70" : "border-white/10"} ${!u.online ? "opacity-60" : ""}`}>
+                            <UserAvatar src={u.avatar} name={u.name} alt={u.name} />
+                          </div>
+                          <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-black ${u.online ? "bg-green-400" : "bg-white/30"}`} />
+                          {unread > 0 && (
+                            <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#fe2c55] border-2 border-black flex items-center justify-center">
+                              <span className="text-white text-[10px] font-bold leading-none">{unread > 99 ? "99+" : unread}</span>
+                            </div>
+                          )}
                         </div>
-                        <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-black ${u.online ? "bg-green-400" : "bg-white/30"}`} />
+                        <span className={`text-[10px] w-12 text-center truncate ${unread > 0 ? "text-white font-medium" : u.online ? "text-white/70" : "text-white/40"}`}>{u.name.split(" ")[0]}</span>
                       </div>
-                      <span className={`text-[10px] w-12 text-center truncate ${u.online ? "text-white/70" : "text-white/40"}`}>{u.name.split(" ")[0]}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );
