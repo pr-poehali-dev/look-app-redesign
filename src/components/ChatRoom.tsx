@@ -30,9 +30,10 @@ const EMOJIS = [
 interface ChatRoomProps {
   chat: Chat;
   onBack: () => void;
+  onDeleted?: (deletedChatId: string | number) => void;
 }
 
-const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
+const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const { user } = useAuth();
   const MY_ID = user?.id || "anon";
   const MY_NAME = user?.name || "Пользователь";
@@ -126,13 +127,24 @@ const ChatRoom = ({ chat, onBack }: ChatRoomProps) => {
   const deleteChat = async () => {
     setConfirmDeleteChat(false);
     try {
+      // Удаляем оба возможных ID — сырой (как в списке) и нормализованный (как в БД для DM)
       await fetch(`${API}?module=chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
         body: JSON.stringify({ action: "delete_chat", chat_id: chatId }),
-      });
+      }).catch(() => {});
+      if (String(chat.id) !== chatId) {
+        await fetch(`${API}?module=chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
+          body: JSON.stringify({ action: "delete_chat", chat_id: String(chat.id) }),
+        }).catch(() => {});
+      }
       showToast("Чат удалён");
-      setTimeout(() => onBack(), 400);
+      setTimeout(() => {
+        if (onDeleted) onDeleted(chat.id);
+        else onBack();
+      }, 400);
     } catch {
       showToast("Не удалось удалить");
     }

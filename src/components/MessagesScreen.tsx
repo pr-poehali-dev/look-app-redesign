@@ -233,7 +233,16 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
       {/* На мобиле: если открыт чат — показываем только его */}
       {openChat && (
         <div className="md:hidden absolute inset-0 z-40 bg-black">
-          <ChatRoom chat={openChat} onBack={() => { setOpenChat(null); loadChats(); }} />
+          <ChatRoom
+            chat={openChat}
+            onBack={() => { setOpenChat(null); loadChats(); }}
+            onDeleted={(deletedId) => {
+              const did = String(deletedId);
+              setChats(prev => prev.filter(c => String(c.id) !== did));
+              setOpenChat(null);
+              loadChats();
+            }}
+          />
         </div>
       )}
 
@@ -495,6 +504,12 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
             key={String(openChat.id)}
             chat={openChat}
             onBack={() => { setOpenChat(null); loadChats(); }}
+            onDeleted={(deletedId) => {
+              const did = String(deletedId);
+              setChats(prev => prev.filter(c => String(c.id) !== did));
+              setOpenChat(null);
+              loadChats();
+            }}
           />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center px-8">
