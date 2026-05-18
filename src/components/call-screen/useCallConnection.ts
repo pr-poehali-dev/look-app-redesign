@@ -372,8 +372,11 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
       pc.ontrack = (e) => {
         const remoteStream = e.streams[0];
         if (remoteVideoRef.current) {
+          // Видео-элемент только для картинки. Звук всегда воспроизводится через <audio>,
+          // иначе получается двойное проигрывание и микрофон ловит эхо.
           remoteVideoRef.current.srcObject = remoteStream;
-          tuneRemoteAudioElement(remoteVideoRef.current);
+          remoteVideoRef.current.muted = true;
+          remoteVideoRef.current.volume = 0;
         }
         if (remoteAudioRef.current) {
           remoteAudioRef.current.srcObject = remoteStream;
