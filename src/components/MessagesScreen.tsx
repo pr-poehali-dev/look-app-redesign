@@ -53,6 +53,7 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
   const [activeCall, setActiveCall] = useState<{ user: { id: string; name: string }; mode: "audio" | "video" } | null>(null);
   const [onlineMenu, setOnlineMenu] = useState<AppUser | null>(null);
   const [userSearch, setUserSearch] = useState("");
+  const [userSearchOpen, setUserSearchOpen] = useState(false);
   const usersStripRef = useRef<HTMLDivElement | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -284,15 +285,38 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
             <span className="text-white/40 text-xs font-medium">Пользователи</span>
             <span className="text-white/25 text-xs">{allUsers.filter(u => u.online).length} онлайн · {allUsers.length} всего</span>
             <div className="ml-auto flex items-center gap-1.5">
-              <div className="relative">
-                <Icon name="Search" size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-white/30" />
-                <input
-                  value={userSearch}
-                  onChange={(e) => setUserSearch(e.target.value)}
-                  placeholder="Поиск"
-                  className="bg-white/8 text-white/80 placeholder-white/30 text-[11px] rounded-full pl-6 pr-2 py-1 w-24 focus:w-36 focus:outline-none focus:bg-white/12 transition-all"
-                />
-              </div>
+              {userSearchOpen ? (
+                <div className="relative">
+                  <Icon name="Search" size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-white/30" />
+                  <input
+                    autoFocus
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    onBlur={() => { if (!userSearch) setUserSearchOpen(false); }}
+                    placeholder="Поиск"
+                    className="bg-white/8 text-white/80 placeholder-white/30 text-[11px] rounded-full pl-6 pr-6 py-1 w-36 focus:outline-none"
+                  />
+                  {userSearch && (
+                    <button
+                      type="button"
+                      onClick={() => { setUserSearch(""); setUserSearchOpen(false); }}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70"
+                      aria-label="Очистить"
+                    >
+                      <Icon name="X" size={12} />
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setUserSearchOpen(true)}
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/8 transition-colors"
+                  aria-label="Найти пользователя"
+                >
+                  <Icon name="Search" size={13} />
+                </button>
+              )}
             </div>
           </div>
           {(() => {
@@ -348,7 +372,13 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
                       <div
                         key={u.id}
                         className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer active:scale-95 transition-transform"
-                        onClick={() => setOnlineMenu(onlineMenu?.id === u.id ? null : u)}
+                        onClick={() => {
+                          if (unread > 0) {
+                            openChatWithUser(u);
+                          } else {
+                            setOnlineMenu(onlineMenu?.id === u.id ? null : u);
+                          }
+                        }}
                       >
                         <div className="relative">
                           <div className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-colors ${onlineMenu?.id === u.id ? "border-[#fe2c55]" : unread > 0 ? "border-[#fe2c55]/70" : "border-white/10"} ${!u.online ? "opacity-60" : ""}`}>
