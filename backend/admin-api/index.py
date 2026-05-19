@@ -14,6 +14,11 @@ import base64
 import psycopg2
 import psycopg2.extras
 
+try:
+    import pymysql
+except ImportError:
+    pymysql = None
+
 
 def _cors():
     return {
@@ -322,6 +327,124 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         conn.commit()
         return {'statusCode': 200, 'headers': _cors(),
                 'body': json.dumps({'ok': True, 'affected': affected})}
+
+    if action == 'videos_match_authors_preview' or action == 'videos_match_authors_run':
+        # Сопоставляем "архивные" видео с реальными авторами из MySQL short-video.ru
+        # Связь: description ('1757844620 Look finalvideo') ↔ post_file ('1757844620_Look_finalvideo.mp4')
+        if pymysql is None:
+            return {'statusCode': 500, 'headers': _cors(),
+                    'body': json.dumps({'error': 'pymysql not installed'})}
+        mysql_pwd = os.environ.get('SHORT_VIDEO_DB_PASSWORD', '')
+        if not mysql_pwd:
+            return {'statusCode': 500, 'headers': _cors(),
+                    'body': json.dumps({'error': 'SHORT_VIDEO_DB_PASSWORD not set'})}
+
+        # 1. Берём наши архивные видео
+        _q(cur, """
+            SELECT id, description, author, handle
+            FROM {S}.videos
+            WHERE (author = 'Архив' OR handle = 'archive' OR user_id = 'legacy-import')
+        """)
+        legacy_rows = cur.fetchall()
+        if not legacy_rows:
+            return {'statusCode': 200, 'headers': _cors(),
+                    'body': json.dumps({'ok': True, 'total': 0, 'matched': 0, 'updated': 0, 'samples': []})}
+
+        # Строим ключи поиска: 'finalvideo', 'кака...', и т.п. — берём всё описание
+        # Также из описания вытаскиваем "тело" имени файла (всё после 'Look ')
+        def desc_to_key(s: str) -> str:
+            if not s:
+                return ''
+            # Нормализация: убрать множественные пробелы
+            return ' '.join(s.split()).strip()
+
+        keys = {desc_to_key(r['description']): r['id'] for r in legacy_rows if r['description']}
+
+        # 2. Тянем посты + авторов из MySQL
+        mysql = pymysql.connect(
+            host='alexei3y.beget.tech',
+            port=3306,
+            user='alexei3y_tiktoks',
+            password=mysql_pwd,
+            database='alexei3y_tiktoks',
+            charset='utf8mb4',
+            cursorclass=pymysql.cursors.DictCursor,
+            connect_timeout=10,
+        )
+        try:
+            with mysql.cursor() as mc:
+                mc.execute("""
+                    SELECT p.post_file, p.post_description, u.username, u.name, u.profile_image
+                    FROM tbl_posts p
+                    LEFT JOIN tbl_users u ON p.user_id = u.id
+                    WHERE p.post_type = 'video' AND p.post_file IS NOT NULL AND p.post_file <> ''
+                """)
+                mysql_posts = mc.fetchall()
+        finally:
+            mysql.close()
+
+        # 3. Матчинг
+        # post_file = '1757844620_Look_finalvideo.mp4' → ключ '1757844620 Look finalvideo'
+        def file_to_key(fname: str) -> str:
+            if not fname:
+                return ''
+            # обрезаем расширение
+            name = fname.rsplit('/', 1)[-1]
+            if '.' in name:
+                name = name.rsplit('.', 1)[0]
+            return name.replace('_', ' ').strip()
+
+        matches = []  # list of dicts {video_id, author_name, handle, avatar, description}
+        for p in mysql_posts:
+            key = file_to_key(p.get('post_file') or '')
+            if not key:
+                continue
+            vid_id = keys.get(key)
+            if not vid_id:
+                continue
+            author_name = (p.get('name') or p.get('username') or '').strip()
+            handle = (p.get('username') or '').strip()
+            avatar = p.get('profile_image') or ''
+            if avatar and not avatar.startswith('http'):
+                avatar = 'https://short-video.ru/uploads/' + avatar
+            real_desc = (p.get('post_description') or '').strip()
+            matches.append({
+                'video_id': vid_id,
+                'author': author_name or 'Пользователь',
+                'handle': handle or 'user',
+                'thumbnail_new': avatar,
+                'description': real_desc,
+            })
+
+        if action == 'videos_match_authors_preview':
+            samples = matches[:10]
+            return {'statusCode': 200, 'headers': _cors(),
+                    'body': json.dumps({
+                        'total_legacy': len(legacy_rows),
+                        'matched': len(matches),
+                        'samples': samples,
+                    }, ensure_ascii=False, default=str)}
+
+        # action == 'videos_match_authors_run'
+        updated = 0
+        for m in matches:
+            # Не перетираем thumbnail если новый пустой
+            if m['thumbnail_new']:
+                _q(cur, """
+                    UPDATE {S}.videos
+                    SET author = %s, handle = %s, description = %s, thumbnail = %s
+                    WHERE id = %s
+                """, (m['author'], m['handle'], m['description'], m['thumbnail_new'], m['video_id']))
+            else:
+                _q(cur, """
+                    UPDATE {S}.videos
+                    SET author = %s, handle = %s, description = %s
+                    WHERE id = %s
+                """, (m['author'], m['handle'], m['description'], m['video_id']))
+            updated += 1
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(),
+                'body': json.dumps({'ok': True, 'updated': updated, 'total_legacy': len(legacy_rows)}, default=str)}
 
     if action == 'videos_cleanup_preview':
         # Предпросмотр очистки: сколько скрытых и сколько дублей удалится

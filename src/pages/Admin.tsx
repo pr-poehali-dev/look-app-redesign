@@ -506,6 +506,38 @@ function Videos({ token }: { token: string }) {
   };
   const stopMigrate = () => { migAbortRef.current = true; };
 
+  // ---------- Восстановление авторов из MySQL short-video.ru ----------
+  const [matchInfo, setMatchInfo] = useState<{ total_legacy: number; matched: number; samples: { video_id: number; author: string; handle: string; description: string }[] } | null>(null);
+  const [matchBusy, setMatchBusy] = useState(false);
+
+  const previewMatchAuthors = async () => {
+    setMatchBusy(true);
+    try {
+      const d = await api("videos_match_authors_preview", {}, token);
+      setMatchInfo(d);
+    } catch (e) {
+      alert("Ошибка: " + (e instanceof Error ? e.message : "неизвестная"));
+    } finally {
+      setMatchBusy(false);
+    }
+  };
+
+  const runMatchAuthors = async () => {
+    if (!matchInfo) return;
+    if (!confirm(`Обновить ${matchInfo.matched} видео — заменить «Архив @archive» на реальных авторов и описания со short-video.ru?`)) return;
+    setMatchBusy(true);
+    try {
+      const d = await api("videos_match_authors_run", {}, token);
+      alert(`Обновлено: ${d.updated}`);
+      setMatchInfo(null);
+      load();
+    } catch (e) {
+      alert("Ошибка: " + (e instanceof Error ? e.message : "неизвестная"));
+    } finally {
+      setMatchBusy(false);
+    }
+  };
+
   // ---------- Очистка дублей и скрытых ----------
   const [cleanupInfo, setCleanupInfo] = useState<{ total: number; hidden: number; duplicates: number; to_delete: number; will_remain: number } | null>(null);
   const [cleanupBusy, setCleanupBusy] = useState(false);
@@ -846,6 +878,75 @@ function Videos({ token }: { token: string }) {
           )}
         </div>
       )}
+
+      {/* ----- Восстановление авторов «архивных» видео ----- */}
+      <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-2xl p-4 space-y-3">
+        <div className="flex items-start gap-3 flex-wrap">
+          <Icon name="UserCheck" size={20} className="text-cyan-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-white">Восстановить авторов и описания</p>
+            <p className="text-xs text-white/60">
+              Найдёт в базе short-video.ru настоящих авторов и описания для видео с подписью «Архив @archive». Сопоставление идёт по имени файла.
+            </p>
+          </div>
+          {!matchInfo ? (
+            <button
+              onClick={previewMatchAuthors}
+              disabled={matchBusy}
+              className="px-3 py-2 rounded-lg bg-cyan-500 text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+            >
+              {matchBusy ? <Icon name="Loader2" size={16} className="animate-spin" /> : <Icon name="Search" size={16} />}
+              Найти авторов
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={runMatchAuthors}
+                disabled={matchBusy || matchInfo.matched === 0}
+                className="px-3 py-2 rounded-lg bg-cyan-500 text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+              >
+                <Icon name="UserCheck" size={16} />
+                Применить ({matchInfo.matched})
+              </button>
+              <button
+                onClick={() => setMatchInfo(null)}
+                className="px-3 py-2 rounded-lg bg-white/10 text-white text-sm hover:bg-white/15"
+              >
+                Отмена
+              </button>
+            </div>
+          )}
+        </div>
+        {matchInfo && (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+              <div className="bg-black/30 rounded-lg p-2">
+                <div className="text-white/50">Архивных видео</div>
+                <div className="text-white font-semibold text-base">{matchInfo.total_legacy}</div>
+              </div>
+              <div className="bg-black/30 rounded-lg p-2">
+                <div className="text-white/50">Нашли авторов</div>
+                <div className="text-cyan-400 font-semibold text-base">{matchInfo.matched}</div>
+              </div>
+              <div className="bg-black/30 rounded-lg p-2">
+                <div className="text-white/50">Без авторов</div>
+                <div className="text-white/70 font-semibold text-base">{matchInfo.total_legacy - matchInfo.matched}</div>
+              </div>
+            </div>
+            {matchInfo.samples.length > 0 && (
+              <div className="bg-black/30 rounded-lg p-3 space-y-1 text-xs max-h-60 overflow-auto">
+                <div className="text-white/50 mb-1">Примеры:</div>
+                {matchInfo.samples.map((s) => (
+                  <div key={s.video_id} className="text-white/80">
+                    #{s.video_id} → <b className="text-cyan-300">{s.author}</b> <span className="text-white/40">@{s.handle}</span>
+                    {s.description && <span className="text-white/60"> · {s.description.slice(0, 60)}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* ----- Очистка дублей и скрытых ----- */}
       <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 space-y-3">
