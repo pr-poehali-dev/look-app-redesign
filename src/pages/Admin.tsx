@@ -552,6 +552,20 @@ function Videos({ token }: { token: string }) {
     }
   };
 
+  const deleteBrokenCdn = async () => {
+    if (!confirm("Удалить все видео с битыми CDN-ссылками (файлы не существуют на сервере)?")) return;
+    setMatchBusy(true);
+    try {
+      const d = await api("videos_delete_broken_cdn", {}, token);
+      alert(`Удалено: ${d.deleted}`);
+      load();
+    } catch (e) {
+      alert("Ошибка: " + (e instanceof Error ? e.message : "неизвестная"));
+    } finally {
+      setMatchBusy(false);
+    }
+  };
+
   // ---------- Очистка дублей и скрытых ----------
   const [cleanupInfo, setCleanupInfo] = useState<{ total: number; hidden: number; duplicates: number; to_delete: number; will_remain: number } | null>(null);
   const [cleanupBusy, setCleanupBusy] = useState(false);
@@ -920,6 +934,14 @@ function Videos({ token }: { token: string }) {
               >
                 <Icon name="Trash2" size={16} />
                 Удалить «Архив»
+              </button>
+              <button
+                onClick={deleteBrokenCdn}
+                disabled={matchBusy}
+                className="px-3 py-2 rounded-lg bg-amber-600 text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+              >
+                <Icon name="FileX" size={16} />
+                Удалить битые
               </button>
             </div>
           ) : (

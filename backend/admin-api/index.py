@@ -446,6 +446,25 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         return {'statusCode': 200, 'headers': _cors(),
                 'body': json.dumps({'ok': True, 'updated': updated, 'total_legacy': len(legacy_rows)}, default=str)}
 
+    if action == 'videos_delete_broken_cdn':
+        # Удалить видео с битыми URL вида /bucket/legacy/uploads/ (файлы не существуют на CDN)
+        _q(cur, """
+            SELECT id FROM {S}.videos
+            WHERE url LIKE '%/bucket/legacy/uploads/%'
+        """)
+        ids = [r['id'] for r in cur.fetchall()]
+        if not ids:
+            return {'statusCode': 200, 'headers': _cors(),
+                    'body': json.dumps({'ok': True, 'deleted': 0})}
+        ids_str = [str(x) for x in ids]
+        _q(cur, "DELETE FROM {S}.likes WHERE target_type = 'video' AND target_id = ANY(%s)", (ids_str,))
+        _q(cur, "DELETE FROM {S}.comments WHERE target_type = 'video' AND target_id = ANY(%s)", (ids_str,))
+        _q(cur, "DELETE FROM {S}.videos WHERE id = ANY(%s)", (ids,))
+        affected = cur.rowcount
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(),
+                'body': json.dumps({'ok': True, 'deleted': affected})}
+
     if action == 'videos_delete_archive':
         # Удалить все видео где автор "Архив" и handle "archive"
         _q(cur, """
