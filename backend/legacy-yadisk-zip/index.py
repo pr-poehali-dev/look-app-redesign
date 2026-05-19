@@ -390,6 +390,154 @@ def handler(event: dict, context) -> dict:
                         'sample': names[:5],
                     })}
 
+        if action == 'import-all':
+            # Создаёт НОВЫЕ записи в videos для всех файлов из папки.
+            # Группирует видео и превью по базовому имени (без расширения).
+            if not public_url:
+                return {'statusCode': 400, 'headers': _cors(),
+                        'body': json.dumps({'error': 'public_url required'})}
+            offset = int(body.get('offset') or 0)
+            batch_size = max(1, min(int(body.get('batch_size') or 3), 10))
+
+            s3 = _s3()
+            files = _load_folder_cache(s3, public_url)
+            if not files:
+                files = _yadisk_list_folder(public_url)
+                _save_folder_cache(s3, public_url, files)
+
+            # Группируем по базовому имени
+            groups: dict = {}
+            order: list = []
+            for f in files:
+                name = f['name']
+                base = name.rsplit('.', 1)[0] if '.' in name else name
+                if base not in groups:
+                    groups[base] = {'video': None, 'thumb': None, 'base': base}
+                    order.append(base)
+                low = name.lower()
+                if low.endswith(('.mp4', '.webm', '.mov')):
+                    groups[base]['video'] = f
+                elif low.endswith(('.jpg', '.jpeg', '.png', '.webp', '.gif')):
+                    groups[base]['thumb'] = f
+
+            keys = order
+            total = len(keys)
+            end = min(offset + batch_size, total)
+            start_ts = time.time()
+            actual_end = offset
+            created = 0
+            skipped = 0
+            errors = []
+            created_ids = []
+
+            conn = psycopg2.connect(os.environ['DATABASE_URL'])
+            try:
+                for i in range(offset, end):
+                    if time.time() - start_ts > 21:
+                        break
+                    try:
+                        base = keys[i]
+                        g = groups[base]
+                        video_f = g['video']
+                        thumb_f = g['thumb']
+                        if not video_f:
+                            # Только превью без видео — пропускаем
+                            skipped += 1
+                            actual_end = i + 1
+                            continue
+
+                        # Проверка: уже есть запись с этим именем?
+                        vname_esc = video_f['name'].replace("'", "''")
+                        with conn.cursor() as cur:
+                            cur.execute(
+                                f"SELECT 1 FROM {schema}.videos WHERE url LIKE '%/{vname_esc}' LIMIT 1"
+                            )
+                            if cur.fetchone():
+                                skipped += 1
+                                actual_end = i + 1
+                                continue
+
+                        # Качаем видео
+                        try:
+                            v_url = _yadisk_direct_url(public_url, path=video_f['path'])
+                            v_data = _http_get_with_retry(v_url, attempts=1, timeout=18)
+                        except Exception as e:
+                            errors.append({'idx': i, 'file': video_f['name'], 'error': str(e)[:120]})
+                            skipped += 1
+                            actual_end = i + 1
+                            continue
+
+                        ts = int(time.time())
+                        v_ext = video_f['name'].rsplit('.', 1)[-1]
+                        v_key = f"videos/legacy/import_{ts}_{i}.{v_ext}"
+                        try:
+                            s3.put_object(Bucket='files', Key=v_key, Body=v_data,
+                                          ContentType=_content_type(video_f['name']))
+                        except Exception as e:
+                            errors.append({'idx': i, 'file': video_f['name'], 'error': f'S3: {str(e)[:120]}'})
+                            skipped += 1
+                            actual_end = i + 1
+                            continue
+                        cdn_v = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{v_key}"
+                        cdn_t = None
+
+                        # Качаем превью, если есть (best-effort)
+                        if thumb_f:
+                            try:
+                                t_url = _yadisk_direct_url(public_url, path=thumb_f['path'])
+                                t_data = _http_get_with_retry(t_url, attempts=1, timeout=10)
+                                t_ext = thumb_f['name'].rsplit('.', 1)[-1]
+                                t_key = f"videos/legacy/import_{ts}_{i}.{t_ext}"
+                                s3.put_object(Bucket='files', Key=t_key, Body=t_data,
+                                              ContentType=_content_type(thumb_f['name']))
+                                cdn_t = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{t_key}"
+                            except Exception:
+                                cdn_t = None
+
+                        # Создаём запись. Описание = чистое имя без расширения
+                        descr = base.replace('_', ' ')
+                        descr_esc = descr.replace("'", "''")[:500]
+                        with conn.cursor() as cur:
+                            if cdn_t:
+                                cur.execute(
+                                    f"INSERT INTO {schema}.videos (url, thumbnail, author, handle, description, category, type, user_id) "
+                                    f"VALUES (%s, %s, 'Архив', 'archive', %s, 'humor', 'video', 'legacy-import') RETURNING id",
+                                    (cdn_v, cdn_t, descr_esc)
+                                )
+                            else:
+                                cur.execute(
+                                    f"INSERT INTO {schema}.videos (url, author, handle, description, category, type, user_id) "
+                                    f"VALUES (%s, 'Архив', 'archive', %s, 'humor', 'video', 'legacy-import') RETURNING id",
+                                    (cdn_v, descr_esc)
+                                )
+                            new_id = cur.fetchone()[0]
+                        conn.commit()
+                        created += 1
+                        created_ids.append(new_id)
+                    except Exception as e:
+                        try:
+                            conn.rollback()
+                        except Exception:
+                            pass
+                        errors.append({'idx': i, 'error': f'fatal: {str(e)[:160]}'})
+                        skipped += 1
+                    actual_end = i + 1
+
+                done = actual_end >= total
+                return {'statusCode': 200, 'headers': _cors(),
+                        'body': json.dumps({
+                            'offset': actual_end,
+                            'total': total,
+                            'created': created,
+                            'migrated': created,
+                            'skipped': skipped,
+                            'errors': errors,
+                            'created_ids': created_ids,
+                            'done': done,
+                        })}
+            finally:
+                conn.close()
+
         if action == 'import':
             if not public_url:
                 return {'statusCode': 400, 'headers': _cors(),

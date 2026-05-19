@@ -605,6 +605,55 @@ function Videos({ token }: { token: string }) {
   };
   const stopYadiskImport = () => { yadiskAbortRef.current = true; };
 
+  const yadiskImportAll = async () => {
+    if (!yadiskInfo) return;
+    const resumeFrom = yadiskProgress?.offset && yadiskProgress.offset < (yadiskProgress?.total || 0) ? yadiskProgress.offset : 0;
+    const msg = resumeFrom > 0
+      ? `Продолжить заливку всех файлов с ${resumeFrom}?`
+      : `Залить ВСЕ файлы из Я.Диска в S3 и создать новые записи в базе (≈${yadiskInfo.total_files} файлов, видео+превью объединятся в пары)?`;
+    if (!confirm(msg)) return;
+    setYadiskImporting(true);
+    yadiskAbortRef.current = false;
+    let offset = resumeFrom;
+    let migrated = yadiskProgress?.migrated || 0;
+    let skipped = yadiskProgress?.skipped || 0;
+    let consecutiveErrors = 0;
+    try {
+      while (!yadiskAbortRef.current) {
+        let d: { error?: string; offset?: number; total?: number; created?: number; migrated?: number; skipped?: number; done?: boolean };
+        try {
+          d = await callYadisk("import-all", { offset, batch_size: 3 });
+        } catch (netErr) {
+          consecutiveErrors++;
+          if (consecutiveErrors >= 5) { alert("Сеть/бэк недоступны. Прогресс сохранён, продолжу с " + offset); break; }
+          await new Promise((r) => setTimeout(r, 1500 * consecutiveErrors));
+          continue;
+        }
+        if (d.error) {
+          consecutiveErrors++;
+          if (consecutiveErrors >= 5) { alert("Ошибка: " + d.error + ". Продолжу с " + offset); break; }
+          offset += 3;
+          setYadiskProgress({ offset, total: d.total || yadiskInfo.total_files, migrated, skipped });
+          await new Promise((r) => setTimeout(r, 500));
+          continue;
+        }
+        consecutiveErrors = 0;
+        const newOffset = typeof d.offset === "number" ? d.offset : offset;
+        offset = newOffset <= offset ? offset + 3 : newOffset;
+        migrated += d.created || d.migrated || 0;
+        skipped += d.skipped || 0;
+        setYadiskProgress({ offset, total: d.total || yadiskInfo.total_files, migrated, skipped });
+        if (d.done || offset >= (d.total || yadiskInfo.total_files)) break;
+      }
+    } catch (e) {
+      alert("Ошибка: " + (e instanceof Error ? e.message : "неизвестная"));
+    } finally {
+      setYadiskImporting(false);
+      load();
+      loadBroken();
+    }
+  };
+
   // ---------- Разведка short-video.ru ----------
   const PROBE_API = "https://functions.poehali.dev/d1cfb246-8b1e-4e41-8905-1966589c1420";
   const [probeBusy, setProbeBusy] = useState(false);
@@ -830,14 +879,25 @@ function Videos({ token }: { token: string }) {
             )}
             <div className="flex gap-2 pt-1">
               {!yadiskImporting ? (
-                <button
-                  onClick={yadiskImport}
-                  disabled={yadiskInfo.matched_in_db === 0}
-                  className="px-3 py-2 rounded-lg bg-emerald-500 text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
-                >
-                  <Icon name="Play" size={14} />
-                  Запустить импорт
-                </button>
+                <>
+                  <button
+                    onClick={yadiskImport}
+                    disabled={yadiskInfo.matched_in_db === 0}
+                    className="px-3 py-2 rounded-lg bg-emerald-500 text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+                    title="Только обновить URL в существующих записях БД"
+                  >
+                    <Icon name="Play" size={14} />
+                    Обновить совпадения ({yadiskInfo.matched_in_db})
+                  </button>
+                  <button
+                    onClick={yadiskImportAll}
+                    className="px-3 py-2 rounded-lg bg-blue-500 text-white text-sm font-semibold hover:opacity-90 flex items-center gap-2"
+                    title="Залить ВСЕ файлы и создать новые записи в БД"
+                  >
+                    <Icon name="Upload" size={14} />
+                    Залить всё новыми
+                  </button>
+                </>
               ) : (
                 <button
                   onClick={stopYadiskImport}
