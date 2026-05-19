@@ -187,12 +187,8 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         result['chats_total'] = cur.fetchone()['c']
         _q(cur, "SELECT COUNT(*) AS c FROM {S}.live_streams WHERE status = 'active'")
         result['streams_active'] = cur.fetchone()['c']
-        _q(cur, "SELECT to_regclass(%s) AS t", (f"{_schema()}.reports",))
-        if cur.fetchone()['t']:
-            _q(cur, "SELECT COUNT(*) AS c FROM {S}.reports WHERE status = 'open'")
-            result['reports_open'] = cur.fetchone()['c']
-        else:
-            result['reports_open'] = 0
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.reports WHERE status = 'open'")
+        result['reports_open'] = cur.fetchone()['c']
         # График: регистрации за 14 дней
         _q(cur, """
             SELECT DATE(created_at) AS d, COUNT(*) AS c
@@ -501,22 +497,9 @@ def _route(cur, conn, action: str, body: dict) -> dict:
 
     # ============ BROADCAST / NOTIFICATIONS ============
     if action == 'broadcast':
-        # Создаём системный чат от имени админа и шлём сообщение всем пользователям
         text = (body.get('text') or '').strip()
         if not text:
             return {'statusCode': 400, 'headers': _cors(), 'body': json.dumps({'error': 'text required'})}
-        # Сохраняем в простую таблицу логов broadcasts (создадим лениво)
-        _q(cur, "SELECT to_regclass(%s) AS t", (f"{_schema()}.admin_broadcasts",))
-        exists = cur.fetchone()['t']
-        if not exists:
-            _q(cur, """
-                CREATE TABLE {S}.admin_broadcasts (
-                    id SERIAL PRIMARY KEY,
-                    text TEXT NOT NULL,
-                    target TEXT NOT NULL DEFAULT 'all',
-                    created_at TIMESTAMP DEFAULT NOW()
-                )
-            """)
         _q(cur, "INSERT INTO {S}.admin_broadcasts(text, target) VALUES (%s, %s) RETURNING id",
            (text, body.get('target') or 'all'))
         broadcast_id = cur.fetchone()['id']
@@ -525,10 +508,6 @@ def _route(cur, conn, action: str, body: dict) -> dict:
                 'body': json.dumps({'ok': True, 'broadcast_id': broadcast_id})}
 
     if action == 'broadcasts_list':
-        _q(cur, "SELECT to_regclass(%s) AS t", (f"{_schema()}.admin_broadcasts",))
-        exists = cur.fetchone()['t']
-        if not exists:
-            return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'broadcasts': []})}
         _q(cur, "SELECT id, text, target, created_at FROM {S}.admin_broadcasts ORDER BY id DESC LIMIT 50")
         return {'statusCode': 200, 'headers': _cors(),
                 'body': json.dumps({'broadcasts': cur.fetchall()}, default=str)}
