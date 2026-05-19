@@ -556,7 +556,10 @@ function Videos({ token, mediaType = "video" }: { token: string; mediaType?: "vi
     if (k === "video") counts.video++;
     else if (k === "image") counts.image++;
     else counts.unknown++;
-    if (v.hidden) counts.hidden++; else counts.active++;
+    // Счётчики статуса считаем только в рамках текущего фильтра по типу
+    if (kindFilter === "all" || k === kindFilter) {
+      if (v.hidden) counts.hidden++; else counts.active++;
+    }
   }
 
   const filtered = videos
