@@ -4,7 +4,7 @@ import Icon from "@/components/ui/icon";
 const API = "https://functions.poehali.dev/c578b52c-b9b6-47b3-9bcf-b6ab8405c4d7";
 const TOKEN_KEY = "admin_token_v1";
 
-type Section = "dashboard" | "users" | "videos" | "comments" | "chats" | "reports" | "streams" | "broadcast";
+type Section = "dashboard" | "users" | "videos" | "photos" | "comments" | "chats" | "reports" | "streams" | "broadcast";
 
 interface Stats {
   users_total: number; users_today: number; users_week: number;
@@ -35,6 +35,7 @@ const SECTIONS: { id: Section; label: string; icon: string }[] = [
   { id: "dashboard", label: "Дашборд", icon: "LayoutDashboard" },
   { id: "users", label: "Пользователи", icon: "Users" },
   { id: "videos", label: "Видео", icon: "Film" },
+  { id: "photos", label: "Фото", icon: "Image" },
   { id: "comments", label: "Комментарии", icon: "MessageSquare" },
   { id: "chats", label: "Чаты", icon: "MessagesSquare" },
   { id: "streams", label: "Стримы", icon: "Radio" },
@@ -101,7 +102,8 @@ export default function Admin() {
         <div className="flex-1 p-4 md:p-8 overflow-y-auto">
           {section === "dashboard" && <Dashboard token={token!} />}
           {section === "users" && <Users token={token!} />}
-          {section === "videos" && <Videos token={token!} />}
+          {section === "videos" && <Videos token={token!} mediaType="video" />}
+              {section === "photos" && <Videos token={token!} mediaType="image" />}
           {section === "comments" && <Comments token={token!} />}
           {section === "chats" && <Chats token={token!} />}
           {section === "streams" && <Streams token={token!} />}
@@ -432,11 +434,11 @@ type KindFilter = "all" | "video" | "image" | "unknown";
 type VisFilter = "all" | "active" | "hidden";
 type SortKey = "new" | "old" | "likes" | "comments";
 
-function Videos({ token }: { token: string }) {
+function Videos({ token, mediaType = "video" }: { token: string; mediaType?: "video" | "image" }) {
   const [videos, setVideos] = useState<VideoRow[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
-  const [kindFilter, setKindFilter] = useState<KindFilter>("all");
+  const [kindFilter, setKindFilter] = useState<KindFilter>(mediaType);
   const [visFilter, setVisFilter] = useState<VisFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("new");
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -445,6 +447,9 @@ function Videos({ token }: { token: string }) {
   const [migrating, setMigrating] = useState(false);
   const [migProgress, setMigProgress] = useState<{ migrated: number; failed: number; remaining: number } | null>(null);
   const migAbortRef = useRef(false);
+
+  // При переключении секции (Видео/Фото) сбрасываем фильтр типа на нужный
+  useEffect(() => { setKindFilter(mediaType); }, [mediaType]);
 
   const loadBroken = useCallback(async () => {
     try {
@@ -581,7 +586,7 @@ function Videos({ token }: { token: string }) {
 
   return (
     <div className="space-y-4 pb-24">
-      <h2 className="text-2xl font-bold hidden md:block">Видео</h2>
+      <h2 className="text-2xl font-bold hidden md:block">{mediaType === "image" ? "Фото" : "Видео"}</h2>
 
       {(effectiveBroken > 0 || migrating) && (
         <div className="bg-orange-500/10 border border-orange-500/30 rounded-2xl p-4 space-y-3">
@@ -656,21 +661,7 @@ function Videos({ token }: { token: string }) {
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-2 items-center">
-        <span className="text-[11px] uppercase tracking-wider text-white/40 mr-1">Тип:</span>
-        <Chip active={kindFilter === "all"} onClick={() => setKindFilter("all")}>Все ({counts.all})</Chip>
-        <Chip active={kindFilter === "video"} onClick={() => setKindFilter("video")}>
-          <span className="flex items-center gap-1"><Icon name="Video" size={12} /> Видео ({counts.video})</span>
-        </Chip>
-        <Chip active={kindFilter === "image"} onClick={() => setKindFilter("image")}>
-          <span className="flex items-center gap-1"><Icon name="Image" size={12} /> Фото ({counts.image})</span>
-        </Chip>
-        {counts.unknown > 0 && (
-          <Chip active={kindFilter === "unknown"} onClick={() => setKindFilter("unknown")}>
-            <span className="flex items-center gap-1"><Icon name="HelpCircle" size={12} /> Прочее ({counts.unknown})</span>
-          </Chip>
-        )}
-      </div>
+
 
       <div className="flex flex-wrap gap-2 items-center">
         <span className="text-[11px] uppercase tracking-wider text-white/40 mr-1">Статус:</span>
