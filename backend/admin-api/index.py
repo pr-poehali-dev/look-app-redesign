@@ -301,6 +301,24 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         conn.commit()
         return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
 
+    if action == 'videos_bulk':
+        ids_raw = body.get('ids') or []
+        op = body.get('op')  # 'hide' | 'show' | 'delete'
+        ids = [int(x) for x in ids_raw if str(x).strip().lstrip('-').isdigit()]
+        if not ids or op not in ('hide', 'show', 'delete'):
+            return {'statusCode': 400, 'headers': _cors(),
+                    'body': json.dumps({'error': 'ids and valid op required'})}
+        if op == 'delete':
+            _q(cur, "DELETE FROM {S}.videos WHERE id = ANY(%s)", (ids,))
+        elif op == 'hide':
+            _q(cur, "UPDATE {S}.videos SET hidden = TRUE WHERE id = ANY(%s)", (ids,))
+        else:
+            _q(cur, "UPDATE {S}.videos SET hidden = FALSE WHERE id = ANY(%s)", (ids,))
+        affected = cur.rowcount
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(),
+                'body': json.dumps({'ok': True, 'affected': affected})}
+
     # ============ COMMENTS ============
     if action == 'comments_list':
         limit = _safe_int(body.get('limit'), 50, 200)

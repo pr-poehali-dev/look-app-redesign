@@ -310,8 +310,25 @@ function detectKind(url?: string): "video" | "image" | "unknown" {
 function VideoPreview({ url, thumbnail, hidden }: { url?: string; thumbnail?: string; hidden?: boolean }) {
   const [playing, setPlaying] = useState(false);
   const [errored, setErrored] = useState(false);
+  const [visible, setVisible] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
   const kind = detectKind(url);
+
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) { setVisible(true); obs.disconnect(); break; }
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   const toggle = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -323,8 +340,16 @@ function VideoPreview({ url, thumbnail, hidden }: { url?: string; thumbnail?: st
   };
 
   const renderMedia = () => {
+    if (!visible) {
+      // Скелетон до попадания в viewport
+      return (
+        <div className="w-full h-full flex items-center justify-center text-white/20 animate-pulse">
+          <Icon name="Image" size={28} />
+        </div>
+      );
+    }
     if (thumbnail && !errored) {
-      return <img src={thumbnail} alt="" className="w-full h-full object-cover" onError={() => setErrored(true)} />;
+      return <img src={thumbnail} alt="" className="w-full h-full object-cover" loading="lazy" onError={() => setErrored(true)} />;
     }
     if (kind === "video" && url) {
       return (
@@ -345,7 +370,6 @@ function VideoPreview({ url, thumbnail, hidden }: { url?: string; thumbnail?: st
       return <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" onError={() => setErrored(true)} />;
     }
     if (kind === "unknown" && url && !errored) {
-      // Пробуем как картинку (большинство ссылок без расширения — изображения)
       return <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" onError={() => setErrored(true)} />;
     }
     return (
@@ -356,7 +380,7 @@ function VideoPreview({ url, thumbnail, hidden }: { url?: string; thumbnail?: st
   };
 
   return (
-    <div className="aspect-[9/16] bg-black relative cursor-pointer group" onClick={toggle}>
+    <div ref={wrapperRef} className="aspect-[9/16] bg-black relative cursor-pointer group" onClick={toggle}>
       {renderMedia()}
       {/* Play overlay только для видео */}
       {!playing && kind === "video" && !errored && (
@@ -378,9 +402,15 @@ function VideoPreview({ url, thumbnail, hidden }: { url?: string; thumbnail?: st
         </div>
       )}
       {errored && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-white/40 gap-1 text-[10px] p-2 text-center bg-black/60">
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-white/40 gap-2 text-[10px] p-2 text-center bg-black/70">
           <Icon name="AlertTriangle" size={20} />
           <span>Не загрузилось</span>
+          <button
+            onClick={(e) => { e.stopPropagation(); setErrored(false); }}
+            className="px-2 py-1 rounded bg-white/10 text-white/80 hover:bg-white/20 text-[10px]"
+          >
+            Повторить
+          </button>
         </div>
       )}
       {hidden && <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/70 text-xs">скрыто</div>}
@@ -399,6 +429,8 @@ function Videos({ token }: { token: string }) {
   const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const [visFilter, setVisFilter] = useState<VisFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("new");
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [selectMode, setSelectMode] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -417,6 +449,25 @@ function Videos({ token }: { token: string }) {
   const del = async (id: number) => {
     if (!confirm("Удалить видео?")) return;
     await api("video_delete", { video_id: id }, token);
+    load();
+  };
+
+  const toggleSel = (id: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const clearSel = () => setSelected(new Set());
+  const bulk = async (op: "hide" | "show" | "delete") => {
+    if (selected.size === 0) return;
+    const msg = op === "delete"
+      ? `Удалить ${selected.size} записей навсегда?`
+      : op === "hide" ? `Скрыть ${selected.size} записей?` : `Показать ${selected.size} записей?`;
+    if (!confirm(msg)) return;
+    await api("videos_bulk", { ids: Array.from(selected), op }, token);
+    clearSel();
     load();
   };
 
@@ -450,8 +501,12 @@ function Videos({ token }: { token: string }) {
     </button>
   );
 
+  const selectAllVisible = () => {
+    setSelected(new Set(filtered.map((v) => v.id)));
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-24">
       <h2 className="text-2xl font-bold hidden md:block">Видео</h2>
       <div className="flex gap-2">
         <input
@@ -461,6 +516,12 @@ function Videos({ token }: { token: string }) {
         />
         <button onClick={load} className="px-4 rounded-xl bg-zinc-900 border border-white/10 hover:bg-white/5">
           <Icon name="RefreshCw" size={18} />
+        </button>
+        <button
+          onClick={() => { setSelectMode((s) => !s); clearSel(); }}
+          className={`px-4 rounded-xl text-sm font-medium ${selectMode ? "bg-[#fe2c55] text-white" : "bg-zinc-900 border border-white/10 hover:bg-white/5"}`}
+        >
+          {selectMode ? "Готово" : "Выбрать"}
         </button>
       </div>
 
@@ -497,28 +558,56 @@ function Videos({ token }: { token: string }) {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {loading && <p className="text-white/50 col-span-full">Загрузка...</p>}
         {!loading && filtered.length === 0 && <p className="text-white/40 col-span-full text-sm">Нет записей под выбранные фильтры</p>}
-        {filtered.map((v) => (
-          <div key={v.id} className={`bg-zinc-900 border border-white/10 rounded-xl overflow-hidden ${v.hidden ? "opacity-50" : ""}`}>
-            <VideoPreview url={v.url} thumbnail={v.thumbnail} hidden={v.hidden} />
-            <div className="p-2 space-y-1">
-              <p className="text-xs font-medium truncate">{v.author} <span className="text-white/30">@{v.handle}</span></p>
-              <p className="text-[11px] text-white/40 truncate">{v.description || "—"}</p>
-              <p className="text-[11px] text-white/40">♥ {v.likes || 0} · 💬 {v.comments || 0} · #{v.id}</p>
-              <div className="flex gap-1 pt-1">
-                <a href={v.url} target="_blank" rel="noreferrer" className="px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-[11px] flex items-center" title="Открыть в новой вкладке">
-                  <Icon name="ExternalLink" size={12} />
-                </a>
-                <button onClick={() => hide(v.id, !!v.hidden)} className="flex-1 py-1 rounded bg-white/5 hover:bg-white/10 text-[11px]">
-                  {v.hidden ? "Показать" : "Скрыть"}
-                </button>
-                <button onClick={() => del(v.id)} className="px-2 py-1 rounded bg-[#fe2c55]/20 hover:bg-[#fe2c55]/30 text-[#fe2c55]">
-                  <Icon name="Trash2" size={12} />
-                </button>
+        {filtered.map((v) => {
+          const isSel = selected.has(v.id);
+          return (
+            <div
+              key={v.id}
+              className={`bg-zinc-900 border rounded-xl overflow-hidden relative ${isSel ? "border-[#fe2c55] ring-2 ring-[#fe2c55]/40" : "border-white/10"} ${v.hidden ? "opacity-50" : ""}`}
+              onClick={selectMode ? () => toggleSel(v.id) : undefined}
+              style={selectMode ? { cursor: "pointer" } : undefined}
+            >
+              {selectMode && (
+                <div className="absolute top-2 left-2 z-10 w-6 h-6 rounded-md flex items-center justify-center"
+                  style={{ background: isSel ? "#fe2c55" : "rgba(0,0,0,0.7)", border: isSel ? "none" : "1.5px solid rgba(255,255,255,0.4)" }}>
+                  {isSel && <Icon name="Check" size={14} className="text-white" />}
+                </div>
+              )}
+              <VideoPreview url={v.url} thumbnail={v.thumbnail} hidden={v.hidden} />
+              <div className="p-2 space-y-1">
+                <p className="text-xs font-medium truncate">{v.author} <span className="text-white/30">@{v.handle}</span></p>
+                <p className="text-[11px] text-white/40 truncate">{v.description || "—"}</p>
+                <p className="text-[11px] text-white/40">♥ {v.likes || 0} · 💬 {v.comments || 0} · #{v.id}</p>
+                {!selectMode && (
+                  <div className="flex gap-1 pt-1">
+                    <a href={v.url} target="_blank" rel="noreferrer" className="px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-[11px] flex items-center" title="Открыть в новой вкладке">
+                      <Icon name="ExternalLink" size={12} />
+                    </a>
+                    <button onClick={() => hide(v.id, !!v.hidden)} className="flex-1 py-1 rounded bg-white/5 hover:bg-white/10 text-[11px]">
+                      {v.hidden ? "Показать" : "Скрыть"}
+                    </button>
+                    <button onClick={() => del(v.id)} className="px-2 py-1 rounded bg-[#fe2c55]/20 hover:bg-[#fe2c55]/30 text-[#fe2c55]">
+                      <Icon name="Trash2" size={12} />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
+      {selectMode && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-zinc-900 border border-white/15 rounded-2xl shadow-2xl px-3 py-2 flex items-center gap-2 max-w-[calc(100vw-2rem)] flex-wrap">
+          <span className="text-sm font-semibold text-white px-2">{selected.size} выбрано</span>
+          <button onClick={selectAllVisible} className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs">Выбрать все</button>
+          <button onClick={clearSel} className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs">Снять</button>
+          <div className="w-px h-6 bg-white/10" />
+          <button onClick={() => bulk("hide")} disabled={!selected.size} className="px-3 py-1.5 rounded-lg bg-orange-500/20 text-orange-300 text-xs font-medium disabled:opacity-40">Скрыть</button>
+          <button onClick={() => bulk("show")} disabled={!selected.size} className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs font-medium disabled:opacity-40">Показать</button>
+          <button onClick={() => bulk("delete")} disabled={!selected.size} className="px-3 py-1.5 rounded-lg bg-[#fe2c55] text-white text-xs font-semibold disabled:opacity-40">Удалить</button>
+        </div>
+      )}
     </div>
   );
 }
