@@ -571,6 +571,28 @@ function Videos({ token }: { token: string }) {
     }
   };
   const stopYadiskImport = () => { yadiskAbortRef.current = true; };
+
+  // ---------- Разведка short-video.ru ----------
+  const PROBE_API = "https://functions.poehali.dev/d1cfb246-8b1e-4e41-8905-1966589c1420";
+  const [probeBusy, setProbeBusy] = useState(false);
+  const [probeResult, setProbeResult] = useState<unknown>(null);
+  const runProbe = async () => {
+    setProbeBusy(true);
+    setProbeResult(null);
+    try {
+      const res = await fetch(PROBE_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Admin-Token": token },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      setProbeResult(data);
+    } catch (e) {
+      setProbeResult({ error: String(e) });
+    } finally {
+      setProbeBusy(false);
+    }
+  };
   const fmtBytes = (n: number) => {
     if (n < 1024) return `${n} Б`;
     if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} КБ`;
@@ -710,6 +732,30 @@ function Videos({ token }: { token: string }) {
           )}
         </div>
       )}
+
+      {/* ----- Разведка short-video.ru ----- */}
+      <div className="bg-violet-500/10 border border-violet-500/30 rounded-2xl p-4 space-y-3">
+        <div className="flex items-start gap-3 flex-wrap">
+          <Icon name="Radar" size={20} className="text-violet-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-white">Разведка short-video.ru</p>
+            <p className="text-xs text-white/60">Залогинимся на short-video.ru с сохранёнными секретами и узнаем настоящие пути к файлам видео и превью.</p>
+          </div>
+          <button
+            onClick={runProbe}
+            disabled={probeBusy}
+            className="px-3 py-2 rounded-lg bg-violet-500 text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+          >
+            {probeBusy ? <Icon name="Loader2" size={16} className="animate-spin" /> : <Icon name="Play" size={16} />}
+            Запустить разведку
+          </button>
+        </div>
+        {!!probeResult && (
+          <pre className="bg-black/40 rounded-lg p-3 text-[11px] text-white/80 overflow-auto max-h-80 whitespace-pre-wrap break-all">
+            {JSON.stringify(probeResult, null, 2)}
+          </pre>
+        )}
+      </div>
 
       {/* ----- Импорт ZIP с Яндекс.Диска ----- */}
       <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4 space-y-3">
