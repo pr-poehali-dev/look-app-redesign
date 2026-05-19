@@ -439,7 +439,7 @@ function Videos({ token, mediaType = "video" }: { token: string; mediaType?: "vi
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [kindFilter, setKindFilter] = useState<KindFilter>(mediaType);
-  const [visFilter, setVisFilter] = useState<VisFilter>("all");
+  const [visFilter, setVisFilter] = useState<VisFilter>("active");
   const [sortKey, setSortKey] = useState<SortKey>("new");
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
@@ -448,8 +448,8 @@ function Videos({ token, mediaType = "video" }: { token: string; mediaType?: "vi
   const [migProgress, setMigProgress] = useState<{ migrated: number; failed: number; remaining: number } | null>(null);
   const migAbortRef = useRef(false);
 
-  // При переключении секции (Видео/Фото) сбрасываем фильтр типа на нужный
-  useEffect(() => { setKindFilter(mediaType); }, [mediaType]);
+  // При переключении секции (Видео/Фото) сбрасываем фильтр типа и показываем только активные
+  useEffect(() => { setKindFilter(mediaType); setVisFilter("active"); }, [mediaType]);
 
   const loadBroken = useCallback(async () => {
     try {
