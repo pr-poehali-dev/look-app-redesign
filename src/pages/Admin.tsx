@@ -454,9 +454,14 @@ function Videos({ token }: { token: string }) {
   }, [token]);
   useEffect(() => { loadBroken(); }, [loadBroken]);
 
+  // Дублирующий локальный счётчик — на случай если бэк-эндпоинт не отвечает
+  const localBrokenCount = videos.filter((v) => isLegacyExternal(v.url)).length;
+  const effectiveBroken = brokenCount || localBrokenCount;
+
   const deleteBroken = async () => {
-    if (brokenCount === 0) return;
-    if (!confirm(`Удалить ${brokenCount} битых записей со ссылками на short-video.ru? Это действие необратимо.`)) return;
+    const n = brokenCount || videos.filter((v) => isLegacyExternal(v.url)).length;
+    if (n === 0) return;
+    if (!confirm(`Удалить ${n} битых записей со ссылками на short-video.ru? Это действие необратимо.`)) return;
     const d = await api("videos_broken_delete", {}, token);
     alert(`Удалено: ${d.affected || 0}`);
     setBrokenCount(0);
@@ -475,8 +480,9 @@ function Videos({ token }: { token: string }) {
   };
 
   const migrateLegacy = async () => {
-    if (migrating || brokenCount === 0) return;
-    if (!confirm(`Перенести ${brokenCount} legacy-видео на наш CDN? Будет идти в фоне партиями по 5 шт, неудачные пометятся как скрытые.`)) return;
+    const n = brokenCount || videos.filter((v) => isLegacyExternal(v.url)).length;
+    if (migrating || n === 0) return;
+    if (!confirm(`Перенести ${n} legacy-видео на наш CDN? Будет идти в фоне партиями по 5 шт, неудачные пометятся как скрытые.`)) return;
     setMigrating(true);
     migAbortRef.current = false;
     let totalMigrated = 0;
@@ -577,13 +583,13 @@ function Videos({ token }: { token: string }) {
     <div className="space-y-4 pb-24">
       <h2 className="text-2xl font-bold hidden md:block">Видео</h2>
 
-      {(brokenCount > 0 || migrating) && (
+      {(effectiveBroken > 0 || migrating) && (
         <div className="bg-orange-500/10 border border-orange-500/30 rounded-2xl p-4 space-y-3">
           <div className="flex items-start gap-3 flex-wrap">
             <Icon name="AlertTriangle" size={20} className="text-orange-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white">
-                {migrating ? "Переносим legacy-видео на наш CDN..." : `Найдено ${brokenCount} legacy-записей`}
+                {migrating ? "Переносим legacy-видео на наш CDN..." : `Найдено ${effectiveBroken} legacy-записей`}
               </p>
               <p className="text-xs text-white/60">
                 Видео со старого сайта short-video.ru. Можно перенести файлы на наш CDN, чтобы они снова работали, либо удалить.
@@ -596,7 +602,7 @@ function Videos({ token }: { token: string }) {
                   className="px-3 py-2 rounded-lg bg-emerald-500 text-white text-sm font-semibold hover:opacity-90 flex items-center gap-2"
                 >
                   <Icon name="CloudDownload" size={16} />
-                  Перенести на наш CDN ({brokenCount})
+                  Перенести на наш CDN ({effectiveBroken})
                 </button>
                 <button
                   onClick={deleteBroken}
