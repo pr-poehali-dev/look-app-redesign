@@ -269,6 +269,54 @@ def _s3():
     )
 
 
+def _cache_key(public_url: str) -> str:
+    h = hashlib.sha1(public_url.encode()).hexdigest()[:16]
+    return f"videos/legacy/_cache/folder_{h}.json"
+
+
+def _load_folder_cache(s3, public_url: str):
+    try:
+        obj = s3.get_object(Bucket='files', Key=_cache_key(public_url))
+        return json.loads(obj['Body'].read())
+    except Exception:
+        return None
+
+
+def _save_folder_cache(s3, public_url: str, files: list):
+    try:
+        s3.put_object(
+            Bucket='files',
+            Key=_cache_key(public_url),
+            Body=json.dumps(files).encode(),
+            ContentType='application/json',
+        )
+    except Exception:
+        pass
+
+
+def _http_get_with_retry(url: str, attempts: int = 3, timeout: int = 120) -> bytes:
+    last_err = None
+    for i in range(attempts):
+        try:
+            with urllib.request.urlopen(url, timeout=timeout) as resp:
+                return resp.read()
+        except Exception as e:
+            last_err = e
+            time.sleep(0.5 * (i + 1))
+    raise last_err
+
+
+def _yadisk_direct_url_retry(public_url: str, path: str, attempts: int = 3) -> str:
+    last_err = None
+    for i in range(attempts):
+        try:
+            return _yadisk_direct_url(public_url, path=path)
+        except Exception as e:
+            last_err = e
+            time.sleep(0.5 * (i + 1))
+    raise last_err
+
+
 def handler(event: dict, context) -> dict:
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': _cors(), 'body': ''}
@@ -306,7 +354,11 @@ def handler(event: dict, context) -> dict:
                 names = [_basename(e['name']) for e in entries if not e['name'].endswith('/')]
                 total_size = reader.size
             elif res_type == 'dir':
-                files = _yadisk_list_folder(public_url)
+                s3 = _s3()
+                files = _load_folder_cache(s3, public_url)
+                if not files:
+                    files = _yadisk_list_folder(public_url)
+                    _save_folder_cache(s3, public_url, files)
                 names = [f['name'] for f in files]
                 total_size = sum(f['size'] for f in files)
             else:
@@ -361,7 +413,11 @@ def handler(event: dict, context) -> dict:
                 zip_entries = [e for e in zip_reader.read_central_directory() if not e['name'].endswith('/')]
                 total = len(zip_entries)
             elif res_type == 'dir':
-                folder_files = _yadisk_list_folder(public_url)
+                s3_tmp = _s3()
+                folder_files = _load_folder_cache(s3_tmp, public_url)
+                if not folder_files:
+                    folder_files = _yadisk_list_folder(public_url)
+                    _save_folder_cache(s3_tmp, public_url, folder_files)
                 total = len(folder_files)
             else:
                 return {'statusCode': 400, 'headers': _cors(),
@@ -402,9 +458,8 @@ def handler(event: dict, context) -> dict:
                         if is_zip:
                             data = zip_reader.read_entry(entry)
                         else:
-                            file_url = _yadisk_direct_url(public_url, path=folder_files[i]['path'])
-                            with urllib.request.urlopen(file_url, timeout=120) as resp:
-                                data = resp.read()
+                            file_url = _yadisk_direct_url_retry(public_url, folder_files[i]['path'])
+                            data = _http_get_with_retry(file_url, attempts=3, timeout=120)
                     except Exception as e:
                         errors.append({'file': fname, 'error': str(e)[:120]})
                         continue
