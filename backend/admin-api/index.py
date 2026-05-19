@@ -448,18 +448,25 @@ def _route(cur, conn, action: str, body: dict) -> dict:
 
     if action == 'videos_delete_broken_cdn':
         # Удалить видео с битыми URL вида /bucket/legacy/uploads/ (файлы не существуют на CDN)
-        _q(cur, """
-            SELECT id FROM {S}.videos
-            WHERE url LIKE '%/bucket/legacy/uploads/%'
-        """)
+        schema = _schema()
+        cur.execute(f"SELECT id FROM {schema}.videos WHERE url LIKE %s", ('%/bucket/legacy/uploads/%',))
         ids = [r['id'] for r in cur.fetchall()]
         if not ids:
             return {'statusCode': 200, 'headers': _cors(),
                     'body': json.dumps({'ok': True, 'deleted': 0})}
-        ids_str = [str(x) for x in ids]
-        _q(cur, "DELETE FROM {S}.likes WHERE target_type = 'video' AND target_id = ANY(%s)", (ids_str,))
-        _q(cur, "DELETE FROM {S}.comments WHERE target_type = 'video' AND target_id = ANY(%s)", (ids_str,))
-        _q(cur, "DELETE FROM {S}.videos WHERE id = ANY(%s)", (ids,))
+        ids_str_list = [str(x) for x in ids]
+        cur.execute(
+            f"DELETE FROM {schema}.likes WHERE target_type = 'video' AND target_id = ANY(%s::text[])",
+            (ids_str_list,)
+        )
+        cur.execute(
+            f"DELETE FROM {schema}.comments WHERE target_type = 'video' AND target_id = ANY(%s::text[])",
+            (ids_str_list,)
+        )
+        cur.execute(
+            f"DELETE FROM {schema}.videos WHERE id = ANY(%s::int[])",
+            (ids,)
+        )
         affected = cur.rowcount
         conn.commit()
         return {'statusCode': 200, 'headers': _cors(),
