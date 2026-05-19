@@ -538,6 +538,20 @@ function Videos({ token }: { token: string }) {
     }
   };
 
+  const deleteArchiveVideos = async () => {
+    if (!confirm("Удалить все видео с автором «Архив @archive», для которых не нашлось реального автора?")) return;
+    setMatchBusy(true);
+    try {
+      const d = await api("videos_delete_archive", {}, token);
+      alert(`Удалено: ${d.deleted}`);
+      load();
+    } catch (e) {
+      alert("Ошибка: " + (e instanceof Error ? e.message : "неизвестная"));
+    } finally {
+      setMatchBusy(false);
+    }
+  };
+
   // ---------- Очистка дублей и скрытых ----------
   const [cleanupInfo, setCleanupInfo] = useState<{ total: number; hidden: number; duplicates: number; to_delete: number; will_remain: number } | null>(null);
   const [cleanupBusy, setCleanupBusy] = useState(false);
@@ -890,14 +904,24 @@ function Videos({ token }: { token: string }) {
             </p>
           </div>
           {!matchInfo ? (
-            <button
-              onClick={previewMatchAuthors}
-              disabled={matchBusy}
-              className="px-3 py-2 rounded-lg bg-cyan-500 text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
-            >
-              {matchBusy ? <Icon name="Loader2" size={16} className="animate-spin" /> : <Icon name="Search" size={16} />}
-              Найти авторов
-            </button>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={previewMatchAuthors}
+                disabled={matchBusy}
+                className="px-3 py-2 rounded-lg bg-cyan-500 text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+              >
+                {matchBusy ? <Icon name="Loader2" size={16} className="animate-spin" /> : <Icon name="Search" size={16} />}
+                Найти авторов
+              </button>
+              <button
+                onClick={deleteArchiveVideos}
+                disabled={matchBusy}
+                className="px-3 py-2 rounded-lg bg-rose-500 text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+              >
+                <Icon name="Trash2" size={16} />
+                Удалить «Архив»
+              </button>
+            </div>
           ) : (
             <div className="flex gap-2">
               <button
