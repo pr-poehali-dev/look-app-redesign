@@ -209,19 +209,52 @@ const NotificationsScreen = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
-const TextScreen = ({ onBack, title, text }: { onBack: () => void; title: string; text: string }) => (
-  <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-    <div className="md:max-w-2xl md:mx-auto">
-    <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
-      <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
-      <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">{title}</span>
+const ADMIN_API_URL = "https://functions.poehali.dev/c578b52c-b9b6-47b3-9bcf-b6ab8405c4d7";
+
+const LegalScreen = ({ onBack, title, settingKey, fallback }: { onBack: () => void; title: string; settingKey: "privacy_policy" | "terms_of_use"; fallback: string }) => {
+  const [text, setText] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(ADMIN_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "settings_public_get" }),
+        });
+        const raw = await res.json();
+        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+        const value = data?.settings?.[settingKey];
+        if (!cancelled) setText(value || fallback);
+      } catch {
+        if (!cancelled) setText(fallback);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [settingKey, fallback]);
+
+  return (
+    <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
+      <div className="md:max-w-2xl md:mx-auto">
+        <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
+          <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
+          <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">{title}</span>
+        </div>
+        <div className="px-4 py-6 md:py-4">
+          {loading ? (
+            <p className="text-gray-400 text-sm">Загрузка...</p>
+          ) : (
+            <p className="text-gray-600 text-sm md:text-xs leading-relaxed whitespace-pre-wrap">{text}</p>
+          )}
+        </div>
+      </div>
     </div>
-    <div className="px-4 py-6 md:py-4">
-      <p className="text-gray-600 text-sm md:text-xs leading-relaxed">{text}</p>
-    </div>
-    </div>
-  </div>
-);
+  );
+};
 
 const SubscriptionScreen = ({ onBack }: { onBack: () => void }) => {
   const [current] = useState<"free" | "premium">("free");
@@ -376,8 +409,8 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   if (screen === "blocked") return <BlockedScreen onBack={() => setScreen(null)} />;
   if (screen === "qr") return <QrScreen onBack={() => setScreen(null)} />;
   if (screen === "notifications") return <NotificationsScreen onBack={() => setScreen(null)} />;
-  if (screen === "terms") return <TextScreen onBack={() => setScreen(null)} title="Условия использования" text="Используя приложение Look, вы соглашаетесь с нашими условиями использования. Мы оставляем за собой право изменять условия в любое время. Продолжая использовать приложение, вы принимаете обновлённые условия. Запрещается публиковать незаконный, оскорбительный или вводящий в заблуждение контент. Мы вправе заблокировать аккаунт при нарушении правил." />;
-  if (screen === "privacy") return <TextScreen onBack={() => setScreen(null)} title="Политика конфиденциальности" text="Мы уважаем вашу конфиденциальность. Собираемые данные используются только для улучшения работы приложения Look. Мы не передаём личные данные третьим лицам без вашего согласия. Вы вправе в любой момент запросить удаление своих данных через настройки аккаунта или обратившись в поддержку." />;
+  if (screen === "terms") return <LegalScreen onBack={() => setScreen(null)} title="Условия использования" settingKey="terms_of_use" fallback="Используя приложение Look, вы соглашаетесь с нашими условиями использования." />;
+  if (screen === "privacy") return <LegalScreen onBack={() => setScreen(null)} title="Политика конфиденциальности" settingKey="privacy_policy" fallback="Мы уважаем вашу конфиденциальность." />;
   if (screen === "subscription") return <SubscriptionScreen onBack={() => setScreen(null)} />;
 
   const Toggle = ({ value, onChange }: { value: boolean; onChange: () => void }) => (
