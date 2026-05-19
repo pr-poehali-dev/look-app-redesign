@@ -1,0 +1,24 @@
+{
+  "tests": [
+    {
+      "name": "Unauthorized stats request returns 401",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "stats"},
+      "expectedStatus": 401
+    },
+    {
+      "name": "Unknown action without token returns 401",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "nonsense"},
+      "expectedStatus": 401
+    },
+    {
+      "name": "CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}

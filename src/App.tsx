@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import Admin from "./pages/Admin";
 import { UserMediaProvider } from "./context/UserMediaContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { UnreadProvider } from "./context/UnreadContext";
@@ -295,6 +296,18 @@ const AppContent = () => {
           )}
         </div>
       </div>
+    );
+  }
+
+  const isAdminRoute = typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
+  if (isAdminRoute) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/*" element={<Admin />} />
+        </Routes>
+      </BrowserRouter>
     );
   }
 

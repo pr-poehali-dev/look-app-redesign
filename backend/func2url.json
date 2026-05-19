@@ -1,4 +1,5 @@
 {
+  "admin-api": "https://functions.poehali.dev/c578b52c-b9b6-47b3-9bcf-b6ab8405c4d7",
   "import-firebase-users": "https://functions.poehali.dev/e4135c0e-d218-4ce3-bb17-1834be6fcfd0",
   "follows": "https://functions.poehali.dev/791bdb8d-0cb7-40b2-8a0c-e4a84b213fbc",
   "auth-me": "https://functions.poehali.dev/aa92a65b-92cc-4c07-a255-6e18811805bd",
