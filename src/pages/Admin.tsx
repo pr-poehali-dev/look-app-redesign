@@ -37,7 +37,6 @@ const SECTIONS: { id: Section; label: string; icon: string }[] = [
   { id: "videos", label: "Видео", icon: "Film" },
   { id: "photos", label: "Фото", icon: "Image" },
   { id: "comments", label: "Комментарии", icon: "MessageSquare" },
-  { id: "chats", label: "Чаты", icon: "MessagesSquare" },
   { id: "streams", label: "Стримы", icon: "Radio" },
   { id: "reports", label: "Жалобы", icon: "Flag" },
   { id: "broadcast", label: "Рассылки", icon: "Send" },
