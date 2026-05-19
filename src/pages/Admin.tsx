@@ -561,7 +561,7 @@ function Videos({ token }: { token: string }) {
       while (!yadiskAbortRef.current) {
         let d: { error?: string; offset?: number; total?: number; migrated?: number; skipped?: number; done?: boolean };
         try {
-          d = await callYadisk("import", { offset, batch_size: 3 });
+          d = await callYadisk("import", { offset, batch_size: 5 });
         } catch (netErr) {
           consecutiveErrors++;
           if (consecutiveErrors >= 5) {
@@ -577,17 +577,23 @@ function Videos({ token }: { token: string }) {
             alert("Ошибка 5 раз подряд: " + d.error + ". Прогресс сохранён, продолжу с " + offset);
             break;
           }
-          offset += 3;
+          offset += 5;
           setYadiskProgress({ offset, total: d.total || yadiskInfo.total_files, migrated, skipped });
           await new Promise((r) => setTimeout(r, 500));
           continue;
         }
         consecutiveErrors = 0;
-        offset = d.offset || offset;
+        const newOffset = typeof d.offset === "number" ? d.offset : offset;
+        if (newOffset <= offset) {
+          // защита от зацикливания: бэк не сдвинул offset — двигаем вручную
+          offset = offset + 5;
+        } else {
+          offset = newOffset;
+        }
         migrated += d.migrated || 0;
         skipped += d.skipped || 0;
         setYadiskProgress({ offset, total: d.total || yadiskInfo.total_files, migrated, skipped });
-        if (d.done) break;
+        if (d.done || offset >= (d.total || yadiskInfo.total_files)) break;
       }
     } catch (e) {
       alert("Ошибка импорта: " + (e instanceof Error ? e.message : "неизвестная"));
