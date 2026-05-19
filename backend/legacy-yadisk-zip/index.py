@@ -432,7 +432,12 @@ def handler(event: dict, context) -> dict:
 
             try:
                 end = min(offset + batch_size, total)
+                start_ts = time.time()
+                actual_end = offset
                 for i in range(offset, end):
+                    # Бюджет времени: если осталось меньше 9 сек до таймаута — выходим
+                    if time.time() - start_ts > 21:
+                        break
                     try:
                         if is_zip:
                             entry = zip_entries[i]
@@ -459,8 +464,8 @@ def handler(event: dict, context) -> dict:
                             if is_zip:
                                 data = zip_reader.read_entry(entry)
                             else:
-                                file_url = _yadisk_direct_url_retry(public_url, folder_files[i]['path'])
-                                data = _http_get_with_retry(file_url, attempts=3, timeout=120)
+                                file_url = _yadisk_direct_url(public_url, path=folder_files[i]['path'])
+                                data = _http_get_with_retry(file_url, attempts=1, timeout=18)
                         except Exception as e:
                             errors.append({'idx': i, 'file': fname, 'error': str(e)[:120]})
                             skipped += 1
@@ -500,12 +505,12 @@ def handler(event: dict, context) -> dict:
                             pass
                         errors.append({'idx': i, 'error': f'fatal: {str(e)[:160]}'})
                         skipped += 1
-                        continue
+                    actual_end = i + 1
 
-                done = end >= total
+                done = actual_end >= total
                 return {'statusCode': 200, 'headers': _cors(),
                         'body': json.dumps({
-                            'offset': end,
+                            'offset': actual_end,
                             'total': total,
                             'migrated': migrated,
                             'skipped': skipped,
