@@ -161,62 +161,104 @@ def handler(event: dict, context) -> dict:
         report['result'] = 'Login page not found — see steps above'
         return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps(report, ensure_ascii=False)}
 
-    # 2) POST на форму
-    post_url = form_action_m if form_action_m else login_page_url
-    if post_url.startswith('/'):
-        post_url = BASE + post_url
+    # 1.5) Парсим страницу логина — ищем JS-эндпоинты для входа
+    code, _, body, _ = _fetch(opener, login_page_url)
+    page_html = body.decode('utf-8', errors='replace')
+    # Ищем url: '/что-то' рядом с login/auth
+    js_urls = re.findall(r'url\s*:\s*["\']([^"\']+)["\']', page_html, re.IGNORECASE)
+    fetch_urls = re.findall(r'fetch\(["\']([^"\']+)["\']', page_html, re.IGNORECASE)
+    ajax_paths = re.findall(r'["\'](/[\w/_-]*(?:login|authenticate|sign[-_]?in|auth)[\w/_-]*)["\']', page_html, re.IGNORECASE)
+    route_paths = re.findall(r'route\(["\']([^"\']+)["\']\)', page_html, re.IGNORECASE)
+    # Скрипты со страницы
+    scripts = re.findall(r'<script[^>]+src=["\']([^"\']+)["\']', page_html, re.IGNORECASE)
+    report['login_page_analysis'] = {
+        'js_urls': list(dict.fromkeys(js_urls))[:20],
+        'fetch_urls': list(dict.fromkeys(fetch_urls))[:20],
+        'ajax_login_paths': list(dict.fromkeys(ajax_paths))[:20],
+        'routes': list(dict.fromkeys(route_paths))[:20],
+        'scripts': list(dict.fromkeys(scripts))[:10],
+    }
 
-    # Пробуем разные имена полей — Laravel часто использует email или login
-    login_attempts = []
+    # 1.6) Пробуем кучу типичных endpoint-ов для логина Laravel
+    candidate_endpoints = [
+        '/login', '/authenticate', '/auth/login', '/sign-in', '/signin',
+        '/post-login', '/do-login', '/user/login', '/users/login',
+        '/account/login', '/api/login', '/api/auth/login',
+    ]
+    # Добавляем то что нашли в JS
+    for u in (ajax_paths + js_urls + fetch_urls):
+        if u and u.startswith('/') and u not in candidate_endpoints and len(u) < 80:
+            candidate_endpoints.append(u)
+
+    # 2) Перебираем endpoint'ы + поле логина (username сразу первым)
+    field_priority = []
     if detected_field:
-        login_attempts.append({'_token': csrf, detected_field: login_val, 'password': pass_val})
-    for fn in ('email', 'username', 'login', 'user', 'name'):
-        if not detected_field or fn != detected_field:
-            login_attempts.append({'_token': csrf, fn: login_val, 'password': pass_val})
+        field_priority.append(detected_field)
+    for fn in ('username', 'email', 'login', 'user', 'name'):
+        if fn not in field_priority:
+            field_priority.append(fn)
 
     login_ok = False
-    for attempt in login_attempts:
-        code, hdrs, body, final = _fetch(
-            opener, post_url, data=attempt,
-            headers={
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Referer': login_page_url or f'{BASE}/login',
-                'X-CSRF-TOKEN': csrf,
-                'Origin': BASE,
-            },
-            method='POST',
-        )
-        cookies_now = [c.name for c in cj]
-        landed = final
-        # Признак успешного логина — редирект НЕ на /login и наличие сессионной cookie
-        report['steps'].append({
-            'step': f"POST {post_url} ({list(attempt.keys())})",
-            'status': code,
-            'final_url': landed,
-            'cookies': cookies_now,
-            'body_head': body[:300].decode('utf-8', errors='replace'),
-        })
-        if landed and 'login' not in landed and code in (200, 302):
-            # Дополнительная проверка — пробуем /posts
+    tried = 0
+    for ep in candidate_endpoints:
+        post_url = BASE + ep if ep.startswith('/') else ep
+        for field in field_priority:
+            tried += 1
+            if tried > 25:
+                break
+            attempt = {'_token': csrf, field: login_val, 'password': pass_val}
+            # Получаем свежий XSRF cookie для заголовка
+            xsrf_cookie = None
+            for c in cj:
+                if c.name == 'XSRF-TOKEN':
+                    xsrf_cookie = urllib.parse.unquote(c.value)
+                    break
+            code, hdrs, body, final = _fetch(
+                opener, post_url, data=attempt,
+                headers={
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json, text/html, */*',
+                    'Referer': login_page_url or BASE + '/',
+                    'X-CSRF-TOKEN': csrf,
+                    'X-XSRF-TOKEN': xsrf_cookie or csrf,
+                    'Origin': BASE,
+                },
+                method='POST',
+            )
+            # 405 = метод не разрешён, 404 = такого route нет — пропускаем
+            if code in (404, 405):
+                report['steps'].append({
+                    'step': f'POST {ep} [{field}]',
+                    'status': code, 'skip': True,
+                })
+                continue
+            cookies_now = [c.name for c in cj]
+            report['steps'].append({
+                'step': f'POST {ep} [{field}]',
+                'status': code,
+                'final_url': final,
+                'cookies': cookies_now,
+                'body_head': body[:250].decode('utf-8', errors='replace'),
+            })
+            # Проверяем — заработал ли логин (получаем /posts)
             code2, _, body2, final2 = _fetch(opener, f'{BASE}/posts')
             text2 = body2.decode('utf-8', errors='replace')
-            if 'authentication-bg' not in text2 and code2 == 200:
+            if 'authentication-bg' not in text2 and code2 == 200 and 'csrf-token' in text2:
                 login_ok = True
-                report['login_field_used'] = list(attempt.keys())
+                report['login_endpoint'] = ep
+                report['login_field_used'] = field
                 report['posts_status'] = code2
                 report['posts_final_url'] = final2
-                # Ищем video и img URL
                 videos = re.findall(r'<(?:video|source)[^>]+src=["\']([^"\']+)["\']', text2, re.IGNORECASE)
                 imgs = re.findall(r'<img[^>]+src=["\']([^"\']+)["\']', text2, re.IGNORECASE)
-                # data-src
-                data_srcs = re.findall(r'data-src=["\']([^"\']+\.(?:mp4|webm|jpg|jpeg|png))["\']', text2, re.IGNORECASE)
-                # любые URL в JS похожие на медиа
-                media_urls = re.findall(r'https?://[^"\'\s<>]+\.(?:mp4|webm|jpg|jpeg|png)', text2)
+                data_srcs = re.findall(r'data-src=["\']([^"\']+\.(?:mp4|webm|jpg|jpeg|png|webp))["\']', text2, re.IGNORECASE)
+                media_urls = re.findall(r'https?://[^"\'\s<>]+\.(?:mp4|webm|jpg|jpeg|png|webp)', text2)
                 report['posts_videos'] = list(dict.fromkeys(videos))[:10]
                 report['posts_imgs'] = list(dict.fromkeys(imgs))[:10]
                 report['posts_data_srcs'] = list(dict.fromkeys(data_srcs))[:10]
                 report['posts_media_urls'] = list(dict.fromkeys(media_urls))[:10]
-                report['posts_body_head'] = text2[:800]
+                report['posts_body_head'] = text2[:1000]
                 break
         if login_ok:
             break
