@@ -1,0 +1,17 @@
+{
+  "tests": [
+    {
+      "name": "Unauthorized returns 401",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "status"},
+      "expectedStatus": 401
+    },
+    {
+      "name": "CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}

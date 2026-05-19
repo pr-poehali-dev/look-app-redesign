@@ -442,6 +442,9 @@ function Videos({ token }: { token: string }) {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [brokenCount, setBrokenCount] = useState(0);
+  const [migrating, setMigrating] = useState(false);
+  const [migProgress, setMigProgress] = useState<{ migrated: number; failed: number; remaining: number } | null>(null);
+  const migAbortRef = useRef(false);
 
   const loadBroken = useCallback(async () => {
     try {
@@ -459,6 +462,43 @@ function Videos({ token }: { token: string }) {
     setBrokenCount(0);
     load();
   };
+
+  const REUPLOAD_API = "https://functions.poehali.dev/d60ef7bd-d96d-4388-9c4a-637a822e9313";
+  const callReupload = async (action: string, payload: Record<string, unknown> = {}) => {
+    const res = await fetch(REUPLOAD_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Admin-Token": token },
+      body: JSON.stringify({ action, ...payload }),
+    });
+    const raw = await res.json();
+    return typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+  };
+
+  const migrateLegacy = async () => {
+    if (migrating || brokenCount === 0) return;
+    if (!confirm(`Перенести ${brokenCount} legacy-видео на наш CDN? Будет идти в фоне партиями по 5 шт, неудачные пометятся как скрытые.`)) return;
+    setMigrating(true);
+    migAbortRef.current = false;
+    let totalMigrated = 0;
+    let totalFailed = 0;
+    try {
+      while (!migAbortRef.current) {
+        const d = await callReupload("migrate", { batch_size: 5 });
+        totalMigrated += d.migrated || 0;
+        totalFailed += d.failed || 0;
+        setMigProgress({ migrated: totalMigrated, failed: totalFailed, remaining: d.remaining ?? 0 });
+        setBrokenCount(d.remaining ?? 0);
+        if (d.done || (d.migrated === 0 && d.failed === 0)) break;
+      }
+    } catch (e) {
+      alert("Ошибка переноса: " + (e instanceof Error ? e.message : "неизвестная"));
+    } finally {
+      setMigrating(false);
+      load();
+      loadBroken();
+    }
+  };
+  const stopMigrate = () => { migAbortRef.current = true; };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -537,19 +577,59 @@ function Videos({ token }: { token: string }) {
     <div className="space-y-4 pb-24">
       <h2 className="text-2xl font-bold hidden md:block">Видео</h2>
 
-      {brokenCount > 0 && (
-        <div className="bg-orange-500/10 border border-orange-500/30 rounded-2xl p-4 flex items-center gap-3 flex-wrap">
-          <Icon name="AlertTriangle" size={20} className="text-orange-400 flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white">Найдено {brokenCount} битых записей</p>
-            <p className="text-xs text-white/60">Это видео со старого сайта short-video.ru — файлы недоступны и показывают «Не загрузилось».</p>
+      {(brokenCount > 0 || migrating) && (
+        <div className="bg-orange-500/10 border border-orange-500/30 rounded-2xl p-4 space-y-3">
+          <div className="flex items-start gap-3 flex-wrap">
+            <Icon name="AlertTriangle" size={20} className="text-orange-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white">
+                {migrating ? "Переносим legacy-видео на наш CDN..." : `Найдено ${brokenCount} legacy-записей`}
+              </p>
+              <p className="text-xs text-white/60">
+                Видео со старого сайта short-video.ru. Можно перенести файлы на наш CDN, чтобы они снова работали, либо удалить.
+              </p>
+            </div>
+            {!migrating ? (
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={migrateLegacy}
+                  className="px-3 py-2 rounded-lg bg-emerald-500 text-white text-sm font-semibold hover:opacity-90 flex items-center gap-2"
+                >
+                  <Icon name="CloudDownload" size={16} />
+                  Перенести на наш CDN ({brokenCount})
+                </button>
+                <button
+                  onClick={deleteBroken}
+                  className="px-3 py-2 rounded-lg bg-[#fe2c55] text-white text-sm font-semibold hover:opacity-90"
+                >
+                  Удалить все
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={stopMigrate}
+                className="px-3 py-2 rounded-lg bg-white/10 text-white text-sm hover:bg-white/15"
+              >
+                Остановить
+              </button>
+            )}
           </div>
-          <button
-            onClick={deleteBroken}
-            className="px-3 py-2 rounded-lg bg-[#fe2c55] text-white text-sm font-semibold hover:opacity-90"
-          >
-            Удалить все ({brokenCount})
-          </button>
+          {migProgress && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs text-white/70">
+                <span>Перенесено: <b className="text-emerald-400">{migProgress.migrated}</b> · Не удалось: <b className="text-[#fe2c55]">{migProgress.failed}</b> · Осталось: <b>{migProgress.remaining}</b></span>
+                {migrating && <span className="flex items-center gap-1"><Icon name="Loader2" size={12} className="animate-spin" /> в процессе</span>}
+              </div>
+              <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500 transition-all"
+                  style={{ width: `${migProgress.migrated + migProgress.failed > 0
+                    ? Math.round(((migProgress.migrated + migProgress.failed) / (migProgress.migrated + migProgress.failed + migProgress.remaining)) * 100)
+                    : 0}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
