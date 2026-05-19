@@ -103,6 +103,32 @@ def handler(event: dict, context) -> dict:
     headers_in = event.get('headers') or {}
     token = headers_in.get('X-Admin-Token') or headers_in.get('x-admin-token') or ''
 
+    # Создание жалобы — публичный endpoint, без токена
+    if action == 'report_create':
+        target_type = (body.get('target_type') or '').strip()
+        target_id = str(body.get('target_id') or '').strip()
+        reason = (body.get('reason') or 'other').strip()[:50]
+        comment_txt = (body.get('comment') or '').strip()[:2000]
+        reporter_id = (body.get('reporter_id') or 'anon').strip()
+        reporter_name = (body.get('reporter_name') or '').strip()[:100]
+        allowed_types = {'video', 'comment', 'user', 'chat', 'message', 'stream', 'post'}
+        if target_type not in allowed_types or not target_id:
+            return {'statusCode': 400, 'headers': _cors(),
+                    'body': json.dumps({'error': 'target_type/target_id required'})}
+        conn = _conn()
+        try:
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                _q(cur, """
+                    INSERT INTO {S}.reports(target_type, target_id, reason, comment, reporter_id, reporter_name, status)
+                    VALUES (%s, %s, %s, %s, %s, %s, 'open') RETURNING id
+                """, (target_type, target_id, reason, comment_txt, reporter_id, reporter_name))
+                rid = cur.fetchone()['id']
+                conn.commit()
+            return {'statusCode': 200, 'headers': _cors(),
+                    'body': json.dumps({'ok': True, 'report_id': rid})}
+        finally:
+            conn.close()
+
     # Логин — без токена
     if action == 'login':
         login = (body.get('login') or '').strip()
@@ -161,6 +187,12 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         result['chats_total'] = cur.fetchone()['c']
         _q(cur, "SELECT COUNT(*) AS c FROM {S}.live_streams WHERE status = 'active'")
         result['streams_active'] = cur.fetchone()['c']
+        _q(cur, "SELECT to_regclass(%s) AS t", (f"{_schema()}.reports",))
+        if cur.fetchone()['t']:
+            _q(cur, "SELECT COUNT(*) AS c FROM {S}.reports WHERE status = 'open'")
+            result['reports_open'] = cur.fetchone()['c']
+        else:
+            result['reports_open'] = 0
         # График: регистрации за 14 дней
         _q(cur, """
             SELECT DATE(created_at) AS d, COUNT(*) AS c
@@ -336,16 +368,114 @@ def _route(cur, conn, action: str, body: dict) -> dict:
 
     # ============ REPORTS / MODERATION ============
     if action == 'reports_list':
-        # Жалобы пока не реализованы в БД — возвращаем заглушку из последних видео с >100 лайками без жалоб
-        _q(cur, "SELECT to_regclass(%s) AS t", (f"{_schema()}.reports",))
-        exists = cur.fetchone()['t']
-        if not exists:
-            return {'statusCode': 200, 'headers': _cors(),
-                    'body': json.dumps({'reports': [], 'note': 'Таблица reports ещё не создана. Добавь миграцию для очереди жалоб.'})}
-        limit = _safe_int(body.get('limit'), 50, 200)
-        _q(cur, "SELECT * FROM {S}.reports ORDER BY created_at DESC LIMIT %s", (limit,))
+        limit = _safe_int(body.get('limit'), 100, 500)
+        status_filter = body.get('status') or 'open'  # open | resolved | all
+        if status_filter == 'all':
+            _q(cur, """
+                SELECT id, target_type, target_id, reason, comment, reporter_id, reporter_name,
+                       status, resolved_at, resolved_note, created_at
+                FROM {S}.reports ORDER BY created_at DESC LIMIT %s
+            """, (limit,))
+        else:
+            _q(cur, """
+                SELECT id, target_type, target_id, reason, comment, reporter_id, reporter_name,
+                       status, resolved_at, resolved_note, created_at
+                FROM {S}.reports WHERE status = %s ORDER BY created_at DESC LIMIT %s
+            """, (status_filter, limit))
+        reports = cur.fetchall()
+        # Группируем по типу для batch-обогащения
+        by_type = {}
+        for r in reports:
+            by_type.setdefault(r['target_type'], set()).add(str(r['target_id']))
+        previews = {}
+        # video preview
+        if 'video' in by_type and by_type['video']:
+            ids = [int(x) for x in by_type['video'] if str(x).isdigit()]
+            if ids:
+                _q(cur, "SELECT id, author, description, thumbnail, hidden FROM {S}.videos WHERE id = ANY(%s)", (ids,))
+                for row in cur.fetchall():
+                    previews[f"video:{row['id']}"] = {
+                        'title': (row['description'] or '')[:80] or '(без описания)',
+                        'subtitle': row['author'],
+                        'thumb': row['thumbnail'],
+                        'hidden': row['hidden'],
+                    }
+        # comment preview
+        if 'comment' in by_type and by_type['comment']:
+            ids = [int(x) for x in by_type['comment'] if str(x).isdigit()]
+            if ids:
+                _q(cur, "SELECT id, author_name, text FROM {S}.comments WHERE id = ANY(%s)", (ids,))
+                for row in cur.fetchall():
+                    previews[f"comment:{row['id']}"] = {
+                        'title': (row['text'] or '')[:120],
+                        'subtitle': row['author_name'],
+                    }
+        # user preview
+        if 'user' in by_type and by_type['user']:
+            uids = list(by_type['user'])
+            _q(cur, "SELECT id, name, handle, avatar FROM {S}.app_users WHERE id = ANY(%s)", (uids,))
+            for row in cur.fetchall():
+                previews[f"user:{row['id']}"] = {
+                    'title': row['name'], 'subtitle': '@' + row['handle'], 'thumb': row['avatar'],
+                }
+        # message preview
+        if 'message' in by_type and by_type['message']:
+            ids = [int(x) for x in by_type['message'] if str(x).isdigit()]
+            if ids:
+                _q(cur, "SELECT id, user_name, content, chat_id FROM {S}.sa_messages WHERE id = ANY(%s)", (ids,))
+                for row in cur.fetchall():
+                    previews[f"message:{row['id']}"] = {
+                        'title': (row['content'] or '')[:120],
+                        'subtitle': f"{row['user_name']} · чат {row['chat_id']}",
+                    }
+        # Считаем open
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.reports WHERE status = 'open'")
+        open_count = cur.fetchone()['c']
         return {'statusCode': 200, 'headers': _cors(),
-                'body': json.dumps({'reports': cur.fetchall()}, default=str)}
+                'body': json.dumps({'reports': reports, 'previews': previews, 'open_count': open_count}, default=str)}
+
+    if action == 'report_resolve':
+        rid = body.get('report_id')
+        note = (body.get('note') or '').strip()
+        if not rid:
+            return {'statusCode': 400, 'headers': _cors(), 'body': json.dumps({'error': 'report_id required'})}
+        _q(cur, """
+            UPDATE {S}.reports SET status = 'resolved', resolved_at = NOW(), resolved_note = %s WHERE id = %s
+        """, (note, rid))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
+
+    if action == 'report_delete':
+        rid = body.get('report_id')
+        _q(cur, "DELETE FROM {S}.reports WHERE id = %s", (rid,))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
+
+    # Удобный action: применить действие к цели жалобы (скрыть видео / удалить коммент) + закрыть жалобу
+    if action == 'report_action':
+        rid = body.get('report_id')
+        act = body.get('do')  # 'hide_video' | 'delete_video' | 'delete_comment' | 'delete_user' | 'delete_message'
+        _q(cur, "SELECT target_type, target_id FROM {S}.reports WHERE id = %s", (rid,))
+        row = cur.fetchone()
+        if not row:
+            return {'statusCode': 404, 'headers': _cors(), 'body': json.dumps({'error': 'report not found'})}
+        t, tid = row['target_type'], row['target_id']
+        if act == 'hide_video' and t == 'video':
+            _q(cur, "UPDATE {S}.videos SET hidden = TRUE WHERE id = %s", (int(tid),))
+        elif act == 'delete_video' and t == 'video':
+            _q(cur, "DELETE FROM {S}.videos WHERE id = %s", (int(tid),))
+        elif act == 'delete_comment' and t == 'comment':
+            _q(cur, "DELETE FROM {S}.comments WHERE id = %s", (int(tid),))
+        elif act == 'delete_user' and t == 'user':
+            _q(cur, "DELETE FROM {S}.app_users WHERE id = %s", (tid,))
+        elif act == 'delete_message' and t == 'message':
+            _q(cur, "DELETE FROM {S}.sa_messages WHERE id = %s", (int(tid),))
+        else:
+            return {'statusCode': 400, 'headers': _cors(), 'body': json.dumps({'error': 'unsupported action for this target'})}
+        _q(cur, "UPDATE {S}.reports SET status = 'resolved', resolved_at = NOW(), resolved_note = %s WHERE id = %s",
+           (act, rid))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
 
     # ============ STREAMS ============
     if action == 'streams_list':

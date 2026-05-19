@@ -6,6 +6,7 @@ import { useComments } from "@/hooks/useComments";
 import { useLikes } from "@/hooks/useLikes";
 import { useSavedItem } from "@/hooks/useSaved";
 import { useFollowing } from "@/hooks/useFollowing";
+import ReportButton from "@/components/ReportButton";
 
 export interface VideoData {
   id: number;
@@ -254,6 +255,16 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
           <span className="text-white text-xs font-semibold">Скачать</span>
         </button>
 
+        {/* Report */}
+        <div className="flex flex-col items-center gap-1">
+          <ReportButton
+            targetType="video"
+            targetId={video.id}
+            className="w-11 h-11 rounded-full flex items-center justify-center text-white"
+          />
+          <span className="text-white text-xs font-semibold">Жалоба</span>
+        </div>
+
         {/* Spinning disc */}
         <div className="w-10 h-10 rounded-full border-4 border-white/30 overflow-hidden animate-spin" style={{ animationDuration: "3s" }}>
           <UserAvatar src={video.avatar} name={video.author || video.handle} alt="disc" />
@@ -320,6 +331,16 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
           </div>
           <span className="text-white text-xs font-semibold">Скачать</span>
         </button>
+
+        {/* Report */}
+        <div className="flex flex-col items-center gap-1">
+          <ReportButton
+            targetType="video"
+            targetId={video.id}
+            className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition-colors text-white"
+          />
+          <span className="text-white text-xs font-semibold">Жалоба</span>
+        </div>
 
         {/* Spinning disc */}
         <div className="w-10 h-10 rounded-full border-4 border-white/30 overflow-hidden animate-spin" style={{ animationDuration: "3s" }}>
@@ -417,9 +438,16 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
                     </div>
                     <p className="text-white/80 text-sm">{c.text}</p>
                   </div>
-                  <button className="flex-shrink-0 mt-1">
-                    <Icon name="Heart" size={14} className="text-white/40" />
-                  </button>
+                  <div className="flex-shrink-0 mt-1 flex items-center gap-1">
+                    <button>
+                      <Icon name="Heart" size={14} className="text-white/40" />
+                    </button>
+                    <ReportButton
+                      targetType="comment"
+                      targetId={c.id}
+                      className="p-1 text-white/40 hover:text-[#fe2c55]"
+                    />
+                  </div>
                 </div>
               ))}
             </div>

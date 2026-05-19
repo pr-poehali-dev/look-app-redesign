@@ -7,6 +7,7 @@ import { useComments } from "@/hooks/useComments";
 import { useLikes } from "@/hooks/useLikes";
 import { useSavedItem } from "@/hooks/useSaved";
 import { useFollowing } from "@/hooks/useFollowing";
+import ReportButton from "@/components/ReportButton";
 
 const PostCard = ({ post }: { post: Post }) => {
   const { saved, toggle: toggleSaved } = useSavedItem("post", post.id, {
@@ -19,6 +20,7 @@ const PostCard = ({ post }: { post: Post }) => {
   const [showComments, setShowComments] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -150,7 +152,7 @@ const PostCard = ({ post }: { post: Post }) => {
               { icon: "BellOff", label: "Выключить уведомления", action: () => setShowMenu(false) },
               { icon: "Link", label: "Скопировать ссылку", action: () => { navigator.clipboard.writeText(window.location.href).catch(() => {}); setShowMenu(false); } },
               { icon: "Share2", label: "Поделиться", action: () => { setShowMenu(false); setShowShare(true); } },
-              { icon: "Flag", label: "Пожаловаться", action: () => setShowMenu(false) },
+              { icon: "Flag", label: "Пожаловаться", action: () => { setShowMenu(false); setShowReport(true); } },
             ].map((item, i) => (
               <button
                 key={i}
@@ -165,6 +167,14 @@ const PostCard = ({ post }: { post: Post }) => {
         </div>,
         document.body
       )}
+
+      <ReportButton
+        targetType="post"
+        targetId={post.id}
+        variant="controlled"
+        open={showReport}
+        onOpenChange={setShowReport}
+      />
 
       {/* Comments popup */}
       {showComments && createPortal(

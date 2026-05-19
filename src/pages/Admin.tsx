@@ -11,6 +11,7 @@ interface Stats {
   videos_total: number; videos_today: number;
   comments_total: number; likes_total: number;
   messages_total: number; chats_total: number; streams_active: number;
+  reports_open: number;
   users_chart: { date: string; count: number }[];
   videos_chart: { date: string; count: number }[];
 }
@@ -219,6 +220,7 @@ function Dashboard({ token }: { token: string }) {
         <StatCard label="Чатов" value={stats.chats_total} icon="MessagesSquare" color="bg-indigo-500" />
         <StatCard label="Сообщений" value={stats.messages_total} icon="Mail" color="bg-teal-500" />
         <StatCard label="Стримов сейчас" value={stats.streams_active} icon="Radio" color="bg-red-500" />
+        <StatCard label="Жалоб открыто" value={stats.reports_open || 0} icon="Flag" color="bg-yellow-500" />
       </div>
       <div className="grid md:grid-cols-2 gap-4">
         <div className="bg-zinc-900 border border-white/10 rounded-2xl p-5">
@@ -524,28 +526,158 @@ function Streams({ token }: { token: string }) {
   );
 }
 
-function Reports({ token }: { token: string }) {
-  const [note, setNote] = useState("");
-  const [rows, setRows] = useState<Record<string, unknown>[]>([]);
+interface ReportRow {
+  id: number; target_type: string; target_id: string; reason: string; comment: string;
+  reporter_id: string; reporter_name: string; status: string; resolved_at?: string;
+  resolved_note?: string; created_at?: string;
+}
+interface ReportPreview { title?: string; subtitle?: string; thumb?: string; hidden?: boolean }
 
-  useEffect(() => {
-    api("reports_list", {}, token).then(d => { setRows(d.reports || []); setNote(d.note || ""); });
-  }, [token]);
+const REASON_LABEL: Record<string, string> = {
+  spam: "Спам", violence: "Насилие", harassment: "Травля", nudity: "18+",
+  hate: "Ненависть", illegal: "Незаконное", fake: "Фейк", other: "Другое",
+};
+const TARGET_LABEL: Record<string, string> = {
+  video: "Видео", comment: "Комментарий", user: "Пользователь",
+  chat: "Чат", message: "Сообщение", stream: "Стрим", post: "Пост",
+};
+
+function Reports({ token }: { token: string }) {
+  const [rows, setRows] = useState<ReportRow[]>([]);
+  const [previews, setPreviews] = useState<Record<string, ReportPreview>>({});
+  const [openCount, setOpenCount] = useState(0);
+  const [filter, setFilter] = useState<"open" | "resolved" | "all">("open");
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const d = await api("reports_list", { status: filter, limit: 200 }, token);
+      setRows(d.reports || []);
+      setPreviews(d.previews || {});
+      setOpenCount(d.open_count || 0);
+    } finally { setLoading(false); }
+  }, [filter, token]);
+  useEffect(() => { load(); }, [load]);
+
+  const resolve = async (id: number) => { await api("report_resolve", { report_id: id }, token); load(); };
+  const remove = async (id: number) => { if (!confirm("Удалить жалобу?")) return; await api("report_delete", { report_id: id }, token); load(); };
+  const doAction = async (id: number, doKey: string, label: string) => {
+    if (!confirm(`Выполнить: ${label}? Жалоба будет закрыта.`)) return;
+    await api("report_action", { report_id: id, do: doKey }, token);
+    load();
+  };
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold hidden md:block">Жалобы</h2>
-      {note && (
-        <div className="bg-zinc-900 border border-white/10 rounded-2xl p-5 flex items-start gap-3">
-          <Icon name="Info" size={20} className="text-blue-400 flex-shrink-0 mt-0.5" />
-          <p className="text-white/70 text-sm">{note}</p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h2 className="text-2xl font-bold hidden md:block">Жалобы</h2>
+        <div className="flex gap-1 bg-zinc-900 border border-white/10 rounded-xl p-1">
+          {(["open", "resolved", "all"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${filter === f ? "bg-[#fe2c55] text-white" : "text-white/60 hover:text-white"}`}
+            >
+              {f === "open" ? `Новые${openCount ? ` (${openCount})` : ""}` : f === "resolved" ? "Закрытые" : "Все"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading && <p className="text-white/50 text-sm">Загрузка...</p>}
+      {!loading && rows.length === 0 && (
+        <div className="bg-zinc-900 border border-white/10 rounded-2xl p-8 text-center">
+          <Icon name="ShieldCheck" size={32} className="text-emerald-400 mx-auto mb-2" />
+          <p className="text-white/70 text-sm">Жалоб нет</p>
         </div>
       )}
-      {rows.length > 0 && (
-        <div className="bg-zinc-900 border border-white/10 rounded-2xl p-3">
-          <pre className="text-xs overflow-x-auto">{JSON.stringify(rows, null, 2)}</pre>
-        </div>
-      )}
+
+      <div className="space-y-3">
+        {rows.map((r) => {
+          const preview = previews[`${r.target_type}:${r.target_id}`];
+          return (
+            <div key={r.id} className="bg-zinc-900 border border-white/10 rounded-2xl p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-[#fe2c55]/20 flex items-center justify-center">
+                  <Icon name="Flag" size={20} className="text-[#fe2c55]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/80">{TARGET_LABEL[r.target_type] || r.target_type}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300">{REASON_LABEL[r.reason] || r.reason}</span>
+                    {r.status === "resolved" && <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Закрыта</span>}
+                  </div>
+                  <p className="text-xs text-white/40 mt-1">
+                    От {r.reporter_name || r.reporter_id} · {r.created_at?.slice(0, 16)} · #{r.id}
+                  </p>
+                </div>
+              </div>
+
+              {preview && (
+                <div className="flex items-center gap-3 p-3 bg-black/30 rounded-xl">
+                  {preview.thumb && <img src={preview.thumb} alt="" className="w-12 h-16 object-cover rounded" />}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{preview.title || "—"}</p>
+                    {preview.subtitle && <p className="text-xs text-white/50 truncate">{preview.subtitle}</p>}
+                    {preview.hidden && <p className="text-xs text-orange-400">⚠ Скрыто</p>}
+                  </div>
+                  <span className="text-xs text-white/40">ID {r.target_id}</span>
+                </div>
+              )}
+
+              {r.comment && (
+                <p className="text-sm text-white/70 italic bg-black/20 rounded-xl p-3">«{r.comment}»</p>
+              )}
+
+              {r.status === "open" && (
+                <div className="flex flex-wrap gap-2">
+                  {r.target_type === "video" && (
+                    <>
+                      <button onClick={() => doAction(r.id, "hide_video", "скрыть видео")} className="px-3 py-1.5 rounded-lg bg-orange-500/20 text-orange-300 text-xs font-medium hover:bg-orange-500/30">
+                        Скрыть видео
+                      </button>
+                      <button onClick={() => doAction(r.id, "delete_video", "удалить видео")} className="px-3 py-1.5 rounded-lg bg-[#fe2c55]/20 text-[#fe2c55] text-xs font-medium hover:bg-[#fe2c55]/30">
+                        Удалить видео
+                      </button>
+                    </>
+                  )}
+                  {r.target_type === "comment" && (
+                    <button onClick={() => doAction(r.id, "delete_comment", "удалить комментарий")} className="px-3 py-1.5 rounded-lg bg-[#fe2c55]/20 text-[#fe2c55] text-xs font-medium hover:bg-[#fe2c55]/30">
+                      Удалить комментарий
+                    </button>
+                  )}
+                  {r.target_type === "user" && (
+                    <button onClick={() => doAction(r.id, "delete_user", "удалить пользователя")} className="px-3 py-1.5 rounded-lg bg-[#fe2c55]/20 text-[#fe2c55] text-xs font-medium hover:bg-[#fe2c55]/30">
+                      Удалить пользователя
+                    </button>
+                  )}
+                  {r.target_type === "message" && (
+                    <button onClick={() => doAction(r.id, "delete_message", "удалить сообщение")} className="px-3 py-1.5 rounded-lg bg-[#fe2c55]/20 text-[#fe2c55] text-xs font-medium hover:bg-[#fe2c55]/30">
+                      Удалить сообщение
+                    </button>
+                  )}
+                  <button onClick={() => resolve(r.id)} className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs font-medium hover:bg-emerald-500/30">
+                    Закрыть без действий
+                  </button>
+                  <button onClick={() => remove(r.id)} className="px-3 py-1.5 rounded-lg bg-white/5 text-white/60 text-xs hover:bg-white/10 ml-auto">
+                    Удалить жалобу
+                  </button>
+                </div>
+              )}
+
+              {r.status === "resolved" && (
+                <div className="flex items-center justify-between text-xs text-white/40">
+                  <span>Закрыто: {r.resolved_at?.slice(0, 16)} {r.resolved_note ? `· ${r.resolved_note}` : ""}</span>
+                  <button onClick={() => remove(r.id)} className="text-white/40 hover:text-[#fe2c55]">
+                    <Icon name="Trash2" size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
