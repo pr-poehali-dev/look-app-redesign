@@ -301,6 +301,28 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         conn.commit()
         return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
 
+    if action == 'videos_broken_list':
+        # Видео, ссылающиеся на внешний домен short-video.ru — почти все из них недоступны
+        _q(cur, """
+            SELECT id, author, handle, url, created_at
+            FROM {S}.videos
+            WHERE url LIKE 'https://short-video.ru/%' OR url LIKE 'http://short-video.ru/%'
+            ORDER BY id DESC
+        """)
+        rows = cur.fetchall()
+        return {'statusCode': 200, 'headers': _cors(),
+                'body': json.dumps({'videos': rows, 'total': len(rows)}, default=str)}
+
+    if action == 'videos_broken_delete':
+        _q(cur, """
+            DELETE FROM {S}.videos
+            WHERE url LIKE 'https://short-video.ru/%' OR url LIKE 'http://short-video.ru/%'
+        """)
+        affected = cur.rowcount
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(),
+                'body': json.dumps({'ok': True, 'affected': affected})}
+
     if action == 'videos_bulk':
         ids_raw = body.get('ids') or []
         op = body.get('op')  # 'hide' | 'show' | 'delete'

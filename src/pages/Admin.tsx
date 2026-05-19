@@ -307,6 +307,11 @@ function detectKind(url?: string): "video" | "image" | "unknown" {
   return "unknown";
 }
 
+function isLegacyExternal(url?: string): boolean {
+  if (!url) return false;
+  return /^https?:\/\/short-video\.ru\//i.test(url);
+}
+
 function VideoPreview({ url, thumbnail, hidden }: { url?: string; thumbnail?: string; hidden?: boolean }) {
   const [playing, setPlaying] = useState(false);
   const [errored, setErrored] = useState(false);
@@ -404,13 +409,18 @@ function VideoPreview({ url, thumbnail, hidden }: { url?: string; thumbnail?: st
       {errored && (
         <div className="absolute inset-0 flex flex-col items-center justify-center text-white/40 gap-2 text-[10px] p-2 text-center bg-black/70">
           <Icon name="AlertTriangle" size={20} />
-          <span>Не загрузилось</span>
+          <span>{isLegacyExternal(url) ? "Файл на внешнем сайте" : "Не загрузилось"}</span>
           <button
             onClick={(e) => { e.stopPropagation(); setErrored(false); }}
             className="px-2 py-1 rounded bg-white/10 text-white/80 hover:bg-white/20 text-[10px]"
           >
             Повторить
           </button>
+        </div>
+      )}
+      {!errored && isLegacyExternal(url) && (
+        <div className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-orange-500/80 text-[9px] text-white flex items-center gap-1">
+          <Icon name="ExternalLink" size={9} /> Legacy
         </div>
       )}
       {hidden && <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/70 text-xs">скрыто</div>}
@@ -431,6 +441,24 @@ function Videos({ token }: { token: string }) {
   const [sortKey, setSortKey] = useState<SortKey>("new");
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
+  const [brokenCount, setBrokenCount] = useState(0);
+
+  const loadBroken = useCallback(async () => {
+    try {
+      const d = await api("videos_broken_list", {}, token);
+      setBrokenCount(d.total || 0);
+    } catch (e) { void e; }
+  }, [token]);
+  useEffect(() => { loadBroken(); }, [loadBroken]);
+
+  const deleteBroken = async () => {
+    if (brokenCount === 0) return;
+    if (!confirm(`Удалить ${brokenCount} битых записей со ссылками на short-video.ru? Это действие необратимо.`)) return;
+    const d = await api("videos_broken_delete", {}, token);
+    alert(`Удалено: ${d.affected || 0}`);
+    setBrokenCount(0);
+    load();
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -508,6 +536,23 @@ function Videos({ token }: { token: string }) {
   return (
     <div className="space-y-4 pb-24">
       <h2 className="text-2xl font-bold hidden md:block">Видео</h2>
+
+      {brokenCount > 0 && (
+        <div className="bg-orange-500/10 border border-orange-500/30 rounded-2xl p-4 flex items-center gap-3 flex-wrap">
+          <Icon name="AlertTriangle" size={20} className="text-orange-400 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-white">Найдено {brokenCount} битых записей</p>
+            <p className="text-xs text-white/60">Это видео со старого сайта short-video.ru — файлы недоступны и показывают «Не загрузилось».</p>
+          </div>
+          <button
+            onClick={deleteBroken}
+            className="px-3 py-2 rounded-lg bg-[#fe2c55] text-white text-sm font-semibold hover:opacity-90"
+          >
+            Удалить все ({brokenCount})
+          </button>
+        </div>
+      )}
+
       <div className="flex gap-2">
         <input
           value={search} onChange={(e) => setSearch(e.target.value)}
