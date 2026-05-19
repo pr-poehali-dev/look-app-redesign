@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Icon from "@/components/ui/icon";
 
 const API = "https://functions.poehali.dev/c578b52c-b9b6-47b3-9bcf-b6ab8405c4d7";
@@ -299,6 +299,60 @@ function Users({ token }: { token: string }) {
 
 interface VideoRow { id: number; url: string; thumbnail?: string; author: string; handle: string; description?: string; likes?: number; comments?: number; created_at?: string; hidden?: boolean }
 
+function VideoPreview({ url, thumbnail, hidden }: { url?: string; thumbnail?: string; hidden?: boolean }) {
+  const [playing, setPlaying] = useState(false);
+  const [errored, setErrored] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const isVideo = !!url && /\.(mp4|webm|mov|m4v|ogv)(\?|#|$)/i.test(url);
+
+  const toggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const el = videoRef.current;
+    if (!el) return;
+    if (el.paused) { el.play().catch(() => {}); setPlaying(true); }
+    else { el.pause(); setPlaying(false); }
+  };
+
+  return (
+    <div className="aspect-[9/16] bg-black relative cursor-pointer group" onClick={toggle}>
+      {thumbnail && !errored ? (
+        <img src={thumbnail} alt="" className="w-full h-full object-cover" onError={() => setErrored(true)} />
+      ) : isVideo ? (
+        <video
+          ref={videoRef}
+          src={url}
+          className="w-full h-full object-cover"
+          preload="metadata"
+          muted
+          playsInline
+          onPlay={() => setPlaying(true)}
+          onPause={() => setPlaying(false)}
+          onError={() => setErrored(true)}
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-white/30">
+          <Icon name="Film" size={32} />
+        </div>
+      )}
+      {/* Play overlay */}
+      {!playing && (thumbnail || isVideo) && !errored && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/20 transition-colors">
+          <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
+            <Icon name="Play" size={18} className="text-black ml-0.5" />
+          </div>
+        </div>
+      )}
+      {errored && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-white/40 gap-1 text-[10px] p-2 text-center">
+          <Icon name="AlertTriangle" size={20} />
+          <span>Не загрузилось</span>
+        </div>
+      )}
+      {hidden && <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/70 text-xs">скрыто</div>}
+    </div>
+  );
+}
+
 function Videos({ token }: { token: string }) {
   const [videos, setVideos] = useState<VideoRow[]>([]);
   const [search, setSearch] = useState("");
@@ -341,19 +395,15 @@ function Videos({ token }: { token: string }) {
         {loading && <p className="text-white/50 col-span-full">Загрузка...</p>}
         {videos.map((v) => (
           <div key={v.id} className={`bg-zinc-900 border border-white/10 rounded-xl overflow-hidden ${v.hidden ? "opacity-50" : ""}`}>
-            <div className="aspect-[9/16] bg-black relative">
-              {v.thumbnail ? (
-                <img src={v.thumbnail} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-white/30"><Icon name="Film" size={32} /></div>
-              )}
-              {v.hidden && <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/70 text-xs">скрыто</div>}
-            </div>
+            <VideoPreview url={v.url} thumbnail={v.thumbnail} hidden={v.hidden} />
             <div className="p-2 space-y-1">
-              <p className="text-xs font-medium truncate">{v.author}</p>
+              <p className="text-xs font-medium truncate">{v.author} <span className="text-white/30">@{v.handle}</span></p>
               <p className="text-[11px] text-white/40 truncate">{v.description || "—"}</p>
-              <p className="text-[11px] text-white/40">♥ {v.likes || 0} · 💬 {v.comments || 0}</p>
+              <p className="text-[11px] text-white/40">♥ {v.likes || 0} · 💬 {v.comments || 0} · #{v.id}</p>
               <div className="flex gap-1 pt-1">
+                <a href={v.url} target="_blank" rel="noreferrer" className="px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-[11px] flex items-center" title="Открыть в новой вкладке">
+                  <Icon name="ExternalLink" size={12} />
+                </a>
                 <button onClick={() => hide(v.id, !!v.hidden)} className="flex-1 py-1 rounded bg-white/5 hover:bg-white/10 text-[11px]">
                   {v.hidden ? "Показать" : "Скрыть"}
                 </button>
