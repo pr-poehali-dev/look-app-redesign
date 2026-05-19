@@ -51,13 +51,75 @@ def _check_admin_token(token: str) -> bool:
         return False
 
 
-def _yadisk_direct_url(public_url: str) -> str:
-    """Получает прямую ссылку на скачивание архива с Я.Диска по публичной ссылке"""
-    api = "https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + urllib.parse.quote(public_url, safe='')
+def _yadisk_direct_url(public_url: str, path: str = '') -> str:
+    """Получает прямую ссылку на скачивание ресурса (файл/файл в папке) с Я.Диска"""
+    qs = "public_key=" + urllib.parse.quote(public_url, safe='')
+    if path:
+        qs += "&path=" + urllib.parse.quote(path, safe='')
+    api = "https://cloud-api.yandex.net/v1/disk/public/resources/download?" + qs
     req = urllib.request.Request(api)
     with urllib.request.urlopen(req, timeout=20) as resp:
         data = json.loads(resp.read())
     return data['href']
+
+
+def _yadisk_meta(public_url: str, path: str = '', limit: int = 1) -> dict:
+    """Метаданные публичного ресурса (тип, имя, размер; для папок — items)"""
+    qs = "public_key=" + urllib.parse.quote(public_url, safe='')
+    qs += f"&limit={limit}"
+    if path:
+        qs += "&path=" + urllib.parse.quote(path, safe='')
+    api = "https://cloud-api.yandex.net/v1/disk/public/resources?" + qs
+    req = urllib.request.Request(api)
+    with urllib.request.urlopen(req, timeout=20) as resp:
+        return json.loads(resp.read())
+
+
+def _yadisk_list_folder(public_url: str) -> list:
+    """Рекурсивно собирает все файлы в публичной папке Я.Диска"""
+    files = []
+    stack = ['']  # path inside the public folder
+    while stack:
+        p = stack.pop()
+        offset = 0
+        page = 200
+        while True:
+            qs = "public_key=" + urllib.parse.quote(public_url, safe='')
+            qs += f"&limit={page}&offset={offset}"
+            if p:
+                qs += "&path=" + urllib.parse.quote(p, safe='')
+            api = "https://cloud-api.yandex.net/v1/disk/public/resources?" + qs
+            req = urllib.request.Request(api)
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                meta = json.loads(resp.read())
+            embedded = meta.get('_embedded') or {}
+            items = embedded.get('items') or []
+            if not items:
+                break
+            for it in items:
+                t = it.get('type')
+                ip = it.get('path') or ''
+                # Я.Диск возвращает path вида "disk:/folder/file.mp4" или "/file.mp4"
+                rel = ip
+                if rel.startswith('disk:'):
+                    rel = rel[5:]
+                # Делаем путь относительно корня публичного ресурса
+                if not rel.startswith('/'):
+                    rel = '/' + rel
+                if t == 'dir':
+                    stack.append(rel)
+                elif t == 'file':
+                    files.append({
+                        'path': rel,
+                        'name': it.get('name') or _basename(rel),
+                        'size': int(it.get('size') or 0),
+                    })
+            if len(items) < page:
+                break
+            offset += page
+            if offset > 10000:
+                break
+    return files
 
 
 def _http_size(url: str) -> int:
@@ -228,21 +290,34 @@ def handler(event: dict, context) -> dict:
 
     try:
         if action == 'index':
-            # Только читаем список файлов из архива
+            # Определяем — это zip-файл или папка
             if not public_url:
                 return {'statusCode': 400, 'headers': _cors(),
                         'body': json.dumps({'error': 'public_url required'})}
-            direct = _yadisk_direct_url(public_url)
-            reader = _RemoteZipReader(direct)
-            entries = reader.read_central_directory()
-            # Считаем сколько файлов из архива есть в БД
-            names = [_basename(e['name']) for e in entries if not e['name'].endswith('/')]
+            meta = _yadisk_meta(public_url, limit=1)
+            res_type = meta.get('type')
+            mime = (meta.get('mime_type') or '').lower()
+            is_zip = res_type == 'file' and ('zip' in mime or (meta.get('name', '').lower().endswith('.zip')))
+
+            if is_zip:
+                direct = _yadisk_direct_url(public_url)
+                reader = _RemoteZipReader(direct)
+                entries = reader.read_central_directory()
+                names = [_basename(e['name']) for e in entries if not e['name'].endswith('/')]
+                total_size = reader.size
+            elif res_type == 'dir':
+                files = _yadisk_list_folder(public_url)
+                names = [f['name'] for f in files]
+                total_size = sum(f['size'] for f in files)
+            else:
+                return {'statusCode': 400, 'headers': _cors(),
+                        'body': json.dumps({'error': f'Неподдерживаемый ресурс: type={res_type}, mime={mime}. Нужна папка или ZIP-файл'})}
+
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             matched = 0
             try:
                 with conn.cursor() as cur:
                     for n in names:
-                        # экранируем кавычки
                         ne = n.replace("'", "''")
                         cur.execute(
                             f"SELECT 1 FROM {schema}.videos "
@@ -256,10 +331,10 @@ def handler(event: dict, context) -> dict:
 
             return {'statusCode': 200, 'headers': _cors(),
                     'body': json.dumps({
-                        'archive_size': reader.size,
+                        'resource_type': res_type,
+                        'archive_size': total_size,
                         'total_files': len(names),
                         'matched_in_db': matched,
-                        'direct_url': direct,
                         'sample': names[:5],
                     })}
 
@@ -270,10 +345,27 @@ def handler(event: dict, context) -> dict:
             offset = int(body.get('offset') or 0)
             batch_size = max(1, min(int(body.get('batch_size') or 3), 10))
 
-            direct = _yadisk_direct_url(public_url)
-            reader = _RemoteZipReader(direct)
-            entries = [e for e in reader.read_central_directory() if not e['name'].endswith('/')]
-            total = len(entries)
+            meta = _yadisk_meta(public_url, limit=1)
+            res_type = meta.get('type')
+            mime = (meta.get('mime_type') or '').lower()
+            is_zip = res_type == 'file' and ('zip' in mime or (meta.get('name', '').lower().endswith('.zip')))
+
+            # Универсальный список entries: либо из ZIP, либо из папки
+            zip_reader = None
+            zip_entries = None
+            folder_files = None
+
+            if is_zip:
+                direct = _yadisk_direct_url(public_url)
+                zip_reader = _RemoteZipReader(direct)
+                zip_entries = [e for e in zip_reader.read_central_directory() if not e['name'].endswith('/')]
+                total = len(zip_entries)
+            elif res_type == 'dir':
+                folder_files = _yadisk_list_folder(public_url)
+                total = len(folder_files)
+            else:
+                return {'statusCode': 400, 'headers': _cors(),
+                        'body': json.dumps({'error': f'Неподдерживаемый ресурс: type={res_type}'})}
 
             s3 = _s3()
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
@@ -285,8 +377,13 @@ def handler(event: dict, context) -> dict:
             try:
                 end = min(offset + batch_size, total)
                 for i in range(offset, end):
-                    entry = entries[i]
-                    fname = _basename(entry['name'])
+                    if is_zip:
+                        entry = zip_entries[i]
+                        fname = _basename(entry['name'])
+                    else:
+                        f = folder_files[i]
+                        fname = f['name']
+
                     fname_esc = fname.replace("'", "''")
 
                     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -302,7 +399,12 @@ def handler(event: dict, context) -> dict:
                         continue
 
                     try:
-                        data = reader.read_entry(entry)
+                        if is_zip:
+                            data = zip_reader.read_entry(entry)
+                        else:
+                            file_url = _yadisk_direct_url(public_url, path=folder_files[i]['path'])
+                            with urllib.request.urlopen(file_url, timeout=120) as resp:
+                                data = resp.read()
                     except Exception as e:
                         errors.append({'file': fname, 'error': str(e)[:120]})
                         continue
@@ -318,7 +420,6 @@ def handler(event: dict, context) -> dict:
 
                     cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
 
-                    # Решаем что обновлять: видео или превью
                     is_video = fname.lower().endswith(('.mp4', '.webm', '.mov'))
                     with conn.cursor() as cur:
                         if is_video:
