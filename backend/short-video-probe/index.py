@@ -105,37 +105,74 @@ def handler(event: dict, context) -> dict:
     report = {'steps': []}
     opener, cj = _build_opener()
 
-    # 1) GET /login — получаем CSRF
-    code, hdrs, body, final = _fetch(opener, f'{BASE}/login')
-    html = body.decode('utf-8', errors='replace')
-    csrf_meta = re.search(r'name=["\']csrf-token["\']\s+content=["\']([^"\']+)["\']', html)
-    csrf_input = re.search(r'name=["\']_token["\']\s+value=["\']([^"\']+)["\']', html)
-    form_action = re.search(r'<form[^>]+action=["\']([^"\']+)["\']', html, re.IGNORECASE)
-    report['steps'].append({
-        'step': 'GET /login',
-        'status': code,
-        'final_url': final,
-        'csrf_meta': csrf_meta.group(1) if csrf_meta else None,
-        'csrf_input': csrf_input.group(1) if csrf_input else None,
-        'form_action': form_action.group(1) if form_action else None,
-        'cookies_after': [c.name for c in cj],
-    })
+    # 1) Ищем где живёт форма логина — пробуем кучу вариантов
+    login_paths = [
+        '/', '/posts', '/login', '/admin', '/admin/login',
+        '/auth/login', '/sign-in', '/signin', '/account/login',
+        '/users/login', '/user/login', '/dashboard', '/home',
+        '/auth', '/users/sign_in', '/account',
+    ]
+    csrf = None
+    form_action_m = None
+    login_page_url = None
+    detected_field = None
 
-    csrf = (csrf_input.group(1) if csrf_input else None) or (csrf_meta.group(1) if csrf_meta else None)
+    for p in login_paths:
+        url = BASE + p
+        code, hdrs, body, final = _fetch(opener, url)
+        html = body.decode('utf-8', errors='replace')
+        title_m = re.search(r'<title>(.*?)</title>', html, re.IGNORECASE | re.DOTALL)
+        m_meta = re.search(r'name=["\']csrf-token["\']\s+content=["\']([^"\']+)["\']', html)
+        m_input = re.search(r'name=["\']_token["\']\s+value=["\']([^"\']+)["\']', html)
+        m_pwd = re.search(r'type=["\']password["\']', html, re.IGNORECASE)
+        m_form = re.search(r'<form[^>]+action=["\']([^"\']+)["\'][^>]*method=["\']post["\']', html, re.IGNORECASE)
+        if not m_form:
+            m_form = re.search(r'<form[^>]+method=["\']post["\'][^>]+action=["\']([^"\']+)["\']', html, re.IGNORECASE)
+        all_forms = re.findall(r'<form[^>]*action=["\']([^"\']+)["\']', html, re.IGNORECASE)
+        inputs = re.findall(r'<input[^>]+name=["\']([^"\']+)["\']', html, re.IGNORECASE)
+        # Угадываем имя поля логина
+        candidate_field = None
+        for n in inputs:
+            if n.lower() in ('email', 'login', 'username', 'user', 'name'):
+                candidate_field = n
+                break
+
+        report['steps'].append({
+            'step': f'GET {p}',
+            'status': code,
+            'final_url': final,
+            'has_password': bool(m_pwd),
+            'csrf_input': (m_input.group(1)[:20] + '…') if m_input else None,
+            'csrf_meta': (m_meta.group(1)[:20] + '…') if m_meta else None,
+            'form_action': m_form.group(1) if m_form else None,
+            'all_form_actions': all_forms[:5],
+            'inputs': inputs[:15],
+            'login_field_candidate': candidate_field,
+            'title': title_m.group(1).strip()[:80] if title_m else None,
+        })
+        if m_pwd and (m_input or m_meta):
+            csrf = (m_input.group(1) if m_input else m_meta.group(1))
+            form_action_m = m_form.group(1) if m_form else url
+            login_page_url = final
+            detected_field = candidate_field
+            break
+
     if not csrf:
+        report['result'] = 'Login page not found — see steps above'
         return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps(report, ensure_ascii=False)}
 
-    # 2) POST /login
-    post_url = form_action.group(1) if form_action else f'{BASE}/login'
+    # 2) POST на форму
+    post_url = form_action_m if form_action_m else login_page_url
     if post_url.startswith('/'):
         post_url = BASE + post_url
 
     # Пробуем разные имена полей — Laravel часто использует email или login
-    login_attempts = [
-        {'_token': csrf, 'email': login_val, 'password': pass_val},
-        {'_token': csrf, 'username': login_val, 'password': pass_val},
-        {'_token': csrf, 'login': login_val, 'password': pass_val},
-    ]
+    login_attempts = []
+    if detected_field:
+        login_attempts.append({'_token': csrf, detected_field: login_val, 'password': pass_val})
+    for fn in ('email', 'username', 'login', 'user', 'name'):
+        if not detected_field or fn != detected_field:
+            login_attempts.append({'_token': csrf, fn: login_val, 'password': pass_val})
 
     login_ok = False
     for attempt in login_attempts:
@@ -143,7 +180,7 @@ def handler(event: dict, context) -> dict:
             opener, post_url, data=attempt,
             headers={
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'Referer': f'{BASE}/login',
+                'Referer': login_page_url or f'{BASE}/login',
                 'X-CSRF-TOKEN': csrf,
                 'Origin': BASE,
             },
