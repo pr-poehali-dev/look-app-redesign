@@ -150,6 +150,19 @@ def handler(event: dict, context) -> dict:
         return {'statusCode': 200, 'headers': _cors(),
                 'body': json.dumps({'ok': True, 'token': _make_token(login)})}
 
+    # Публичные настройки (политика, условия) — без токена
+    if action == 'settings_public_get':
+        conn = _conn()
+        try:
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                _q(cur, "SELECT key, value FROM {S}.app_settings WHERE key IN ('privacy_policy', 'terms_of_use')")
+                rows = cur.fetchall()
+                settings = {r['key']: r['value'] for r in rows}
+            return {'statusCode': 200, 'headers': _cors(),
+                    'body': json.dumps({'settings': settings}, ensure_ascii=False)}
+        finally:
+            conn.close()
+
     # Все остальные действия — только с токеном
     if not _check_token(token):
         return {'statusCode': 401, 'headers': _cors(),
@@ -169,6 +182,29 @@ def handler(event: dict, context) -> dict:
 
 
 def _route(cur, conn, action: str, body: dict) -> dict:
+    # ============ SETTINGS ============
+    if action == 'settings_get':
+        _q(cur, "SELECT key, value FROM {S}.app_settings")
+        rows = cur.fetchall()
+        settings = {r['key']: r['value'] for r in rows}
+        return {'statusCode': 200, 'headers': _cors(),
+                'body': json.dumps({'settings': settings}, ensure_ascii=False)}
+
+    if action == 'settings_save':
+        key = (body.get('key') or '').strip()
+        value = body.get('value') or ''
+        allowed_keys = {'privacy_policy', 'terms_of_use'}
+        if key not in allowed_keys:
+            return {'statusCode': 400, 'headers': _cors(),
+                    'body': json.dumps({'error': 'invalid key'})}
+        _q(cur, """
+            INSERT INTO {S}.app_settings (key, value, updated_at) VALUES (%s, %s, NOW())
+            ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+        """, (key, value))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(),
+                'body': json.dumps({'ok': True})}
+
     # ============ DASHBOARD ============
     if action == 'stats':
         result = {}

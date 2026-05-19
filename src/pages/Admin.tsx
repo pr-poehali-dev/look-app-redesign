@@ -4,7 +4,7 @@ import Icon from "@/components/ui/icon";
 const API = "https://functions.poehali.dev/c578b52c-b9b6-47b3-9bcf-b6ab8405c4d7";
 const TOKEN_KEY = "admin_token_v1";
 
-type Section = "dashboard" | "users" | "videos" | "photos" | "comments" | "chats" | "reports" | "streams" | "broadcast";
+type Section = "dashboard" | "users" | "videos" | "photos" | "comments" | "chats" | "reports" | "streams" | "broadcast" | "privacy" | "terms";
 
 interface Stats {
   users_total: number; users_today: number; users_week: number;
@@ -40,6 +40,8 @@ const SECTIONS: { id: Section; label: string; icon: string }[] = [
   { id: "streams", label: "Стримы", icon: "Radio" },
   { id: "reports", label: "Жалобы", icon: "Flag" },
   { id: "broadcast", label: "Рассылки", icon: "Send" },
+  { id: "privacy", label: "Политика конф.", icon: "ShieldCheck" },
+  { id: "terms", label: "Условия использ.", icon: "FileText" },
 ];
 
 export default function Admin() {
@@ -108,6 +110,8 @@ export default function Admin() {
           {section === "streams" && <Streams token={token!} />}
           {section === "reports" && <Reports token={token!} />}
           {section === "broadcast" && <Broadcast token={token!} />}
+          {section === "privacy" && <DocEditor token={token!} settingKey="privacy_policy" title="Политика конфиденциальности" />}
+          {section === "terms" && <DocEditor token={token!} settingKey="terms_of_use" title="Условия использования" />}
         </div>
       </main>
     </div>
@@ -1093,6 +1097,72 @@ function Broadcast({ token }: { token: string }) {
         ))}
         {list.length === 0 && <p className="p-4 text-white/40 text-sm">Рассылок пока не было</p>}
       </div>
+    </div>
+  );
+}
+
+function DocEditor({ token, settingKey, title }: { token: string; settingKey: "privacy_policy" | "terms_of_use"; title: string }) {
+  const [value, setValue] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const d = await api("settings_get", {}, token);
+      setValue(d.settings?.[settingKey] || "");
+    } catch (e) {
+      alert("Ошибка загрузки: " + (e instanceof Error ? e.message : "неизвестная"));
+    } finally {
+      setLoading(false);
+    }
+  }, [token, settingKey]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const save = async () => {
+    setSaving(true);
+    setSaved(false);
+    try {
+      await api("settings_save", { key: settingKey, value }, token);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (e) {
+      alert("Ошибка сохранения: " + (e instanceof Error ? e.message : "неизвестная"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4 pb-24">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">{title}</h2>
+        <button
+          onClick={save}
+          disabled={saving || loading}
+          className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-semibold text-sm disabled:opacity-50 flex items-center gap-2"
+        >
+          {saving ? <Icon name="Loader2" size={16} className="animate-spin" /> : <Icon name="Save" size={16} />}
+          {saved ? "Сохранено ✓" : "Сохранить"}
+        </button>
+      </div>
+      <p className="text-xs text-white/40">
+        Этот текст увидят пользователи в приложении в разделе «{title}». Поддерживается обычный текст и переносы строк.
+      </p>
+      {loading ? (
+        <p className="text-white/50">Загрузка...</p>
+      ) : (
+        <textarea
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          rows={24}
+          placeholder={`Введите текст «${title.toLowerCase()}»…`}
+          className="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-white/10 text-white placeholder:text-white/30 text-sm resize-y min-h-[400px] font-mono"
+        />
+      )}
+      <p className="text-xs text-white/40">Символов: {value.length}</p>
     </div>
   );
 }
