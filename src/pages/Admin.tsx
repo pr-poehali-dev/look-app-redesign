@@ -219,8 +219,6 @@ function Dashboard({ token }: { token: string }) {
         <StatCard label="Видео за сутки" value={stats.videos_today} icon="Video" color="bg-orange-500" />
         <StatCard label="Комментариев" value={stats.comments_total} icon="MessageSquare" color="bg-cyan-500" />
         <StatCard label="Лайков" value={stats.likes_total} icon="Heart" color="bg-rose-500" />
-        <StatCard label="Чатов" value={stats.chats_total} icon="MessagesSquare" color="bg-indigo-500" />
-        <StatCard label="Сообщений" value={stats.messages_total} icon="Mail" color="bg-teal-500" />
         <StatCard label="Стримов сейчас" value={stats.streams_active} icon="Radio" color="bg-red-500" />
         <StatCard label="Жалоб открыто" value={stats.reports_open || 0} icon="Flag" color="bg-yellow-500" />
       </div>
