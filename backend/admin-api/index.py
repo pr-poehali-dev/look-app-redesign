@@ -323,6 +323,77 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         return {'statusCode': 200, 'headers': _cors(),
                 'body': json.dumps({'ok': True, 'affected': affected})}
 
+    if action == 'videos_cleanup_preview':
+        # Предпросмотр очистки: сколько скрытых и сколько дублей удалится
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.videos WHERE COALESCE(hidden, FALSE) = TRUE")
+        hidden_cnt = cur.fetchone()['c']
+        _q(cur, """
+            SELECT COUNT(*) AS c FROM (
+                SELECT id, ROW_NUMBER() OVER (
+                    PARTITION BY author, description
+                    ORDER BY (CASE WHEN COALESCE(hidden, FALSE) THEN 1 ELSE 0 END) ASC,
+                             created_at ASC, id ASC
+                ) AS rn
+                FROM {S}.videos
+                WHERE COALESCE(description, '') <> ''
+            ) t WHERE rn > 1
+        """)
+        dup_cnt = cur.fetchone()['c']
+        _q(cur, """
+            SELECT COUNT(DISTINCT v.id) AS c
+            FROM {S}.videos v
+            WHERE COALESCE(v.hidden, FALSE) = TRUE
+               OR v.id IN (
+                 SELECT id FROM (
+                   SELECT id, ROW_NUMBER() OVER (
+                       PARTITION BY author, description
+                       ORDER BY (CASE WHEN COALESCE(hidden, FALSE) THEN 1 ELSE 0 END) ASC,
+                                created_at ASC, id ASC
+                   ) AS rn
+                   FROM {S}.videos
+                   WHERE COALESCE(description, '') <> ''
+                 ) t WHERE rn > 1
+               )
+        """)
+        total_del = cur.fetchone()['c']
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.videos")
+        total = cur.fetchone()['c']
+        return {'statusCode': 200, 'headers': _cors(),
+                'body': json.dumps({
+                    'total': total,
+                    'hidden': hidden_cnt,
+                    'duplicates': dup_cnt,
+                    'to_delete': total_del,
+                    'will_remain': total - total_del,
+                }, default=str)}
+
+    if action == 'videos_cleanup_run':
+        # Удалить все скрытые видео + дубли по (author, description) (оставляя самое старое не-скрытое)
+        _q(cur, """
+            CREATE TEMP TABLE _vids_to_del ON COMMIT DROP AS
+            SELECT DISTINCT v.id
+            FROM {S}.videos v
+            WHERE COALESCE(v.hidden, FALSE) = TRUE
+               OR v.id IN (
+                 SELECT id FROM (
+                   SELECT id, ROW_NUMBER() OVER (
+                       PARTITION BY author, description
+                       ORDER BY (CASE WHEN COALESCE(hidden, FALSE) THEN 1 ELSE 0 END) ASC,
+                                created_at ASC, id ASC
+                   ) AS rn
+                   FROM {S}.videos
+                   WHERE COALESCE(description, '') <> ''
+                 ) t WHERE rn > 1
+               )
+        """)
+        _q(cur, "DELETE FROM {S}.likes WHERE target_type = 'video' AND target_id IN (SELECT id::text FROM _vids_to_del)")
+        _q(cur, "DELETE FROM {S}.comments WHERE target_type = 'video' AND target_id IN (SELECT id::text FROM _vids_to_del)")
+        _q(cur, "DELETE FROM {S}.videos WHERE id IN (SELECT id FROM _vids_to_del)")
+        affected = cur.rowcount
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(),
+                'body': json.dumps({'ok': True, 'deleted': affected})}
+
     if action == 'videos_bulk':
         ids_raw = body.get('ids') or []
         op = body.get('op')  # 'hide' | 'show' | 'delete'

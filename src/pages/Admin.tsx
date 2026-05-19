@@ -506,6 +506,38 @@ function Videos({ token }: { token: string }) {
   };
   const stopMigrate = () => { migAbortRef.current = true; };
 
+  // ---------- Очистка дублей и скрытых ----------
+  const [cleanupInfo, setCleanupInfo] = useState<{ total: number; hidden: number; duplicates: number; to_delete: number; will_remain: number } | null>(null);
+  const [cleanupBusy, setCleanupBusy] = useState(false);
+
+  const previewCleanup = async () => {
+    setCleanupBusy(true);
+    try {
+      const d = await api("videos_cleanup_preview", {}, token);
+      setCleanupInfo(d);
+    } catch (e) {
+      alert("Ошибка: " + (e instanceof Error ? e.message : "неизвестная"));
+    } finally {
+      setCleanupBusy(false);
+    }
+  };
+
+  const runCleanup = async () => {
+    if (!cleanupInfo) return;
+    if (!confirm(`Удалить ${cleanupInfo.to_delete} видео (${cleanupInfo.hidden} скрытых + дубли)? Останется ${cleanupInfo.will_remain}. Действие необратимо.`)) return;
+    setCleanupBusy(true);
+    try {
+      const d = await api("videos_cleanup_run", {}, token);
+      alert(`Удалено: ${d.deleted}`);
+      setCleanupInfo(null);
+      load();
+    } catch (e) {
+      alert("Ошибка: " + (e instanceof Error ? e.message : "неизвестная"));
+    } finally {
+      setCleanupBusy(false);
+    }
+  };
+
   // ---------- Импорт ZIP с Я.Диска ----------
   const YADISK_API = "https://functions.poehali.dev/be1dc659-71d3-414a-9029-c3bc7de92bf2";
   const [yadiskUrl, setYadiskUrl] = useState("");
@@ -814,6 +846,66 @@ function Videos({ token }: { token: string }) {
           )}
         </div>
       )}
+
+      {/* ----- Очистка дублей и скрытых ----- */}
+      <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 space-y-3">
+        <div className="flex items-start gap-3 flex-wrap">
+          <Icon name="Trash2" size={20} className="text-rose-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-white">Очистка дублей и скрытых видео</p>
+            <p className="text-xs text-white/60">
+              Удалит все скрытые видео и оставит только одну копию из каждой группы дублей (по автору + описанию). Сохранится самое старое не-скрытое видео.
+            </p>
+          </div>
+          {!cleanupInfo ? (
+            <button
+              onClick={previewCleanup}
+              disabled={cleanupBusy}
+              className="px-3 py-2 rounded-lg bg-rose-500 text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+            >
+              {cleanupBusy ? <Icon name="Loader2" size={16} className="animate-spin" /> : <Icon name="Search" size={16} />}
+              Проверить
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={runCleanup}
+                disabled={cleanupBusy || cleanupInfo.to_delete === 0}
+                className="px-3 py-2 rounded-lg bg-rose-500 text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+              >
+                <Icon name="Trash2" size={16} />
+                Удалить ({cleanupInfo.to_delete})
+              </button>
+              <button
+                onClick={() => setCleanupInfo(null)}
+                className="px-3 py-2 rounded-lg bg-white/10 text-white text-sm hover:bg-white/15"
+              >
+                Отмена
+              </button>
+            </div>
+          )}
+        </div>
+        {cleanupInfo && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            <div className="bg-black/30 rounded-lg p-2">
+              <div className="text-white/50">Всего</div>
+              <div className="text-white font-semibold text-base">{cleanupInfo.total}</div>
+            </div>
+            <div className="bg-black/30 rounded-lg p-2">
+              <div className="text-white/50">Скрытых</div>
+              <div className="text-orange-400 font-semibold text-base">{cleanupInfo.hidden}</div>
+            </div>
+            <div className="bg-black/30 rounded-lg p-2">
+              <div className="text-white/50">Дублей</div>
+              <div className="text-rose-400 font-semibold text-base">{cleanupInfo.duplicates}</div>
+            </div>
+            <div className="bg-black/30 rounded-lg p-2">
+              <div className="text-white/50">Останется</div>
+              <div className="text-emerald-400 font-semibold text-base">{cleanupInfo.will_remain}</div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* ----- Разведка short-video.ru ----- */}
       <div className="bg-violet-500/10 border border-violet-500/30 rounded-2xl p-4 space-y-3">
