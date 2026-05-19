@@ -506,6 +506,78 @@ function Videos({ token }: { token: string }) {
   };
   const stopMigrate = () => { migAbortRef.current = true; };
 
+  // ---------- Импорт ZIP с Я.Диска ----------
+  const YADISK_API = "https://functions.poehali.dev/be1dc659-71d3-414a-9029-c3bc7de92bf2";
+  const [yadiskUrl, setYadiskUrl] = useState("");
+  const [yadiskInfo, setYadiskInfo] = useState<{ total_files: number; matched_in_db: number; archive_size: number; sample: string[] } | null>(null);
+  const [yadiskBusy, setYadiskBusy] = useState(false);
+  const [yadiskImporting, setYadiskImporting] = useState(false);
+  const [yadiskProgress, setYadiskProgress] = useState<{ offset: number; total: number; migrated: number; skipped: number } | null>(null);
+  const yadiskAbortRef = useRef(false);
+
+  const callYadisk = async (action: string, payload: Record<string, unknown> = {}) => {
+    const res = await fetch(YADISK_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Admin-Token": token },
+      body: JSON.stringify({ action, public_url: yadiskUrl, ...payload }),
+    });
+    return await res.json();
+  };
+
+  const yadiskIndex = async () => {
+    if (!yadiskUrl.trim()) { alert("Вставь публичную ссылку на zip с Яндекс.Диска"); return; }
+    setYadiskBusy(true);
+    setYadiskInfo(null);
+    try {
+      const d = await callYadisk("index");
+      if (d.error) { alert("Ошибка: " + d.error); return; }
+      setYadiskInfo({
+        total_files: d.total_files,
+        matched_in_db: d.matched_in_db,
+        archive_size: d.archive_size,
+        sample: d.sample || [],
+      });
+    } catch (e) {
+      alert("Ошибка: " + (e instanceof Error ? e.message : "неизвестная"));
+    } finally {
+      setYadiskBusy(false);
+    }
+  };
+
+  const yadiskImport = async () => {
+    if (!yadiskInfo) return;
+    if (!confirm(`Импортировать файлы из архива? Будет обработано ${yadiskInfo.total_files} файлов пачками по 3 шт.`)) return;
+    setYadiskImporting(true);
+    yadiskAbortRef.current = false;
+    let offset = 0;
+    let migrated = 0;
+    let skipped = 0;
+    try {
+      while (!yadiskAbortRef.current) {
+        const d = await callYadisk("import", { offset, batch_size: 3 });
+        if (d.error) { alert("Ошибка: " + d.error); break; }
+        offset = d.offset;
+        migrated += d.migrated || 0;
+        skipped += d.skipped || 0;
+        setYadiskProgress({ offset, total: d.total, migrated, skipped });
+        if (d.done) break;
+      }
+    } catch (e) {
+      alert("Ошибка импорта: " + (e instanceof Error ? e.message : "неизвестная"));
+    } finally {
+      setYadiskImporting(false);
+      load();
+      loadBroken();
+    }
+  };
+  const stopYadiskImport = () => { yadiskAbortRef.current = true; };
+  const fmtBytes = (n: number) => {
+    if (n < 1024) return `${n} Б`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} КБ`;
+    if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} МБ`;
+    return `${(n / 1024 / 1024 / 1024).toFixed(2)} ГБ`;
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -638,6 +710,85 @@ function Videos({ token }: { token: string }) {
           )}
         </div>
       )}
+
+      {/* ----- Импорт ZIP с Яндекс.Диска ----- */}
+      <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4 space-y-3">
+        <div className="flex items-start gap-3">
+          <Icon name="Archive" size={20} className="text-blue-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-white">Импорт legacy-видео из ZIP-архива (Я.Диск)</p>
+            <p className="text-xs text-white/60">
+              Загрузи папку с файлами на Я.Диск, опубликуй её и вставь ссылку сюда. Бэкенд распакует архив и обновит ссылки в базе на наш CDN. Имена файлов в архиве должны совпадать с именами в URL базы.
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <input
+            value={yadiskUrl}
+            onChange={(e) => setYadiskUrl(e.target.value)}
+            placeholder="https://disk.yandex.ru/d/..."
+            className="flex-1 min-w-[260px] px-3 py-2 rounded-lg bg-zinc-900 border border-white/10 text-white text-sm placeholder:text-white/30"
+            disabled={yadiskBusy || yadiskImporting}
+          />
+          <button
+            onClick={yadiskIndex}
+            disabled={yadiskBusy || yadiskImporting || !yadiskUrl.trim()}
+            className="px-3 py-2 rounded-lg bg-blue-500 text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+          >
+            {yadiskBusy ? <Icon name="Loader2" size={16} className="animate-spin" /> : <Icon name="Search" size={16} />}
+            Проверить
+          </button>
+        </div>
+        {yadiskInfo && (
+          <div className="bg-black/30 rounded-lg p-3 text-xs space-y-2">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-white/80">
+              <span>Размер: <b className="text-white">{fmtBytes(yadiskInfo.archive_size)}</b></span>
+              <span>Файлов в архиве: <b className="text-white">{yadiskInfo.total_files}</b></span>
+              <span>Совпало с базой: <b className="text-emerald-400">{yadiskInfo.matched_in_db}</b></span>
+            </div>
+            {yadiskInfo.sample.length > 0 && (
+              <div className="text-white/50 truncate">Примеры: {yadiskInfo.sample.join(", ")}</div>
+            )}
+            <div className="flex gap-2 pt-1">
+              {!yadiskImporting ? (
+                <button
+                  onClick={yadiskImport}
+                  disabled={yadiskInfo.matched_in_db === 0}
+                  className="px-3 py-2 rounded-lg bg-emerald-500 text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+                >
+                  <Icon name="Play" size={14} />
+                  Запустить импорт
+                </button>
+              ) : (
+                <button
+                  onClick={stopYadiskImport}
+                  className="px-3 py-2 rounded-lg bg-white/10 text-white text-sm hover:bg-white/15"
+                >
+                  Остановить
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+        {yadiskProgress && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs text-white/70">
+              <span>
+                Обработано: <b>{yadiskProgress.offset}/{yadiskProgress.total}</b> ·
+                Перенесено: <b className="text-emerald-400">{yadiskProgress.migrated}</b> ·
+                Пропущено: <b>{yadiskProgress.skipped}</b>
+              </span>
+              {yadiskImporting && <span className="flex items-center gap-1"><Icon name="Loader2" size={12} className="animate-spin" /> идёт</span>}
+            </div>
+            <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-500 transition-all"
+                style={{ width: `${yadiskProgress.total > 0 ? Math.round((yadiskProgress.offset / yadiskProgress.total) * 100) : 0}%` }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="flex gap-2">
         <input
