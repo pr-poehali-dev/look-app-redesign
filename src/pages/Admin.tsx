@@ -678,7 +678,7 @@ function Videos({ token, mediaType = "video" }: { token: string; mediaType?: "vi
         <Chip active={sortKey === "comments"} onClick={() => setSortKey("comments")}>По коммент.</Chip>
       </div>
 
-      <p className="text-xs text-white/40">Показано: {filtered.length} из {videos.length}</p>
+      <p className="text-xs text-white/40">Показано: {filtered.length} из {kindFilter === "all" ? videos.length : (kindFilter === "video" ? counts.video : kindFilter === "image" ? counts.image : counts.unknown)}</p>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {loading && <p className="text-white/50 col-span-full">Загрузка...</p>}
