@@ -299,25 +299,35 @@ function Users({ token }: { token: string }) {
 
 interface VideoRow { id: number; url: string; thumbnail?: string; author: string; handle: string; description?: string; likes?: number; comments?: number; created_at?: string; hidden?: boolean }
 
+function detectKind(url?: string): "video" | "image" | "unknown" {
+  if (!url) return "unknown";
+  const clean = url.split("?")[0].split("#")[0].toLowerCase();
+  if (/\.(mp4|webm|mov|m4v|ogv|avi|mkv)$/i.test(clean)) return "video";
+  if (/\.(jpe?g|png|gif|webp|avif|bmp|heic|heif)$/i.test(clean)) return "image";
+  return "unknown";
+}
+
 function VideoPreview({ url, thumbnail, hidden }: { url?: string; thumbnail?: string; hidden?: boolean }) {
   const [playing, setPlaying] = useState(false);
   const [errored, setErrored] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const isVideo = !!url && /\.(mp4|webm|mov|m4v|ogv)(\?|#|$)/i.test(url);
+  const kind = detectKind(url);
 
   const toggle = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (kind !== "video") return;
     const el = videoRef.current;
     if (!el) return;
     if (el.paused) { el.play().catch(() => {}); setPlaying(true); }
     else { el.pause(); setPlaying(false); }
   };
 
-  return (
-    <div className="aspect-[9/16] bg-black relative cursor-pointer group" onClick={toggle}>
-      {thumbnail && !errored ? (
-        <img src={thumbnail} alt="" className="w-full h-full object-cover" onError={() => setErrored(true)} />
-      ) : isVideo ? (
+  const renderMedia = () => {
+    if (thumbnail && !errored) {
+      return <img src={thumbnail} alt="" className="w-full h-full object-cover" onError={() => setErrored(true)} />;
+    }
+    if (kind === "video" && url) {
+      return (
         <video
           ref={videoRef}
           src={url}
@@ -329,21 +339,46 @@ function VideoPreview({ url, thumbnail, hidden }: { url?: string; thumbnail?: st
           onPause={() => setPlaying(false)}
           onError={() => setErrored(true)}
         />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center text-white/30">
-          <Icon name="Film" size={32} />
-        </div>
-      )}
-      {/* Play overlay */}
-      {!playing && (thumbnail || isVideo) && !errored && (
+      );
+    }
+    if (kind === "image" && url && !errored) {
+      return <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" onError={() => setErrored(true)} />;
+    }
+    if (kind === "unknown" && url && !errored) {
+      // Пробуем как картинку (большинство ссылок без расширения — изображения)
+      return <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" onError={() => setErrored(true)} />;
+    }
+    return (
+      <div className="w-full h-full flex items-center justify-center text-white/30">
+        <Icon name="Film" size={32} />
+      </div>
+    );
+  };
+
+  return (
+    <div className="aspect-[9/16] bg-black relative cursor-pointer group" onClick={toggle}>
+      {renderMedia()}
+      {/* Play overlay только для видео */}
+      {!playing && kind === "video" && !errored && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/20 transition-colors">
           <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
             <Icon name="Play" size={18} className="text-black ml-0.5" />
           </div>
         </div>
       )}
+      {/* Бейдж типа */}
+      {kind === "image" && (
+        <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-black/70 text-[10px] text-white/80 flex items-center gap-1">
+          <Icon name="Image" size={10} /> Фото
+        </div>
+      )}
+      {kind === "video" && (
+        <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-black/70 text-[10px] text-white/80 flex items-center gap-1">
+          <Icon name="Video" size={10} /> Видео
+        </div>
+      )}
       {errored && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-white/40 gap-1 text-[10px] p-2 text-center">
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-white/40 gap-1 text-[10px] p-2 text-center bg-black/60">
           <Icon name="AlertTriangle" size={20} />
           <span>Не загрузилось</span>
         </div>
