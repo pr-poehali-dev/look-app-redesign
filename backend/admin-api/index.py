@@ -369,8 +369,8 @@ def _route(cur, conn, action: str, body: dict) -> dict:
 
     if action == 'videos_cleanup_run':
         # Удалить все скрытые видео + дубли по (author, description) (оставляя самое старое не-скрытое)
+        # Сначала собираем ID в Python-список, потом удаляем через ANY(%s)
         _q(cur, """
-            CREATE TEMP TABLE _vids_to_del ON COMMIT DROP AS
             SELECT DISTINCT v.id
             FROM {S}.videos v
             WHERE COALESCE(v.hidden, FALSE) = TRUE
@@ -386,9 +386,14 @@ def _route(cur, conn, action: str, body: dict) -> dict:
                  ) t WHERE rn > 1
                )
         """)
-        _q(cur, "DELETE FROM {S}.likes WHERE target_type = 'video' AND target_id IN (SELECT id::text FROM _vids_to_del)")
-        _q(cur, "DELETE FROM {S}.comments WHERE target_type = 'video' AND target_id IN (SELECT id::text FROM _vids_to_del)")
-        _q(cur, "DELETE FROM {S}.videos WHERE id IN (SELECT id FROM _vids_to_del)")
+        ids_to_del = [r['id'] for r in cur.fetchall()]
+        if not ids_to_del:
+            return {'statusCode': 200, 'headers': _cors(),
+                    'body': json.dumps({'ok': True, 'deleted': 0})}
+        ids_str = [str(x) for x in ids_to_del]
+        _q(cur, "DELETE FROM {S}.likes WHERE target_type = 'video' AND target_id = ANY(%s)", (ids_str,))
+        _q(cur, "DELETE FROM {S}.comments WHERE target_type = 'video' AND target_id = ANY(%s)", (ids_str,))
+        _q(cur, "DELETE FROM {S}.videos WHERE id = ANY(%s)", (ids_to_del,))
         affected = cur.rowcount
         conn.commit()
         return {'statusCode': 200, 'headers': _cors(),
