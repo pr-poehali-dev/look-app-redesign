@@ -388,15 +388,22 @@ function VideoPreview({ url, thumbnail, hidden }: { url?: string; thumbnail?: st
   );
 }
 
+type KindFilter = "all" | "video" | "image" | "unknown";
+type VisFilter = "all" | "active" | "hidden";
+type SortKey = "new" | "old" | "likes" | "comments";
+
 function Videos({ token }: { token: string }) {
   const [videos, setVideos] = useState<VideoRow[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [kindFilter, setKindFilter] = useState<KindFilter>("all");
+  const [visFilter, setVisFilter] = useState<VisFilter>("all");
+  const [sortKey, setSortKey] = useState<SortKey>("new");
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api("videos_list", { search, limit: 100 }, token);
+      const data = await api("videos_list", { search, limit: 300 }, token);
       setVideos(data.videos || []);
     } finally { setLoading(false); }
   }, [search, token]);
@@ -413,6 +420,36 @@ function Videos({ token }: { token: string }) {
     load();
   };
 
+  const counts = { all: videos.length, video: 0, image: 0, unknown: 0, hidden: 0, active: 0 };
+  for (const v of videos) {
+    const k = detectKind(v.url);
+    if (k === "video") counts.video++;
+    else if (k === "image") counts.image++;
+    else counts.unknown++;
+    if (v.hidden) counts.hidden++; else counts.active++;
+  }
+
+  const filtered = videos
+    .filter((v) => kindFilter === "all" || detectKind(v.url) === kindFilter)
+    .filter((v) => visFilter === "all" || (visFilter === "hidden" ? v.hidden : !v.hidden))
+    .slice()
+    .sort((a, b) => {
+      if (sortKey === "likes") return (b.likes || 0) - (a.likes || 0);
+      if (sortKey === "comments") return (b.comments || 0) - (a.comments || 0);
+      const at = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bt = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return sortKey === "old" ? at - bt : bt - at;
+    });
+
+  const Chip = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
+    <button
+      onClick={onClick}
+      className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${active ? "bg-[#fe2c55] text-white" : "bg-zinc-900 border border-white/10 text-white/60 hover:text-white hover:bg-white/5"}`}
+    >
+      {children}
+    </button>
+  );
+
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold hidden md:block">Видео</h2>
@@ -426,9 +463,41 @@ function Videos({ token }: { token: string }) {
           <Icon name="RefreshCw" size={18} />
         </button>
       </div>
+
+      <div className="flex flex-wrap gap-2 items-center">
+        <span className="text-[11px] uppercase tracking-wider text-white/40 mr-1">Тип:</span>
+        <Chip active={kindFilter === "all"} onClick={() => setKindFilter("all")}>Все ({counts.all})</Chip>
+        <Chip active={kindFilter === "video"} onClick={() => setKindFilter("video")}>
+          <span className="flex items-center gap-1"><Icon name="Video" size={12} /> Видео ({counts.video})</span>
+        </Chip>
+        <Chip active={kindFilter === "image"} onClick={() => setKindFilter("image")}>
+          <span className="flex items-center gap-1"><Icon name="Image" size={12} /> Фото ({counts.image})</span>
+        </Chip>
+        {counts.unknown > 0 && (
+          <Chip active={kindFilter === "unknown"} onClick={() => setKindFilter("unknown")}>
+            <span className="flex items-center gap-1"><Icon name="HelpCircle" size={12} /> Прочее ({counts.unknown})</span>
+          </Chip>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-2 items-center">
+        <span className="text-[11px] uppercase tracking-wider text-white/40 mr-1">Статус:</span>
+        <Chip active={visFilter === "all"} onClick={() => setVisFilter("all")}>Все</Chip>
+        <Chip active={visFilter === "active"} onClick={() => setVisFilter("active")}>Активные ({counts.active})</Chip>
+        <Chip active={visFilter === "hidden"} onClick={() => setVisFilter("hidden")}>Скрытые ({counts.hidden})</Chip>
+        <span className="text-[11px] uppercase tracking-wider text-white/40 mx-1 ml-auto">Сортировка:</span>
+        <Chip active={sortKey === "new"} onClick={() => setSortKey("new")}>Новые</Chip>
+        <Chip active={sortKey === "old"} onClick={() => setSortKey("old")}>Старые</Chip>
+        <Chip active={sortKey === "likes"} onClick={() => setSortKey("likes")}>По лайкам</Chip>
+        <Chip active={sortKey === "comments"} onClick={() => setSortKey("comments")}>По коммент.</Chip>
+      </div>
+
+      <p className="text-xs text-white/40">Показано: {filtered.length} из {videos.length}</p>
+
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {loading && <p className="text-white/50 col-span-full">Загрузка...</p>}
-        {videos.map((v) => (
+        {!loading && filtered.length === 0 && <p className="text-white/40 col-span-full text-sm">Нет записей под выбранные фильтры</p>}
+        {filtered.map((v) => (
           <div key={v.id} className={`bg-zinc-900 border border-white/10 rounded-xl overflow-hidden ${v.hidden ? "opacity-50" : ""}`}>
             <VideoPreview url={v.url} thumbnail={v.thumbnail} hidden={v.hidden} />
             <div className="p-2 space-y-1">
