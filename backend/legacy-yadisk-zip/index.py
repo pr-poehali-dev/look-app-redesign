@@ -433,63 +433,74 @@ def handler(event: dict, context) -> dict:
             try:
                 end = min(offset + batch_size, total)
                 for i in range(offset, end):
-                    if is_zip:
-                        entry = zip_entries[i]
-                        fname = _basename(entry['name'])
-                    else:
-                        f = folder_files[i]
-                        fname = f['name']
-
-                    fname_esc = fname.replace("'", "''")
-
-                    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-                        cur.execute(
-                            f"SELECT id, url, thumbnail FROM {schema}.videos "
-                            f"WHERE (url LIKE '%/{fname_esc}' OR thumbnail LIKE '%/{fname_esc}') "
-                            f"AND (url LIKE '%short-video.ru%' OR url LIKE 'failed:%' OR thumbnail LIKE '%short-video.ru%') "
-                            f"LIMIT 1"
-                        )
-                        row = cur.fetchone()
-                    if not row:
-                        skipped += 1
-                        continue
-
                     try:
                         if is_zip:
-                            data = zip_reader.read_entry(entry)
+                            entry = zip_entries[i]
+                            fname = _basename(entry['name'])
                         else:
-                            file_url = _yadisk_direct_url_retry(public_url, folder_files[i]['path'])
-                            data = _http_get_with_retry(file_url, attempts=3, timeout=120)
-                    except Exception as e:
-                        errors.append({'file': fname, 'error': str(e)[:120]})
-                        continue
+                            f = folder_files[i]
+                            fname = f['name']
 
-                    ext = fname.rsplit('.', 1)[-1] if '.' in fname else 'bin'
-                    key = f"videos/legacy/{row['id']}_{int(time.time())}_{i}.{ext}"
-                    try:
-                        s3.put_object(Bucket='files', Key=key, Body=data,
-                                      ContentType=_content_type(fname))
-                    except Exception as e:
-                        errors.append({'file': fname, 'error': f'S3: {str(e)[:120]}'})
-                        continue
+                        fname_esc = fname.replace("'", "''")
 
-                    cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
-
-                    is_video = fname.lower().endswith(('.mp4', '.webm', '.mov'))
-                    with conn.cursor() as cur:
-                        if is_video:
+                        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                             cur.execute(
-                                f"UPDATE {schema}.videos SET url = %s WHERE id = %s",
-                                (cdn_url, row['id'])
+                                f"SELECT id, url, thumbnail FROM {schema}.videos "
+                                f"WHERE (url LIKE '%/{fname_esc}' OR thumbnail LIKE '%/{fname_esc}') "
+                                f"AND (url LIKE '%short-video.ru%' OR url LIKE 'failed:%' OR thumbnail LIKE '%short-video.ru%') "
+                                f"LIMIT 1"
                             )
-                        else:
-                            cur.execute(
-                                f"UPDATE {schema}.videos SET thumbnail = %s WHERE id = %s",
-                                (cdn_url, row['id'])
-                            )
-                    conn.commit()
-                    migrated += 1
-                    updated_ids.append(row['id'])
+                            row = cur.fetchone()
+                        if not row:
+                            skipped += 1
+                            continue
+
+                        try:
+                            if is_zip:
+                                data = zip_reader.read_entry(entry)
+                            else:
+                                file_url = _yadisk_direct_url_retry(public_url, folder_files[i]['path'])
+                                data = _http_get_with_retry(file_url, attempts=3, timeout=120)
+                        except Exception as e:
+                            errors.append({'idx': i, 'file': fname, 'error': str(e)[:120]})
+                            skipped += 1
+                            continue
+
+                        ext = fname.rsplit('.', 1)[-1] if '.' in fname else 'bin'
+                        key = f"videos/legacy/{row['id']}_{int(time.time())}_{i}.{ext}"
+                        try:
+                            s3.put_object(Bucket='files', Key=key, Body=data,
+                                          ContentType=_content_type(fname))
+                        except Exception as e:
+                            errors.append({'idx': i, 'file': fname, 'error': f'S3: {str(e)[:120]}'})
+                            skipped += 1
+                            continue
+
+                        cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
+
+                        is_video = fname.lower().endswith(('.mp4', '.webm', '.mov'))
+                        with conn.cursor() as cur:
+                            if is_video:
+                                cur.execute(
+                                    f"UPDATE {schema}.videos SET url = %s WHERE id = %s",
+                                    (cdn_url, row['id'])
+                                )
+                            else:
+                                cur.execute(
+                                    f"UPDATE {schema}.videos SET thumbnail = %s WHERE id = %s",
+                                    (cdn_url, row['id'])
+                                )
+                        conn.commit()
+                        migrated += 1
+                        updated_ids.append(row['id'])
+                    except Exception as e:
+                        try:
+                            conn.rollback()
+                        except Exception:
+                            pass
+                        errors.append({'idx': i, 'error': f'fatal: {str(e)[:160]}'})
+                        skipped += 1
+                        continue
 
                 done = end >= total
                 return {'statusCode': 200, 'headers': _cors(),

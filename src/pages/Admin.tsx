@@ -546,20 +546,47 @@ function Videos({ token }: { token: string }) {
 
   const yadiskImport = async () => {
     if (!yadiskInfo) return;
-    if (!confirm(`Импортировать файлы из архива? Будет обработано ${yadiskInfo.total_files} файлов пачками по 3 шт.`)) return;
+    const resumeFrom = yadiskProgress?.offset && yadiskProgress.offset < (yadiskProgress?.total || 0) ? yadiskProgress.offset : 0;
+    const startMsg = resumeFrom > 0
+      ? `Продолжить импорт с ${resumeFrom}/${yadiskInfo.total_files}?`
+      : `Импортировать файлы из архива? Будет обработано ${yadiskInfo.total_files} файлов пачками по 3 шт.`;
+    if (!confirm(startMsg)) return;
     setYadiskImporting(true);
     yadiskAbortRef.current = false;
-    let offset = 0;
-    let migrated = 0;
-    let skipped = 0;
+    let offset = resumeFrom;
+    let migrated = yadiskProgress?.migrated || 0;
+    let skipped = yadiskProgress?.skipped || 0;
+    let consecutiveErrors = 0;
     try {
       while (!yadiskAbortRef.current) {
-        const d = await callYadisk("import", { offset, batch_size: 3 });
-        if (d.error) { alert("Ошибка: " + d.error); break; }
-        offset = d.offset;
+        let d: { error?: string; offset?: number; total?: number; migrated?: number; skipped?: number; done?: boolean };
+        try {
+          d = await callYadisk("import", { offset, batch_size: 3 });
+        } catch (netErr) {
+          consecutiveErrors++;
+          if (consecutiveErrors >= 5) {
+            alert("Сеть/бэк недоступны 5 раз подряд. Прогресс сохранён, нажми «Запустить импорт» — продолжу с " + offset);
+            break;
+          }
+          await new Promise((r) => setTimeout(r, 1500 * consecutiveErrors));
+          continue;
+        }
+        if (d.error) {
+          consecutiveErrors++;
+          if (consecutiveErrors >= 5) {
+            alert("Ошибка 5 раз подряд: " + d.error + ". Прогресс сохранён, продолжу с " + offset);
+            break;
+          }
+          offset += 3;
+          setYadiskProgress({ offset, total: d.total || yadiskInfo.total_files, migrated, skipped });
+          await new Promise((r) => setTimeout(r, 500));
+          continue;
+        }
+        consecutiveErrors = 0;
+        offset = d.offset || offset;
         migrated += d.migrated || 0;
         skipped += d.skipped || 0;
-        setYadiskProgress({ offset, total: d.total, migrated, skipped });
+        setYadiskProgress({ offset, total: d.total || yadiskInfo.total_files, migrated, skipped });
         if (d.done) break;
       }
     } catch (e) {
