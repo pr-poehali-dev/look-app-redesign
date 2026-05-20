@@ -96,6 +96,32 @@
       0 0 40px rgba(0, 212, 255, 0.3);
   }
 
+  .slogan-shimmer {
+    background: linear-gradient(
+      90deg,
+      #22e0a1,
+      #22d3ee,
+      #4ade80,
+      #22d3ee,
+      #22e0a1
+    );
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: slogan-shimmer 4s linear infinite;
+    filter: drop-shadow(0 2px 12px rgba(34, 211, 238, 0.35));
+  }
+
+  @keyframes slogan-shimmer {
+    0% {
+      background-position: 0% 50%;
+    }
+    100% {
+      background-position: 300% 50%;
+    }
+  }
+
   .neon-border {
     border: 1px solid rgba(0, 212, 255, 0.3);
     box-shadow:

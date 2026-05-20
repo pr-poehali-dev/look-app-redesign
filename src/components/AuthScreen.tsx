@@ -68,7 +68,7 @@ const AuthScreen = () => {
           />
         </div>
         <h1 className="text-white font-black text-3xl">Look</h1>
-        <p className="text-lg font-extrabold tracking-tight mt-1" style={{ background: "linear-gradient(90deg, #22e0a1, #22d3ee)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", filter: "drop-shadow(0 2px 12px rgba(34, 211, 238, 0.35))" }}>Смотри#Делись#Общайся#Будь собой</p>
+        <p className="text-lg font-extrabold tracking-tight mt-1 slogan-shimmer">Смотри#Делись#Общайся#Будь собой</p>
       </div>
 
       {/* Form */}
