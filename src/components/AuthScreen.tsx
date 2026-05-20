@@ -56,9 +56,10 @@ const AuthScreen = () => {
     : name.trim() && handle.trim() && email.trim() && password.length >= 6 && phoneDigits.length >= 10;
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col" style={{ maxWidth: 480, margin: "0 auto" }}>
+    <div className="fixed inset-0 bg-black overflow-y-auto" style={{ maxWidth: 480, margin: "0 auto" }}>
+      <div className="min-h-full flex flex-col">
       {/* Logo area */}
-      <div className="flex-1 flex flex-col items-center justify-center px-8 gap-2">
+      <div className={`flex flex-col items-center justify-center px-8 gap-2 ${mode === "register" ? "py-8" : "flex-1 py-10"}`}>
         <div className="w-16 h-16 rounded-2xl overflow-hidden mb-2 shadow-lg">
           <img
             src="https://static.rustore.ru/imgproxy/vs3_tA6Fiyv_VxNKTcByf1sXvc4-Qy2G_VlA-uzDgTs/preset:web_app_icon_62/plain/https://static.rustore.ru/2025/9/16/49/apk/2063656157/content/ICON/586db88b-5139-4dc5-b8f4-5a7e07f892ba.png@webp"
@@ -71,7 +72,7 @@ const AuthScreen = () => {
       </div>
 
       {/* Form */}
-      <div className="bg-white rounded-t-3xl px-6 pt-7 pb-10 flex flex-col gap-4">
+      <div className="bg-white rounded-t-3xl px-6 pt-7 pb-12 flex flex-col gap-4">
         {/* Tabs */}
         <div className="flex bg-gray-100 rounded-xl p-1 mb-1">
           <button
@@ -228,6 +229,7 @@ const AuthScreen = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

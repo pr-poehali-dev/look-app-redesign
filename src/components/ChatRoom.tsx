@@ -73,6 +73,11 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showReport, setShowReport] = useState(false);
   const [showBlock, setShowBlock] = useState(false);
+  const [showAddMembers, setShowAddMembers] = useState(false);
+  const [addMembersSearch, setAddMembersSearch] = useState("");
+  const [addMembersList, setAddMembersList] = useState<{ id: string; name: string; avatar: string; handle: string; phone: string }[]>([]);
+  const [selectedNewMembers, setSelectedNewMembers] = useState<string[]>([]);
+  const [addingMembers, setAddingMembers] = useState(false);
   const [muted, setMuted] = useState<boolean>(false);
   const [blocked, setBlocked] = useState<boolean>(false);
   const [showMute, setShowMute] = useState(false);
@@ -672,6 +677,49 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     setCall(mode);
   };
 
+  useEffect(() => {
+    if (!showAddMembers) return;
+    fetch(`${API}?module=chat&action=all_users`, {
+      headers: { "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
+    })
+      .then(r => r.json())
+      .then(raw => {
+        const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
+        setAddMembersList(data.users || []);
+      })
+      .catch(() => setAddMembersList([]));
+  }, [showAddMembers, MY_ID, MY_NAME]);
+
+  const handleAddMembers = async () => {
+    if (selectedNewMembers.length === 0) return;
+    setAddingMembers(true);
+    try {
+      const res = await fetch(`${API}?module=chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
+        body: JSON.stringify({ action: "add_members", chat_id: chatId, user_ids: selectedNewMembers }),
+      });
+      const raw = await res.json();
+      const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
+      if (data.ok) {
+        setToast(data.converted ? "Создан групповой чат" : `Добавлено: ${data.added}`);
+        setShowAddMembers(false);
+        setSelectedNewMembers([]);
+        setAddMembersSearch("");
+        if (data.converted && data.chat_id && onDeleted) {
+          onDeleted(chat.id);
+        }
+      } else {
+        setToast(data.error || "Не удалось добавить");
+      }
+    } catch {
+      setToast("Ошибка сети");
+    } finally {
+      setAddingMembers(false);
+      setTimeout(() => setToast(""), 2500);
+    }
+  };
+
   if (call && isGroup) {
     return (
       <GroupCallScreen
@@ -734,6 +782,9 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
           </button>
           <button onClick={() => startCall("audio")} className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center">
             <Icon name="Phone" size={17} className="text-white" />
+          </button>
+          <button onClick={() => setShowAddMembers(true)} className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center" title="Добавить участников">
+            <Icon name="UserPlus" size={17} className="text-white" />
           </button>
           <div className="relative">
             <button onClick={() => { setMenuOpen(v => !v); setSubmenuOpen(false); }} className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center">
@@ -1172,6 +1223,86 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
           </div>
         </div>
       )}
+
+      {/* Добавить участников */}
+      {showAddMembers && (() => {
+        const q = addMembersSearch.trim().toLowerCase();
+        const qDigits = q.replace(/\D/g, "");
+        const filtered = addMembersList.filter(u => {
+          if (u.id === MY_ID) return false;
+          if (!q) return true;
+          if (u.name.toLowerCase().includes(q)) return true;
+          if (u.handle && u.handle.toLowerCase().includes(q.replace(/^@/, ""))) return true;
+          if (qDigits.length >= 3 && u.phone && u.phone.replace(/\D/g, "").includes(qDigits)) return true;
+          return false;
+        });
+        return (
+          <div className="fixed inset-0 z-[60] bg-black/80 flex items-end sm:items-center justify-center" onClick={() => setShowAddMembers(false)}>
+            <div className="bg-[#1a1a1a] w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+              <div className="px-5 pt-5 pb-3">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-white font-bold text-lg">Добавить участников</span>
+                  <button onClick={() => setShowAddMembers(false)}>
+                    <Icon name="X" size={22} className="text-white/60" />
+                  </button>
+                </div>
+                {!isGroup && (
+                  <p className="text-white/50 text-xs mb-3">Чат станет групповым после добавления</p>
+                )}
+                <div className="flex items-center gap-2 bg-white/10 rounded-xl px-4 py-2.5">
+                  <Icon name="Search" size={16} className="text-white/40" />
+                  <input
+                    value={addMembersSearch}
+                    onChange={e => setAddMembersSearch(e.target.value)}
+                    placeholder="Имя, @ник или номер"
+                    className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/30"
+                    autoFocus
+                  />
+                </div>
+                {selectedNewMembers.length > 0 && (
+                  <div className="mt-3 text-white/60 text-xs">Выбрано: {selectedNewMembers.length}</div>
+                )}
+              </div>
+              <div className="flex-1 overflow-y-auto px-2 pb-2" style={{ scrollbarWidth: "none" }}>
+                {filtered.length === 0 ? (
+                  <div className="text-center text-white/40 text-sm py-8">Никого не нашли</div>
+                ) : (
+                  filtered.map(u => {
+                    const selected = selectedNewMembers.includes(u.id);
+                    return (
+                      <button
+                        key={u.id}
+                        onClick={() => setSelectedNewMembers(prev => selected ? prev.filter(id => id !== u.id) : [...prev, u.id])}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 rounded-xl text-left"
+                      >
+                        <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                          <UserAvatar src={u.avatar} name={u.name} alt={u.name} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-semibold text-sm truncate">{u.name}</p>
+                          <p className="text-white/40 text-xs truncate">{u.handle ? `@${u.handle}` : (u.phone || "")}</p>
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${selected ? "bg-[#fe2c55] border-[#fe2c55]" : "border-white/30"}`}>
+                          {selected && <Icon name="Check" size={12} className="text-white" />}
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+              <div className="p-4 border-t border-white/8">
+                <button
+                  onClick={handleAddMembers}
+                  disabled={selectedNewMembers.length === 0 || addingMembers}
+                  className="w-full py-3.5 rounded-xl bg-[#fe2c55] text-white font-bold text-base disabled:opacity-40"
+                >
+                  {addingMembers ? "Добавляем..." : `Добавить${selectedNewMembers.length > 0 ? ` (${selectedNewMembers.length})` : ""}`}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Toast */}
       {toast && (

@@ -446,6 +446,67 @@ def handler(event: dict, context) -> dict:
                     return {'statusCode': 200, 'headers': headers,
                             'body': json.dumps({'chat_id': new_id, 'ok': True})}
 
+                if post_action == 'add_members':
+                    import uuid as _uuid
+                    src_chat_id = body.get('chat_id')
+                    new_members = body.get('user_ids') or []
+                    group_name = (body.get('name') or '').strip()
+                    if not src_chat_id or not isinstance(new_members, list) or not new_members:
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'chat_id и user_ids обязательны'})}
+                    new_members = [m for m in new_members if isinstance(m, str) and m][:50]
+                    src_chat_id = str(src_chat_id)
+                    if src_chat_id.startswith('dm_'):
+                        rest = src_chat_id[3:]
+                        if rest.startswith('u_'):
+                            sep = rest.find('_u_', 2)
+                            if sep > 0:
+                                dm_members = [rest[:sep], rest[sep + 1:]]
+                            else:
+                                dm_members = [rest]
+                        else:
+                            dm_members = rest.split('_')
+                        dm_members = [m for m in dm_members if m]
+                        target_id = str(_uuid.uuid4())[:12]
+                        if not group_name:
+                            cur.execute("SELECT name FROM app_users WHERE id = ANY(%s)", (dm_members + new_members,))
+                            names = [r[0] for r in cur.fetchall()]
+                            group_name = ', '.join(names[:3]) if names else 'Группа'
+                        cur.execute(
+                            "INSERT INTO sa_chats (id, type, name) VALUES (%s, 'group', %s)",
+                            (target_id, group_name)
+                        )
+                        for mid in set(dm_members + new_members + [user_id]):
+                            cur.execute(
+                                "INSERT INTO sa_chat_members (chat_id, user_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                                (target_id, mid)
+                            )
+                        cur.execute(
+                            "INSERT INTO sa_messages (chat_id, user_id, user_name, type, content) "
+                            "VALUES (%s, %s, %s, 'system', %s)",
+                            (target_id, user_id, user_name, 'Создана группа')
+                        )
+                        conn.commit()
+                        return {'statusCode': 200, 'headers': headers,
+                                'body': json.dumps({'ok': True, 'chat_id': target_id, 'converted': True})}
+                    cur.execute("SELECT id, type FROM sa_chats WHERE id = %s", (src_chat_id,))
+                    chat_row = cur.fetchone()
+                    if not chat_row:
+                        cur.execute("INSERT INTO sa_chats (id, type) VALUES (%s, 'group') ON CONFLICT DO NOTHING", (src_chat_id,))
+                    elif chat_row[1] != 'group':
+                        cur.execute("UPDATE sa_chats SET type='group' WHERE id=%s", (src_chat_id,))
+                    added = 0
+                    for mid in new_members:
+                        cur.execute(
+                            "INSERT INTO sa_chat_members (chat_id, user_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                            (src_chat_id, mid)
+                        )
+                        if cur.rowcount > 0:
+                            added += 1
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True, 'chat_id': src_chat_id, 'added': added, 'converted': False})}
+
                 chat_id = body.get('chat_id')
                 content = body.get('content', '')
                 msg_type = body.get('type', 'text')
