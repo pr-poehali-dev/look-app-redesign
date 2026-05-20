@@ -41,7 +41,8 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
   const [loading, setLoading] = useState(true);
   const [showNewChat, setShowNewChat] = useState(false);
   const [newChatName, setNewChatName] = useState("");
-  const [creating, setCreating] = useState(false);
+  const [searchUsers, setSearchUsers] = useState<{ id: string; name: string; avatar: string; handle: string; phone: string; online: boolean }[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [activeCall, setActiveCall] = useState<{ user: { id: string; name: string }; mode: "audio" | "video" } | null>(null);
   const { user } = useAuth();
   const { refresh: refreshUnread } = useUnread();
@@ -69,6 +70,21 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
   useEffect(() => {
     loadChats();
   }, [user]);
+
+  useEffect(() => {
+    if (!showNewChat || !user) return;
+    setSearchLoading(true);
+    fetch(`${CHAT_API}?module=chat&action=all_users`, {
+      headers: { "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
+    })
+      .then(r => r.json())
+      .then(raw => {
+        const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
+        setSearchUsers(data.users || []);
+      })
+      .catch(() => setSearchUsers([]))
+      .finally(() => setSearchLoading(false));
+  }, [showNewChat, user]);
 
   // Авто-обновление списка чатов каждые 5 сек — чтобы удалённые чаты пропадали почти мгновенно
   useEffect(() => {
@@ -103,33 +119,20 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
     return () => { cancelled = true; };
   }, [initialDirectHandle, user]);
 
-  const handleCreateChat = async () => {
-    if (!newChatName.trim() || !user) return;
-    setCreating(true);
-    try {
-      const res = await fetch(CHAT_API + "?module=chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
-        body: JSON.stringify({ action: "create_chat", name: newChatName.trim(), chat_type: "personal" }),
-      });
-      const raw = await res.json();
-      const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
-      if (data.chat_id) {
-        const newChat: Chat = {
-          id: data.chat_id,
-          type: "personal",
-          name: newChatName.trim(),
-          avatar: user.avatar || "",
-          lastMsg: "",
-          time: "сейчас",
-          unread: 0,
-          online: true,
-        };
-        setChats(prev => [newChat, ...prev]);
-        setOpenChat(newChat);
-      }
-    } catch (e) { console.error(e); }
-    setCreating(false);
+  const startChatWithUser = (peer: { id: string; name: string; avatar?: string; online?: boolean }) => {
+    if (!user) return;
+    const chat: Chat = {
+      id: `dm_${[user.id, peer.id].sort().join("_")}`,
+      type: "personal",
+      name: peer.name,
+      avatar: peer.avatar || "",
+      lastMsg: "",
+      time: "сейчас",
+      unread: 0,
+      online: !!peer.online,
+    };
+    setChats(prev => prev.some(c => String(c.id) === String(chat.id)) ? prev : [chat, ...prev]);
+    setOpenChat(chat);
     setShowNewChat(false);
     setNewChatName("");
   };
@@ -339,34 +342,75 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
         )}
       </div>
 
-      {showNewChat && (
-        <div className="absolute inset-0 z-50 bg-black/70 flex items-end justify-center">
-          <div className="bg-zinc-900 rounded-t-3xl w-full p-6 pb-10">
-            <div className="flex items-center justify-between mb-5">
-              <span className="text-white font-bold text-lg">Новый чат</span>
-              <button onClick={() => setShowNewChat(false)}>
-                <Icon name="X" size={22} className="text-white/60" />
-              </button>
+      {showNewChat && (() => {
+        const q = newChatName.trim().toLowerCase();
+        const qDigits = q.replace(/\D/g, "");
+        const filtered = q
+          ? searchUsers.filter(u => {
+              if (u.name.toLowerCase().includes(q)) return true;
+              if (u.handle && u.handle.toLowerCase().includes(q.replace(/^@/, ""))) return true;
+              if (qDigits.length >= 3 && u.phone && u.phone.replace(/\D/g, "").includes(qDigits)) return true;
+              return false;
+            })
+          : searchUsers;
+        return (
+          <div className="absolute inset-0 z-50 bg-black/70 flex items-end justify-center" onClick={() => setShowNewChat(false)}>
+            <div className="bg-zinc-900 rounded-t-3xl w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+              <div className="px-6 pt-6 pb-3">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-white font-bold text-lg">Новый чат</span>
+                  <button onClick={() => setShowNewChat(false)}>
+                    <Icon name="X" size={22} className="text-white/60" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 bg-white/10 rounded-xl px-4 py-3">
+                  <Icon name="Search" size={16} className="text-white/40" />
+                  <input
+                    value={newChatName}
+                    onChange={e => setNewChatName(e.target.value)}
+                    placeholder="Имя, @ник или номер телефона"
+                    className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/30"
+                    autoFocus
+                  />
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto px-2 pb-6" style={{ scrollbarWidth: "none" }}>
+                {searchLoading ? (
+                  <div className="flex items-center justify-center py-10">
+                    <div className="w-6 h-6 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : filtered.length === 0 ? (
+                  <div className="text-center text-white/40 text-sm py-10">
+                    {q ? "Никого не нашли" : "Пользователей пока нет"}
+                  </div>
+                ) : (
+                  filtered.map(u => (
+                    <button
+                      key={u.id}
+                      onClick={() => startChatWithUser(u)}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 rounded-xl transition-colors text-left"
+                    >
+                      <div className="relative w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
+                        <UserAvatar src={u.avatar} name={u.name} alt={u.name} />
+                        {u.online && (
+                          <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-zinc-900" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-semibold text-sm truncate">{u.name}</p>
+                        <p className="text-white/40 text-xs truncate">
+                          {u.handle ? `@${u.handle}` : (u.phone || "")}
+                        </p>
+                      </div>
+                      <Icon name="MessageCircle" size={18} className="text-white/30 flex-shrink-0" />
+                    </button>
+                  ))
+                )}
+              </div>
             </div>
-            <input
-              value={newChatName}
-              onChange={e => setNewChatName(e.target.value)}
-              placeholder="Название чата..."
-              className="w-full bg-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none placeholder-white/30 mb-4"
-              autoFocus
-              onKeyDown={e => e.key === "Enter" && handleCreateChat()}
-            />
-            <button
-              onClick={handleCreateChat}
-              disabled={!newChatName.trim() || creating}
-              className="w-full py-3.5 rounded-xl bg-[#fe2c55] text-white font-bold text-base disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {creating && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-              Создать
-            </button>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
