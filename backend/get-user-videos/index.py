@@ -61,21 +61,28 @@ def handler(event: dict, context) -> dict:
             email = (body.get('email') or '').strip().lower()
             password = body.get('password') or ''
             origin = (body.get('origin') or '').strip().rstrip('/')
-            if not all([name, handle, email, password]):
+            phone_raw = (body.get('phone') or '').strip()
+            phone = ''.join(ch for ch in phone_raw if ch.isdigit() or ch == '+')
+            if phone and not phone.startswith('+'):
+                phone = '+' + phone.lstrip('+')
+            if not all([name, handle, email, password, phone]):
                 return err('Заполни все поля')
             if len(password) < 6:
                 return err('Пароль минимум 6 символов')
             if '@' not in email or '.' not in email.split('@')[-1]:
                 return err('Введи корректный email')
+            digits_only = ''.join(ch for ch in phone if ch.isdigit())
+            if len(digits_only) < 10:
+                return err('Введи корректный номер телефона')
             conn = get_conn(); cur = conn.cursor()
             try:
-                cur.execute("SELECT id FROM app_users WHERE email=%s OR handle=%s", (email, handle))
+                cur.execute("SELECT id FROM app_users WHERE email=%s OR handle=%s OR phone=%s", (email, handle, phone))
                 if cur.fetchone():
-                    return err('Email или никнейм уже занят')
+                    return err('Email, никнейм или номер телефона уже заняты')
                 uid = 'u_' + secrets.token_hex(8)
                 token = secrets.token_hex(32)
-                cur.execute("INSERT INTO app_users (id,name,handle,email,password_hash,token) VALUES (%s,%s,%s,%s,%s,%s)",
-                    (uid, name, handle, email, hash_pw(password), token))
+                cur.execute("INSERT INTO app_users (id,name,handle,email,password_hash,token,phone) VALUES (%s,%s,%s,%s,%s,%s,%s)",
+                    (uid, name, handle, email, hash_pw(password), token, phone))
                 conn.commit()
             finally:
                 cur.close(); conn.close()
@@ -89,7 +96,7 @@ def handler(event: dict, context) -> dict:
                 urllib.request.urlopen(req, timeout=10)
             except Exception as e:
                 print(f'verify_send error: {e}')
-            return ok({'token': token, 'user': {'id': uid, 'name': name, 'handle': handle, 'email': email, 'avatar': None}, 'verify_sent': True})
+            return ok({'token': token, 'user': {'id': uid, 'name': name, 'handle': handle, 'email': email, 'avatar': None, 'phone': phone}, 'verify_sent': True})
 
         if action == 'login':
             email = (body.get('email') or '').strip().lower()
@@ -98,12 +105,12 @@ def handler(event: dict, context) -> dict:
                 return err('Введи email и пароль')
             conn = get_conn(); cur = conn.cursor()
             try:
-                cur.execute("SELECT id,name,handle,email,avatar,token,password_hash,firebase_hash,firebase_salt FROM app_users WHERE email=%s",
+                cur.execute("SELECT id,name,handle,email,avatar,token,password_hash,firebase_hash,firebase_salt,phone FROM app_users WHERE email=%s",
                     (email,))
                 row = cur.fetchone()
                 if not row:
                     return err('Неверный email или пароль', 401)
-                uid, name, handle, em, avatar, token, pw_hash, fb_hash, fb_salt = row
+                uid, name, handle, em, avatar, token, pw_hash, fb_hash, fb_salt, phone = row
                 if pw_hash == hash_pw(password):
                     pass
                 elif fb_hash and fb_salt and verify_firebase_scrypt(password, fb_salt, fb_hash):
@@ -114,19 +121,44 @@ def handler(event: dict, context) -> dict:
                     return err('Неверный email или пароль', 401)
             finally:
                 cur.close(); conn.close()
-            return ok({'token': token, 'user': {'id': uid, 'name': name, 'handle': handle, 'email': em, 'avatar': avatar}})
+            return ok({'token': token, 'user': {'id': uid, 'name': name, 'handle': handle, 'email': em, 'avatar': avatar, 'phone': phone}})
 
         if action == 'me':
             token = body.get('token') or ''
             if not token: return err('Нет токена', 401)
             conn = get_conn(); cur = conn.cursor()
             try:
-                cur.execute("SELECT id,name,handle,email,avatar FROM app_users WHERE token=%s", (token,))
+                cur.execute("SELECT id,name,handle,email,avatar,phone FROM app_users WHERE token=%s", (token,))
                 row = cur.fetchone()
             finally:
                 cur.close(); conn.close()
             if not row: return err('Токен недействителен', 401)
-            return ok({'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'email': row[3], 'avatar': row[4]}})
+            return ok({'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'email': row[3], 'avatar': row[4], 'phone': row[5]}})
+
+        if action == 'find_by_phones':
+            phones_in = body.get('phones') or []
+            if not isinstance(phones_in, list) or not phones_in:
+                return ok({'users': []})
+            normalized = []
+            for p in phones_in[:500]:
+                if not isinstance(p, str): continue
+                np = ''.join(ch for ch in p if ch.isdigit())
+                if len(np) >= 10:
+                    normalized.append('+' + np)
+            if not normalized:
+                return ok({'users': []})
+            conn = get_conn(); cur = conn.cursor()
+            try:
+                placeholders = ','.join(['%s'] * len(normalized))
+                cur.execute(
+                    f"SELECT id,name,handle,avatar,phone FROM app_users WHERE phone IN ({placeholders})",
+                    tuple(normalized)
+                )
+                rows = cur.fetchall()
+            finally:
+                cur.close(); conn.close()
+            users = [{'id': r[0], 'name': r[1], 'handle': r[2], 'avatar': r[3], 'phone': r[4]} for r in rows]
+            return ok({'users': users})
 
         if action == 'update_avatar':
             token = body.get('token') or ''

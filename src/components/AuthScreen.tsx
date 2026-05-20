@@ -8,6 +8,7 @@ const AuthScreen = () => {
   const [name, setName] = useState("");
   const [handle, setHandle] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -43,15 +44,16 @@ const AuthScreen = () => {
     if (mode === "login") {
       err = await login(email.trim(), password);
     } else {
-      err = await register(name.trim(), handle.trim(), email.trim(), password);
+      err = await register(name.trim(), handle.trim(), email.trim(), password, phone.trim());
     }
     if (err) setError(err);
     setLoading(false);
   };
 
+  const phoneDigits = phone.replace(/\D/g, "");
   const isValid = mode === "login"
     ? email.trim() && password
-    : name.trim() && handle.trim() && email.trim() && password.length >= 6;
+    : name.trim() && handle.trim() && email.trim() && password.length >= 6 && phoneDigits.length >= 10;
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col" style={{ maxWidth: 480, margin: "0 auto" }}>
@@ -104,6 +106,18 @@ const AuthScreen = () => {
                   className="flex-1 py-3 bg-transparent text-black text-sm outline-none ml-1"
                 />
               </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Номер телефона</label>
+              <input
+                value={phone}
+                onChange={e => setPhone(e.target.value.replace(/[^\d+\-() ]/g, ""))}
+                type="tel"
+                inputMode="tel"
+                placeholder="+7 999 123-45-67"
+                className="w-full px-4 py-3 rounded-xl bg-gray-100 text-black text-sm outline-none focus:ring-2 focus:ring-[#8b5cf6]/30"
+              />
+              <p className="text-[11px] text-gray-400">По номеру тебя смогут найти друзья из контактов</p>
             </div>
           </>
         )}

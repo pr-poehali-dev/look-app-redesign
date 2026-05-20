@@ -27,6 +27,8 @@ interface AppUser {
   name: string;
   avatar: string;
   online: boolean;
+  handle?: string;
+  phone?: string;
 }
 
 const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
@@ -288,7 +290,7 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Поиск..."
+            placeholder="Поиск по имени, @нику или номеру"
             className="flex-1 bg-transparent text-white text-base outline-none placeholder-white/30"
           />
         </div>
@@ -314,8 +316,15 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
                 if (peerId) unreadByUser[peerId] = (unreadByUser[peerId] || 0) + c.unread;
               }
             }
-            const base = search.trim()
-              ? allUsers.filter(u => u.name.toLowerCase().includes(search.trim().toLowerCase()))
+            const q = search.trim().toLowerCase();
+            const qDigits = q.replace(/\D/g, "");
+            const base = q
+              ? allUsers.filter(u => {
+                  if (u.name.toLowerCase().includes(q)) return true;
+                  if (u.handle && u.handle.toLowerCase().includes(q.replace(/^@/, ""))) return true;
+                  if (qDigits.length >= 3 && u.phone && u.phone.replace(/\D/g, "").includes(qDigits)) return true;
+                  return false;
+                })
               : allUsers;
             const filteredUsers = [...base].sort((a, b) => {
               const ua = unreadByUser[a.id] || 0;

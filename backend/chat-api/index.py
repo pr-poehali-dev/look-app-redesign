@@ -93,7 +93,7 @@ def handler(event: dict, context) -> dict:
 
                 elif action == 'all_users':
                     cur.execute(
-                        "SELECT au.id, au.name, au.avatar, "
+                        "SELECT au.id, au.name, au.avatar, au.handle, au.phone, "
                         "COALESCE(su.online_at > NOW() - INTERVAL '30 seconds', false) AS online "
                         "FROM app_users au "
                         "LEFT JOIN sa_users su ON su.id = au.id "
@@ -102,7 +102,7 @@ def handler(event: dict, context) -> dict:
                         (user_id,)
                     )
                     users = [
-                        {'id': r[0], 'name': r[1], 'avatar': r[2] or '', 'online': bool(r[3])}
+                        {'id': r[0], 'name': r[1], 'avatar': r[2] or '', 'handle': r[3] or '', 'phone': r[4] or '', 'online': bool(r[5])}
                         for r in cur.fetchall()
                     ]
                     conn.commit()

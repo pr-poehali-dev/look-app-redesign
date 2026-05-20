@@ -6,6 +6,7 @@ export interface AppUser {
   handle: string;
   email: string;
   avatar: string | null;
+  phone?: string | null;
 }
 
 interface AuthContextType {
@@ -13,7 +14,7 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<string | null>;
-  register: (name: string, handle: string, email: string, password: string) => Promise<string | null>;
+  register: (name: string, handle: string, email: string, password: string, phone: string) => Promise<string | null>;
   loginWithSession: (user: AppUser, token: string) => void;
   logout: () => void;
   updateUser: (u: Partial<AppUser>) => void;
@@ -72,11 +73,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return null;
   };
 
-  const register = async (name: string, handle: string, email: string, password: string): Promise<string | null> => {
+  const register = async (name: string, handle: string, email: string, password: string, phone: string): Promise<string | null> => {
     const res = await fetch(AUTH_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "register", name, handle, email, password, origin: window.location.origin }),
+      body: JSON.stringify({ action: "register", name, handle, email, password, phone, origin: window.location.origin }),
     });
     const raw = await res.json();
     const data = parseBody(raw);
