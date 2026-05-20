@@ -88,15 +88,15 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
       <div className="relative w-full h-full md:flex-1 md:max-w-[470px] md:rounded-xl md:overflow-hidden md:bg-black">
       {isVideo ? (
         <>
-          {!videoReady && (
-            <div className="absolute inset-0 w-full h-full pointer-events-none">
-              <VideoThumb src={video.image} className="absolute inset-0 w-full h-full object-cover" />
-            </div>
-          )}
+          <div
+            className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-500 ease-out ${videoReady ? "opacity-0" : "opacity-100"}`}
+          >
+            <VideoThumb src={video.image} className="absolute inset-0 w-full h-full object-cover" />
+          </div>
           <video
             ref={videoRef}
             src={video.image}
-            className="absolute inset-0 w-full h-full object-cover"
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-out ${videoReady ? "opacity-100" : "opacity-0"}`}
             loop
             muted={muted}
             playsInline
