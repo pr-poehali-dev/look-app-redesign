@@ -223,18 +223,18 @@ const MediaViewer = ({ items, startIndex, onClose, onDelete }: { items: Story[];
       )}
 
       {/* Media */}
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden">
         {item.type === "video" ? (
           <video
             key={item.id}
             src={item.url}
-            className="w-full h-full object-contain"
+            className="max-w-full max-h-full w-auto h-auto object-contain"
             autoPlay
             controls
             playsInline
           />
         ) : (
-          <img key={item.id} src={item.url} className="w-full h-full object-contain" alt="" />
+          <img key={item.id} src={item.url} className="max-w-full max-h-full w-auto h-auto object-contain" alt="" />
         )}
       </div>
 
