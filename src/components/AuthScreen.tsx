@@ -67,7 +67,7 @@ const AuthScreen = () => {
             className="w-full h-full object-cover"
           />
         </div>
-        <h1 className="text-white font-black text-3xl">Look</h1>
+        <h1 className="font-black text-4xl slogan-shimmer">Look</h1>
         <p className="text-lg font-extrabold tracking-tight mt-1 slogan-shimmer">Смотри#Делись#Общайся#Будь собой</p>
       </div>
 
