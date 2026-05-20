@@ -160,6 +160,33 @@ def handler(event: dict, context) -> dict:
             users = [{'id': r[0], 'name': r[1], 'handle': r[2], 'avatar': r[3], 'phone': r[4]} for r in rows]
             return ok({'users': users})
 
+        if action == 'update_phone':
+            token = body.get('token') or ''
+            phone_raw = (body.get('phone') or '').strip()
+            if not token:
+                return err('Нет токена', 401)
+            phone = ''.join(ch for ch in phone_raw if ch.isdigit() or ch == '+')
+            if phone and not phone.startswith('+'):
+                phone = '+' + phone.lstrip('+')
+            digits_only = ''.join(ch for ch in phone if ch.isdigit())
+            if len(digits_only) < 10:
+                return err('Введи корректный номер телефона')
+            conn = get_conn(); cur = conn.cursor()
+            try:
+                cur.execute("SELECT id FROM app_users WHERE token=%s", (token,))
+                row = cur.fetchone()
+                if not row:
+                    return err('Токен недействителен', 401)
+                uid = row[0]
+                cur.execute("SELECT id FROM app_users WHERE phone=%s AND id<>%s", (phone, uid))
+                if cur.fetchone():
+                    return err('Этот номер уже используется другим аккаунтом')
+                cur.execute("UPDATE app_users SET phone=%s WHERE id=%s", (phone, uid))
+                conn.commit()
+            finally:
+                cur.close(); conn.close()
+            return ok({'phone': phone})
+
         if action == 'update_avatar':
             token = body.get('token') or ''
             file_data = body.get('file') or ''

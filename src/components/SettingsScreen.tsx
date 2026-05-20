@@ -256,6 +256,94 @@ const LegalScreen = ({ onBack, title, settingKey, fallback }: { onBack: () => vo
   );
 };
 
+const AUTH_API_URL = "https://functions.poehali.dev/075d6280-020a-48ce-a5e4-64eb3291a01e";
+
+const PhoneScreen = ({ onBack }: { onBack: () => void }) => {
+  const { user, updateUser } = useAuth();
+  const [phone, setPhone] = useState<string>(user?.phone || "");
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<"idle" | "ok" | "error">("idle");
+  const [error, setError] = useState("");
+
+  const digits = phone.replace(/\D/g, "");
+  const isValid = digits.length >= 10;
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError("");
+    setStatus("idle");
+    try {
+      const token = localStorage.getItem("auth_token") || "";
+      const res = await fetch(AUTH_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_phone", token, phone: phone.trim() }),
+      });
+      const raw = await res.json();
+      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      if (data.error) {
+        setError(data.error);
+        setStatus("error");
+      } else {
+        updateUser({ phone: data.phone });
+        setPhone(data.phone || phone);
+        setStatus("ok");
+      }
+    } catch {
+      setError("Не удалось сохранить. Попробуй ещё раз");
+      setStatus("error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
+      <div className="md:max-w-2xl md:mx-auto">
+        <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
+          <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
+          <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Номер телефона</span>
+        </div>
+        <div className="px-4 py-6 md:py-4 flex flex-col gap-4">
+          <p className="text-gray-500 text-sm">
+            По номеру тебя смогут найти друзья из контактов. Номер не показывается в профиле.
+          </p>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Телефон</label>
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.replace(/[^\d+\-() ]/g, ""))}
+              type="tel"
+              inputMode="tel"
+              placeholder="+7 999 123-45-67"
+              className="w-full px-4 py-3 rounded-xl bg-gray-100 text-black text-sm outline-none focus:ring-2 focus:ring-[#8b5cf6]/30"
+            />
+          </div>
+          {status === "ok" && (
+            <div className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+              <Icon name="CheckCircle2" size={16} className="text-green-600 flex-shrink-0" />
+              <span className="text-green-700 text-sm">Номер сохранён</span>
+            </div>
+          )}
+          {status === "error" && (
+            <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+              <Icon name="AlertCircle" size={16} className="text-red-500 flex-shrink-0" />
+              <span className="text-red-600 text-sm">{error}</span>
+            </div>
+          )}
+          <button
+            onClick={handleSave}
+            disabled={!isValid || saving}
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold text-base disabled:opacity-40 transition-opacity"
+          >
+            {saving ? "Сохраняем..." : "Сохранить"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const SubscriptionScreen = ({ onBack }: { onBack: () => void }) => {
   const [current] = useState<"free" | "premium">("free");
   const [showPending, setShowPending] = useState(false);
@@ -409,6 +497,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   if (screen === "blocked") return <BlockedScreen onBack={() => setScreen(null)} />;
   if (screen === "qr") return <QrScreen onBack={() => setScreen(null)} />;
   if (screen === "notifications") return <NotificationsScreen onBack={() => setScreen(null)} />;
+  if (screen === "phone") return <PhoneScreen onBack={() => setScreen(null)} />;
   if (screen === "terms") return <LegalScreen onBack={() => setScreen(null)} title="Условия использования" settingKey="terms_of_use" fallback="Используя приложение Look, вы соглашаетесь с нашими условиями использования." />;
   if (screen === "privacy") return <LegalScreen onBack={() => setScreen(null)} title="Политика конфиденциальности" settingKey="privacy_policy" fallback="Мы уважаем вашу конфиденциальность." />;
   if (screen === "subscription") return <SubscriptionScreen onBack={() => setScreen(null)} />;
