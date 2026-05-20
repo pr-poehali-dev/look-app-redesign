@@ -172,7 +172,7 @@ const AuthScreen = () => {
         <button
           onClick={handleSubmit}
           disabled={!isValid || loading}
-          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold text-base disabled:opacity-40 transition-opacity mt-1"
+          className="auth-cta-btn w-full py-3.5 rounded-xl text-white font-bold text-base disabled:opacity-40 mt-1"
         >
           {loading ? "Загрузка..." : mode === "login" ? "Войти" : "Создать аккаунт"}
         </button>
