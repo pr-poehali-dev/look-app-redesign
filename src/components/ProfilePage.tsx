@@ -1,6 +1,7 @@
 import { useState, useRef, useMemo, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
+import VideoThumb from "@/components/ui/video-thumb";
 import SettingsScreen from "./SettingsScreen";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
@@ -460,7 +461,7 @@ const ProfilePage = () => {
               <div className="w-16 h-16 md:w-14 md:h-14 rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]">
                 <div className="w-full h-full rounded-full overflow-hidden border-2 border-white bg-gray-100">
                   {s.type === "video"
-                    ? <video src={s.url} className="w-full h-full object-cover" muted playsInline />
+                    ? <VideoThumb src={s.url} className="w-full h-full object-cover" />
                     : <img src={s.url} className="w-full h-full object-cover" alt="" />
                   }
                 </div>
@@ -530,7 +531,7 @@ const ProfilePage = () => {
             <div className="grid grid-cols-3 md:grid-cols-4 gap-px bg-gray-100">
               {videos.map((item, i) => (
                 <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200 cursor-pointer" onClick={() => setMediaViewer({ tab: "video", index: i })}>
-                  <video src={item.url} className="w-full h-full object-cover" muted playsInline />
+                  <VideoThumb src={item.url} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="bg-black/40 rounded-full p-2 md:p-1.5">
                       <Icon name="Play" size={16} className="text-white" />

@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide default play button overlay in Android WebView / iOS Safari for videos */
+video::-webkit-media-controls-start-playback-button {
+  display: none !important;
+  -webkit-appearance: none;
+}
+video::-webkit-media-controls-overlay-play-button {
+  display: none !important;
+  -webkit-appearance: none;
+}
+video::-webkit-media-controls {
+  display: none !important;
+}
+video {
+  background-color: #000;
+}
+
 @layer base {
   :root {
     --background: 220 20% 6%;
