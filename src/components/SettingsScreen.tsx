@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
@@ -258,40 +258,97 @@ const LegalScreen = ({ onBack, title, settingKey, fallback }: { onBack: () => vo
 
 const AUTH_API_URL = "https://functions.poehali.dev/075d6280-020a-48ce-a5e4-64eb3291a01e";
 
-const PhoneScreen = ({ onBack }: { onBack: () => void }) => {
-  const { user, updateUser } = useAuth();
-  const [phone, setPhone] = useState<string>(user?.phone || "");
-  const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState<"idle" | "ok" | "error">("idle");
-  const [error, setError] = useState("");
+type ProfileLinkObj = { url: string; label: string };
 
-  const digits = phone.replace(/\D/g, "");
-  const isValid = digits.length >= 10;
+const normalizeLinks = (raw: unknown): ProfileLinkObj[] => {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((l): ProfileLinkObj => {
+    if (typeof l === "string") return { url: l, label: "" };
+    if (l && typeof l === "object" && "url" in l) {
+      const obj = l as { url?: unknown; label?: unknown };
+      return { url: String(obj.url || ""), label: String(obj.label || "") };
+    }
+    return { url: "", label: "" };
+  }).filter(l => l.url);
+};
+
+const EditProfileScreen = ({ onBack }: { onBack: () => void }) => {
+  const { user, updateUser } = useAuth();
+  const [name, setName] = useState<string>(user?.name || "");
+  const [handle, setHandle] = useState<string>(user?.handle || "");
+  const [gender, setGender] = useState<string>(user?.gender || "");
+  const [email, setEmail] = useState<string>(user?.email || "");
+  const [phone, setPhone] = useState<string>(() => {
+    const p = user?.phone || "";
+    return p.startsWith("+7") ? p.slice(2).trim() : p;
+  });
+  const [links, setLinks] = useState<ProfileLinkObj[]>(normalizeLinks(user?.links));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const [showGender, setShowGender] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
+
+  const genderLabel = gender === "male" ? "Мужской" : gender === "female" ? "Женский" : gender === "other" ? "Другой" : "Не указан";
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const token = localStorage.getItem("auth_token") || "";
+    if (!file || !token) return;
+    setAvatarLoading(true);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = (reader.result as string).split(",")[1];
+      const ext = file.name.split(".").pop() || "jpg";
+      try {
+        const res = await fetch(AUTH_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "update_avatar", token, file: base64, file_type: file.type, ext }),
+        });
+        const raw = await res.json();
+        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+        if (data.avatar) updateUser({ avatar: data.avatar });
+      } catch { /* ignore */ }
+      setAvatarLoading(false);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
 
   const handleSave = async () => {
     setSaving(true);
     setError("");
-    setStatus("idle");
     try {
       const token = localStorage.getItem("auth_token") || "";
+      const phoneClean = phone.replace(/[^\d]/g, "");
+      const phoneFull = phoneClean ? "+7" + phoneClean : "";
+      const body: Record<string, unknown> = {
+        action: "update_profile",
+        token,
+        name: name.trim(),
+        handle: handle.trim(),
+        email: email.trim(),
+        gender,
+        links: links.filter(l => l.url.trim()),
+      };
+      if (phoneClean) body.phone = phoneFull;
+      else body.phone = "";
       const res = await fetch(AUTH_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "update_phone", token, phone: phone.trim() }),
+        body: JSON.stringify(body),
       });
       const raw = await res.json();
       const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
       if (data.error) {
         setError(data.error);
-        setStatus("error");
-      } else {
-        updateUser({ phone: data.phone });
-        setPhone(data.phone || phone);
-        setStatus("ok");
+      } else if (data.user) {
+        updateUser(data.user);
+        onBack();
       }
     } catch {
       setError("Не удалось сохранить. Попробуй ещё раз");
-      setStatus("error");
     } finally {
       setSaving(false);
     }
@@ -299,42 +356,169 @@ const PhoneScreen = ({ onBack }: { onBack: () => void }) => {
 
   return (
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-      <div className="md:max-w-2xl md:mx-auto">
-        <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
-          <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
-          <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Номер телефона</span>
+      <div className="md:max-w-2xl md:mx-auto pb-32">
+        <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white">
+          <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={24} className="text-black" /></button>
+          <span className="flex-1 text-black font-bold text-lg md:text-base">Редактировать профиль</span>
         </div>
-        <div className="px-4 py-6 md:py-4 flex flex-col gap-4">
-          <p className="text-gray-500 text-sm">
-            По номеру тебя смогут найти друзья из контактов. Номер не показывается в профиле.
-          </p>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Телефон</label>
+
+        {/* Avatar */}
+        <div className="px-4 py-4 flex items-center">
+          <input
+            type="file"
+            accept="image/*"
+            ref={avatarInputRef}
+            className="hidden"
+            onChange={handleAvatarChange}
+          />
+          <button
+            onClick={() => avatarInputRef.current?.click()}
+            className="relative w-24 h-24 rounded-full bg-gradient-to-br from-[#c084fc] to-[#8b5cf6] flex items-center justify-center overflow-hidden"
+          >
+            {user?.avatar
+              ? <img src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
+              : <span className="text-white font-black text-4xl">{(name?.[0] || user?.name?.[0] || "?").toUpperCase()}</span>
+            }
+            <span className="absolute -right-1 -bottom-1 w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center border-2 border-white">
+              {avatarLoading
+                ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                : <Icon name="Pencil" size={14} className="text-white" />
+              }
+            </span>
+          </button>
+        </div>
+
+        {/* Полное имя */}
+        <div className="px-4 pt-3">
+          <label className="text-black text-base">Полное имя</label>
+          <input
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Введите здесь..."
+            className="w-full mt-2 px-0 py-3 bg-gray-50 text-gray-400 text-base rounded-md px-3 outline-none focus:text-black"
+          />
+        </div>
+
+        {/* Имя пользователя */}
+        <div className="px-4 pt-5">
+          <label className="text-black text-base">Имя пользователя</label>
+          <input
+            value={handle}
+            onChange={e => setHandle(e.target.value.replace(/[^a-z0-9_.]/gi, ""))}
+            placeholder="Введите здесь..."
+            className="w-full mt-2 px-3 py-3 bg-gray-50 text-gray-400 text-base rounded-md outline-none focus:text-black"
+          />
+        </div>
+
+        {/* Пол */}
+        <div className="px-4 pt-5 relative">
+          <label className="text-black text-base">Пол</label>
+          <button
+            type="button"
+            onClick={() => setShowGender(s => !s)}
+            className="w-full mt-2 px-3 py-3 bg-gray-50 text-base rounded-md outline-none flex items-center justify-between"
+          >
+            <span className={gender ? "text-black" : "text-gray-400"}>{genderLabel}</span>
+            <Icon name="ChevronDown" size={18} className="text-gray-400" />
+          </button>
+          {showGender && (
+            <div className="absolute left-4 right-4 mt-1 z-10 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden">
+              {[
+                { v: "male", l: "Мужской" },
+                { v: "female", l: "Женский" },
+                { v: "other", l: "Другой" },
+                { v: "", l: "Не указан" },
+              ].map(opt => (
+                <button
+                  key={opt.l}
+                  onClick={() => { setGender(opt.v); setShowGender(false); }}
+                  className={`w-full text-left px-4 py-3 text-sm border-b border-gray-50 last:border-0 ${gender === opt.v ? "text-[#8b5cf6] font-semibold" : "text-black"}`}
+                >
+                  {opt.l}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Email */}
+        <div className="px-4 pt-5">
+          <label className="text-black text-base">Email</label>
+          <input
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            type="email"
+            placeholder="Введите здесь..."
+            className="w-full mt-2 px-3 py-3 bg-gray-50 text-gray-400 text-base rounded-md outline-none focus:text-black"
+          />
+        </div>
+
+        {/* Телефон */}
+        <div className="px-4 pt-5">
+          <label className="text-black text-base">Телефон</label>
+          <div className="mt-2 flex items-stretch gap-2">
+            <div className="flex items-center gap-1 px-3 py-3 bg-gray-700 text-white text-sm rounded-md">
+              <span>RU +7</span>
+              <Icon name="ChevronDown" size={14} className="text-white/70" />
+            </div>
             <input
               value={phone}
-              onChange={(e) => setPhone(e.target.value.replace(/[^\d+\-() ]/g, ""))}
+              onChange={e => setPhone(e.target.value.replace(/[^\d\-() ]/g, ""))}
               type="tel"
               inputMode="tel"
-              placeholder="+7 999 123-45-67"
-              className="w-full px-4 py-3 rounded-xl bg-gray-100 text-black text-sm outline-none focus:ring-2 focus:ring-[#8b5cf6]/30"
+              placeholder="Введите здесь..."
+              className="flex-1 px-3 py-3 bg-gray-50 text-gray-400 text-base rounded-md outline-none focus:text-black"
             />
           </div>
-          {status === "ok" && (
-            <div className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
-              <Icon name="CheckCircle2" size={16} className="text-green-600 flex-shrink-0" />
-              <span className="text-green-700 text-sm">Номер сохранён</span>
+        </div>
+
+        {/* Ссылки */}
+        <div className="px-4 pt-5">
+          <div className="flex items-center gap-2">
+            <span className="text-black text-base">Ссылки</span>
+            <button
+              type="button"
+              onClick={() => setLinks(prev => [...prev, { url: "", label: "" }])}
+              className="w-6 h-6 rounded-full bg-[#8b5cf6] flex items-center justify-center"
+            >
+              <Icon name="Plus" size={14} className="text-white" />
+            </button>
+          </div>
+          {links.length > 0 && (
+            <div className="mt-2 flex flex-col gap-2">
+              {links.map((ln, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    value={ln.url}
+                    onChange={e => setLinks(prev => prev.map((p, idx) => idx === i ? { ...p, url: e.target.value } : p))}
+                    placeholder="https://..."
+                    className="flex-1 px-3 py-2.5 bg-gray-50 text-black text-sm rounded-md outline-none"
+                  />
+                  <button
+                    onClick={() => setLinks(prev => prev.filter((_, idx) => idx !== i))}
+                    className="p-2 text-gray-400 hover:text-red-500"
+                  >
+                    <Icon name="X" size={16} />
+                  </button>
+                </div>
+              ))}
             </div>
           )}
-          {status === "error" && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
-              <Icon name="AlertCircle" size={16} className="text-red-500 flex-shrink-0" />
-              <span className="text-red-600 text-sm">{error}</span>
-            </div>
-          )}
+        </div>
+
+        {error && (
+          <div className="mx-4 mt-5 flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+            <Icon name="AlertCircle" size={16} className="text-red-500 flex-shrink-0" />
+            <span className="text-red-600 text-sm">{error}</span>
+          </div>
+        )}
+
+        {/* Кнопка Сохранить */}
+        <div className="px-4 pt-8">
           <button
             onClick={handleSave}
-            disabled={!isValid || saving}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold text-base disabled:opacity-40 transition-opacity"
+            disabled={saving}
+            className="w-full py-4 rounded-xl bg-gray-700 text-white font-bold text-base disabled:opacity-50"
           >
             {saving ? "Сохраняем..." : "Сохранить"}
           </button>
@@ -497,7 +681,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   if (screen === "blocked") return <BlockedScreen onBack={() => setScreen(null)} />;
   if (screen === "qr") return <QrScreen onBack={() => setScreen(null)} />;
   if (screen === "notifications") return <NotificationsScreen onBack={() => setScreen(null)} />;
-  if (screen === "phone") return <PhoneScreen onBack={() => setScreen(null)} />;
+  if (screen === "edit_profile") return <EditProfileScreen onBack={() => setScreen(null)} />;
   if (screen === "terms") return <LegalScreen onBack={() => setScreen(null)} title="Условия использования" settingKey="terms_of_use" fallback="Используя приложение Look, вы соглашаетесь с нашими условиями использования." />;
   if (screen === "privacy") return <LegalScreen onBack={() => setScreen(null)} title="Политика конфиденциальности" settingKey="privacy_policy" fallback="Мы уважаем вашу конфиденциальность." />;
   if (screen === "subscription") return <SubscriptionScreen onBack={() => setScreen(null)} />;
@@ -558,6 +742,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
       )}
 
       <div className="mt-2">
+        <Row icon="UserPen" label="Редактировать профиль" onPress={() => setScreen("edit_profile")} />
         <Row icon="Star" label="Подписка и тарифы" onPress={() => setScreen("subscription")} />
         <Row icon="Bookmark" label="Сохранённые" onPress={() => setScreen("saved")} />
         <Row icon="Languages" label="Языки" onPress={() => setScreen("languages")} />

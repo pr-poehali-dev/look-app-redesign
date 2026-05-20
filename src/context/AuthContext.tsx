@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
+export type ProfileLink = string | { url: string; label?: string };
+
 export interface AppUser {
   id: string;
   name: string;
@@ -7,6 +9,8 @@ export interface AppUser {
   email: string;
   avatar: string | null;
   phone?: string | null;
+  gender?: string | null;
+  links?: ProfileLink[];
 }
 
 interface AuthContextType {

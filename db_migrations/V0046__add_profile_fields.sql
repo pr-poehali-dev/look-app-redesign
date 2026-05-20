@@ -1,0 +1,4 @@
+ALTER TABLE t_p96441965_look_app_redesign.app_users
+  ADD COLUMN IF NOT EXISTS bio TEXT,
+  ADD COLUMN IF NOT EXISTS gender VARCHAR(16),
+  ADD COLUMN IF NOT EXISTS links JSONB DEFAULT '[]'::jsonb;

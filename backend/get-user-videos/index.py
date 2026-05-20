@@ -128,12 +128,13 @@ def handler(event: dict, context) -> dict:
             if not token: return err('Нет токена', 401)
             conn = get_conn(); cur = conn.cursor()
             try:
-                cur.execute("SELECT id,name,handle,email,avatar,phone FROM app_users WHERE token=%s", (token,))
+                cur.execute("SELECT id,name,handle,email,avatar,phone,gender,links FROM app_users WHERE token=%s", (token,))
                 row = cur.fetchone()
             finally:
                 cur.close(); conn.close()
             if not row: return err('Токен недействителен', 401)
-            return ok({'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'email': row[3], 'avatar': row[4], 'phone': row[5]}})
+            links_val = row[7] if row[7] is not None else []
+            return ok({'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'email': row[3], 'avatar': row[4], 'phone': row[5], 'gender': row[6], 'links': links_val}})
 
         if action == 'find_by_phones':
             phones_in = body.get('phones') or []
@@ -160,17 +161,64 @@ def handler(event: dict, context) -> dict:
             users = [{'id': r[0], 'name': r[1], 'handle': r[2], 'avatar': r[3], 'phone': r[4]} for r in rows]
             return ok({'users': users})
 
-        if action == 'update_phone':
+        if action == 'update_profile':
             token = body.get('token') or ''
-            phone_raw = (body.get('phone') or '').strip()
             if not token:
                 return err('Нет токена', 401)
-            phone = ''.join(ch for ch in phone_raw if ch.isdigit() or ch == '+')
-            if phone and not phone.startswith('+'):
-                phone = '+' + phone.lstrip('+')
-            digits_only = ''.join(ch for ch in phone if ch.isdigit())
-            if len(digits_only) < 10:
-                return err('Введи корректный номер телефона')
+            updates = []
+            values = []
+            if 'name' in body:
+                name = (body.get('name') or '').strip()
+                if not name:
+                    return err('Имя не может быть пустым')
+                if len(name) > 80:
+                    return err('Имя слишком длинное')
+                updates.append('name=%s'); values.append(name)
+            if 'handle' in body:
+                handle = (body.get('handle') or '').strip().lstrip('@')
+                if not handle:
+                    return err('Никнейм не может быть пустым')
+                if len(handle) > 40:
+                    return err('Никнейм слишком длинный')
+                updates.append('handle=%s'); values.append(handle)
+            if 'email' in body:
+                email = (body.get('email') or '').strip().lower()
+                if '@' not in email or '.' not in email.split('@')[-1]:
+                    return err('Введи корректный email')
+                updates.append('email=%s'); values.append(email)
+            if 'gender' in body:
+                gender = (body.get('gender') or '').strip().lower()
+                if gender and gender not in ('male', 'female', 'other', ''):
+                    return err('Некорректный пол')
+                updates.append('gender=%s'); values.append(gender or None)
+            phone_final = None
+            if 'phone' in body:
+                phone_raw = (body.get('phone') or '').strip()
+                if phone_raw:
+                    phone_clean = ''.join(ch for ch in phone_raw if ch.isdigit() or ch == '+')
+                    if phone_clean and not phone_clean.startswith('+'):
+                        phone_clean = '+' + phone_clean.lstrip('+')
+                    digits_only = ''.join(ch for ch in phone_clean if ch.isdigit())
+                    if len(digits_only) < 10:
+                        return err('Введи корректный номер телефона')
+                    phone_final = phone_clean
+                updates.append('phone=%s'); values.append(phone_final)
+            if 'links' in body:
+                links = body.get('links') or []
+                if not isinstance(links, list):
+                    return err('Некорректные ссылки')
+                clean_links = []
+                for ln in links[:10]:
+                    if isinstance(ln, str) and ln.strip():
+                        clean_links.append(ln.strip()[:300])
+                    elif isinstance(ln, dict):
+                        url = (ln.get('url') or '').strip()[:300]
+                        label = (ln.get('label') or '').strip()[:60]
+                        if url:
+                            clean_links.append({'url': url, 'label': label})
+                updates.append('links=%s'); values.append(json.dumps(clean_links))
+            if not updates:
+                return err('Нет данных для обновления')
             conn = get_conn(); cur = conn.cursor()
             try:
                 cur.execute("SELECT id FROM app_users WHERE token=%s", (token,))
@@ -178,14 +226,28 @@ def handler(event: dict, context) -> dict:
                 if not row:
                     return err('Токен недействителен', 401)
                 uid = row[0]
-                cur.execute("SELECT id FROM app_users WHERE phone=%s AND id<>%s", (phone, uid))
-                if cur.fetchone():
-                    return err('Этот номер уже используется другим аккаунтом')
-                cur.execute("UPDATE app_users SET phone=%s WHERE id=%s", (phone, uid))
+                if 'handle' in body:
+                    cur.execute("SELECT id FROM app_users WHERE handle=%s AND id<>%s", (body.get('handle','').strip().lstrip('@'), uid))
+                    if cur.fetchone():
+                        return err('Этот никнейм уже занят')
+                if 'email' in body:
+                    em = (body.get('email') or '').strip().lower()
+                    cur.execute("SELECT id FROM app_users WHERE email=%s AND id<>%s", (em, uid))
+                    if cur.fetchone():
+                        return err('Этот email уже используется')
+                if 'phone' in body and phone_final:
+                    cur.execute("SELECT id FROM app_users WHERE phone=%s AND id<>%s", (phone_final, uid))
+                    if cur.fetchone():
+                        return err('Этот номер уже используется другим аккаунтом')
+                values.append(uid)
+                cur.execute(f"UPDATE app_users SET {', '.join(updates)} WHERE id=%s", tuple(values))
+                cur.execute("SELECT id,name,handle,email,avatar,phone,gender,links FROM app_users WHERE id=%s", (uid,))
+                r = cur.fetchone()
                 conn.commit()
             finally:
                 cur.close(); conn.close()
-            return ok({'phone': phone})
+            links_val = r[7] if r[7] is not None else []
+            return ok({'user': {'id': r[0], 'name': r[1], 'handle': r[2], 'email': r[3], 'avatar': r[4], 'phone': r[5], 'gender': r[6], 'links': links_val}})
 
         if action == 'update_avatar':
             token = body.get('token') or ''
