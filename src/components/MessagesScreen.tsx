@@ -39,8 +39,6 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
   const [search, setSearch] = useState("");
   const [chats, setChats] = useState<Chat[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showNewChat, setShowNewChat] = useState(false);
-  const [newChatName, setNewChatName] = useState("");
   const [searchUsers, setSearchUsers] = useState<{ id: string; name: string; avatar: string; handle: string; phone: string; online: boolean }[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [activeCall, setActiveCall] = useState<{ user: { id: string; name: string }; mode: "audio" | "video" } | null>(null);
@@ -72,19 +70,25 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
   }, [user]);
 
   useEffect(() => {
-    if (!showNewChat || !user) return;
+    if (!user || !search.trim()) {
+      setSearchUsers([]);
+      return;
+    }
     setSearchLoading(true);
-    fetch(`${CHAT_API}?module=chat&action=all_users`, {
-      headers: { "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
-    })
-      .then(r => r.json())
-      .then(raw => {
-        const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
-        setSearchUsers(data.users || []);
+    const t = setTimeout(() => {
+      fetch(`${CHAT_API}?module=chat&action=all_users`, {
+        headers: { "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
       })
-      .catch(() => setSearchUsers([]))
-      .finally(() => setSearchLoading(false));
-  }, [showNewChat, user]);
+        .then(r => r.json())
+        .then(raw => {
+          const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
+          setSearchUsers(data.users || []);
+        })
+        .catch(() => setSearchUsers([]))
+        .finally(() => setSearchLoading(false));
+    }, 250);
+    return () => clearTimeout(t);
+  }, [search, user]);
 
   // Авто-обновление списка чатов каждые 5 сек — чтобы удалённые чаты пропадали почти мгновенно
   useEffect(() => {
@@ -213,12 +217,6 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
             <Icon name="Phone" size={17} className="text-white" />
           </button>
           <button
-            onClick={() => setShowNewChat(true)}
-            className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center"
-          >
-            <Icon name="Plus" size={18} className="text-white" />
-          </button>
-          <button
             onClick={() => setTab("communities")}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#00d4ff] to-[#8b5cf6] text-white text-sm font-medium"
           >
@@ -237,8 +235,72 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
             placeholder="Поиск по имени, @нику или номеру"
             className="flex-1 bg-transparent text-white text-base outline-none placeholder-white/30"
           />
+          {search && (
+            <button onClick={() => setSearch("")} className="p-1">
+              <Icon name="X" size={14} className="text-white/40" />
+            </button>
+          )}
         </div>
       </div>
+
+      {search.trim() && (() => {
+        const q = search.trim().toLowerCase();
+        const qDigits = q.replace(/\D/g, "");
+        const existingIds = new Set<string>();
+        if (user) {
+          for (const c of chats) {
+            if (c.type === "personal") {
+              const cid = String(c.id);
+              if (cid.startsWith("dm_")) {
+                const rest = cid.slice(3);
+                const parts = rest.startsWith("u_")
+                  ? (() => { const sep = rest.indexOf("_u_", 2); return sep > 0 ? [rest.slice(0, sep), rest.slice(sep + 1)] : [rest]; })()
+                  : rest.split("_");
+                for (const p of parts) if (p && p !== user.id) existingIds.add(p);
+              }
+            }
+          }
+        }
+        const peopleFiltered = searchUsers
+          .filter(u => !existingIds.has(u.id))
+          .filter(u => {
+            if (u.name.toLowerCase().includes(q)) return true;
+            if (u.handle && u.handle.toLowerCase().includes(q.replace(/^@/, ""))) return true;
+            if (qDigits.length >= 3 && u.phone && u.phone.replace(/\D/g, "").includes(qDigits)) return true;
+            return false;
+          });
+        if (peopleFiltered.length === 0 && !searchLoading) return null;
+        return (
+          <div className="px-2 pb-2">
+            <div className="px-3 pb-1 text-white/40 text-[11px] font-semibold uppercase tracking-wide">Новый чат</div>
+            {searchLoading && peopleFiltered.length === 0 ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="w-5 h-5 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : (
+              peopleFiltered.slice(0, 20).map(u => (
+                <button
+                  key={u.id}
+                  onClick={() => startChatWithUser(u)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 rounded-xl transition-colors text-left"
+                >
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                    <UserAvatar src={u.avatar} name={u.name} alt={u.name} />
+                    {u.online && (
+                      <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-black" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-semibold text-sm truncate">{u.name}</p>
+                    <p className="text-white/40 text-xs truncate">{u.handle ? `@${u.handle}` : (u.phone || "")}</p>
+                  </div>
+                  <Icon name="MessageCircle" size={16} className="text-white/30 flex-shrink-0" />
+                </button>
+              ))
+            )}
+          </div>
+        );
+      })()}
 
       <div className="flex-1 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
         {loading ? (
@@ -342,75 +404,6 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
         )}
       </div>
 
-      {showNewChat && (() => {
-        const q = newChatName.trim().toLowerCase();
-        const qDigits = q.replace(/\D/g, "");
-        const filtered = q
-          ? searchUsers.filter(u => {
-              if (u.name.toLowerCase().includes(q)) return true;
-              if (u.handle && u.handle.toLowerCase().includes(q.replace(/^@/, ""))) return true;
-              if (qDigits.length >= 3 && u.phone && u.phone.replace(/\D/g, "").includes(qDigits)) return true;
-              return false;
-            })
-          : searchUsers;
-        return (
-          <div className="absolute inset-0 z-50 bg-black/70 flex items-end justify-center" onClick={() => setShowNewChat(false)}>
-            <div className="bg-zinc-900 rounded-t-3xl w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
-              <div className="px-6 pt-6 pb-3">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-white font-bold text-lg">Новый чат</span>
-                  <button onClick={() => setShowNewChat(false)}>
-                    <Icon name="X" size={22} className="text-white/60" />
-                  </button>
-                </div>
-                <div className="flex items-center gap-2 bg-white/10 rounded-xl px-4 py-3">
-                  <Icon name="Search" size={16} className="text-white/40" />
-                  <input
-                    value={newChatName}
-                    onChange={e => setNewChatName(e.target.value)}
-                    placeholder="Имя, @ник или номер телефона"
-                    className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/30"
-                    autoFocus
-                  />
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto px-2 pb-6" style={{ scrollbarWidth: "none" }}>
-                {searchLoading ? (
-                  <div className="flex items-center justify-center py-10">
-                    <div className="w-6 h-6 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
-                  </div>
-                ) : filtered.length === 0 ? (
-                  <div className="text-center text-white/40 text-sm py-10">
-                    {q ? "Никого не нашли" : "Пользователей пока нет"}
-                  </div>
-                ) : (
-                  filtered.map(u => (
-                    <button
-                      key={u.id}
-                      onClick={() => startChatWithUser(u)}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 rounded-xl transition-colors text-left"
-                    >
-                      <div className="relative w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
-                        <UserAvatar src={u.avatar} name={u.name} alt={u.name} />
-                        {u.online && (
-                          <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-zinc-900" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white font-semibold text-sm truncate">{u.name}</p>
-                        <p className="text-white/40 text-xs truncate">
-                          {u.handle ? `@${u.handle}` : (u.phone || "")}
-                        </p>
-                      </div>
-                      <Icon name="MessageCircle" size={18} className="text-white/30 flex-shrink-0" />
-                    </button>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
     </div>
   );
 };
