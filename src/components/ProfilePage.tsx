@@ -267,40 +267,6 @@ const ProfilePage = () => {
   const [showScreen, setShowScreen] = useState<"followers" | "following" | null>(null);
   const { userVideos: stories, removeMedia, addMedia } = useUserMedia();
   const { user, token, logout, updateUser } = useAuth();
-  const [showPhoneEdit, setShowPhoneEdit] = useState(false);
-  const [phoneInput, setPhoneInput] = useState("");
-  const [phoneSaving, setPhoneSaving] = useState(false);
-  const [phoneError, setPhoneError] = useState("");
-
-  const openPhoneEdit = () => {
-    setPhoneInput(user?.phone || "");
-    setPhoneError("");
-    setShowPhoneEdit(true);
-  };
-
-  const savePhone = async () => {
-    setPhoneSaving(true);
-    setPhoneError("");
-    try {
-      const res = await fetch(AUTH_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "update_phone", token, phone: phoneInput.trim() }),
-      });
-      const raw = await res.json();
-      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-      if (data.error) {
-        setPhoneError(data.error);
-      } else {
-        updateUser({ phone: data.phone });
-        setShowPhoneEdit(false);
-      }
-    } catch {
-      setPhoneError("Не удалось сохранить");
-    } finally {
-      setPhoneSaving(false);
-    }
-  };
   const followingHandles = useFollowingList();
   const followersCount = useFollowerCount(user?.handle || "");
   const [followersList, setFollowersList] = useState<UserItem[]>([]);
@@ -438,55 +404,7 @@ const ProfilePage = () => {
       <div className="px-4 pb-4 md:px-3 md:pb-3">
         <p className="text-black font-bold text-lg md:text-base leading-tight">{user?.name ?? ""}</p>
         <p className="text-gray-500 text-sm md:text-xs mt-0.5">@{user?.handle ?? ""}</p>
-        <button
-          onClick={openPhoneEdit}
-          className="mt-2 flex items-center gap-1.5 text-xs md:text-[11px] text-gray-500 hover:text-[#8b5cf6] transition-colors"
-        >
-          <Icon name="Phone" size={13} className="flex-shrink-0" />
-          <span>{user?.phone ? user.phone : "Добавить номер телефона"}</span>
-          <Icon name="Pencil" size={11} className="flex-shrink-0 opacity-60" />
-        </button>
       </div>
-
-      {showPhoneEdit && (
-        <div className="fixed inset-0 z-[9999] bg-black/60 flex items-end sm:items-center justify-center" onClick={() => setShowPhoneEdit(false)}>
-          <div className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl px-6 pt-6 pb-8 flex flex-col gap-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h2 className="text-black font-bold text-lg">Номер телефона</h2>
-              <button onClick={() => setShowPhoneEdit(false)} className="p-1">
-                <Icon name="X" size={20} className="text-gray-400" />
-              </button>
-            </div>
-            <p className="text-gray-500 text-sm">
-              По номеру тебя смогут найти друзья из контактов. Номер не показывается в профиле.
-            </p>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Телефон</label>
-              <input
-                value={phoneInput}
-                onChange={e => setPhoneInput(e.target.value.replace(/[^\d+\-() ]/g, ""))}
-                type="tel"
-                inputMode="tel"
-                placeholder="+7 999 123-45-67"
-                className="w-full px-4 py-3 rounded-xl bg-gray-100 text-black text-sm outline-none focus:ring-2 focus:ring-[#8b5cf6]/30"
-              />
-            </div>
-            {phoneError && (
-              <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
-                <Icon name="AlertCircle" size={16} className="text-red-500 flex-shrink-0" />
-                <span className="text-red-600 text-sm">{phoneError}</span>
-              </div>
-            )}
-            <button
-              onClick={savePhone}
-              disabled={phoneInput.replace(/\D/g, "").length < 10 || phoneSaving}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold text-base disabled:opacity-40 transition-opacity"
-            >
-              {phoneSaving ? "Сохраняем..." : "Сохранить"}
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Action buttons */}
       <div className="flex gap-2 px-4 pb-4 md:px-3 md:pb-3">
