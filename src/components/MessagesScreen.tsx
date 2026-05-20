@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import ChatRoom from "./ChatRoom";
@@ -22,15 +22,6 @@ export interface Chat {
   typing?: string;
 }
 
-interface AppUser {
-  id: string;
-  name: string;
-  avatar: string;
-  online: boolean;
-  handle?: string;
-  phone?: string;
-}
-
 const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
 type Tab = "chats" | "communities" | "calls";
@@ -51,17 +42,7 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
   const [showNewChat, setShowNewChat] = useState(false);
   const [newChatName, setNewChatName] = useState("");
   const [creating, setCreating] = useState(false);
-  const [allUsers, setAllUsers] = useState<AppUser[]>([]);
   const [activeCall, setActiveCall] = useState<{ user: { id: string; name: string }; mode: "audio" | "video" } | null>(null);
-  const [onlineMenu, setOnlineMenu] = useState<AppUser | null>(null);
-  const usersStripRef = useRef<HTMLDivElement | null>(null);
-  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const scrollUsers = (dir: 1 | -1) => {
-    const el = usersStripRef.current;
-    if (!el) return;
-    el.scrollBy({ left: dir * Math.max(200, el.clientWidth * 0.7), behavior: "smooth" });
-  };
   const { user } = useAuth();
   const { refresh: refreshUnread } = useUnread();
 
@@ -85,32 +66,8 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
       .finally(() => setLoading(false));
   };
 
-  const loadAllUsers = () => {
-    if (!user) return;
-    fetch(`${CHAT_API}?module=chat&action=all_users`, {
-      headers: { "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
-    })
-      .then(r => r.json())
-      .then(raw => {
-        const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
-        setAllUsers(data.users || []);
-      })
-      .catch(() => {});
-  };
-
   useEffect(() => {
     loadChats();
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) return;
-    loadAllUsers();
-    heartbeatRef.current = setInterval(() => {
-      loadAllUsers();
-    }, 25000);
-    return () => {
-      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
-    };
   }, [user]);
 
   // Авто-обновление списка чатов каждые 5 сек — чтобы удалённые чаты пропадали почти мгновенно
@@ -178,7 +135,6 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
   };
 
   const startCall = async (u: { id: string; name: string }, mode: "audio" | "video") => {
-    setOnlineMenu(null);
     if (!user) return;
     const roomId = `call_${[user.id, u.id].sort().join("_")}`;
     await fetch(`${CHAT_API}?module=signal`, {
@@ -205,21 +161,6 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
       onEnd={() => setActiveCall(null)}
     />
   );
-
-  const openChatWithUser = (u: AppUser) => {
-    const chat: Chat = {
-      id: `dm_${[user?.id, u.id].sort().join("_")}`,
-      type: "personal",
-      name: u.name,
-      avatar: u.avatar || "",
-      lastMsg: "",
-      time: "сейчас",
-      unread: 0,
-      online: u.online,
-    };
-    setOnlineMenu(null);
-    setOpenChat(chat);
-  };
 
   if (tab === "communities") return (
     <CommunitiesScreen
@@ -295,155 +236,6 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
           />
         </div>
       </div>
-
-      {allUsers.length > 0 && (
-        <div className="px-4 pb-3">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-white/40 text-xs font-medium">Пользователи</span>
-            <span className="text-white/25 text-xs">{allUsers.filter(u => u.online).length} онлайн · {allUsers.length} всего</span>
-
-          </div>
-          {(() => {
-            const unreadByUser: Record<string, number> = {};
-            if (user) {
-              for (const c of chats) {
-                if (c.type !== "personal" || !c.unread) continue;
-                const cid = String(c.id);
-                if (!cid.startsWith("dm_")) continue;
-                const parts = cid.slice(3).split("_");
-                const peerId = parts.find(p => p && p !== user.id);
-                if (peerId) unreadByUser[peerId] = (unreadByUser[peerId] || 0) + c.unread;
-              }
-            }
-            const q = search.trim().toLowerCase();
-            const qDigits = q.replace(/\D/g, "");
-            const base = q
-              ? allUsers.filter(u => {
-                  if (u.name.toLowerCase().includes(q)) return true;
-                  if (u.handle && u.handle.toLowerCase().includes(q.replace(/^@/, ""))) return true;
-                  if (qDigits.length >= 3 && u.phone && u.phone.replace(/\D/g, "").includes(qDigits)) return true;
-                  return false;
-                })
-              : allUsers;
-            const filteredUsers = [...base].sort((a, b) => {
-              const ua = unreadByUser[a.id] || 0;
-              const ub = unreadByUser[b.id] || 0;
-              if (ua !== ub) return ub - ua;
-              return Number(b.online) - Number(a.online);
-            });
-            return (
-              <div className="relative group">
-                <button
-                  type="button"
-                  onClick={() => scrollUsers(-1)}
-                  className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-black/60 backdrop-blur items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  aria-label="Прокрутить влево"
-                >
-                  <Icon name="ChevronLeft" size={16} className="text-white" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => scrollUsers(1)}
-                  className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-black/60 backdrop-blur items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  aria-label="Прокрутить вправо"
-                >
-                  <Icon name="ChevronRight" size={16} className="text-white" />
-                </button>
-                <div
-                  ref={usersStripRef}
-                  className="flex gap-3 overflow-x-auto scroll-smooth"
-                  style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
-                >
-                  {filteredUsers.length === 0 && (
-                    <div className="text-white/30 text-xs py-3">Никого не найдено</div>
-                  )}
-                  {filteredUsers.map((u) => {
-                    const unread = unreadByUser[u.id] || 0;
-                    return (
-                      <div
-                        key={u.id}
-                        className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer active:scale-95 transition-transform"
-                        onClick={() => {
-                          if (unread > 0) {
-                            openChatWithUser(u);
-                          } else {
-                            setOnlineMenu(onlineMenu?.id === u.id ? null : u);
-                          }
-                        }}
-                      >
-                        <div className="relative">
-                          <div className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-colors ${onlineMenu?.id === u.id ? "border-[#fe2c55]" : unread > 0 ? "border-[#fe2c55]/70" : "border-white/10"} ${!u.online ? "opacity-60" : ""}`}>
-                            <UserAvatar src={u.avatar} name={u.name} alt={u.name} />
-                          </div>
-                          <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-black ${u.online ? "bg-green-400" : "bg-white/30"}`} />
-                          {unread > 0 && (
-                            <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#fe2c55] border-2 border-black flex items-center justify-center">
-                              <span className="text-white text-[10px] font-bold leading-none">{unread > 99 ? "99+" : unread}</span>
-                            </div>
-                          )}
-                        </div>
-                        <span className={`text-[10px] w-12 text-center truncate ${unread > 0 ? "text-white font-medium" : u.online ? "text-white/70" : "text-white/40"}`}>
-                          {(() => {
-                            const firstName = u.name.split(" ")[0];
-                            const q = search.trim();
-                            if (!q) return firstName;
-                            const idx = firstName.toLowerCase().indexOf(q.toLowerCase());
-                            if (idx < 0) return firstName;
-                            return (
-                              <>
-                                {firstName.slice(0, idx)}
-                                <span className="bg-[#fe2c55]/30 text-white rounded px-0.5">{firstName.slice(idx, idx + q.length)}</span>
-                                {firstName.slice(idx + q.length)}
-                              </>
-                            );
-                          })()}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
-
-          {onlineMenu && (
-            <div className="mt-3 bg-white/8 rounded-2xl overflow-hidden border border-white/10">
-              <div className="px-4 py-2.5 border-b border-white/8 flex items-center gap-2">
-                <span className="text-white/60 text-xs">{onlineMenu.name}</span>
-                <span className={`text-[10px] ${onlineMenu.online ? "text-green-400" : "text-white/30"}`}>
-                  {onlineMenu.online ? "онлайн" : "оффлайн"}
-                </span>
-              </div>
-              <div className="flex">
-                <button
-                  onClick={() => openChatWithUser(onlineMenu)}
-                  className="flex-1 flex flex-col items-center gap-1.5 py-3 hover:bg-white/5 transition-colors"
-                >
-                  <Icon name="MessageCircle" size={20} className="text-[#00a2ff]" />
-                  <span className="text-white/60 text-[11px]">Написать</span>
-                </button>
-                <div className="w-px bg-white/8" />
-                <button
-                  onClick={() => startCall(onlineMenu, "audio")}
-                  className="flex-1 flex flex-col items-center gap-1.5 py-3 hover:bg-white/5 transition-colors"
-                >
-                  <Icon name="Phone" size={20} className="text-green-400" />
-                  <span className="text-white/60 text-[11px]">Аудио</span>
-                </button>
-                <div className="w-px bg-white/8" />
-                <button
-                  onClick={() => startCall(onlineMenu, "video")}
-                  className="flex-1 flex flex-col items-center gap-1.5 py-3 hover:bg-white/5 transition-colors"
-                >
-                  <Icon name="Video" size={20} className="text-[#fe2c55]" />
-                  <span className="text-white/60 text-[11px]">Видео</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       <div className="flex-1 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
         {loading ? (
