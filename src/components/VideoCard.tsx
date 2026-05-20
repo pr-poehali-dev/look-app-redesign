@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
+import VideoThumb from "@/components/ui/video-thumb";
 import { useComments } from "@/hooks/useComments";
 import { useLikes } from "@/hooks/useLikes";
 import { useSavedItem } from "@/hooks/useSaved";
@@ -41,6 +42,7 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
   const [showShare, setShowShare] = useState(false);
   const [copied, setCopied] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [videoReady, setVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const parseShortNum = (raw: string | number) => {
     const s = String(raw || "0").trim().toUpperCase();
@@ -86,6 +88,11 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
       <div className="relative w-full h-full md:flex-1 md:max-w-[470px] md:rounded-xl md:overflow-hidden md:bg-black">
       {isVideo ? (
         <>
+          {!videoReady && (
+            <div className="absolute inset-0 w-full h-full pointer-events-none">
+              <VideoThumb src={video.image} className="absolute inset-0 w-full h-full object-cover" />
+            </div>
+          )}
           <video
             ref={videoRef}
             src={video.image}
@@ -93,6 +100,9 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
             loop
             muted={muted}
             playsInline
+            preload="auto"
+            onPlaying={() => setVideoReady(true)}
+            onLoadedData={() => setVideoReady(true)}
             onClick={handleVideoClick}
             style={{ touchAction: "manipulation" }}
           />
