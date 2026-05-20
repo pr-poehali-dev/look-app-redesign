@@ -150,7 +150,7 @@ export const getAuthor = (handle: string): AuthorProfile => {
     handle,
     name: handle.replace(/_/g, " "),
     avatar: "",
-    bio: "Привет! Я в Look ✨",
+    bio: "Привет! Я в Лоок ✨",
     followers: "0",
     following: "0",
     posts: "0",

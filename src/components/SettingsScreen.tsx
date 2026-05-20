@@ -170,7 +170,7 @@ const QrScreen = ({ onBack }: { onBack: () => void }) => (
       </div>
       <div className="text-center">
         <p className="text-black font-bold text-lg">@look_user</p>
-        <p className="text-gray-400 text-sm mt-1">Отсканируй код чтобы найти меня в Look</p>
+        <p className="text-gray-400 text-sm mt-1">Отсканируй код чтобы найти меня в Лоок</p>
       </div>
       <button className="flex items-center gap-2 px-6 py-3 md:py-2.5 rounded-xl bg-[#8b5cf6] text-white font-semibold md:text-sm">
         <Icon name="Share2" size={18} className="text-white" />

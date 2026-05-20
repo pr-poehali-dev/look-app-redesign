@@ -68,7 +68,7 @@ const Index = () => {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-[240px] xl:w-[280px] h-full border-r border-white/8 bg-black flex-shrink-0 z-40">
         <div className="px-6 pt-6 pb-4">
-          <span className="font-bold text-white text-2xl tracking-tight">Look</span>
+          <span className="font-bold text-white text-2xl tracking-tight">Лоок</span>
         </div>
         <nav className="flex-1 flex flex-col gap-1 px-3">
           {TABS.map((tab) => {
@@ -114,7 +114,7 @@ const Index = () => {
           })}
         </nav>
         <div className="px-6 py-4 border-t border-white/8">
-          <p className="text-white/40 text-xs leading-relaxed">© Look 2026</p>
+          <p className="text-white/40 text-xs leading-relaxed">© Лоок 2026</p>
         </div>
       </aside>
 

@@ -9,11 +9,11 @@ const Footer = () => {
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#00d4ff] to-[#8b5cf6] flex items-center justify-center">
             <Icon name="Zap" size={14} className="text-[#080c14]" />
           </div>
-          <span className="font-display text-lg font-bold gradient-text">Look</span>
+          <span className="font-display text-lg font-bold gradient-text">Лоок</span>
         </div>
 
         <p className="font-body text-sm text-white/30 text-center">
-          © {new Date().getFullYear()} Look — Создано с ❤️
+          © {new Date().getFullYear()} Лоок — Создано с ❤️
         </p>
 
         <a
