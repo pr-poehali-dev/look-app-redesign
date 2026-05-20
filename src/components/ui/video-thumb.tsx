@@ -10,6 +10,7 @@ const VideoThumb = ({ src, className = "", posterTime = 0.1 }: VideoThumbProps) 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [poster, setPoster] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -27,9 +28,12 @@ const VideoThumb = ({ src, className = "", posterTime = 0.1 }: VideoThumbProps) 
         if (!ctx) return;
         ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
         const data = canvas.toDataURL("image/jpeg", 0.7);
-        if (!cancelled) setPoster(data);
+        if (!cancelled) {
+          setPoster(data);
+          setReady(true);
+        }
       } catch {
-        // CORS / tainted canvas — fallback to inline video
+        if (!cancelled) setReady(true);
       }
     };
 
@@ -48,6 +52,24 @@ const VideoThumb = ({ src, className = "", posterTime = 0.1 }: VideoThumbProps) 
 
     v.addEventListener("loadeddata", onLoaded);
     v.addEventListener("seeked", onSeeked);
+
+    const playPromise = v.play();
+    if (playPromise && typeof playPromise.then === "function") {
+      playPromise
+        .then(() => {
+          setTimeout(() => {
+            try {
+              v.pause();
+            } catch {
+              /* noop */
+            }
+            capture();
+          }, 100);
+        })
+        .catch(() => {
+          /* autoplay blocked — рассчитываем на loadeddata/seeked */
+        });
+    }
 
     return () => {
       cancelled = true;
@@ -69,7 +91,7 @@ const VideoThumb = ({ src, className = "", posterTime = 0.1 }: VideoThumbProps) 
         muted
         playsInline
         preload="metadata"
-        crossOrigin="anonymous"
+        style={ready ? undefined : { opacity: 0.999 }}
       />
       <canvas ref={canvasRef} className="hidden" />
     </>
