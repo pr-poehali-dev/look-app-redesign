@@ -14,7 +14,7 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
   const data = getAuthor(handle);
   const { following, toggle: toggleFollow } = useFollowing(handle);
   const realFollowers = useFollowerCount(handle);
-  const [tab, setTab] = useState<"grid" | "tagged">("grid");
+  const [tab, setTab] = useState<"media" | "files" | "links">("media");
   const [openedItem, setOpenedItem] = useState<number | null>(null);
 
   useEffect(() => {
@@ -40,113 +40,177 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
   const opened = openedItem !== null ? data.gallery[openedItem] : null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[10000] bg-white overflow-y-auto" style={{ scrollbarWidth: "none" }}>
-      <div className="md:max-w-2xl md:mx-auto">
-        <div className="flex items-center gap-3 px-4 pt-12 md:pt-6 pb-3 bg-white border-b border-gray-100 sticky top-0 z-10">
-          <button onClick={onClose} className="p-1">
-            <Icon name="ArrowLeft" size={22} className="text-black" />
-          </button>
-          <div className="flex-1 flex items-center justify-center gap-1.5 pr-7">
-            <span className="text-black font-bold text-base">@{data.handle}</span>
-            {data.verified && <Icon name="BadgeCheck" size={14} className="text-[#0095f6]" />}
-          </div>
-        </div>
+    <div className="fixed inset-0 z-[10000] bg-white flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between px-2 pt-12 md:pt-4 pb-2 bg-white border-b border-gray-100 z-10">
+        <button onClick={onClose} className="p-2 -ml-1">
+          <Icon name="ArrowLeft" size={24} className="text-[#2AABEE]" />
+        </button>
+        <span className="text-black font-semibold text-base">Профиль</span>
+        <button className="p-2 -mr-1">
+          <Icon name="MoreVertical" size={22} className="text-[#2AABEE]" />
+        </button>
+      </div>
 
-        <div className="px-5 pt-5 pb-3 flex items-center gap-5">
-          <div className="w-20 h-20 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-[#fe2c55] ring-offset-2 ring-offset-white">
-            <UserAvatar src={data.avatar} name={data.name} alt={data.name} />
-          </div>
-          <div className="flex-1 grid grid-cols-3 gap-2 text-center">
-            <button className="active:opacity-60">
-              <p className="text-black font-bold text-base">{data.posts}</p>
-              <p className="text-gray-500 text-xs">постов</p>
+      <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+        <div className="md:max-w-2xl md:mx-auto">
+          {/* Large avatar header — Telegram style */}
+          <div className="flex flex-col items-center pt-8 pb-6 px-6 bg-white">
+            <button
+              onClick={() => data.gallery[0] && setOpenedItem(0)}
+              className="w-28 h-28 rounded-full overflow-hidden active:opacity-80"
+            >
+              <UserAvatar src={data.avatar} name={data.name} alt={data.name} />
             </button>
-            <button className="active:opacity-60">
-              <p className="text-black font-bold text-base">{realFollowers > 0 ? realFollowers : data.followers}</p>
-              <p className="text-gray-500 text-xs">подписчиков</p>
+            <div className="mt-4 text-center flex items-center gap-1.5">
+              <h1 className="text-black font-bold text-2xl leading-tight">{data.name}</h1>
+              {data.verified && <Icon name="BadgeCheck" size={20} className="text-[#2AABEE]" />}
+            </div>
+            <p className="text-gray-500 text-sm mt-1">был(а) недавно</p>
+          </div>
+
+          {/* Action buttons — Telegram style round */}
+          <div className="flex justify-center gap-3 px-6 pb-6 bg-white">
+            <button
+              onClick={toggleFollow}
+              className="flex flex-col items-center gap-1.5 active:opacity-70"
+            >
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${following ? "bg-gray-100" : "bg-[#2AABEE]"}`}>
+                <Icon name={following ? "Check" : "UserPlus"} size={20} className={following ? "text-[#2AABEE]" : "text-white"} />
+              </div>
+              <span className="text-[#2AABEE] text-xs font-medium">{following ? "Вы подписаны" : "Подписаться"}</span>
             </button>
-            <button className="active:opacity-60">
-              <p className="text-black font-bold text-base">{data.following}</p>
-              <p className="text-gray-500 text-xs">подписок</p>
+            <button
+              onClick={openMessage}
+              className="flex flex-col items-center gap-1.5 active:opacity-70"
+            >
+              <div className="w-12 h-12 rounded-full bg-[#2AABEE] flex items-center justify-center">
+                <Icon name="MessageCircle" size={20} className="text-white" />
+              </div>
+              <span className="text-[#2AABEE] text-xs font-medium">Сообщение</span>
+            </button>
+            <button className="flex flex-col items-center gap-1.5 active:opacity-70">
+              <div className="w-12 h-12 rounded-full bg-[#2AABEE] flex items-center justify-center">
+                <Icon name="Bell" size={20} className="text-white" />
+              </div>
+              <span className="text-[#2AABEE] text-xs font-medium">Уведомл.</span>
+            </button>
+            <button className="flex flex-col items-center gap-1.5 active:opacity-70">
+              <div className="w-12 h-12 rounded-full bg-[#2AABEE] flex items-center justify-center">
+                <Icon name="MoreHorizontal" size={20} className="text-white" />
+              </div>
+              <span className="text-[#2AABEE] text-xs font-medium">Ещё</span>
             </button>
           </div>
-        </div>
 
-        <div className="px-5 pb-3">
-          <p className="text-black font-semibold text-sm">{data.name}</p>
-          <p className="text-gray-700 text-sm leading-snug mt-0.5 whitespace-pre-line">{data.bio}</p>
-        </div>
+          {/* Info section — Telegram style rows */}
+          <div className="bg-[#f4f4f5] py-2">
+            <div className="bg-white">
+              {data.bio && (
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <p className="text-black text-base leading-snug whitespace-pre-line">{data.bio}</p>
+                  <p className="text-gray-500 text-xs mt-1">био</p>
+                </div>
+              )}
+              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                  <p className="text-[#2AABEE] text-base">@{data.handle}</p>
+                  <p className="text-gray-500 text-xs mt-0.5">username</p>
+                </div>
+                <Icon name="QrCode" size={20} className="text-gray-400" />
+              </div>
+            </div>
+          </div>
 
-        <div className="px-5 pb-4 flex gap-2">
-          <button
-            onClick={toggleFollow}
-            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all active:scale-95 ${
-              following ? "bg-gray-100 text-black" : "bg-[#fe2c55] text-white"
-            }`}
-          >
-            {following ? "Вы подписаны" : "Подписаться"}
-          </button>
-          <button
-            onClick={openMessage}
-            className="flex-1 py-2 rounded-lg text-sm font-semibold bg-gray-100 text-black active:scale-95"
-          >
-            Сообщение
-          </button>
-          <button className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center active:scale-95">
-            <Icon name="UserPlus" size={18} className="text-black" />
-          </button>
-        </div>
+          {/* Stats — Telegram style */}
+          <div className="bg-[#f4f4f5] pb-2">
+            <div className="bg-white grid grid-cols-3 divide-x divide-gray-100">
+              <button className="py-3 active:bg-gray-50">
+                <p className="text-black font-bold text-lg">{data.posts}</p>
+                <p className="text-gray-500 text-xs">постов</p>
+              </button>
+              <button className="py-3 active:bg-gray-50">
+                <p className="text-black font-bold text-lg">{realFollowers > 0 ? realFollowers : data.followers}</p>
+                <p className="text-gray-500 text-xs">подписчиков</p>
+              </button>
+              <button className="py-3 active:bg-gray-50">
+                <p className="text-black font-bold text-lg">{data.following}</p>
+                <p className="text-gray-500 text-xs">подписок</p>
+              </button>
+            </div>
+          </div>
 
-        <div className="border-t border-gray-100 flex">
-          <button
-            onClick={() => setTab("grid")}
-            className={`flex-1 flex items-center justify-center py-3 ${tab === "grid" ? "border-b-2 border-black" : "border-b-2 border-transparent"}`}
-          >
-            <Icon name="Grid3x3" size={20} className={tab === "grid" ? "text-black" : "text-gray-400"} />
-          </button>
-          <button
-            onClick={() => setTab("tagged")}
-            className={`flex-1 flex items-center justify-center py-3 ${tab === "tagged" ? "border-b-2 border-black" : "border-b-2 border-transparent"}`}
-          >
-            <Icon name="UserSquare" size={20} className={tab === "tagged" ? "text-black" : "text-gray-400"} />
-          </button>
-        </div>
+          {/* Tabs — Telegram style underlined */}
+          <div className="bg-white border-b border-gray-100 flex sticky top-0 z-[1]">
+            <button
+              onClick={() => setTab("media")}
+              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-all ${
+                tab === "media" ? "border-[#2AABEE] text-[#2AABEE]" : "border-transparent text-gray-500"
+              }`}
+            >
+              Медиа
+            </button>
+            <button
+              onClick={() => setTab("files")}
+              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-all ${
+                tab === "files" ? "border-[#2AABEE] text-[#2AABEE]" : "border-transparent text-gray-500"
+              }`}
+            >
+              Файлы
+            </button>
+            <button
+              onClick={() => setTab("links")}
+              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-all ${
+                tab === "links" ? "border-[#2AABEE] text-[#2AABEE]" : "border-transparent text-gray-500"
+              }`}
+            >
+              Ссылки
+            </button>
+          </div>
 
-        {tab === "grid" ? (
-          data.gallery.length > 0 ? (
-            <div className="grid grid-cols-3 gap-px bg-gray-200">
-              {data.gallery.map((item, i) => (
-                <button
-                  key={i}
-                  onClick={() => setOpenedItem(i)}
-                  className="relative aspect-square overflow-hidden bg-gray-100 active:opacity-80"
-                >
-                  <img src={item.image} alt="" className="w-full h-full object-cover" />
-                  {item.isVideo && (
-                    <Icon name="Play" size={14} className="absolute top-1.5 right-1.5 text-white drop-shadow" />
-                  )}
-                  {item.views && (
-                    <div className="absolute bottom-1.5 left-1.5 flex items-center gap-0.5">
-                      <Icon name="Play" size={10} className="text-white drop-shadow" />
-                      <span className="text-white text-[10px] font-semibold drop-shadow">{item.views}</span>
-                    </div>
-                  )}
-                </button>
-              ))}
+          {tab === "media" ? (
+            data.gallery.length > 0 ? (
+              <div className="grid grid-cols-3 gap-px bg-gray-100">
+                {data.gallery.map((item, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setOpenedItem(i)}
+                    className="relative aspect-square overflow-hidden bg-gray-200 active:opacity-80"
+                  >
+                    <img src={item.image} alt="" className="w-full h-full object-cover" />
+                    {item.isVideo && (
+                      <div className="absolute top-1.5 right-1.5 bg-black/40 rounded-full p-1">
+                        <Icon name="Play" size={10} className="text-white" />
+                      </div>
+                    )}
+                    {item.views && (
+                      <div className="absolute bottom-1.5 left-1.5 flex items-center gap-0.5">
+                        <Icon name="Play" size={10} className="text-white drop-shadow" />
+                        <span className="text-white text-[10px] font-semibold drop-shadow">{item.views}</span>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 bg-white">
+                <Icon name="Image" size={48} className="text-gray-300" />
+                <p className="text-gray-400 text-sm">Пока нет медиа</p>
+              </div>
+            )
+          ) : tab === "files" ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3 bg-white">
+              <Icon name="File" size={48} className="text-gray-300" />
+              <p className="text-gray-400 text-sm">Нет файлов</p>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-20 gap-3">
-              <Icon name="Camera" size={48} className="text-gray-300" />
-              <p className="text-gray-400 text-sm">Пока нет публикаций</p>
+            <div className="flex flex-col items-center justify-center py-20 gap-3 bg-white">
+              <Icon name="Link" size={48} className="text-gray-300" />
+              <p className="text-gray-400 text-sm">Нет ссылок</p>
             </div>
-          )
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Icon name="UserSquare" size={48} className="text-gray-300" />
-            <p className="text-gray-400 text-sm">Нет отметок</p>
-          </div>
-        )}
-        <div className="pb-24" />
+          )}
+          <div className="pb-24 bg-white" />
+        </div>
       </div>
 
       {opened && (
