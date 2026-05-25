@@ -626,7 +626,7 @@ const SubscriptionScreen = ({ onBack }: { onBack: () => void }) => {
 
 // Main Settings
 const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [showSubscriptions, setShowSubscriptions] = useState(true);
   const [showChatButton, setShowChatButton] = useState(true);
   const [whoSees, setWhoSees] = useState("Все");
@@ -795,9 +795,14 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
       <div>
         <Row icon="Info" label="Условия использования" onPress={() => setScreen("terms")} />
         <Row icon="Info" label="Политика конфиденциальности" onPress={() => setScreen("privacy")} />
-        <button className="w-full flex items-center gap-4 px-4 py-4 md:py-3 bg-white border-b border-gray-100">
-          <Icon name="LogOut" size={22} className="text-[#8b5cf6] flex-shrink-0" />
-          <span className="flex-1 text-black text-base md:text-sm text-left">Выйти</span>
+        <button
+          onClick={() => {
+            if (confirm("Выйти из аккаунта?")) logout();
+          }}
+          className="w-full flex items-center gap-4 px-4 py-4 md:py-3 bg-white border-b border-gray-100 active:bg-gray-50"
+        >
+          <Icon name="LogOut" size={22} className="text-[#fe2c55] flex-shrink-0" />
+          <span className="flex-1 text-[#fe2c55] font-semibold text-base md:text-sm text-left">Выйти</span>
         </button>
       </div>
 
