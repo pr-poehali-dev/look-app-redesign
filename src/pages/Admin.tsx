@@ -4,7 +4,7 @@ import Icon from "@/components/ui/icon";
 const API = "https://functions.poehali.dev/c578b52c-b9b6-47b3-9bcf-b6ab8405c4d7";
 const TOKEN_KEY = "admin_token_v1";
 
-type Section = "dashboard" | "users" | "videos" | "photos" | "comments" | "chats" | "reports" | "streams" | "broadcast" | "privacy" | "terms";
+type Section = "dashboard" | "users" | "videos" | "photos" | "comments" | "chats" | "reports" | "streams" | "broadcast" | "email_stats" | "support" | "privacy" | "terms";
 
 interface Stats {
   users_total: number; users_today: number; users_week: number;
@@ -40,6 +40,8 @@ const SECTIONS: { id: Section; label: string; icon: string }[] = [
   { id: "streams", label: "Стримы", icon: "Radio" },
   { id: "reports", label: "Жалобы", icon: "Flag" },
   { id: "broadcast", label: "Рассылки", icon: "Send" },
+  { id: "email_stats", label: "Метрики писем", icon: "Mail" },
+  { id: "support", label: "Поддержка", icon: "LifeBuoy" },
   { id: "privacy", label: "Политика конф.", icon: "ShieldCheck" },
   { id: "terms", label: "Условия использ.", icon: "FileText" },
 ];
@@ -110,6 +112,8 @@ export default function Admin() {
           {section === "streams" && <Streams token={token!} />}
           {section === "reports" && <Reports token={token!} />}
           {section === "broadcast" && <Broadcast token={token!} />}
+          {section === "email_stats" && <EmailStats />}
+          {section === "support" && <SupportAdmin />}
           {section === "privacy" && <DocEditor token={token!} settingKey="privacy_policy" title="Политика конфиденциальности" />}
           {section === "terms" && <DocEditor token={token!} settingKey="terms_of_use" title="Условия использования" />}
         </div>
@@ -1163,6 +1167,292 @@ function DocEditor({ token, settingKey, title }: { token: string; settingKey: "p
         />
       )}
       <p className="text-xs text-white/40">Символов: {value.length}</p>
+    </div>
+  );
+}
+
+const PASSWORD_RESET_URL = "https://functions.poehali.dev/050dfa15-1d92-4aaf-9b87-55d04c9affa7";
+const SUPPORT_URL = "https://functions.poehali.dev/c799ab49-0e91-4b94-8ec4-4325db5e1c73";
+
+interface EmailStatsData {
+  total: number;
+  sent: number;
+  failed: number;
+  sent_24h: number;
+  failed_24h: number;
+  by_kind: { kind: string; sent: number; failed: number }[];
+  recent: { id: number; to_email: string; subject: string; kind: string; success: boolean; error_msg: string | null; created_at: string }[];
+}
+
+function EmailStats() {
+  const [data, setData] = useState<EmailStatsData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(PASSWORD_RESET_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "email_stats" }),
+      });
+      const raw = await res.json();
+      const json = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      setData(json);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  if (loading || !data) {
+    return <div className="text-white/60">Загружаем метрики...</div>;
+  }
+
+  const successRate = data.total > 0 ? Math.round((data.sent / data.total) * 100) : 100;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">Метрики отправки писем</h2>
+        <button
+          onClick={load}
+          className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-sm flex items-center gap-2"
+        >
+          <Icon name="RefreshCw" size={14} />
+          Обновить
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <Stat title="Всего" value={data.total} color="text-white" />
+        <Stat title="Доставлено" value={data.sent} color="text-green-400" />
+        <Stat title="Ошибки" value={data.failed} color="text-red-400" />
+        <Stat title="За 24 часа" value={data.sent_24h} color="text-blue-400" />
+        <Stat title="Успешность" value={`${successRate}%`} color="text-purple-400" />
+      </div>
+
+      <div className="bg-zinc-900 border border-white/10 rounded-xl p-4">
+        <h3 className="font-semibold mb-3">По типу писем</h3>
+        <div className="space-y-2">
+          {data.by_kind.length === 0 && <p className="text-white/40 text-sm">Пока нет данных</p>}
+          {data.by_kind.map((k) => (
+            <div key={k.kind} className="flex items-center justify-between text-sm py-1.5 border-b border-white/5 last:border-0">
+              <span className="font-medium">{k.kind}</span>
+              <div className="flex gap-4">
+                <span className="text-green-400">✓ {k.sent}</span>
+                <span className="text-red-400">✗ {k.failed}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-zinc-900 border border-white/10 rounded-xl p-4">
+        <h3 className="font-semibold mb-3">Последние письма</h3>
+        <div className="space-y-2 max-h-[500px] overflow-y-auto">
+          {data.recent.length === 0 && <p className="text-white/40 text-sm">Журнал пуст</p>}
+          {data.recent.map((r) => (
+            <div key={r.id} className="flex items-start justify-between gap-3 text-sm py-2 border-b border-white/5 last:border-0">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${r.success ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>
+                    {r.success ? "OK" : "FAIL"}
+                  </span>
+                  <span className="text-white/80 truncate">{r.to_email}</span>
+                </div>
+                <p className="text-white/50 text-xs truncate">{r.subject}</p>
+                {r.error_msg && <p className="text-red-400 text-xs truncate">{r.error_msg}</p>}
+              </div>
+              <span className="text-white/40 text-xs whitespace-nowrap">
+                {new Date(r.created_at).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Stat({ title, value, color }: { title: string; value: number | string; color: string }) {
+  return (
+    <div className="bg-zinc-900 border border-white/10 rounded-xl p-4">
+      <p className="text-white/40 text-xs uppercase tracking-wide">{title}</p>
+      <p className={`text-2xl font-bold mt-1 ${color}`}>{value}</p>
+    </div>
+  );
+}
+
+interface Ticket {
+  id: number;
+  user_id: string | null;
+  user_name: string | null;
+  user_email: string | null;
+  subject: string;
+  message: string;
+  attachment_url: string | null;
+  status: string;
+  created_at: string;
+}
+
+function SupportAdmin() {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Ticket | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(SUPPORT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "list" }),
+      });
+      const raw = await res.json();
+      const json = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      setTickets(json.tickets || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const updateStatus = async (id: number, status: string) => {
+    await fetch(SUPPORT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "update_status", id, status }),
+    });
+    setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)));
+    if (selected?.id === id) setSelected({ ...selected, status });
+  };
+
+  if (loading) return <div className="text-white/60">Загружаем тикеты...</div>;
+
+  const statusColor: Record<string, string> = {
+    new: "bg-blue-500/20 text-blue-400",
+    in_progress: "bg-yellow-500/20 text-yellow-400",
+    done: "bg-green-500/20 text-green-400",
+  };
+  const statusLabel: Record<string, string> = {
+    new: "Новый",
+    in_progress: "В работе",
+    done: "Решён",
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">Обращения в поддержку ({tickets.length})</h2>
+        <button onClick={load} className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-sm flex items-center gap-2">
+          <Icon name="RefreshCw" size={14} /> Обновить
+        </button>
+      </div>
+
+      {tickets.length === 0 ? (
+        <div className="text-white/40 text-sm bg-zinc-900 border border-white/10 rounded-xl p-8 text-center">
+          Пока нет обращений
+        </div>
+      ) : (
+        <div className="bg-zinc-900 border border-white/10 rounded-xl divide-y divide-white/5">
+          {tickets.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setSelected(t)}
+              className="w-full flex items-start gap-3 p-4 text-left hover:bg-white/5 transition"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${statusColor[t.status] || "bg-white/10"}`}>
+                    {statusLabel[t.status] || t.status}
+                  </span>
+                  <p className="font-semibold truncate">{t.subject}</p>
+                </div>
+                <p className="text-white/60 text-sm truncate">
+                  {t.user_name || "Аноним"} {t.user_email && `· ${t.user_email}`}
+                </p>
+                <p className="text-white/40 text-xs mt-0.5">{new Date(t.created_at).toLocaleString("ru-RU")}</p>
+              </div>
+              {t.attachment_url && <Icon name="Paperclip" size={16} className="text-white/40 mt-1" />}
+              <Icon name="ChevronRight" size={18} className="text-white/30" />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {selected && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur flex items-center justify-center p-4" onClick={() => setSelected(null)}>
+          <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b border-white/10 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-lg">{selected.subject}</h3>
+                <p className="text-white/50 text-sm mt-1">
+                  {selected.user_name || "Аноним"} {selected.user_email && `· ${selected.user_email}`}
+                </p>
+                <p className="text-white/40 text-xs mt-0.5">{new Date(selected.created_at).toLocaleString("ru-RU")}</p>
+              </div>
+              <button onClick={() => setSelected(null)} className="p-2 hover:bg-white/10 rounded-lg">
+                <Icon name="X" size={18} />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div>
+                <p className="text-white/40 text-xs font-semibold uppercase mb-2">Сообщение</p>
+                <p className="bg-white/5 rounded-xl p-3 text-sm whitespace-pre-wrap">{selected.message}</p>
+              </div>
+
+              {selected.attachment_url && (
+                <div>
+                  <p className="text-white/40 text-xs font-semibold uppercase mb-2">Файл</p>
+                  <a
+                    href={selected.attachment_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 bg-white/5 rounded-xl p-3 text-sm text-blue-400 hover:bg-white/10"
+                  >
+                    <Icon name="Paperclip" size={16} />
+                    Открыть прикреплённый файл
+                  </a>
+                </div>
+              )}
+
+              <div>
+                <p className="text-white/40 text-xs font-semibold uppercase mb-2">Статус</p>
+                <div className="flex gap-2">
+                  {(["new", "in_progress", "done"] as const).map((st) => (
+                    <button
+                      key={st}
+                      onClick={() => updateStatus(selected.id, st)}
+                      className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${
+                        selected.status === st ? statusColor[st] : "bg-white/5 text-white/60 hover:bg-white/10"
+                      }`}
+                    >
+                      {statusLabel[st]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {selected.user_email && (
+                <a
+                  href={`mailto:${selected.user_email}?subject=Re:%20${encodeURIComponent(selected.subject)}`}
+                  className="block w-full py-3 rounded-xl bg-[#fe2c55] text-white font-bold text-sm text-center"
+                >
+                  Ответить на email
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

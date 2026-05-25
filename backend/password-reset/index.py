@@ -29,6 +29,21 @@ def hash_pw(p):
 
 LAST_SMTP_ERROR = {'msg': ''}
 
+
+def _log_email(to_email: str, subject: str, kind: str, success: bool, error_msg: str = ''):
+    try:
+        c = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = c.cursor()
+        cur.execute(
+            "INSERT INTO email_log (to_email, subject, kind, success, error_msg) VALUES (%s, %s, %s, %s, %s)",
+            (to_email, subject, kind, success, error_msg or None),
+        )
+        c.commit()
+        cur.close()
+        c.close()
+    except Exception as e:
+        print(f'email_log error: {type(e).__name__}: {e}')
+
 def _send_via_smtp(to_email: str, subject: str, html_body: str, text_body: str) -> bool:
     host = os.environ.get('SMTP_HOST', '').strip()
     port_raw = os.environ.get('SMTP_PORT', '').strip()
@@ -123,6 +138,7 @@ def _send_via_resend(to_email: str, subject: str, html_body: str, text_body: str
 
 def send_email(to_email: str, reset_link: str) -> bool:
     subject = 'Сброс пароля в Look'
+    kind = 'password_reset'
     html_body = f'''<!DOCTYPE html>
 <html lang="ru"><head><meta charset="utf-8"><title>Сброс пароля</title></head>
 <body style="margin:0;padding:0;background:#f5f5f7;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif">
@@ -152,11 +168,14 @@ def send_email(to_email: str, reset_link: str) -> bool:
         'Если вы не запрашивали сброс пароля — просто проигнорируйте это письмо.\n\n'
         '— Look'
     )
-    return _send_via_resend(to_email, subject, html_body, text_body)
+    ok_result = _send_via_resend(to_email, subject, html_body, text_body)
+    _log_email(to_email, subject, kind, ok_result, LAST_SMTP_ERROR.get('msg', '') if not ok_result else '')
+    return ok_result
 
 
 def send_verify_email(to_email: str, name: str, verify_link: str) -> bool:
     subject = 'Подтверждение email в Look'
+    kind = 'verify_email'
     safe_name = (name or '').strip() or 'друг'
     html_body = f'''<!DOCTYPE html>
 <html lang="ru"><head><meta charset="utf-8"><title>Подтверждение email</title></head>
@@ -185,7 +204,9 @@ def send_verify_email(to_email: str, name: str, verify_link: str) -> bool:
         'Ссылка действует 24 часа.\n\n'
         '— Look'
     )
-    return _send_via_resend(to_email, subject, html_body, text_body)
+    ok_result = _send_via_resend(to_email, subject, html_body, text_body)
+    _log_email(to_email, subject, kind, ok_result, LAST_SMTP_ERROR.get('msg', '') if not ok_result else '')
+    return ok_result
 
 def handler(event: dict, context) -> dict:
     """Восстановление пароля: запрос ссылки и установка нового пароля"""
@@ -202,6 +223,40 @@ def handler(event: dict, context) -> dict:
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
     try:
+        if action == 'email_stats':
+            cur.execute(
+                "SELECT COUNT(*) FILTER (WHERE success), COUNT(*) FILTER (WHERE NOT success), COUNT(*) FROM email_log"
+            )
+            row = cur.fetchone()
+            sent, failed, total = (row[0] or 0), (row[1] or 0), (row[2] or 0)
+            cur.execute(
+                "SELECT COUNT(*) FILTER (WHERE success), COUNT(*) FILTER (WHERE NOT success) "
+                "FROM email_log WHERE created_at > NOW() - INTERVAL '24 hours'"
+            )
+            row24 = cur.fetchone()
+            sent24, failed24 = (row24[0] or 0), (row24[1] or 0)
+            cur.execute(
+                "SELECT kind, COUNT(*) FILTER (WHERE success), COUNT(*) FILTER (WHERE NOT success) "
+                "FROM email_log GROUP BY kind ORDER BY kind"
+            )
+            by_kind = [{'kind': r[0], 'sent': r[1] or 0, 'failed': r[2] or 0} for r in cur.fetchall()]
+            cur.execute(
+                "SELECT id, to_email, subject, kind, success, error_msg, created_at "
+                "FROM email_log ORDER BY id DESC LIMIT 30"
+            )
+            recent = [
+                {
+                    'id': r[0], 'to_email': r[1], 'subject': r[2], 'kind': r[3],
+                    'success': r[4], 'error_msg': r[5], 'created_at': r[6].isoformat() if r[6] else None,
+                }
+                for r in cur.fetchall()
+            ]
+            return ok({
+                'total': total, 'sent': sent, 'failed': failed,
+                'sent_24h': sent24, 'failed_24h': failed24,
+                'by_kind': by_kind, 'recent': recent,
+            })
+
         if action == 'check_verified':
             email = (body.get('email') or '').strip().lower()
             if not email:

@@ -624,6 +624,178 @@ const SubscriptionScreen = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
+const SUPPORT_URL = "https://functions.poehali.dev/c799ab49-0e91-4b94-8ec4-4325db5e1c73";
+
+const SupportScreen = ({ onBack }: { onBack: () => void }) => {
+  const { user } = useAuth();
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [fileB64, setFileB64] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 8 * 1024 * 1024) {
+      setError("Файл слишком большой. Максимум 8 МБ.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const b64 = result.includes(",") ? result.split(",")[1] : result;
+      setFileB64(b64);
+      setFileName(f.name);
+      setError("");
+    };
+    reader.readAsDataURL(f);
+  };
+
+  const submit = async () => {
+    if (!subject.trim() || !message.trim()) {
+      setError("Заполни тему и сообщение");
+      return;
+    }
+    setSending(true);
+    setError("");
+    try {
+      const res = await fetch(SUPPORT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(user?.id ? { "X-User-Id": user.id } : {}),
+          ...(user?.name ? { "X-User-Name": encodeURIComponent(user.name) } : {}),
+        },
+        body: JSON.stringify({
+          action: "create",
+          subject: subject.trim(),
+          message: message.trim(),
+          user_email: user?.email || "",
+          file_base64: fileB64 || "",
+          file_name: fileName || "",
+        }),
+      });
+      const raw = await res.json();
+      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      if (data.ok) {
+        setSent(true);
+        setSubject("");
+        setMessage("");
+        setFileB64("");
+        setFileName("");
+      } else {
+        setError(data.error || "Не удалось отправить. Попробуй позже.");
+      }
+    } catch {
+      setError("Не удалось отправить. Проверь интернет.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="h-full bg-gray-100 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
+      <div className="md:max-w-2xl md:mx-auto">
+        <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
+          <button onClick={onBack} className="p-1">
+            <Icon name="ArrowLeft" size={22} className="text-black" />
+          </button>
+          <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Помощь и поддержка</span>
+        </div>
+
+        {sent ? (
+          <div className="m-4 bg-white rounded-2xl p-6 flex flex-col items-center gap-3 text-center">
+            <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+              <Icon name="Check" size={28} className="text-green-600" />
+            </div>
+            <p className="text-black font-bold text-lg">Сообщение отправлено</p>
+            <p className="text-gray-500 text-sm">Мы ответим на твой email в течение 24 часов.</p>
+            <button
+              onClick={() => setSent(false)}
+              className="mt-2 px-5 py-2.5 rounded-xl bg-[#8b5cf6] text-white font-semibold text-sm"
+            >
+              Написать ещё
+            </button>
+          </div>
+        ) : (
+          <div className="m-4 bg-white rounded-2xl p-4 flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wide">Тема</label>
+              <input
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Кратко опиши проблему"
+                maxLength={120}
+                className="bg-gray-100 rounded-xl px-3 py-3 text-black text-sm outline-none placeholder-gray-400"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wide">Сообщение</label>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Опиши подробно, что случилось..."
+                rows={6}
+                maxLength={4000}
+                className="bg-gray-100 rounded-xl px-3 py-3 text-black text-sm outline-none placeholder-gray-400 resize-none"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wide">Прикрепить файл</label>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*,video/*,application/pdf"
+                onChange={onPickFile}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-3 text-left"
+              >
+                <Icon name="Paperclip" size={18} className="text-[#8b5cf6]" />
+                <span className="flex-1 text-sm text-gray-600 truncate">
+                  {fileName || "Выбрать файл (необязательно)"}
+                </span>
+                {fileName && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFileB64("");
+                      setFileName("");
+                    }}
+                    className="p-1"
+                  >
+                    <Icon name="X" size={16} className="text-gray-400" />
+                  </button>
+                )}
+              </button>
+            </div>
+
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+
+            <button
+              onClick={submit}
+              disabled={sending}
+              className="mt-2 w-full py-3 rounded-xl bg-[#8b5cf6] text-white font-semibold text-base disabled:opacity-50"
+            >
+              {sending ? "Отправляем..." : "Отправить"}
+            </button>
+          </div>
+        )}
+
+        <div className="pb-28" />
+      </div>
+    </div>
+  );
+};
+
 // Main Settings
 const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   const { user, logout } = useAuth();
@@ -682,6 +854,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   if (screen === "qr") return <QrScreen onBack={() => setScreen(null)} />;
   if (screen === "notifications") return <NotificationsScreen onBack={() => setScreen(null)} />;
   if (screen === "edit_profile") return <EditProfileScreen onBack={() => setScreen(null)} />;
+  if (screen === "support") return <SupportScreen onBack={() => setScreen(null)} />;
   if (screen === "terms") return <LegalScreen onBack={() => setScreen(null)} title="Условия использования" settingKey="terms_of_use" fallback="Используя приложение Look, вы соглашаетесь с нашими условиями использования." />;
   if (screen === "privacy") return <LegalScreen onBack={() => setScreen(null)} title="Политика конфиденциальности" settingKey="privacy_policy" fallback="Мы уважаем вашу конфиденциальность." />;
   if (screen === "subscription") return <SubscriptionScreen onBack={() => setScreen(null)} />;
@@ -793,6 +966,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
 
       <SectionHeader title="General" />
       <div>
+        <Row icon="LifeBuoy" label="Поддержка" onPress={() => setScreen("support")} />
         <Row icon="Info" label="Условия использования" onPress={() => setScreen("terms")} />
         <Row icon="Info" label="Политика конфиденциальности" onPress={() => setScreen("privacy")} />
         <button
