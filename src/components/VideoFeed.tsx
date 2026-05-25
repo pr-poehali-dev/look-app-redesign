@@ -4,9 +4,11 @@ import Icon from "@/components/ui/icon";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
+import { useFollowingList } from "@/hooks/useFollowing";
 
 export const CATEGORIES = [
   { id: "all", label: "Все" },
+  { id: "subs", label: "Подписки" },
   { id: "music", label: "Музыка" },
   { id: "dance", label: "Танцы" },
   { id: "sport", label: "Спорт" },
@@ -275,6 +277,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
 
   const { userVideos } = useUserMedia();
   const { user } = useAuth();
+  const followingHandles = useFollowingList();
 
   const userVideoData: (VideoData & { category: string })[] = userVideos
     .filter(v => v.type === "video")
@@ -295,7 +298,8 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
 
   useEffect(() => {
     setDbLoaded(false);
-    const url = activeCategory && activeCategory !== "all"
+    const isSubsCategory = activeCategory === "subs";
+    const url = activeCategory && activeCategory !== "all" && !isSubsCategory
       ? `${GET_VIDEOS_URL}?type=video&category=${activeCategory}`
       : `${GET_VIDEOS_URL}?type=video`;
     fetch(url)
@@ -325,9 +329,12 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
   }, [activeCategory]);
 
   const allVideos = [...userVideoData, ...dbVideos];
-  const filtered = activeCategory === "all"
-    ? allVideos
-    : allVideos.filter((v) => v.category === activeCategory);
+  const filtered =
+    activeCategory === "all"
+      ? allVideos
+      : activeCategory === "subs"
+        ? allVideos.filter((v) => followingHandles.includes(v.handle))
+        : allVideos.filter((v) => v.category === activeCategory);
 
   const counts = useBulkCounts("video", filtered.map(v => v.id));
   const formatShort = (n: number) => n >= 1_000_000 ? (n / 1_000_000).toFixed(1) + "M" : n >= 1000 ? (n / 1000).toFixed(1) + "K" : String(n);

@@ -140,27 +140,8 @@ const Index = () => {
           <div className="px-4 pt-10 md:pt-4 pb-2 bg-gradient-to-b from-black/70 to-transparent pointer-events-none" />
           {activeTab === "home" && (
             <>
-              {/* Десктоп: горизонтальный список категорий */}
-              <div className="hidden md:block pointer-events-auto overflow-x-scroll scrollbar-none px-4 pb-2" style={{ scrollbarWidth: "none" }}>
-                <div className="flex gap-2 w-max">
-                  {CATEGORIES.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => setActiveCategory(cat.id)}
-                      className={`px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                        activeCategory === cat.id
-                          ? "bg-white text-black"
-                          : "bg-white/10 text-white/70 hover:bg-white/20"
-                      }`}
-                    >
-                      {cat.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Мобайл: только текущая категория, по тапу — раскрывается вниз */}
-              <div className="md:hidden pointer-events-auto px-4 pb-2 relative">
+              {/* Категории — единый стиль на ПК и телефоне: компактная кнопка с раскрывающейся панелью */}
+              <div className="pointer-events-auto px-4 pb-2 relative">
                 <button
                   onClick={() => setMobileCatOpen((v) => !v)}
                   className="px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap bg-white text-black flex items-center gap-1"
@@ -169,7 +150,7 @@ const Index = () => {
                   <Icon name={mobileCatOpen ? "ChevronUp" : "ChevronDown"} size={14} />
                 </button>
                 {mobileCatOpen && (
-                  <div className="absolute left-4 right-4 top-full mt-1 bg-black/90 backdrop-blur rounded-2xl p-2 max-h-[60vh] overflow-y-auto z-40 border border-white/10">
+                  <div className="absolute left-4 right-4 md:right-auto md:w-[420px] top-full mt-1 bg-black/90 backdrop-blur rounded-2xl p-2 max-h-[60vh] overflow-y-auto z-40 border border-white/10">
                     <div className="flex flex-wrap gap-2">
                       {CATEGORIES.map((cat) => (
                         <button
