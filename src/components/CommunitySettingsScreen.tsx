@@ -1,37 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
-
-interface ContactUser {
-  id: string;
-  name: string;
-  avatar: string;
-  online: boolean;
-}
-
-interface JoinRequest {
-  id: number;
-  user_id: string;
-  user_name: string;
-  avatar: string;
-  created_at: string | null;
-}
-
-const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
-const CATEGORIES = ["Фото", "Путешествия", "Спорт", "Игры", "Еда", "Музыка", "Другое"];
-
-interface Community {
-  id: string;
-  name: string;
-  description: string;
-  type: "open" | "closed";
-  category: string;
-  img: string;
-  members: number;
-  joined: boolean;
-  is_admin?: boolean;
-  creator_id?: string;
-}
+import SettingsHeader from "./community-settings/SettingsHeader";
+import SettingsForm from "./community-settings/SettingsForm";
+import InviteModal from "./community-settings/InviteModal";
+import RequestsModal from "./community-settings/RequestsModal";
+import { API, Community, ContactUser, JoinRequest } from "./community-settings/types";
 
 interface Props {
   community: Community;
@@ -139,11 +112,7 @@ const CommunitySettingsScreen = ({ community, onBack, onUpdated, onDeleted }: Pr
     copyLink();
   };
 
-  const filteredContacts = contacts.filter((c) =>
-    !inviteSearch.trim() ? true : c.name.toLowerCase().includes(inviteSearch.trim().toLowerCase()),
-  );
-
-  const isOwner = user && community.creator_id === user.id;
+  const isOwner = !!(user && community.creator_id === user.id);
 
   const loadRequests = async () => {
     if (!user || !isOwner) return;
@@ -301,316 +270,58 @@ const CommunitySettingsScreen = ({ community, onBack, onUpdated, onDeleted }: Pr
 
   return (
     <div className="h-full bg-black flex flex-col overflow-hidden">
-      <div className="flex items-center justify-between px-4 pt-14 pb-3">
-        <div className="flex items-center gap-2">
-          <button onClick={onBack}>
-            <Icon name="ChevronLeft" size={24} className="text-white" />
-          </button>
-          <h2 className="text-white font-bold text-xl">Настройки</h2>
-        </div>
-        {isOwner && (
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-[#fe2c55] px-4 py-1.5 rounded-full text-white text-xs font-bold disabled:opacity-40"
-          >
-            {saving ? "Сохраняем..." : "Сохранить"}
-          </button>
-        )}
-      </div>
+      <SettingsHeader isOwner={isOwner} saving={saving} onBack={onBack} onSave={handleSave} />
 
-      <div className="flex-1 overflow-y-scroll px-4 pb-28 flex flex-col gap-4" style={{ scrollbarWidth: "none" }}>
-        <div className="relative h-40 rounded-2xl overflow-hidden bg-[#111] border border-white/10">
-          {displayImg ? (
-            <img src={displayImg} className="w-full h-full object-cover" alt={name} />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-[#fe2c55]/30 to-[#8b5cf6]/30" />
-          )}
-          {isOwner && (
-            <button
-              onClick={handlePickImage}
-              className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm px-3 py-2 rounded-full flex items-center gap-1.5"
-            >
-              <Icon name="Camera" size={14} className="text-white" />
-              <span className="text-white text-xs font-semibold">Изменить фото</span>
-            </button>
-          )}
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label className="text-white/50 text-xs font-semibold uppercase tracking-wide">Название</label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            disabled={!isOwner}
-            placeholder="Название сообщества"
-            className="bg-[#111] rounded-xl px-3 py-3 text-white text-sm outline-none placeholder-zinc-500 border border-white/10 disabled:opacity-60"
-            maxLength={80}
-          />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label className="text-white/50 text-xs font-semibold uppercase tracking-wide">Описание</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            disabled={!isOwner}
-            placeholder="О чём это сообщество..."
-            rows={3}
-            className="bg-[#111] rounded-xl px-3 py-3 text-white text-sm outline-none placeholder-zinc-500 border border-white/10 resize-none disabled:opacity-60"
-            maxLength={500}
-          />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label className="text-white/50 text-xs font-semibold uppercase tracking-wide">Тип</label>
-          <div className="flex gap-2">
-            {(["open", "closed"] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => isOwner && setType(t)}
-                disabled={!isOwner}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-60 ${
-                  type === t ? "bg-[#fe2c55] text-white" : "bg-white/8 text-white/50"
-                }`}
-              >
-                <Icon name={t === "open" ? "Globe" : "Lock"} size={14} />
-                {t === "open" ? "Открытое" : "Закрытое"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label className="text-white/50 text-xs font-semibold uppercase tracking-wide">Категория</label>
-          <div className="flex gap-2 flex-wrap">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c}
-                onClick={() => isOwner && setCategory(c)}
-                disabled={!isOwner}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all disabled:opacity-60 ${
-                  category === c ? "bg-white text-black" : "bg-white/10 text-white/60"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2 mt-2">
-          <label className="text-white/50 text-xs font-semibold uppercase tracking-wide">Пригласить друзей</label>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowInvite(true)}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-bold"
-            >
-              <Icon name="UserPlus" size={16} />
-              Выбрать друзей
-            </button>
-            <button
-              onClick={shareLink}
-              className="px-4 py-2.5 rounded-xl bg-white/10 text-white text-sm font-semibold flex items-center gap-2"
-              title="Поделиться ссылкой"
-            >
-              <Icon name="Share2" size={16} />
-            </button>
-            <button
-              onClick={copyLink}
-              className="px-4 py-2.5 rounded-xl bg-white/10 text-white text-sm font-semibold flex items-center gap-2"
-              title="Скопировать ссылку"
-            >
-              <Icon name={linkCopied ? "Check" : "Link"} size={16} className={linkCopied ? "text-green-400" : ""} />
-            </button>
-          </div>
-          {linkCopied && (
-            <span className="text-green-400 text-xs">Ссылка скопирована</span>
-          )}
-        </div>
-
-        {isOwner && type === "closed" && (
-          <div className="flex flex-col gap-1.5 mt-2">
-            <label className="text-white/50 text-xs font-semibold uppercase tracking-wide">Заявки на вступление</label>
-            <button
-              onClick={() => setShowRequests(true)}
-              className="flex items-center justify-between bg-[#111] rounded-xl border border-white/10 p-3 hover:bg-white/5 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#8b5cf6]/20 flex items-center justify-center">
-                  <Icon name="UserCheck" size={18} className="text-[#8b5cf6]" />
-                </div>
-                <div className="text-left">
-                  <div className="text-white font-bold text-sm">
-                    {pendingCount > 0 ? `${pendingCount} ${pendingCount === 1 ? "заявка" : pendingCount < 5 ? "заявки" : "заявок"}` : "Нет заявок"}
-                  </div>
-                  <div className="text-white/50 text-xs">Принять или отклонить</div>
-                </div>
-              </div>
-              <Icon name="ChevronRight" size={18} className="text-white/40" />
-            </button>
-          </div>
-        )}
-
-        <div className="flex flex-col gap-1.5 mt-2">
-          <label className="text-white/50 text-xs font-semibold uppercase tracking-wide">Статистика</label>
-          <div className="bg-[#111] rounded-xl border border-white/10 p-3 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#fe2c55]/20 flex items-center justify-center">
-              <Icon name="Users" size={18} className="text-[#fe2c55]" />
-            </div>
-            <div>
-              <div className="text-white font-bold text-sm">{community.members}</div>
-              <div className="text-white/50 text-xs">участников</div>
-            </div>
-          </div>
-        </div>
-
-        {isOwner && (
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="mt-4 flex items-center justify-center gap-2 py-3 rounded-xl bg-red-500/15 border border-red-500/40 text-red-400 text-sm font-bold hover:bg-red-500/25 transition-colors disabled:opacity-40"
-          >
-            <Icon name="Trash2" size={16} />
-            {deleting ? "Удаляем..." : "Удалить сообщество"}
-          </button>
-        )}
-      </div>
+      <SettingsForm
+        community={community}
+        isOwner={isOwner}
+        name={name}
+        setName={setName}
+        description={description}
+        setDescription={setDescription}
+        type={type}
+        setType={setType}
+        category={category}
+        setCategory={setCategory}
+        displayImg={displayImg}
+        fileRef={fileRef}
+        onPickImage={handlePickImage}
+        onImageChange={handleImageChange}
+        linkCopied={linkCopied}
+        onShareLink={shareLink}
+        onCopyLink={copyLink}
+        onShowInvite={() => setShowInvite(true)}
+        pendingCount={pendingCount}
+        onShowRequests={() => setShowRequests(true)}
+        deleting={deleting}
+        onDelete={handleDelete}
+      />
 
       {showInvite && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center">
-          <div className="w-full max-w-md bg-[#111] rounded-t-3xl sm:rounded-3xl border border-white/10 flex flex-col max-h-[85vh]">
-            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/10">
-              <div>
-                <h3 className="text-white font-bold text-base">Пригласить друзей</h3>
-                <p className="text-white/40 text-xs">Выбрано: {selectedIds.length}</p>
-              </div>
-              <button
-                onClick={() => { setShowInvite(false); setSelectedIds([]); setInviteSearch(""); }}
-                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
-              >
-                <Icon name="X" size={16} className="text-white" />
-              </button>
-            </div>
-
-            <div className="px-4 py-3">
-              <div className="relative">
-                <Icon name="Search" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-                <input
-                  value={inviteSearch}
-                  onChange={(e) => setInviteSearch(e.target.value)}
-                  placeholder="Поиск..."
-                  className="w-full bg-zinc-800 rounded-xl pl-9 pr-3 py-2 text-white text-sm outline-none placeholder-zinc-500 border border-white/10"
-                />
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-2 pb-2" style={{ scrollbarWidth: "none" }}>
-              {contactsLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="w-6 h-6 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : filteredContacts.length === 0 ? (
-                <div className="text-center py-12 text-white/40 text-sm">
-                  {inviteSearch ? "Никого не найдено" : "Нет контактов"}
-                </div>
-              ) : (
-                filteredContacts.map((c) => {
-                  const checked = selectedIds.includes(c.id);
-                  return (
-                    <button
-                      key={c.id}
-                      onClick={() => toggleSelect(c.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${checked ? "bg-[#fe2c55]/15" : "hover:bg-white/5"}`}
-                    >
-                      <div className="relative">
-                        {c.avatar ? (
-                          <img src={c.avatar} className="w-10 h-10 rounded-full object-cover" alt={c.name} />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center text-white text-sm font-bold">
-                            {c.name.slice(0, 1).toUpperCase()}
-                          </div>
-                        )}
-                        {c.online && (
-                          <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-[#111]" />
-                        )}
-                      </div>
-                      <span className="flex-1 text-left text-white text-sm">{c.name}</span>
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${checked ? "bg-[#fe2c55] border-[#fe2c55]" : "border-white/30"}`}>
-                        {checked && <Icon name="Check" size={12} className="text-white" />}
-                      </div>
-                    </button>
-                  );
-                })
-              )}
-            </div>
-
-            <div className="p-4 border-t border-white/10">
-              <button
-                onClick={handleInvite}
-                disabled={selectedIds.length === 0 || inviting}
-                className="w-full py-3 rounded-xl bg-[#fe2c55] text-white font-bold text-sm disabled:opacity-40"
-              >
-                {inviting ? "Приглашаем..." : selectedIds.length > 0 ? `Пригласить (${selectedIds.length})` : "Выбери друзей"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <InviteModal
+          contacts={contacts}
+          contactsLoading={contactsLoading}
+          selectedIds={selectedIds}
+          inviteSearch={inviteSearch}
+          setInviteSearch={setInviteSearch}
+          toggleSelect={toggleSelect}
+          onClose={() => {
+            setShowInvite(false);
+            setSelectedIds([]);
+            setInviteSearch("");
+          }}
+          onInvite={handleInvite}
+          inviting={inviting}
+        />
       )}
 
       {showRequests && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center">
-          <div className="w-full max-w-md bg-[#111] rounded-t-3xl sm:rounded-3xl border border-white/10 flex flex-col max-h-[85vh]">
-            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/10">
-              <div>
-                <h3 className="text-white font-bold text-base">Заявки на вступление</h3>
-                <p className="text-white/40 text-xs">Ожидают: {requests.length}</p>
-              </div>
-              <button
-                onClick={() => setShowRequests(false)}
-                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
-              >
-                <Icon name="X" size={16} className="text-white" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-2 pb-4" style={{ scrollbarWidth: "none" }}>
-              {requestsLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="w-6 h-6 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : requests.length === 0 ? (
-                <div className="text-center py-12 text-white/40 text-sm">Пока нет заявок</div>
-              ) : (
-                requests.map((r) => (
-                  <div key={r.id} className="flex items-center gap-3 px-3 py-2.5">
-                    {r.avatar ? (
-                      <img src={r.avatar} className="w-10 h-10 rounded-full object-cover" alt={r.user_name} />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center text-white text-sm font-bold">
-                        {r.user_name.slice(0, 1).toUpperCase()}
-                      </div>
-                    )}
-                    <span className="flex-1 text-white text-sm truncate">{r.user_name}</span>
-                    <button
-                      onClick={() => decideRequest(r.user_id, true)}
-                      className="px-3 py-1.5 rounded-lg bg-[#fe2c55] text-white text-xs font-semibold"
-                    >
-                      Принять
-                    </button>
-                    <button
-                      onClick={() => decideRequest(r.user_id, false)}
-                      className="px-3 py-1.5 rounded-lg bg-white/10 text-white text-xs font-semibold"
-                    >
-                      Отклонить
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
+        <RequestsModal
+          requests={requests}
+          requestsLoading={requestsLoading}
+          onClose={() => setShowRequests(false)}
+          onDecide={decideRequest}
+        />
       )}
     </div>
   );

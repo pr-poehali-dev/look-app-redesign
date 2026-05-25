@@ -11,6 +11,7 @@ import { UserMediaProvider } from "./context/UserMediaContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { UnreadProvider } from "./context/UnreadContext";
 import AuthScreen from "./components/AuthScreen";
+import Landing from "./components/Landing";
 import ResetPasswordScreen from "./components/ResetPasswordScreen";
 import CallScreen from "./components/CallScreen";
 import AutoTranslator from "./components/AutoTranslator";
@@ -42,6 +43,7 @@ const AppContent = () => {
   });
   const [verifyState, setVerifyState] = useState<"loading" | "ok" | "error">("loading");
   const [verifyError, setVerifyError] = useState<string>("");
+  const [authMode, setAuthMode] = useState<"landing" | "login" | "register">("landing");
 
   useEffect(() => {
     if (!verifyToken) return;
@@ -311,7 +313,17 @@ const AppContent = () => {
     );
   }
 
-  if (!user) return <AuthScreen />;
+  if (!user) {
+    if (authMode === "landing") {
+      return (
+        <Landing
+          onLogin={() => setAuthMode("login")}
+          onRegister={() => setAuthMode("register")}
+        />
+      );
+    }
+    return <AuthScreen initialMode={authMode} />;
+  }
 
   return (
     <UserMediaProvider userId={user.id} token={token}>

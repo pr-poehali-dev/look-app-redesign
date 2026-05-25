@@ -2,9 +2,13 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
 
-const AuthScreen = () => {
+interface AuthScreenProps {
+  initialMode?: "login" | "register";
+}
+
+const AuthScreen = ({ initialMode = "login" }: AuthScreenProps = {}) => {
   const { login, register } = useAuth();
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [name, setName] = useState("");
   const [handle, setHandle] = useState("");
   const [email, setEmail] = useState("");
