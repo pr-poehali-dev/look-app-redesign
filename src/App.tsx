@@ -52,8 +52,16 @@ const AppContent = () => {
 
   useEffect(() => {
     const onOpen = () => setShowQrLogin(true);
+    const onApprove = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { code?: string } | null;
+      if (detail?.code) setQrLoginCode(detail.code);
+    };
     window.addEventListener("open-qr-login", onOpen);
-    return () => window.removeEventListener("open-qr-login", onOpen);
+    window.addEventListener("qr-login-approve", onApprove);
+    return () => {
+      window.removeEventListener("open-qr-login", onOpen);
+      window.removeEventListener("qr-login-approve", onApprove);
+    };
   }, []);
   const [verifyState, setVerifyState] = useState<"loading" | "ok" | "error">("loading");
   const [verifyError, setVerifyError] = useState<string>("");

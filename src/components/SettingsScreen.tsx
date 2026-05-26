@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
 import { useSavedList, SavedItem } from "@/hooks/useSaved";
 import SavedItemViewer from "@/components/SavedItemViewer";
+import QrScannerScreen from "@/components/QrScannerScreen";
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -912,6 +913,15 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   if (screen === "languages") return <LanguagesScreen onBack={() => setScreen(null)} />;
   if (screen === "blocked") return <BlockedScreen onBack={() => setScreen(null)} />;
   if (screen === "qr") return <QrScreen onBack={() => setScreen(null)} />;
+  if (screen === "scan_qr") return (
+    <QrScannerScreen
+      onBack={() => setScreen(null)}
+      onCode={(code) => {
+        setScreen(null);
+        window.dispatchEvent(new CustomEvent("qr-login-approve", { detail: { code } }));
+      }}
+    />
+  );
   if (screen === "notifications") return <NotificationsScreen onBack={() => setScreen(null)} />;
   if (screen === "edit_profile") return <EditProfileScreen onBack={() => setScreen(null)} />;
   if (screen === "support") return <SupportScreen onBack={() => setScreen(null)} />;
@@ -981,6 +991,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
         <Row icon="Languages" label="Языки" onPress={() => setScreen("languages")} />
         <Row icon="Ban" label="Заблокированные" onPress={() => setScreen("blocked")} />
         <Row icon="QrCode" label="Мой QR-код" onPress={() => setScreen("qr")} />
+        <Row icon="ScanLine" label="Сканировать QR" onPress={() => setScreen("scan_qr")} />
       </div>
 
       <SectionHeader title="Privacy" />

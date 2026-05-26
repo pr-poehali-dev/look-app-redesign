@@ -48,6 +48,7 @@
     "i18next": "^26.0.10",
     "i18next-browser-languagedetector": "^8.2.1",
     "input-otp": "^1.2.4",
+    "jsqr": "^1.4.0",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
     "qrcode.react": "^4.2.0",
