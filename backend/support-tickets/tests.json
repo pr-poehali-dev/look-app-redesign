@@ -17,9 +17,18 @@
       "name": "Create ticket",
       "method": "POST",
       "path": "/",
-      "body": {"action": "create", "subject": "Тест", "message": "Проверка тикета", "user_email": "test@test.ru"},
+      "body": {"action": "create", "subject": "Тест", "message": "Проверка тикета", "user_email": "test@test.ru", "category": "bug"},
       "expectedStatus": 200,
       "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "List by category",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "list", "category": "bug"},
+      "expectedStatus": 200,
+      "expectedBody": {"tickets": "array"},
       "bodyMatcher": "partial"
     },
     {

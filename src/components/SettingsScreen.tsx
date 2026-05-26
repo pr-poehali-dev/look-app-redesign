@@ -626,8 +626,20 @@ const SubscriptionScreen = ({ onBack }: { onBack: () => void }) => {
 
 const SUPPORT_URL = "https://functions.poehali.dev/c799ab49-0e91-4b94-8ec4-4325db5e1c73";
 
+const SUPPORT_CATEGORIES: { id: string; label: string; icon: string }[] = [
+  { id: "bug", label: "Баг / ошибка", icon: "Bug" },
+  { id: "payment", label: "Оплата", icon: "CreditCard" },
+  { id: "account", label: "Аккаунт", icon: "UserCog" },
+  { id: "idea", label: "Идея", icon: "Lightbulb" },
+  { id: "suggestion", label: "Предложение", icon: "MessageSquarePlus" },
+  { id: "content", label: "Жалоба на контент", icon: "Flag" },
+  { id: "other", label: "Другое", icon: "HelpCircle" },
+];
+
 const SupportScreen = ({ onBack }: { onBack: () => void }) => {
   const { user } = useAuth();
+  const [category, setCategory] = useState("bug");
+  const [categoryOpen, setCategoryOpen] = useState(false);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [fileName, setFileName] = useState("");
@@ -672,6 +684,7 @@ const SupportScreen = ({ onBack }: { onBack: () => void }) => {
         },
         body: JSON.stringify({
           action: "create",
+          category,
           subject: subject.trim(),
           message: message.trim(),
           user_email: user?.email || "",
@@ -687,6 +700,7 @@ const SupportScreen = ({ onBack }: { onBack: () => void }) => {
         setMessage("");
         setFileB64("");
         setFileName("");
+        setCategory("bug");
       } else {
         setError(data.error || "Не удалось отправить. Попробуй позже.");
       }
@@ -723,6 +737,44 @@ const SupportScreen = ({ onBack }: { onBack: () => void }) => {
           </div>
         ) : (
           <div className="m-4 bg-white rounded-2xl p-4 flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wide">Категория</label>
+              <button
+                type="button"
+                onClick={() => setCategoryOpen((v) => !v)}
+                className="bg-gray-100 rounded-xl px-3 py-3 text-left flex items-center gap-2"
+              >
+                <Icon
+                  name={(SUPPORT_CATEGORIES.find((c) => c.id === category)?.icon as "Bug") || "HelpCircle"}
+                  size={18}
+                  className="text-[#8b5cf6]"
+                />
+                <span className="flex-1 text-black text-sm">
+                  {SUPPORT_CATEGORIES.find((c) => c.id === category)?.label || "Другое"}
+                </span>
+                <Icon name={categoryOpen ? "ChevronUp" : "ChevronDown"} size={16} className="text-gray-400" />
+              </button>
+              {categoryOpen && (
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mt-1">
+                  {SUPPORT_CATEGORIES.map((c) => (
+                    <button
+                      type="button"
+                      key={c.id}
+                      onClick={() => {
+                        setCategory(c.id);
+                        setCategoryOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm border-b border-gray-50 last:border-0 ${
+                        category === c.id ? "bg-[#8b5cf6]/10 text-[#8b5cf6] font-semibold" : "text-black hover:bg-gray-50"
+                      }`}
+                    >
+                      <Icon name={c.icon as "Bug"} size={16} />
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-gray-500 text-xs font-semibold uppercase tracking-wide">Тема</label>
               <input

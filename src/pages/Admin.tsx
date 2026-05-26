@@ -1296,13 +1296,25 @@ interface Ticket {
   message: string;
   attachment_url: string | null;
   status: string;
+  category: string;
   created_at: string;
 }
+
+const CATEGORY_META: Record<string, { label: string; icon: string; color: string }> = {
+  bug: { label: "Баг", icon: "Bug", color: "bg-red-500/20 text-red-400" },
+  payment: { label: "Оплата", icon: "CreditCard", color: "bg-emerald-500/20 text-emerald-400" },
+  account: { label: "Аккаунт", icon: "UserCog", color: "bg-blue-500/20 text-blue-400" },
+  idea: { label: "Идея", icon: "Lightbulb", color: "bg-yellow-500/20 text-yellow-400" },
+  suggestion: { label: "Предложение", icon: "MessageSquarePlus", color: "bg-purple-500/20 text-purple-400" },
+  content: { label: "Контент", icon: "Flag", color: "bg-orange-500/20 text-orange-400" },
+  other: { label: "Другое", icon: "HelpCircle", color: "bg-white/10 text-white/70" },
+};
 
 function SupportAdmin() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Ticket | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   const load = async () => {
     setLoading(true);
@@ -1323,6 +1335,16 @@ function SupportAdmin() {
   };
 
   useEffect(() => { load(); }, []);
+
+  const filteredTickets = categoryFilter === "all"
+    ? tickets
+    : tickets.filter((t) => (t.category || "other") === categoryFilter);
+
+  const categoryCounts = tickets.reduce<Record<string, number>>((acc, t) => {
+    const key = t.category || "other";
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
 
   const updateStatus = async (id: number, status: string) => {
     await fetch(SUPPORT_URL, {
@@ -1350,40 +1372,75 @@ function SupportAdmin() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">Обращения в поддержку ({tickets.length})</h2>
+        <h2 className="text-xl font-bold">Обращения в поддержку ({filteredTickets.length}/{tickets.length})</h2>
         <button onClick={load} className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-sm flex items-center gap-2">
           <Icon name="RefreshCw" size={14} /> Обновить
         </button>
       </div>
 
-      {tickets.length === 0 ? (
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setCategoryFilter("all")}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+            categoryFilter === "all" ? "bg-[#fe2c55] text-white" : "bg-white/5 text-white/70 hover:bg-white/10"
+          }`}
+        >
+          Все ({tickets.length})
+        </button>
+        {Object.entries(CATEGORY_META).map(([id, meta]) => {
+          const count = categoryCounts[id] || 0;
+          if (count === 0 && categoryFilter !== id) return null;
+          const active = categoryFilter === id;
+          return (
+            <button
+              key={id}
+              onClick={() => setCategoryFilter(id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+                active ? "bg-[#fe2c55] text-white" : "bg-white/5 text-white/70 hover:bg-white/10"
+              }`}
+            >
+              <Icon name={meta.icon} size={12} />
+              {meta.label} ({count})
+            </button>
+          );
+        })}
+      </div>
+
+      {filteredTickets.length === 0 ? (
         <div className="text-white/40 text-sm bg-zinc-900 border border-white/10 rounded-xl p-8 text-center">
-          Пока нет обращений
+          {tickets.length === 0 ? "Пока нет обращений" : "Нет обращений в этой категории"}
         </div>
       ) : (
         <div className="bg-zinc-900 border border-white/10 rounded-xl divide-y divide-white/5">
-          {tickets.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setSelected(t)}
-              className="w-full flex items-start gap-3 p-4 text-left hover:bg-white/5 transition"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${statusColor[t.status] || "bg-white/10"}`}>
-                    {statusLabel[t.status] || t.status}
-                  </span>
-                  <p className="font-semibold truncate">{t.subject}</p>
+          {filteredTickets.map((t) => {
+            const cat = CATEGORY_META[t.category || "other"] || CATEGORY_META.other;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setSelected(t)}
+                className="w-full flex items-start gap-3 p-4 text-left hover:bg-white/5 transition"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${statusColor[t.status] || "bg-white/10"}`}>
+                      {statusLabel[t.status] || t.status}
+                    </span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 ${cat.color}`}>
+                      <Icon name={cat.icon} size={10} />
+                      {cat.label}
+                    </span>
+                    <p className="font-semibold truncate">{t.subject}</p>
+                  </div>
+                  <p className="text-white/60 text-sm truncate">
+                    {t.user_name || "Аноним"} {t.user_email && `· ${t.user_email}`}
+                  </p>
+                  <p className="text-white/40 text-xs mt-0.5">{new Date(t.created_at).toLocaleString("ru-RU")}</p>
                 </div>
-                <p className="text-white/60 text-sm truncate">
-                  {t.user_name || "Аноним"} {t.user_email && `· ${t.user_email}`}
-                </p>
-                <p className="text-white/40 text-xs mt-0.5">{new Date(t.created_at).toLocaleString("ru-RU")}</p>
-              </div>
-              {t.attachment_url && <Icon name="Paperclip" size={16} className="text-white/40 mt-1" />}
-              <Icon name="ChevronRight" size={18} className="text-white/30" />
-            </button>
-          ))}
+                {t.attachment_url && <Icon name="Paperclip" size={16} className="text-white/40 mt-1" />}
+                <Icon name="ChevronRight" size={18} className="text-white/30" />
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -1392,6 +1449,17 @@ function SupportAdmin() {
           <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="p-5 border-b border-white/10 flex items-start justify-between gap-3">
               <div>
+                <div className="flex items-center gap-2 mb-2">
+                  {(() => {
+                    const cat = CATEGORY_META[selected.category || "other"] || CATEGORY_META.other;
+                    return (
+                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold flex items-center gap-1 ${cat.color}`}>
+                        <Icon name={cat.icon} size={11} />
+                        {cat.label}
+                      </span>
+                    );
+                  })()}
+                </div>
                 <h3 className="font-bold text-lg">{selected.subject}</h3>
                 <p className="text-white/50 text-sm mt-1">
                   {selected.user_name || "Аноним"} {selected.user_email && `· ${selected.user_email}`}

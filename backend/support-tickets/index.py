@@ -52,7 +52,18 @@ def _upload_to_s3(data_b64: str, filename: str) -> str:
         return ''
 
 
-def _notify_email(subject: str, message: str, user_name: str, user_email: str, attachment_url: str) -> None:
+CATEGORY_LABELS = {
+    'bug': 'Баг',
+    'payment': 'Оплата',
+    'account': 'Аккаунт',
+    'idea': 'Идея',
+    'suggestion': 'Предложение',
+    'content': 'Контент',
+    'other': 'Другое',
+}
+
+
+def _notify_email(subject: str, message: str, user_name: str, user_email: str, attachment_url: str, category: str = 'other') -> None:
     host = os.environ.get('SMTP_HOST', '').strip()
     user = os.environ.get('SMTP_USER', '').strip()
     password = os.environ.get('SMTP_PASSWORD', '')
@@ -69,6 +80,7 @@ def _notify_email(subject: str, message: str, user_name: str, user_email: str, a
 <table width='560' style='background:#fff;border-radius:12px;padding:24px;max-width:560px'>
 <tr><td>
 <h2 style='margin:0 0 12px;color:#111'>Новое обращение в поддержку</h2>
+<p><b>Категория:</b> {CATEGORY_LABELS.get(category, 'Другое')}</p>
 <p><b>Тема:</b> {safe_subject}</p>
 <p><b>От:</b> {user_name or '—'} ({user_email or '—'})</p>
 <p><b>Сообщение:</b></p>
@@ -77,13 +89,14 @@ def _notify_email(subject: str, message: str, user_name: str, user_email: str, a
 </td></tr></table></body></html>"""
     text_body = (
         f'Новое обращение в поддержку\n\n'
+        f'Категория: {CATEGORY_LABELS.get(category, "Другое")}\n'
         f'Тема: {safe_subject}\n'
         f'От: {user_name or "—"} ({user_email or "—"})\n\n'
         f'{message}\n\n'
         + (f'Файл: {attachment_url}\n' if attachment_url else '')
     )
     msg = MIMEMultipart('alternative')
-    msg['Subject'] = f'[Look Support] {safe_subject}'
+    msg['Subject'] = f'[Look Support][{CATEGORY_LABELS.get(category, "Другое")}] {safe_subject}'
     msg['From'] = formataddr(('Look Support', user))
     msg['To'] = to_addr
     msg['Reply-To'] = user_email or user
@@ -140,31 +153,44 @@ def handler(event: dict, context) -> dict:
             user_email = (body.get('user_email') or '').strip()
             file_b64 = body.get('file_base64') or ''
             file_name = body.get('file_name') or ''
+            category = (body.get('category') or 'other').strip().lower()
+            allowed_categories = {'bug', 'payment', 'account', 'idea', 'suggestion', 'content', 'other'}
+            if category not in allowed_categories:
+                category = 'other'
             if not subject or not message:
                 return err('Заполни тему и сообщение')
             attachment_url = ''
             if file_b64:
                 attachment_url = _upload_to_s3(file_b64, file_name)
             cur.execute(
-                "INSERT INTO support_tickets (user_id, user_name, user_email, subject, message, attachment_url) "
-                "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
-                (user_id or None, user_name or None, user_email or None, subject, message, attachment_url or None),
+                "INSERT INTO support_tickets (user_id, user_name, user_email, subject, message, attachment_url, category) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id",
+                (user_id or None, user_name or None, user_email or None, subject, message, attachment_url or None, category),
             )
             ticket_id = cur.fetchone()[0]
             conn.commit()
-            _notify_email(subject, message, user_name, user_email, attachment_url)
+            _notify_email(subject, message, user_name, user_email, attachment_url, category)
             return ok({'ok': True, 'id': ticket_id})
 
         if action == 'list':
-            cur.execute(
-                "SELECT id, user_id, user_name, user_email, subject, message, attachment_url, status, created_at "
-                "FROM support_tickets ORDER BY id DESC LIMIT 200"
-            )
+            category_filter = (body.get('category') or '').strip().lower()
+            if category_filter and category_filter != 'all':
+                cur.execute(
+                    "SELECT id, user_id, user_name, user_email, subject, message, attachment_url, status, category, created_at "
+                    "FROM support_tickets WHERE category = %s ORDER BY id DESC LIMIT 200",
+                    (category_filter,),
+                )
+            else:
+                cur.execute(
+                    "SELECT id, user_id, user_name, user_email, subject, message, attachment_url, status, category, created_at "
+                    "FROM support_tickets ORDER BY id DESC LIMIT 200"
+                )
             items = [
                 {
                     'id': r[0], 'user_id': r[1], 'user_name': r[2], 'user_email': r[3],
                     'subject': r[4], 'message': r[5], 'attachment_url': r[6],
-                    'status': r[7], 'created_at': r[8].isoformat() if r[8] else None,
+                    'status': r[7], 'category': r[8] or 'other',
+                    'created_at': r[9].isoformat() if r[9] else None,
                 }
                 for r in cur.fetchall()
             ]
