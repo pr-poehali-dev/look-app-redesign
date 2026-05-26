@@ -13,6 +13,8 @@ import { UnreadProvider } from "./context/UnreadContext";
 import AuthScreen from "./components/AuthScreen";
 import Landing from "./components/Landing";
 import ResetPasswordScreen from "./components/ResetPasswordScreen";
+import QrLoginScreen from "./components/QrLoginScreen";
+import QrApproveScreen from "./components/QrApproveScreen";
 import CallScreen from "./components/CallScreen";
 import AutoTranslator from "./components/AutoTranslator";
 import Icon from "@/components/ui/icon";
@@ -41,6 +43,18 @@ const AppContent = () => {
     const params = new URLSearchParams(window.location.search);
     return params.get("verify_token");
   });
+  const [qrLoginCode, setQrLoginCode] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const params = new URLSearchParams(window.location.search);
+    return params.get("qr_login");
+  });
+  const [showQrLogin, setShowQrLogin] = useState(false);
+
+  useEffect(() => {
+    const onOpen = () => setShowQrLogin(true);
+    window.addEventListener("open-qr-login", onOpen);
+    return () => window.removeEventListener("open-qr-login", onOpen);
+  }, []);
   const [verifyState, setVerifyState] = useState<"loading" | "ok" | "error">("loading");
   const [verifyError, setVerifyError] = useState<string>("");
   const [authMode, setAuthMode] = useState<"landing" | "login" | "register">("landing");
@@ -299,6 +313,22 @@ const AppContent = () => {
         </div>
       </div>
     );
+  }
+
+  if (qrLoginCode) {
+    return (
+      <QrApproveScreen
+        code={qrLoginCode}
+        onDone={() => {
+          setQrLoginCode(null);
+          window.history.replaceState({}, "", window.location.pathname);
+        }}
+      />
+    );
+  }
+
+  if (showQrLogin && !user) {
+    return <QrLoginScreen onBack={() => setShowQrLogin(false)} />;
   }
 
   const isAdminRoute = typeof window !== "undefined" && window.location.pathname.startsWith("/admin");

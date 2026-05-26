@@ -181,6 +181,23 @@ const AuthScreen = ({ initialMode = "login" }: AuthScreenProps = {}) => {
           {loading ? "Загрузка..." : mode === "login" ? "Войти" : "Создать аккаунт"}
         </button>
 
+        {mode === "login" && (
+          <>
+            <div className="flex items-center gap-3 my-1">
+              <div className="flex-1 h-px bg-gray-200" />
+              <span className="text-gray-400 text-xs">или</span>
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent("open-qr-login"))}
+              className="w-full py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-black font-semibold text-sm flex items-center justify-center gap-2"
+            >
+              <Icon name="QrCode" size={18} />
+              Войти по QR-коду
+            </button>
+          </>
+        )}
+
       </div>
 
       {showForgot && (

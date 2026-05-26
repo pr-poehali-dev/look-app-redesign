@@ -136,6 +136,77 @@ def handler(event: dict, context) -> dict:
             links_val = row[7] if row[7] is not None else []
             return ok({'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'email': row[3], 'avatar': row[4], 'phone': row[5], 'gender': row[6], 'links': links_val}})
 
+        if action == 'qr_create':
+            code = secrets.token_urlsafe(16)
+            conn = get_conn(); cur = conn.cursor()
+            try:
+                cur.execute("DELETE FROM qr_login_sessions WHERE created_at < NOW() - INTERVAL '15 minutes'")
+                cur.execute("INSERT INTO qr_login_sessions (code, status) VALUES (%s, 'pending')", (code,))
+                conn.commit()
+            finally:
+                cur.close(); conn.close()
+            return ok({'code': code, 'expires_in': 600})
+
+        if action == 'qr_status':
+            code = (body.get('code') or '').strip()
+            if not code: return err('code обязателен')
+            conn = get_conn(); cur = conn.cursor()
+            try:
+                cur.execute("SELECT status, user_id, token, created_at FROM qr_login_sessions WHERE code=%s", (code,))
+                row = cur.fetchone()
+                if not row:
+                    return ok({'status': 'not_found'})
+                status, uid, tok, created_at = row
+                if status == 'approved' and uid and tok:
+                    cur.execute("SELECT id,name,handle,email,avatar,phone,gender,links FROM app_users WHERE id=%s", (uid,))
+                    u = cur.fetchone()
+                    cur.execute("UPDATE qr_login_sessions SET status='used' WHERE code=%s", (code,))
+                    conn.commit()
+                    if not u: return ok({'status': 'error'})
+                    links_val = u[7] if u[7] is not None else []
+                    return ok({
+                        'status': 'approved',
+                        'token': tok,
+                        'user': {'id': u[0], 'name': u[1], 'handle': u[2], 'email': u[3], 'avatar': u[4], 'phone': u[5], 'gender': u[6], 'links': links_val}
+                    })
+                return ok({'status': status})
+            finally:
+                cur.close(); conn.close()
+
+        if action == 'qr_approve':
+            code = (body.get('code') or '').strip()
+            user_token = (body.get('token') or '').strip()
+            if not code or not user_token: return err('code и token обязательны')
+            conn = get_conn(); cur = conn.cursor()
+            try:
+                cur.execute("SELECT id FROM app_users WHERE token=%s", (user_token,))
+                u = cur.fetchone()
+                if not u: return err('Токен недействителен', 401)
+                cur.execute("SELECT status, created_at FROM qr_login_sessions WHERE code=%s", (code,))
+                row = cur.fetchone()
+                if not row: return err('Код не найден', 404)
+                status, _ = row
+                if status != 'pending': return err('Код уже использован', 400)
+                cur.execute(
+                    "UPDATE qr_login_sessions SET status='approved', user_id=%s, token=%s, approved_at=NOW() WHERE code=%s",
+                    (u[0], user_token, code)
+                )
+                conn.commit()
+            finally:
+                cur.close(); conn.close()
+            return ok({'status': 'approved'})
+
+        if action == 'qr_reject':
+            code = (body.get('code') or '').strip()
+            if not code: return err('code обязателен')
+            conn = get_conn(); cur = conn.cursor()
+            try:
+                cur.execute("UPDATE qr_login_sessions SET status='rejected' WHERE code=%s AND status='pending'", (code,))
+                conn.commit()
+            finally:
+                cur.close(); conn.close()
+            return ok({'status': 'rejected'})
+
         if action == 'get_public_profile':
             handle = (body.get('handle') or '').strip().lstrip('@')
             if not handle:

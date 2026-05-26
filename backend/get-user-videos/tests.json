@@ -48,6 +48,30 @@
       "body": {"action": "get_public_profile", "handle": "no_such_user_xyz_123"},
       "expectedStatus": 200,
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "QR create session",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "qr_create"},
+      "expectedStatus": 200,
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "QR status not found",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "qr_status", "code": "nonexistent_code_xyz"},
+      "expectedStatus": 200,
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "QR approve bad token",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "qr_approve", "code": "any", "token": "bad_token_xyz"},
+      "expectedStatus": 401,
+      "bodyMatcher": "partial"
     }
   ]
 }
