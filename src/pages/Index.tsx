@@ -75,10 +75,10 @@ const Index = () => {
 
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-[240px] xl:w-[280px] h-full border-r border-white/8 bg-black flex-shrink-0 z-40">
-        <div className="px-6 pt-6 pb-4">
-          <span className="font-bold text-white text-2xl tracking-tight">Лоок</span>
+        <div className="px-6 pt-4 pb-2">
+          <span className="font-bold text-white text-xl tracking-tight">Лоок</span>
         </div>
-        <nav className="flex-1 flex flex-col gap-1 px-3">
+        <nav className="flex-1 flex flex-col gap-0.5 px-3 overflow-y-auto min-h-0">
           {TABS.map((tab) => {
             const active = activeTab === tab.id && tab.id !== "add";
             const isAdd = tab.id === "add";
@@ -86,23 +86,23 @@ const Index = () => {
               <button
                 key={tab.id}
                 onClick={() => isAdd ? setShowCamera(true) : setActiveTab(tab.id)}
-                className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-colors ${
+                className={`flex items-center gap-4 px-4 py-2 rounded-xl transition-colors ${
                   active ? "bg-white/10" : "hover:bg-white/5"
                 }`}
               >
                 {isAdd ? (
-                  <div className="relative flex items-center h-7 w-10">
-                    <div className="w-7 h-6 rounded-md bg-[#61d4f0] absolute left-0" />
-                    <div className="w-7 h-6 rounded-md bg-[#fe2c55] absolute right-0" />
-                    <div className="w-7 h-6 rounded-md bg-white flex items-center justify-center relative z-10 mx-auto">
-                      <Icon name="Plus" size={16} className="text-black" />
+                  <div className="relative flex items-center h-6 w-9">
+                    <div className="w-6 h-5 rounded-md bg-[#61d4f0] absolute left-0" />
+                    <div className="w-6 h-5 rounded-md bg-[#fe2c55] absolute right-0" />
+                    <div className="w-6 h-5 rounded-md bg-white flex items-center justify-center relative z-10 mx-auto">
+                      <Icon name="Plus" size={14} className="text-black" />
                     </div>
                   </div>
                 ) : (
                   <div className="relative">
                     <Icon
                       name={tab.icon as "Home"}
-                      size={26}
+                      size={22}
                       className={active ? "text-white" : "text-white/80"}
                     />
                     {tab.id === "messages" && totalUnread > 0 && (
@@ -114,43 +114,43 @@ const Index = () => {
                     )}
                   </div>
                 )}
-                <span className={`text-base ${active ? "text-white font-bold" : "text-white/90"}`}>
+                <span className={`text-sm ${active ? "text-white font-bold" : "text-white/90"}`}>
                   {isAdd ? "Создать" : tab.label}
                 </span>
               </button>
             );
           })}
-        </nav>
-        <div className="px-3 py-1 flex flex-col gap-1">
           <button
             onClick={() => setDesktopOverlay("support")}
-            className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-left"
+            className="flex items-center gap-4 px-4 py-2 rounded-xl hover:bg-white/5 transition-colors text-left"
           >
-            <Icon name="LifeBuoy" size={26} className="text-white/80" />
-            <span className="text-base text-white/90">Поддержка</span>
+            <Icon name="LifeBuoy" size={22} className="text-white/80" />
+            <span className="text-sm text-white/90">Поддержка</span>
           </button>
           <button
             onClick={() => setDesktopOverlay("terms")}
-            className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-left"
+            className="flex items-center gap-4 px-4 py-2 rounded-xl hover:bg-white/5 transition-colors text-left"
           >
-            <Icon name="FileText" size={26} className="text-white/80" />
-            <span className="text-base text-white/90">Условия использования</span>
+            <Icon name="FileText" size={22} className="text-white/80" />
+            <span className="text-sm text-white/90">Условия использования</span>
           </button>
           <button
             onClick={() => setDesktopOverlay("privacy")}
-            className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-left"
+            className="flex items-center gap-4 px-4 py-2 rounded-xl hover:bg-white/5 transition-colors text-left"
           >
-            <Icon name="ShieldCheck" size={26} className="text-white/80" />
-            <span className="text-base text-white/90">Политика конфиденциальности</span>
+            <Icon name="ShieldCheck" size={22} className="text-white/80" />
+            <span className="text-sm text-white/90">Политика конфиденциальности</span>
           </button>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-left"
+            className="flex items-center gap-4 px-4 py-2 rounded-xl hover:bg-white/5 transition-colors text-left"
           >
-            <Icon name="LogOut" size={26} className="text-[#fe2c55]" />
-            <span className="text-base text-[#fe2c55]">Выйти</span>
+            <Icon name="LogOut" size={22} className="text-[#fe2c55]" />
+            <span className="text-sm text-[#fe2c55]">Выйти</span>
           </button>
-          <p className="text-white/40 text-[11px] leading-relaxed px-4 pt-3">© Лоок 2026</p>
+        </nav>
+        <div className="px-6 py-2 flex-shrink-0">
+          <p className="text-white/40 text-[11px] leading-relaxed">© Лоок 2026</p>
         </div>
       </aside>
 
