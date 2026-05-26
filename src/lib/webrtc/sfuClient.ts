@@ -177,6 +177,14 @@ export class SfuClient {
     }
   }
 
+  async replaceVideoTrack(track: MediaStreamTrack): Promise<void> {
+    for (const [, p] of this.producers) {
+      if (p.kind === 'video') {
+        await p.replaceTrack({ track });
+      }
+    }
+  }
+
   close(): void {
     for (const [, c] of this.consumers) c.close();
     for (const [, p] of this.producers) p.close();

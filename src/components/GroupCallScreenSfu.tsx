@@ -13,8 +13,10 @@ interface Props {
 }
 
 const GroupCallScreenSfu = ({ roomId, roomName, mode, myId, myName, token, onEnd }: Props) => {
-  const { localStream, peers, connected, error, muted, cameraOff, toggleMute, toggleCamera, leave } =
-    useSfuCall({ userId: myId, token, roomId, mode, enabled: true });
+  const {
+    localStream, peers, connected, error, muted, cameraOff,
+    hasMultipleCameras, switchingCamera, toggleMute, toggleCamera, switchCamera, leave,
+  } = useSfuCall({ userId: myId, token, roomId, mode, enabled: true });
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const [seconds, setSeconds] = useState(0);
@@ -144,6 +146,20 @@ const GroupCallScreenSfu = ({ roomId, roomName, mode, myId, myName, token, onEnd
               size={22}
               className={cameraOff ? 'text-red-400' : 'text-white'}
             />
+          </button>
+        )}
+        {mode === 'video' && hasMultipleCameras && (
+          <button
+            onClick={switchCamera}
+            disabled={switchingCamera || cameraOff}
+            title="Сменить камеру"
+            className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center transition-colors disabled:opacity-40"
+          >
+            {switchingCamera ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Icon name="SwitchCamera" size={22} className="text-white" />
+            )}
           </button>
         )}
         <button

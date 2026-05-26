@@ -25,6 +25,9 @@ export function useSfuCall({ userId, token, roomId, mode, enabled }: Options) {
   const [error, setError] = useState<string | null>(null);
   const [muted, setMuted] = useState(false);
   const [cameraOff, setCameraOff] = useState(false);
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+  const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
+  const [switchingCamera, setSwitchingCamera] = useState(false);
 
   useEffect(() => {
     if (!enabled || !userId || !roomId) return;
@@ -56,6 +59,13 @@ export function useSfuCall({ userId, token, roomId, mode, enabled }: Options) {
         applyAudioTrackTuning(stream);
         localStreamRef.current = stream;
         setLocalStream(stream);
+
+        // Проверяем сколько камер доступно — для кнопки «Сменить камеру»
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const cams = devices.filter((d) => d.kind === 'videoinput');
+          if (!cancelled) setHasMultipleCameras(cams.length > 1);
+        } catch { /* ignore */ }
 
         const client = new SfuClient({
           userId,
@@ -135,6 +145,43 @@ export function useSfuCall({ userId, token, roomId, mode, enabled }: Options) {
     }
   }, [cameraOff]);
 
+  const switchCamera = useCallback(async () => {
+    if (mode !== 'video' || switchingCamera) return;
+    const next = facingMode === 'user' ? 'environment' : 'user';
+    setSwitchingCamera(true);
+    try {
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: next, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+      const newTrack = newStream.getVideoTracks()[0];
+      if (!newTrack) throw new Error('no video track');
+
+      // Меняем трек у SFU-продьюсера, чтобы собеседники тоже увидели смену камеры
+      if (clientRef.current) {
+        await clientRef.current.replaceVideoTrack(newTrack);
+      }
+
+      // Меняем трек в локальном стриме (для превью «Вы»)
+      if (localStreamRef.current) {
+        const oldTracks = localStreamRef.current.getVideoTracks();
+        oldTracks.forEach((t) => {
+          localStreamRef.current!.removeTrack(t);
+          t.stop();
+        });
+        localStreamRef.current.addTrack(newTrack);
+        // Триггерим перерендер, чтобы <video> обновил кадр
+        setLocalStream(new MediaStream(localStreamRef.current.getTracks()));
+      }
+
+      setFacingMode(next);
+    } catch (e) {
+      console.warn('[useSfuCall] switchCamera failed', e);
+    } finally {
+      setSwitchingCamera(false);
+    }
+  }, [mode, facingMode, switchingCamera]);
+
   const leave = useCallback(() => {
     if (clientRef.current) {
       clientRef.current.close();
@@ -156,8 +203,12 @@ export function useSfuCall({ userId, token, roomId, mode, enabled }: Options) {
     error,
     muted,
     cameraOff,
+    facingMode,
+    hasMultipleCameras,
+    switchingCamera,
     toggleMute,
     toggleCamera,
+    switchCamera,
     leave,
   };
 }
