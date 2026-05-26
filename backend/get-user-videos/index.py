@@ -136,6 +136,20 @@ def handler(event: dict, context) -> dict:
             links_val = row[7] if row[7] is not None else []
             return ok({'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'email': row[3], 'avatar': row[4], 'phone': row[5], 'gender': row[6], 'links': links_val}})
 
+        if action == 'get_public_profile':
+            handle = (body.get('handle') or '').strip().lstrip('@')
+            if not handle:
+                return err('handle обязателен')
+            conn = get_conn(); cur = conn.cursor()
+            try:
+                cur.execute("SELECT id,name,handle,avatar,gender FROM app_users WHERE handle=%s", (handle,))
+                row = cur.fetchone()
+            finally:
+                cur.close(); conn.close()
+            if not row:
+                return ok({'user': None})
+            return ok({'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'avatar': row[3], 'gender': row[4]}})
+
         if action == 'find_by_phones':
             phones_in = body.get('phones') or []
             if not isinstance(phones_in, list) or not phones_in:

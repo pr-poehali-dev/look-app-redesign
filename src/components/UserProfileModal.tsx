@@ -10,12 +10,41 @@ interface Props {
   onClose: () => void;
 }
 
+const PROFILE_URL = "https://functions.poehali.dev/075d6280-020a-48ce-a5e4-64eb3291a01e";
+
+const GENDER_LABELS: Record<string, string> = {
+  male: "Мужской",
+  female: "Женский",
+  other: "Другой",
+  м: "Мужской",
+  ж: "Женский",
+};
+
 const UserProfileModal = ({ handle, onClose }: Props) => {
   const data = getAuthor(handle);
   const { following, toggle: toggleFollow } = useFollowing(handle);
   const realFollowers = useFollowerCount(handle);
   const [tab, setTab] = useState<"media" | "files" | "links">("media");
   const [openedItem, setOpenedItem] = useState<number | null>(null);
+  const [gender, setGender] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(PROFILE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get_public_profile", handle }),
+    })
+      .then((r) => r.json())
+      .then((raw) => {
+        const json = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+        if (!cancelled) setGender(json?.user?.gender || null);
+      })
+      .catch(() => { if (!cancelled) setGender(null); });
+    return () => { cancelled = true; };
+  }, [handle]);
+
+  const genderLabel = gender ? (GENDER_LABELS[gender.toLowerCase()] || gender) : "Не указан";
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -106,12 +135,10 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
           {/* Info section — Telegram style rows */}
           <div className="bg-[#f4f4f5] py-2">
             <div className="bg-white">
-              {data.bio && (
-                <div className="px-4 py-3 border-b border-gray-100">
-                  <p className="text-black text-base leading-snug whitespace-pre-line">{data.bio}</p>
-                  <p className="text-gray-500 text-xs mt-1">био</p>
-                </div>
-              )}
+              <div className="px-4 py-3 border-b border-gray-100">
+                <p className="text-black text-base leading-snug">{genderLabel}</p>
+                <p className="text-gray-500 text-xs mt-1">пол</p>
+              </div>
               <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                 <div>
                   <p className="text-[#2AABEE] text-base">@{data.handle}</p>
