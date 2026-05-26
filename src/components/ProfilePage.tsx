@@ -426,11 +426,20 @@ const ProfilePage = () => {
           Настройки
         </button>
         <button
-          onClick={() => window.dispatchEvent(new CustomEvent("open-settings-screen", { detail: { screen: "scan_qr" } }) ) || setShowSettings(true)}
+          type="button"
+          onClick={() => {
+            setShowSettings(true);
+            // Дожидаемся монтирования SettingsScreen, иначе событие будет потеряно
+            const fire = () => window.dispatchEvent(new CustomEvent("open-settings-screen", { detail: { screen: "scan_qr" } }));
+            setTimeout(fire, 0);
+            setTimeout(fire, 60);
+            setTimeout(fire, 200);
+          }}
           title="Сканировать QR"
-          className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center"
+          aria-label="Сканировать QR"
+          className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center active:scale-95 transition-transform"
         >
-          <Icon name="ScanLine" size={18} className="text-white" />
+          <Icon name="ScanLine" size={18} className="text-white pointer-events-none" />
         </button>
         <button onClick={logout} className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gray-100 flex items-center justify-center">
           <Icon name="LogOut" size={18} className="text-red-500" />
