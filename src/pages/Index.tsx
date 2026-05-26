@@ -9,6 +9,7 @@ import CameraScreen from "@/components/CameraScreen";
 import MessagesScreen from "@/components/MessagesScreen";
 import UserProfileModal from "@/components/UserProfileModal";
 import { useUnread } from "@/context/UnreadContext";
+import { useAuth } from "@/context/AuthContext";
 
 const TABS = [
   { id: "home", icon: "Home", label: "Главная" },
@@ -33,6 +34,18 @@ const Index = () => {
   const [profileHandle, setProfileHandle] = useState<string | null>(null);
   const [pendingDirectHandle, setPendingDirectHandle] = useState<string | null>(null);
   const { totalUnread } = useUnread();
+  const { logout } = useAuth();
+
+  const openSettingsScreen = (screen: string) => {
+    setActiveTab("profile");
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("open-settings-screen", { detail: { screen } }));
+    }, 50);
+  };
+
+  const handleLogout = () => {
+    if (confirm("Выйти из аккаунта?")) logout();
+  };
 
   useEffect(() => {
     const onOpen = (e: Event) => {
@@ -113,8 +126,36 @@ const Index = () => {
             );
           })}
         </nav>
-        <div className="px-6 py-4 border-t border-white/8">
-          <p className="text-white/40 text-xs leading-relaxed">© Лоок 2026</p>
+        <div className="border-t border-white/8 px-3 py-3 flex flex-col gap-0.5">
+          <button
+            onClick={() => openSettingsScreen("support")}
+            className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left"
+          >
+            <Icon name="LifeBuoy" size={20} className="text-white/80" />
+            <span className="text-sm text-white/90">Поддержка</span>
+          </button>
+          <button
+            onClick={() => openSettingsScreen("terms")}
+            className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left"
+          >
+            <Icon name="FileText" size={20} className="text-white/80" />
+            <span className="text-sm text-white/90">Условия использования</span>
+          </button>
+          <button
+            onClick={() => openSettingsScreen("privacy")}
+            className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left"
+          >
+            <Icon name="ShieldCheck" size={20} className="text-white/80" />
+            <span className="text-sm text-white/90">Политика конфиденциальности</span>
+          </button>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left"
+          >
+            <Icon name="LogOut" size={20} className="text-[#fe2c55]" />
+            <span className="text-sm text-[#fe2c55] font-semibold">Выйти</span>
+          </button>
+          <p className="text-white/40 text-[11px] leading-relaxed px-4 pt-3">© Лоок 2026</p>
         </div>
       </aside>
 

@@ -704,7 +704,7 @@ const SupportScreen = ({ onBack }: { onBack: () => void }) => {
           <button onClick={onBack} className="p-1">
             <Icon name="ArrowLeft" size={22} className="text-black" />
           </button>
-          <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Помощь и поддержка</span>
+          <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Поддержка</span>
         </div>
 
         {sent ? (
@@ -804,6 +804,14 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   const [whoSees, setWhoSees] = useState("Все");
   const [showWhoSees, setShowWhoSees] = useState(false);
   const [screen, setScreen] = useState<string | null>(null);
+  useEffect(() => {
+    const onOpenScreen = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { screen?: string } | null;
+      if (detail?.screen) setScreen(detail.screen);
+    };
+    window.addEventListener("open-settings-screen", onOpenScreen);
+    return () => window.removeEventListener("open-settings-screen", onOpenScreen);
+  }, []);
   const [verifyStatus, setVerifyStatus] = useState<"idle" | "loading" | "sent" | "already" | "error">("idle");
   const [emailVerified, setEmailVerified] = useState<boolean | null>(() => {
     if (typeof window === "undefined" || !user?.email) return null;
@@ -964,20 +972,22 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
         <Row icon="Bell" label="Уведомления" onPress={() => setScreen("notifications")} />
       </div>
 
-      <SectionHeader title="General" />
-      <div>
-        <Row icon="LifeBuoy" label="Поддержка" onPress={() => setScreen("support")} />
-        <Row icon="Info" label="Условия использования" onPress={() => setScreen("terms")} />
-        <Row icon="Info" label="Политика конфиденциальности" onPress={() => setScreen("privacy")} />
-        <button
-          onClick={() => {
-            if (confirm("Выйти из аккаунта?")) logout();
-          }}
-          className="w-full flex items-center gap-4 px-4 py-4 md:py-3 bg-white border-b border-gray-100 active:bg-gray-50"
-        >
-          <Icon name="LogOut" size={22} className="text-[#fe2c55] flex-shrink-0" />
-          <span className="flex-1 text-[#fe2c55] font-semibold text-base md:text-sm text-left">Выйти</span>
-        </button>
+      <div className="md:hidden">
+        <SectionHeader title="General" />
+        <div>
+          <Row icon="LifeBuoy" label="Поддержка" onPress={() => setScreen("support")} />
+          <Row icon="Info" label="Условия использования" onPress={() => setScreen("terms")} />
+          <Row icon="Info" label="Политика конфиденциальности" onPress={() => setScreen("privacy")} />
+          <button
+            onClick={() => {
+              if (confirm("Выйти из аккаунта?")) logout();
+            }}
+            className="w-full flex items-center gap-4 px-4 py-4 bg-white border-b border-gray-100 active:bg-gray-50"
+          >
+            <Icon name="LogOut" size={22} className="text-[#fe2c55] flex-shrink-0" />
+            <span className="flex-1 text-[#fe2c55] font-semibold text-base text-left">Выйти</span>
+          </button>
+        </div>
       </div>
 
       <div className="pb-28" />
