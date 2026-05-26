@@ -121,34 +121,34 @@ const Index = () => {
             );
           })}
         </nav>
-        <div className="px-3 py-3 flex flex-col gap-0.5">
+        <div className="px-3 py-1 flex flex-col gap-1">
           <button
             onClick={() => setDesktopOverlay("support")}
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left"
+            className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-left"
           >
-            <Icon name="LifeBuoy" size={20} className="text-white/80" />
-            <span className="text-sm text-white/90">Поддержка</span>
+            <Icon name="LifeBuoy" size={26} className="text-white/80" />
+            <span className="text-base text-white/90">Поддержка</span>
           </button>
           <button
             onClick={() => setDesktopOverlay("terms")}
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left"
+            className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-left"
           >
-            <Icon name="FileText" size={20} className="text-white/80" />
-            <span className="text-sm text-white/90">Условия использования</span>
+            <Icon name="FileText" size={26} className="text-white/80" />
+            <span className="text-base text-white/90">Условия использования</span>
           </button>
           <button
             onClick={() => setDesktopOverlay("privacy")}
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left"
+            className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-left"
           >
-            <Icon name="ShieldCheck" size={20} className="text-white/80" />
-            <span className="text-sm text-white/90">Политика конфиденциальности</span>
+            <Icon name="ShieldCheck" size={26} className="text-white/80" />
+            <span className="text-base text-white/90">Политика конфиденциальности</span>
           </button>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left"
+            className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-left"
           >
-            <Icon name="LogOut" size={20} className="text-[#fe2c55]" />
-            <span className="text-sm text-[#fe2c55] font-semibold">Выйти</span>
+            <Icon name="LogOut" size={26} className="text-[#fe2c55]" />
+            <span className="text-base text-[#fe2c55]">Выйти</span>
           </button>
           <p className="text-white/40 text-[11px] leading-relaxed px-4 pt-3">© Лоок 2026</p>
         </div>
