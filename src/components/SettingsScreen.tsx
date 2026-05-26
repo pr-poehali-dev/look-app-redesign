@@ -997,3 +997,4 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
 };
 
 export default SettingsScreen;
+export { SupportScreen, LegalScreen };

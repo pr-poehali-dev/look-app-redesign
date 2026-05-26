@@ -8,6 +8,7 @@ import ProfilePage from "@/components/ProfilePage";
 import CameraScreen from "@/components/CameraScreen";
 import MessagesScreen from "@/components/MessagesScreen";
 import UserProfileModal from "@/components/UserProfileModal";
+import { SupportScreen, LegalScreen } from "@/components/SettingsScreen";
 import { useUnread } from "@/context/UnreadContext";
 import { useAuth } from "@/context/AuthContext";
 
@@ -35,13 +36,7 @@ const Index = () => {
   const [pendingDirectHandle, setPendingDirectHandle] = useState<string | null>(null);
   const { totalUnread } = useUnread();
   const { logout } = useAuth();
-
-  const openSettingsScreen = (screen: string) => {
-    setActiveTab("profile");
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent("open-settings-screen", { detail: { screen } }));
-    }, 50);
-  };
+  const [desktopOverlay, setDesktopOverlay] = useState<"support" | "terms" | "privacy" | null>(null);
 
   const handleLogout = () => {
     if (confirm("Выйти из аккаунта?")) logout();
@@ -126,23 +121,23 @@ const Index = () => {
             );
           })}
         </nav>
-        <div className="border-t border-white/8 px-3 py-3 flex flex-col gap-0.5">
+        <div className="px-3 py-3 flex flex-col gap-0.5">
           <button
-            onClick={() => openSettingsScreen("support")}
+            onClick={() => setDesktopOverlay("support")}
             className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left"
           >
             <Icon name="LifeBuoy" size={20} className="text-white/80" />
             <span className="text-sm text-white/90">Поддержка</span>
           </button>
           <button
-            onClick={() => openSettingsScreen("terms")}
+            onClick={() => setDesktopOverlay("terms")}
             className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left"
           >
             <Icon name="FileText" size={20} className="text-white/80" />
             <span className="text-sm text-white/90">Условия использования</span>
           </button>
           <button
-            onClick={() => openSettingsScreen("privacy")}
+            onClick={() => setDesktopOverlay("privacy")}
             className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left"
           >
             <Icon name="ShieldCheck" size={20} className="text-white/80" />
@@ -173,6 +168,29 @@ const Index = () => {
         {showCamera && (
           <div className="absolute inset-0 z-50">
             <CameraScreen onClose={() => setShowCamera(false)} />
+          </div>
+        )}
+
+        {/* Desktop info overlays (Support / Terms / Privacy) */}
+        {desktopOverlay && (
+          <div className="absolute inset-0 z-50 bg-gray-100">
+            {desktopOverlay === "support" && <SupportScreen onBack={() => setDesktopOverlay(null)} />}
+            {desktopOverlay === "terms" && (
+              <LegalScreen
+                onBack={() => setDesktopOverlay(null)}
+                title="Условия использования"
+                settingKey="terms_of_use"
+                fallback="Используя приложение Look, вы соглашаетесь с нашими условиями использования."
+              />
+            )}
+            {desktopOverlay === "privacy" && (
+              <LegalScreen
+                onBack={() => setDesktopOverlay(null)}
+                title="Политика конфиденциальности"
+                settingKey="privacy_policy"
+                fallback="Мы уважаем вашу конфиденциальность."
+              />
+            )}
           </div>
         )}
 
