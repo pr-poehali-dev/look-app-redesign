@@ -41,7 +41,38 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
   const [showShare, setShowShare] = useState(false);
   const [copied, setCopied] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [downloading, setDownloading] = useState(false);
+  const [downloadDone, setDownloadDone] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handleDownload = async () => {
+    if (downloading) return;
+    const url = video.image;
+    if (!url) return;
+    setDownloading(true);
+    try {
+      const res = await fetch(url, { mode: "cors" });
+      if (!res.ok) throw new Error("network");
+      const blob = await res.blob();
+      const objUrl = URL.createObjectURL(blob);
+      const ext = (url.split(".").pop() || (video.isVideo ? "mp4" : "jpg")).split("?")[0].slice(0, 5);
+      const safeName = (video.author || video.handle || "look").replace(/[^a-z0-9_-]/gi, "_");
+      const a = document.createElement("a");
+      a.href = objUrl;
+      a.download = `${safeName}-${video.id}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(objUrl), 2000);
+      setDownloadDone(true);
+      setTimeout(() => setDownloadDone(false), 1500);
+    } catch {
+      // Fallback: открываем в новой вкладке — пользователь сохранит вручную
+      window.open(url, "_blank", "noopener");
+    } finally {
+      setDownloading(false);
+    }
+  };
   const parseShortNum = (raw: string | number) => {
     const s = String(raw || "0").trim().toUpperCase();
     if (s.endsWith("K")) return Math.round(parseFloat(s) * 1000) || 0;
@@ -244,15 +275,22 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
 
         {/* Download */}
         <button
-          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); window.open(video.image, '_blank'); }}
-          onClick={() => window.open(video.image, '_blank')}
-          className="flex flex-col items-center gap-1"
+          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); handleDownload(); }}
+          onClick={handleDownload}
+          disabled={downloading}
+          className="flex flex-col items-center gap-1 disabled:opacity-70"
           style={{ touchAction: "manipulation" }}
         >
           <div className="w-11 h-11 rounded-full flex items-center justify-center">
-            <Icon name="Download" size={24} className="text-white" />
+            {downloading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : downloadDone ? (
+              <Icon name="Check" size={24} className="text-green-400" />
+            ) : (
+              <Icon name="Download" size={24} className="text-white" />
+            )}
           </div>
-          <span className="text-white text-xs font-semibold">Скачать</span>
+          <span className="text-white text-xs font-semibold">{downloading ? "..." : downloadDone ? "Готово" : "Скачать"}</span>
         </button>
 
         {/* Report */}
@@ -325,11 +363,17 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
         </button>
 
         {/* Download */}
-        <button onClick={() => window.open(video.image, '_blank')} className="flex flex-col items-center gap-1">
+        <button onClick={handleDownload} disabled={downloading} className="flex flex-col items-center gap-1 disabled:opacity-70">
           <div className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition-colors">
-            <Icon name="Download" size={22} className="text-white" />
+            {downloading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : downloadDone ? (
+              <Icon name="Check" size={22} className="text-green-400" />
+            ) : (
+              <Icon name="Download" size={22} className="text-white" />
+            )}
           </div>
-          <span className="text-white text-xs font-semibold">Скачать</span>
+          <span className="text-white text-xs font-semibold">{downloading ? "..." : downloadDone ? "Готово" : "Скачать"}</span>
         </button>
 
         {/* Report */}
