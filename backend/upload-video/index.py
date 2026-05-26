@@ -2,6 +2,7 @@ import json
 import os
 import base64
 import uuid
+import hashlib
 import boto3
 import psycopg2
 
@@ -39,7 +40,29 @@ def handler(event: dict, context) -> dict:
         }
 
     file_bytes = base64.b64decode(file_data)
-    file_name = f"videos/{uuid.uuid4()}.{ext}"
+    file_hash = hashlib.sha256(file_bytes).hexdigest()[:32]
+
+    # Защита от дублей: тот же user_id + тот же файл за последние 60 секунд = возвращаем существующую запись
+    conn = psycopg2.connect(os.environ['DATABASE_URL'])
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            "SELECT id, url, type FROM videos WHERE user_id=%s AND url LIKE %s AND created_at > NOW() - INTERVAL '60 seconds' ORDER BY id DESC LIMIT 1",
+            (user_id, f'%{file_hash}%')
+        )
+        existing = cur.fetchone()
+        if existing:
+            cur.close()
+            conn.close()
+            return {
+                'statusCode': 200,
+                'headers': {'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'url': existing[1], 'id': existing[0], 'type': existing[2], 'deduped': True})
+            }
+    except Exception:
+        pass
+
+    file_name = f"videos/{file_hash}-{uuid.uuid4().hex[:8]}.{ext}"
 
     s3 = boto3.client(
         's3',
@@ -57,8 +80,6 @@ def handler(event: dict, context) -> dict:
 
     cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{file_name}"
 
-    conn = psycopg2.connect(os.environ['DATABASE_URL'])
-    cur = conn.cursor()
     try:
         cur.execute(
             "INSERT INTO videos (url, author, handle, description, hashtags, category, type, user_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",

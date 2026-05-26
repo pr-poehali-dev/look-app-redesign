@@ -26,7 +26,7 @@ interface Props {
 
 const MediaEditor = ({ onClose, onPublished }: Props) => {
   const { user } = useAuth();
-  const { addMedia } = useUserMedia();
+  const { refreshMedia } = useUserMedia();
   const [clips, setClips] = useState<Clip[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [filter, setFilter] = useState<Filter>("none");
@@ -283,28 +283,32 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
       const reader = new FileReader();
       reader.onload = async () => {
         const base64 = (reader.result as string).split(",")[1];
-        const targets: Array<"home" | "feed"> = destination === "both" ? ["home", "feed"] : [destination];
 
-        for (const target of targets) {
-          await fetch(UPLOAD_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              file: base64,
-              type,
-              ext,
-              category: target === "home" ? category : "feed",
-              description,
-              hashtags,
-              author: user?.name || "Пользователь",
-              handle: user?.handle || user?.name || "user",
-              user_id: user?.id || "anonymous",
-            }),
-          });
-        }
+        // Один POST = одна запись в БД. Если "везде" — категория от Главной,
+        // лента подхватит то же видео по author/handle.
+        const finalCategory =
+          destination === "feed" ? "feed"
+          : destination === "home" ? category
+          : category; // both → используем выбранную категорию
 
-        // Add to own profile stories
-        try { addMedia(file); } catch { /* ignore */ }
+        await fetch(UPLOAD_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            file: base64,
+            type,
+            ext,
+            category: finalCategory,
+            destinations: destination === "both" ? ["home", "feed"] : [destination],
+            description,
+            hashtags,
+            author: user?.name || "Пользователь",
+            handle: user?.handle || user?.name || "user",
+            user_id: user?.id || "anonymous",
+          }),
+        });
+
+        try { await refreshMedia(); } catch { /* ignore */ }
 
         setPublishing(false);
         onPublished();

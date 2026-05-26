@@ -328,7 +328,16 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
       .finally(() => setDbLoaded(true));
   }, [activeCategory]);
 
-  const allVideos = [...userVideoData, ...dbVideos];
+  // Дедупликация: убираем повторы по URL видео, чтобы один ролик не появлялся
+  // дважды (например, из локального состояния и из БД одновременно).
+  const seenUrls = new Set<string>();
+  const allVideos = [...userVideoData, ...dbVideos].filter((v) => {
+    const key = v.image;
+    if (!key) return true;
+    if (seenUrls.has(key)) return false;
+    seenUrls.add(key);
+    return true;
+  });
   const filtered =
     activeCategory === "all"
       ? allVideos

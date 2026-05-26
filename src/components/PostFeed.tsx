@@ -41,7 +41,14 @@ const PostFeed = () => {
             time: formatTime(v.created_at),
           };
         });
-        setPosts([...dbPosts, ...MOCK_POSTS]);
+        const seen = new Set<string>();
+        const deduped = [...dbPosts, ...MOCK_POSTS].filter(p => {
+          if (!p.image) return true;
+          if (seen.has(p.image)) return false;
+          seen.add(p.image);
+          return true;
+        });
+        setPosts(deduped);
       })
       .catch(() => setPosts(MOCK_POSTS))
       .finally(() => setLoading(false));

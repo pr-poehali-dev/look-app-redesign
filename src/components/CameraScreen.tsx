@@ -24,7 +24,7 @@ interface CameraScreenProps {
 }
 
 const CameraScreen = ({ onClose }: CameraScreenProps) => {
-  const { addMedia } = useUserMedia();
+  const { refreshMedia } = useUserMedia();
   const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -63,7 +63,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
     const type = file.type.startsWith("video") ? "video" : "image";
     setUploadedMedia({ url, type });
     setPublished(false);
-    addMedia(file);
+    // Не вызываем addMedia здесь — иначе файл загрузится дважды (при выборе и при публикации).
   };
 
   const handlePublish = async () => {
@@ -80,9 +80,11 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ file: base64, type: file.type, ext, category: destination === "home" ? selectedCategory : "feed", description, hashtags, author: user?.name || "Пользователь", handle: user?.handle || user?.name || "user", user_id: user?.id || "anonymous" }),
         });
-        const data = await res.json();
+        const raw = await res.json();
+        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
         if (data.url) {
           setPublished(true);
+          await refreshMedia();
           setTimeout(() => {
             setUploadedMedia(null);
             setPublished(false);

@@ -425,6 +425,13 @@ const ProfilePage = () => {
         >
           Настройки
         </button>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("open-settings-screen", { detail: { screen: "scan_qr" } }) ) || setShowSettings(true)}
+          title="Сканировать QR"
+          className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center"
+        >
+          <Icon name="ScanLine" size={18} className="text-white" />
+        </button>
         <button onClick={logout} className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gray-100 flex items-center justify-center">
           <Icon name="LogOut" size={18} className="text-red-500" />
         </button>

@@ -11,6 +11,7 @@ interface UserMediaContextType {
   userVideos: UserVideo[];
   addMedia: (file: File) => Promise<void>;
   removeMedia: (id: number) => void;
+  refreshMedia: () => Promise<void>;
   loading: boolean;
   removedIds: Set<number>;
   mediaVersion: number;
@@ -27,16 +28,23 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
   const [removedIds, setRemovedIds] = useState<Set<number>>(new Set());
   const [mediaVersion, setMediaVersion] = useState(0);
 
-  useEffect(() => {
+  const refreshMedia = async () => {
     setLoading(true);
-    fetch(`${USER_VIDEOS_URL}?user_id=${userId}`)
-      .then(r => r.json())
-      .then(raw => {
-        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-        if (data.videos) setUserVideos(data.videos);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    try {
+      const res = await fetch(`${USER_VIDEOS_URL}?user_id=${userId}`);
+      const raw = await res.json();
+      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      if (data.videos) {
+        setUserVideos(data.videos);
+        setMediaVersion(v => v + 1);
+      }
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => {
+    refreshMedia();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   const addMedia = async (file: File) => {
@@ -96,7 +104,7 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
   };
 
   return (
-    <UserMediaContext.Provider value={{ userVideos, addMedia, removeMedia, loading, removedIds, mediaVersion }}>
+    <UserMediaContext.Provider value={{ userVideos, addMedia, removeMedia, refreshMedia, loading, removedIds, mediaVersion }}>
       {children}
     </UserMediaContext.Provider>
   );
