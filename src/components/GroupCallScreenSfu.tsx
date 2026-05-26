@@ -148,11 +148,11 @@ const GroupCallScreenSfu = ({ roomId, roomName, mode, myId, myName, token, onEnd
             />
           </button>
         )}
-        {mode === 'video' && hasMultipleCameras && (
+        {mode === 'video' && (
           <button
             onClick={switchCamera}
             disabled={switchingCamera || cameraOff}
-            title="Сменить камеру"
+            title={hasMultipleCameras ? 'Сменить камеру' : 'Только одна камера'}
             className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center transition-colors disabled:opacity-40"
           >
             {switchingCamera ? (

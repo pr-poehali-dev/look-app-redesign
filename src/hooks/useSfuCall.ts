@@ -28,6 +28,8 @@ export function useSfuCall({ userId, token, roomId, mode, enabled }: Options) {
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
   const [switchingCamera, setSwitchingCamera] = useState(false);
+  const videoDevicesRef = useRef<MediaDeviceInfo[]>([]);
+  const currentDeviceIdRef = useRef<string>('');
 
   useEffect(() => {
     if (!enabled || !userId || !roomId) return;
@@ -60,10 +62,18 @@ export function useSfuCall({ userId, token, roomId, mode, enabled }: Options) {
         localStreamRef.current = stream;
         setLocalStream(stream);
 
-        // Проверяем сколько камер доступно — для кнопки «Сменить камеру»
+        // Запоминаем какое устройство сейчас используется
+        const curTrack = stream.getVideoTracks()[0];
+        if (curTrack) {
+          const settings = curTrack.getSettings();
+          currentDeviceIdRef.current = settings.deviceId || '';
+        }
+
+        // Список всех видео-устройств для кнопки «Сменить камеру»
         try {
           const devices = await navigator.mediaDevices.enumerateDevices();
           const cams = devices.filter((d) => d.kind === 'videoinput');
+          videoDevicesRef.current = cams;
           if (!cancelled) setHasMultipleCameras(cams.length > 1);
         } catch { /* ignore */ }
 
@@ -147,34 +157,90 @@ export function useSfuCall({ userId, token, roomId, mode, enabled }: Options) {
 
   const switchCamera = useCallback(async () => {
     if (mode !== 'video' || switchingCamera) return;
-    const next = facingMode === 'user' ? 'environment' : 'user';
     setSwitchingCamera(true);
     try {
-      const newStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: next, width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false,
-      });
-      const newTrack = newStream.getVideoTracks()[0];
-      if (!newTrack) throw new Error('no video track');
+      // Перечитываем устройства — после разрешения уже есть labels и реальный список
+      let cams = videoDevicesRef.current;
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        cams = devices.filter((d) => d.kind === 'videoinput');
+        videoDevicesRef.current = cams;
+        setHasMultipleCameras(cams.length > 1);
+      } catch { /* ignore */ }
 
-      // Меняем трек у SFU-продьюсера, чтобы собеседники тоже увидели смену камеры
+      // Перед сменой обязательно останавливаем старый трек,
+      // иначе на Windows/macOS вторая камера занята и getUserMedia упадёт.
+      const oldTrack = localStreamRef.current?.getVideoTracks()[0];
+      const oldDeviceId = oldTrack?.getSettings().deviceId || currentDeviceIdRef.current;
+
+      let newStream: MediaStream | null = null;
+
+      if (cams.length > 1) {
+        const idx = Math.max(0, cams.findIndex((c) => c.deviceId === oldDeviceId));
+        const nextDev = cams[(idx + 1) % cams.length];
+        if (oldTrack) oldTrack.stop();
+        try {
+          newStream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: { deviceId: { exact: nextDev.deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          });
+          currentDeviceIdRef.current = nextDev.deviceId;
+        } catch (e) {
+          console.warn('[useSfuCall] switch by deviceId failed', e);
+        }
+      }
+
+      // Фолбэк через facingMode (для мобильных и если deviceId не сработал)
+      if (!newStream) {
+        const nextFacing = facingMode === 'user' ? 'environment' : 'user';
+        if (oldTrack && oldTrack.readyState !== 'ended') oldTrack.stop();
+        try {
+          newStream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: { facingMode: { ideal: nextFacing } },
+          });
+          setFacingMode(nextFacing);
+        } catch (e) {
+          console.warn('[useSfuCall] switch by facingMode failed', e);
+        }
+      }
+
+      if (!newStream) {
+        // Совсем ничего не получилось — пытаемся восстановить прежнюю камеру
+        try {
+          newStream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: oldDeviceId ? { deviceId: { ideal: oldDeviceId } } : true,
+          });
+        } catch (e) {
+          console.error('[useSfuCall] restore camera failed', e);
+          return;
+        }
+      }
+
+      const newTrack = newStream.getVideoTracks()[0];
+      if (!newTrack) return;
+
+      // Меняем трек у SFU-продьюсера
       if (clientRef.current) {
-        await clientRef.current.replaceVideoTrack(newTrack);
+        try {
+          await clientRef.current.replaceVideoTrack(newTrack);
+        } catch (e) {
+          console.warn('[useSfuCall] replaceVideoTrack failed', e);
+        }
       }
 
       // Меняем трек в локальном стриме (для превью «Вы»)
       if (localStreamRef.current) {
-        const oldTracks = localStreamRef.current.getVideoTracks();
-        oldTracks.forEach((t) => {
-          localStreamRef.current!.removeTrack(t);
-          t.stop();
+        localStreamRef.current.getVideoTracks().forEach((t) => {
+          if (t !== newTrack) {
+            localStreamRef.current!.removeTrack(t);
+            if (t.readyState !== 'ended') t.stop();
+          }
         });
         localStreamRef.current.addTrack(newTrack);
-        // Триггерим перерендер, чтобы <video> обновил кадр
         setLocalStream(new MediaStream(localStreamRef.current.getTracks()));
       }
-
-      setFacingMode(next);
     } catch (e) {
       console.warn('[useSfuCall] switchCamera failed', e);
     } finally {
