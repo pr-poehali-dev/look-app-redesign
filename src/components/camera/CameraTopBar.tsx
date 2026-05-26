@@ -1,6 +1,6 @@
 import Icon from "@/components/ui/icon";
 
-const MODES = ["Фото", "Видео", "Прямой эфир"];
+const MODES = ["Фото", "Видео", "Прямой эфир", "Конструктор"];
 
 interface CameraTopBarProps {
   flash: boolean;

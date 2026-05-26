@@ -6,6 +6,7 @@ import CameraTopBar from "@/components/camera/CameraTopBar";
 import CameraMusicPanel from "@/components/camera/CameraMusicPanel";
 import CameraBottomControls from "@/components/camera/CameraBottomControls";
 import LiveStream from "@/components/LiveStream";
+import MediaEditor from "@/components/camera/editor/MediaEditor";
 
 const TRACKS = [
   { id: 1, title: "Roses Remix", artist: "Imanbek", duration: "2:34", color: "#fe2c55" },
@@ -182,6 +183,10 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
 
   if (showLive) {
     return <LiveStream onClose={onClose} />;
+  }
+
+  if (mode === "Конструктор") {
+    return <MediaEditor onClose={onClose} onPublished={onClose} />;
   }
 
   return (
