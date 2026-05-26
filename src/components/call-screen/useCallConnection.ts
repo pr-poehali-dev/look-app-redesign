@@ -619,23 +619,92 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const switchCamera = async () => {
     if (mode !== "video" || !localStreamRef.current || !pcRef.current) return;
     const newFacing = facingMode === "user" ? "environment" : "user";
+
+    // КРИТИЧНО: на iOS/Android вторая камера занята пока активен трек первой.
+    // Останавливаем старый видеотрек ДО запроса нового.
+    const oldVideo = localStreamRef.current.getVideoTracks()[0];
+    if (oldVideo) {
+      localStreamRef.current.removeTrack(oldVideo);
+      oldVideo.stop();
+    }
+
+    let newStream: MediaStream | null = null;
+
+    // Способ 1: facingMode (мобильные)
     try {
-      const newStream = await navigator.mediaDevices.getUserMedia({
+      newStream = await navigator.mediaDevices.getUserMedia({
         audio: false,
-        video: { facingMode: newFacing },
+        video: { facingMode: { exact: newFacing } },
       });
-      const newTrack = newStream.getVideoTracks()[0];
+    } catch (e) {
+      console.warn("[CallScreen] switchCamera facingMode exact failed", e);
+    }
+
+    // Способ 2: ideal facingMode (мягче)
+    if (!newStream) {
+      try {
+        newStream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: { facingMode: { ideal: newFacing } },
+        });
+      } catch (e) {
+        console.warn("[CallScreen] switchCamera facingMode ideal failed", e);
+      }
+    }
+
+    // Способ 3: перебор по списку устройств (для ПК и нестандартных мобильных)
+    if (!newStream) {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cams = devices.filter((d) => d.kind === "videoinput");
+        const oldId = oldVideo?.getSettings().deviceId || "";
+        const other = cams.find((c) => c.deviceId && c.deviceId !== oldId);
+        if (other) {
+          newStream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: { deviceId: { exact: other.deviceId } },
+          });
+        }
+      } catch (e) {
+        console.warn("[CallScreen] switchCamera by deviceId failed", e);
+      }
+    }
+
+    // Если ничего не сработало — пытаемся восстановить прежнюю камеру
+    if (!newStream) {
+      try {
+        newStream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: { facingMode: { ideal: facingMode } },
+        });
+      } catch (e) {
+        console.error("[CallScreen] restore camera failed", e);
+        return;
+      }
+    }
+
+    const newTrack = newStream.getVideoTracks()[0];
+    if (!newTrack) return;
+
+    try {
       const sender = pcRef.current.getSenders().find((s) => s.track?.kind === "video");
       if (sender) await sender.replaceTrack(newTrack);
-      const oldVideo = localStreamRef.current.getVideoTracks()[0];
-      if (oldVideo) {
-        localStreamRef.current.removeTrack(oldVideo);
-        oldVideo.stop();
-      }
-      localStreamRef.current.addTrack(newTrack);
-      if (localVideoRef.current) localVideoRef.current.srcObject = localStreamRef.current;
+    } catch (e) {
+      console.warn("[CallScreen] replaceTrack failed", e);
+    }
+
+    localStreamRef.current.addTrack(newTrack);
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = localStreamRef.current;
+      localVideoRef.current.play().catch(() => {});
+    }
+
+    const settings = newTrack.getSettings() as MediaTrackSettings & { facingMode?: string };
+    if (settings.facingMode === "user" || settings.facingMode === "environment") {
+      setFacingMode(settings.facingMode);
+    } else {
       setFacingMode(newFacing);
-    } catch (e) { void e; }
+    }
   };
 
   const toggleMute = () => {
