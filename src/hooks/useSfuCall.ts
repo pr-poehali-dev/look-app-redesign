@@ -32,11 +32,23 @@ export function useSfuCall({ userId, token, roomId, mode, enabled }: Options) {
 
     const start = async () => {
       try {
-        const constraints: MediaStreamConstraints = {
-          audio: HQ_AUDIO_CONSTRAINTS,
-          video: mode === 'video' ? { width: 1280, height: 720 } : false,
-        };
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        const videoConstraints = mode === 'video'
+          ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+          : false;
+        let stream: MediaStream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: HQ_AUDIO_CONSTRAINTS,
+            video: videoConstraints,
+          });
+        } catch (mediaErr) {
+          // Fallback: упрощённые ограничения (некоторые камеры не поддерживают 1280×720)
+          console.warn('[useSfuCall] strict constraints failed, fallback', mediaErr);
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: mode === 'video' ? { facingMode: 'user' } : false,
+          });
+        }
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop());
           return;

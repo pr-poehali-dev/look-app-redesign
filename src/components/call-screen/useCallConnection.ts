@@ -328,12 +328,20 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         try {
           stream = await navigator.mediaDevices.getUserMedia({
             audio: HQ_AUDIO_CONSTRAINTS,
-            video: mode === "video",
+            video: mode === "video" ? { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } } : false,
           });
         } catch (err) {
           if (mode === "video") {
-            console.warn("[CallScreen] video+audio failed, fallback to audio-only", err);
-            stream = await navigator.mediaDevices.getUserMedia({ audio: HQ_AUDIO_CONSTRAINTS, video: false });
+            console.warn("[CallScreen] strict video failed, fallback to simple video", err);
+            try {
+              stream = await navigator.mediaDevices.getUserMedia({
+                audio: HQ_AUDIO_CONSTRAINTS,
+                video: true,
+              });
+            } catch (err2) {
+              console.warn("[CallScreen] video failed, fallback to audio-only", err2);
+              stream = await navigator.mediaDevices.getUserMedia({ audio: HQ_AUDIO_CONSTRAINTS, video: false });
+            }
           } else {
             throw err;
           }
@@ -344,6 +352,9 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         stream.getTracks().forEach((t) => pc.addTrack(t, stream as MediaStream));
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
+          localVideoRef.current.muted = true;
+          localVideoRef.current.playsInline = true;
+          localVideoRef.current.play().catch((err) => console.warn("[CallScreen] local video play blocked", err));
         }
         console.log("[CallScreen] getUserMedia ok", { tracks: stream.getTracks().length });
       } catch (e) {

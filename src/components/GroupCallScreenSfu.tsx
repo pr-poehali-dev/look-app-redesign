@@ -20,9 +20,15 @@ const GroupCallScreenSfu = ({ roomId, roomName, mode, myId, myName, token, onEnd
   const [seconds, setSeconds] = useState(0);
 
   useEffect(() => {
-    if (localVideoRef.current && localStream) {
-      localVideoRef.current.srcObject = localStream;
-    }
+    const el = localVideoRef.current;
+    if (!el || !localStream) return;
+    el.srcObject = localStream;
+    el.muted = true;
+    el.playsInline = true;
+    const tryPlay = () => el.play().catch((e) => console.warn('[SFU] local video play blocked', e));
+    if (el.readyState >= 1) tryPlay();
+    el.onloadedmetadata = tryPlay;
+    return () => { el.onloadedmetadata = null; };
   }, [localStream]);
 
   useEffect(() => {
@@ -72,15 +78,20 @@ const GroupCallScreenSfu = ({ roomId, roomName, mode, myId, myName, token, onEnd
               autoPlay
               muted
               playsInline
-              className={`w-full h-full object-cover ${cameraOff ? 'opacity-0' : ''}`}
+              className={`w-full h-full object-cover ${cameraOff || !localStream ? 'opacity-0' : ''}`}
             />
-            {cameraOff && (
-              <div className="absolute inset-0 flex items-center justify-center">
+            {(cameraOff || !localStream) && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3">
                 <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center">
                   <span className="text-white font-bold text-xl">
                     {myName.charAt(0).toUpperCase()}
                   </span>
                 </div>
+                {!localStream && (
+                  <p className="text-white/60 text-[11px] text-center">
+                    Камера не активна. Разреши доступ в браузере.
+                  </p>
+                )}
               </div>
             )}
             <div className="absolute bottom-1.5 left-2 bg-black/60 px-2 py-0.5 rounded-full">
