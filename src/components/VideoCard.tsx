@@ -50,24 +50,43 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
     const url = video.image;
     if (!url) return;
     setDownloading(true);
-    try {
-      const res = await fetch(url, { mode: "cors" });
-      if (!res.ok) throw new Error("network");
-      const blob = await res.blob();
+    const ext = ((url.split("?")[0].split(".").pop()) || (video.isVideo ? "mp4" : "jpg")).slice(0, 5);
+    const safeName = (video.author || video.handle || "look").replace(/[^a-z0-9_-]/gi, "_");
+    const fileName = `${safeName}-${video.id}.${ext}`;
+
+    const triggerSave = (blob: Blob) => {
       const objUrl = URL.createObjectURL(blob);
-      const ext = (url.split(".").pop() || (video.isVideo ? "mp4" : "jpg")).split("?")[0].slice(0, 5);
-      const safeName = (video.author || video.handle || "look").replace(/[^a-z0-9_-]/gi, "_");
       const a = document.createElement("a");
       a.href = objUrl;
-      a.download = `${safeName}-${video.id}.${ext}`;
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(objUrl), 2000);
       setDownloadDone(true);
       setTimeout(() => setDownloadDone(false), 1500);
+    };
+
+    // Шаг 1: пробуем напрямую (если CDN отдаёт CORS)
+    try {
+      const res = await fetch(url, { mode: "cors" });
+      if (res.ok) {
+        const blob = await res.blob();
+        triggerSave(blob);
+        setDownloading(false);
+        return;
+      }
+    } catch { /* идём в прокси */ }
+
+    // Шаг 2: через бэкенд-прокси (обходит CORS, добавляет Content-Disposition)
+    try {
+      const proxyUrl = `https://functions.poehali.dev/b5faf1bc-6976-47c6-984e-e21c66d4c879?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(fileName)}`;
+      const res = await fetch(proxyUrl);
+      if (!res.ok) throw new Error("proxy failed");
+      const blob = await res.blob();
+      triggerSave(blob);
     } catch {
-      // Fallback: открываем в новой вкладке — пользователь сохранит вручную
+      // Шаг 3: финальный fallback — открыть в новой вкладке
       window.open(url, "_blank", "noopener");
     } finally {
       setDownloading(false);
