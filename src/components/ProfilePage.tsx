@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useCallback } from "react";
+import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import SettingsScreen from "./SettingsScreen";
@@ -163,20 +163,25 @@ const MediaViewer = ({ items, startIndex, onClose, onDelete }: { items: Story[];
   const [index, setIndex] = useState(startIndex);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleted, setDeleted] = useState(false);
-  const item = items[index];
+
+  useEffect(() => {
+    if (items.length === 0) { onClose(); return; }
+    if (index >= items.length) setIndex(Math.max(0, items.length - 1));
+  }, [items, index, onClose]);
+
+  const item = items[Math.min(index, items.length - 1)];
   const goNext = () => index < items.length - 1 ? setIndex(i => i + 1) : onClose();
   const goPrev = () => index > 0 ? setIndex(i => i - 1) : null;
 
   const handleDelete = () => {
+    if (!item) return;
     onDelete(item.id);
     setConfirmDelete(false);
     setDeleted(true);
-    setTimeout(() => {
-      if (items.length === 1) { onClose(); return; }
-      if (index >= items.length - 1) setIndex(i => i - 1);
-      setDeleted(false);
-    }, 1200);
+    setTimeout(() => setDeleted(false), 1200);
   };
+
+  if (!item) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
@@ -301,6 +306,12 @@ const ProfilePage = () => {
   const [viewingStory, setViewingStory] = useState<number | null>(null);
   const [mediaViewer, setMediaViewer] = useState<{ tab: "video" | "image"; index: number } | null>(null);
   const [avatarLoading, setAvatarLoading] = useState(false);
+
+  useEffect(() => {
+    if (mediaViewer === null) return;
+    const liveItems = stories.filter(s => s.type === mediaViewer.tab);
+    if (liveItems.length === 0) setMediaViewer(null);
+  }, [stories, mediaViewer]);
   const [deleteStoryId, setDeleteStoryId] = useState<number | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -341,8 +352,8 @@ const ProfilePage = () => {
       )}
       {mediaViewer !== null && (() => {
         const liveItems = stories.filter(s => s.type === mediaViewer.tab);
-        if (liveItems.length === 0) { setMediaViewer(null); return null; }
-        const safeIndex = Math.min(mediaViewer.index, liveItems.length - 1);
+        if (liveItems.length === 0) return null;
+        const safeIndex = Math.min(Math.max(mediaViewer.index, 0), liveItems.length - 1);
         return (
           <MediaViewer
             items={liveItems}

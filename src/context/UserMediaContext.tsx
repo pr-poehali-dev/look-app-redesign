@@ -12,6 +12,8 @@ interface UserMediaContextType {
   addMedia: (file: File) => Promise<void>;
   removeMedia: (id: number) => void;
   loading: boolean;
+  removedIds: Set<number>;
+  mediaVersion: number;
 }
 
 const UPLOAD_URL = "https://functions.poehali.dev/78967386-1bfb-4070-9bb3-549cc5c00de6";
@@ -22,6 +24,8 @@ const UserMediaContext = createContext<UserMediaContextType | null>(null);
 export const UserMediaProvider = ({ userId, token, children }: { userId: string; token: string | null; children: ReactNode }) => {
   const [userVideos, setUserVideos] = useState<UserVideo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [removedIds, setRemovedIds] = useState<Set<number>>(new Set());
+  const [mediaVersion, setMediaVersion] = useState(0);
 
   useEffect(() => {
     setLoading(true);
@@ -64,16 +68,24 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
         if (data.url) {
           setUserVideos(s => s.map(v => v.id === tempId ? { ...v, id: Number(data.id), url: data.url } : v));
+          setMediaVersion(v => v + 1);
         }
       } catch {
         // оставляем blob-версию
       }
     };
     reader.readAsDataURL(file);
+    setMediaVersion(v => v + 1);
   };
 
   const removeMedia = (id: number) => {
     setUserVideos(s => s.filter(x => x.id !== id));
+    setRemovedIds(s => {
+      const next = new Set(s);
+      next.add(id);
+      return next;
+    });
+    setMediaVersion(v => v + 1);
     fetch(USER_VIDEOS_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -84,7 +96,7 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
   };
 
   return (
-    <UserMediaContext.Provider value={{ userVideos, addMedia, removeMedia, loading }}>
+    <UserMediaContext.Provider value={{ userVideos, addMedia, removeMedia, loading, removedIds, mediaVersion }}>
       {children}
     </UserMediaContext.Provider>
   );

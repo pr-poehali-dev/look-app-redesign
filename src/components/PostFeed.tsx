@@ -12,7 +12,7 @@ const PostFeed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const { addMedia } = useUserMedia();
+  const { addMedia, removedIds, mediaVersion } = useUserMedia();
   const myStoryInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -45,7 +45,7 @@ const PostFeed = () => {
       })
       .catch(() => setPosts(MOCK_POSTS))
       .finally(() => setLoading(false));
-  }, [user]);
+  }, [user, mediaVersion]);
 
   const [storyIndex, setStoryIndex] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -63,7 +63,8 @@ const PostFeed = () => {
     likes: counts.likes[String(p.id)] ?? p.likes,
   }));
 
-  const storySource = postsWithCounts.length > 0 ? postsWithCounts : MOCK_POSTS;
+  const storySource = (postsWithCounts.length > 0 ? postsWithCounts : MOCK_POSTS)
+    .filter(p => !removedIds.has(p.id));
   const storyUsers = storySource.slice(0, 6);
   const stories: Story[] = storyUsers.map(p => ({ id: p.id, handle: p.handle, avatar: p.avatar, image: p.image }));
 
@@ -122,7 +123,7 @@ const PostFeed = () => {
           <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
-        postsWithCounts.map((post) => (
+        postsWithCounts.filter(p => !removedIds.has(p.id)).map((post) => (
           <PostCard key={post.id} post={post} />
         ))
       )}
