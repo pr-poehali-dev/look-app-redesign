@@ -183,6 +183,10 @@ def handler(event: dict, context) -> dict:
                         "FROM sa_chats c "
                         "JOIN sa_chat_members cm ON cm.chat_id = c.id AND cm.user_id = %s "
                         "AND (c.name IS NULL OR c.name != '__merged__') "
+                        "AND NOT EXISTS ("
+                        "  SELECT 1 FROM community_members ccm "
+                        "  WHERE ccm.community_id = c.id AND ccm.user_id = %s AND ccm.role = 'left'"
+                        ") "
                         "LEFT JOIN LATERAL ("
                         "  SELECT user_name, type, content, created_at FROM sa_messages "
                         "  WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1"
@@ -199,7 +203,7 @@ def handler(event: dict, context) -> dict:
                         "  WHERE cm2.chat_id = c.id AND cm2.user_id != %s LIMIT 1"
                         ") "
                         "ORDER BY COALESCE(m.created_at, c.created_at) DESC",
-                        (user_id, user_id, user_id, user_id, user_id, user_id, user_id)
+                        (user_id, user_id, user_id, user_id, user_id, user_id, user_id, user_id)
                     )
                     rows = cur.fetchall()
                     chats = []
@@ -965,7 +969,10 @@ def handler(event: dict, context) -> dict:
                         (new_id, com_name, com_desc, com_type, com_category, user_id)
                     )
                     cur.execute(
-                        "INSERT INTO community_members (community_id, user_id, user_name, role) VALUES (%s, %s, %s, 'admin')",
+                        "INSERT INTO community_members "
+                        "(community_id, user_id, user_name, role, "
+                        "can_invite, can_pin, can_remove_messages, can_ban, can_change_info, can_add_admins) "
+                        "VALUES (%s, %s, %s, 'owner', TRUE, TRUE, TRUE, TRUE, TRUE, TRUE)",
                         (new_id, user_id, user_name)
                     )
                     # Создаём групповой чат сообщества с тем же id и добавляем создателя
