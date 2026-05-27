@@ -204,7 +204,8 @@ export async function compressVideo(
  * и собирается на бэкенде в финальный объект S3.
  */
 const CHUNKED_URL = "https://functions.poehali.dev/25a6b99d-32f3-45a4-baf7-a088013ca292";
-const CHUNK_SIZE = 3 * 1024 * 1024; // 3 МБ
+// 1 МБ * 1.37 (base64) ≈ 1.4 МБ JSON body. С запасом до лимита 6 МБ.
+const CHUNK_SIZE = 1 * 1024 * 1024;
 
 export interface DirectUploadMeta {
   category: string;
@@ -229,18 +230,43 @@ async function blobToBase64(blob: Blob): Promise<string> {
   });
 }
 
-async function postJSON(payload: unknown) {
-  const res = await fetch(CHUNKED_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const t = await res.text().catch(() => "");
-    throw new Error(`upload ${res.status}: ${t}`);
+async function postJSON(payload: Record<string, unknown>, attempt = 1): Promise<Record<string, unknown>> {
+  const action = String(payload.action || "?");
+  try {
+    const res = await fetch(CHUNKED_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      console.error(`[upload] ${action} HTTP ${res.status}:`, text.slice(0, 500));
+      throw new Error(`upload ${action} ${res.status}`);
+    }
+    let raw: Record<string, unknown>;
+    try {
+      raw = JSON.parse(text);
+    } catch {
+      console.error(`[upload] ${action} not JSON:`, text.slice(0, 500));
+      throw new Error(`upload ${action}: invalid JSON response`);
+    }
+    if (typeof raw.body === "string") {
+      try {
+        return JSON.parse(raw.body as string);
+      } catch {
+        console.error(`[upload] ${action} inner body not JSON:`, (raw.body as string).slice(0, 500));
+        throw new Error(`upload ${action}: invalid inner JSON`);
+      }
+    }
+    return raw;
+  } catch (e) {
+    if (attempt < 3 && action === "chunk") {
+      console.warn(`[upload] retry chunk attempt ${attempt + 1}`, e);
+      await new Promise((r) => setTimeout(r, 800 * attempt));
+      return postJSON(payload, attempt + 1);
+    }
+    throw e;
   }
-  const raw = await res.json();
-  return typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
 }
 
 export async function uploadFileDirect(
@@ -251,12 +277,21 @@ export async function uploadFileDirect(
   const ext = (file.name.split(".").pop() || (file.type.startsWith("video") ? "mp4" : "jpg")).toLowerCase();
   const contentType = file.type || (file.type.startsWith("video") ? "video/mp4" : "image/jpeg");
 
-  // 1) Инициализация: получаем upload_id и финальный key
+  console.info(`[upload] start: ${file.name}, ${(file.size / 1024 / 1024).toFixed(2)} MB, type=${contentType}`);
+
+  // 1) Инициализация
   const init = await postJSON({ action: "init", ext, content_type: contentType });
-  if (!init.upload_id || !init.key) throw new Error("init: bad response");
+  const uploadId = init.upload_id as string | undefined;
+  const key = init.key as string | undefined;
+  if (!uploadId || !key) {
+    console.error("[upload] init bad response:", init);
+    throw new Error("init: bad response");
+  }
+  console.info(`[upload] init ok: upload_id=${uploadId}, key=${key}`);
 
   // 2) Грузим чанки по очереди
   const totalParts = Math.max(1, Math.ceil(file.size / CHUNK_SIZE));
+  console.info(`[upload] chunks=${totalParts}, chunk_size=${CHUNK_SIZE}`);
   try {
     for (let i = 0; i < totalParts; i++) {
       const start = i * CHUNK_SIZE;
@@ -265,26 +300,25 @@ export async function uploadFileDirect(
       const data = await blobToBase64(slice);
       await postJSON({
         action: "chunk",
-        upload_id: init.upload_id,
+        upload_id: uploadId,
         part_number: i + 1,
         data,
       });
       if (onProgress) {
-        // 95% на загрузку, последние 5% оставим на склейку/регистрацию
         onProgress(Math.round(((i + 1) / totalParts) * 95));
       }
     }
   } catch (e) {
-    // Чистим за собой
-    try { await postJSON({ action: "abort", upload_id: init.upload_id, total_parts: totalParts }); } catch { /* ignore */ }
+    console.error("[upload] chunk loop failed:", e);
+    try { await postJSON({ action: "abort", upload_id: uploadId, total_parts: totalParts }); } catch { /* ignore */ }
     throw e;
   }
 
-  // 3) Финал: бэк склеивает чанки и сразу пишет в БД
+  // 3) Финал
   const finish = await postJSON({
     action: "finish",
-    upload_id: init.upload_id,
-    key: init.key,
+    upload_id: uploadId,
+    key,
     total_parts: totalParts,
     content_type: contentType,
     meta: {
@@ -296,7 +330,17 @@ export async function uploadFileDirect(
       user_id: meta.user_id || "anonymous",
     },
   });
-  if (!finish.url || !finish.id) throw new Error("finish: bad response");
+  const finalUrl = finish.url as string | undefined;
+  const finalId = finish.id as number | undefined;
+  if (!finalUrl || !finalId) {
+    console.error("[upload] finish bad response:", finish);
+    throw new Error("finish: bad response");
+  }
   if (onProgress) onProgress(100);
-  return { id: finish.id, url: finish.url, type: finish.type || (contentType.startsWith("video") ? "video" : "image") };
+  console.info(`[upload] done: id=${finalId}, url=${finalUrl}`);
+  return {
+    id: finalId,
+    url: finalUrl,
+    type: (finish.type as string) || (contentType.startsWith("video") ? "video" : "image"),
+  };
 }
