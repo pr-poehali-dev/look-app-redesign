@@ -7,6 +7,7 @@ import CameraMusicPanel from "@/components/camera/CameraMusicPanel";
 import CameraBottomControls from "@/components/camera/CameraBottomControls";
 import LiveStream from "@/components/LiveStream";
 import MediaEditor from "@/components/camera/editor/MediaEditor";
+import { compressVideo, uploadFileDirect } from "@/lib/videoCompress";
 
 const TRACKS = [
   { id: 1, title: "Roses Remix", artist: "Imanbek", duration: "2:34", color: "#fe2c55" },
@@ -47,6 +48,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
   const [uploadedMedia, setUploadedMedia] = useState<{ url: string; type: "image" | "video" } | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [published, setPublished] = useState(false);
+  const [publishProgress, setPublishProgress] = useState<{ stage: "compress" | "upload" | "save"; percent: number } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("humor");
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [destination, setDestination] = useState<"home" | "feed">("home");
@@ -67,60 +69,46 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
   };
 
   const handlePublish = async () => {
-    const file = mediaFileRef.current;
-    if (!file) return;
+    const original = mediaFileRef.current;
+    if (!original) return;
     setPublishing(true);
     try {
-      // Cloud function принимает ~6 МБ JSON. base64 ~ файл * 1.37, поэтому
-      // безопасный лимит на файл — 4 МБ.
-      const MAX_FILE_SIZE = 4 * 1024 * 1024;
-      if (file.size > MAX_FILE_SIZE) {
-        setPublishing(false);
-        alert(
-          `Файл слишком большой (${(file.size / 1024 / 1024).toFixed(1)} МБ). ` +
-          `Максимум — 4 МБ. Сожми видео или выбери покороче.`,
-        );
-        return;
+      let file = original;
+
+      // 1) Сжатие видео (если файл больше 4 МБ и это видео)
+      if (file.type.startsWith("video") && file.size > 4 * 1024 * 1024) {
+        setPublishProgress({ stage: "compress", percent: 0 });
+        try {
+          const result = await compressVideo(file, {
+            maxWidth: 720,
+            maxHeight: 1280,
+            videoBitsPerSecond: 1_200_000,
+            onProgress: (p) => setPublishProgress({ stage: "compress", percent: p }),
+          });
+          file = result.file;
+        } catch (err) {
+          console.warn("[CameraScreen] compress failed, uploading original", err);
+        }
       }
 
-      const base64: string = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const r = reader.result as string;
-          const idx = r.indexOf(",");
-          resolve(idx >= 0 ? r.slice(idx + 1) : r);
-        };
-        reader.onerror = () => reject(reader.error || new Error("FileReader error"));
-        reader.readAsDataURL(file);
-      });
-
-      const ext = file.name.split(".").pop() || "mp4";
-      const res = await fetch("https://functions.poehali.dev/78967386-1bfb-4070-9bb3-549cc5c00de6", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          file: base64,
-          type: file.type,
-          ext,
+      // 2) Прямая загрузка в S3 через presigned URL (любой размер)
+      setPublishProgress({ stage: "upload", percent: 0 });
+      const reg = await uploadFileDirect(
+        file,
+        {
           category: destination === "home" ? selectedCategory : "feed",
           description,
           hashtags,
           author: user?.name || "Пользователь",
           handle: user?.handle || user?.name || "user",
           user_id: user?.id || "anonymous",
-        }),
-      });
+        },
+        (p) => setPublishProgress({ stage: "upload", percent: p }),
+      );
 
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        throw new Error(`Upload failed: ${res.status} ${txt}`);
-      }
-      const raw = await res.json().catch(() => null);
-      const data = raw && typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-      if (!data || !data.url) {
-        throw new Error("Сервер не вернул ссылку на файл");
-      }
+      if (!reg || !reg.url) throw new Error("Сервер не вернул ссылку на файл");
 
+      setPublishProgress({ stage: "save", percent: 100 });
       setPublished(true);
       await refreshMedia();
       setTimeout(() => {
@@ -130,9 +118,10 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
       }, 1500);
     } catch (e) {
       console.error("[CameraScreen] publish error", e);
-      alert("Не удалось опубликовать. Попробуй ещё раз или уменьши размер файла.");
+      alert("Не удалось опубликовать. Проверь интернет и попробуй ещё раз.");
     } finally {
       setPublishing(false);
+      setPublishProgress(null);
     }
   };
 
@@ -260,6 +249,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
         recording={recording}
         uploadedMedia={uploadedMedia}
         publishing={publishing}
+        publishProgress={publishProgress}
         published={published}
         selectedCategory={selectedCategory}
         showCategoryPicker={showCategoryPicker}

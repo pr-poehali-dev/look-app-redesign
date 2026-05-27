@@ -1,0 +1,26 @@
+{
+  "tests": [
+    {
+      "name": "CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Presign returns upload_url",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "presign", "ext": "mp4", "content_type": "video/mp4"},
+      "expectedStatus": 200,
+      "expectedBody": {"upload_url": "string", "cdn_url": "string", "key": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Unknown action returns 400",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "blabla"},
+      "expectedStatus": 400
+    }
+  ]
+}

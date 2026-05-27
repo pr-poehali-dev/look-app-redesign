@@ -2,9 +2,8 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
 import { useUserMedia } from "@/context/UserMediaContext";
+import { compressVideo, uploadFileDirect } from "@/lib/videoCompress";
 import { FILTERS, FONTS, TEXT_COLORS, BG_COLORS, STICKERS, TEMPLATES, type Filter, type Layer, type TextLayer, type StickerLayer, type Clip } from "./editorTypes";
-
-const UPLOAD_URL = "https://functions.poehali.dev/78967386-1bfb-4070-9bb3-549cc5c00de6";
 
 const VIDEO_CATEGORIES = [
   { id: "music", label: "Музыка" },
@@ -45,6 +44,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
   const [description, setDescription] = useState("");
   const [hashtags, setHashtags] = useState("");
   const [publishing, setPublishing] = useState(false);
+  const [publishProgress, setPublishProgress] = useState<{ stage: "compress" | "upload" | "save"; percent: number } | null>(null);
   const [step, setStep] = useState<"edit" | "publish">("edit");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const musicInputRef = useRef<HTMLInputElement>(null);
@@ -275,48 +275,37 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
     setPublishing(true);
     try {
       const blob = await captureFrame();
-      const file = active.type === "video" ? active.file : (blob ? new File([blob], "edited.jpg", { type: "image/jpeg" }) : active.file);
+      let file: File = active.type === "video"
+        ? active.file
+        : (blob ? new File([blob], "edited.jpg", { type: "image/jpeg" }) : active.file);
       const isVideo = active.type === "video";
-      const ext = isVideo ? "mp4" : "jpg";
-      const type = isVideo ? "video/mp4" : "image/jpeg";
 
-      // Лимит размера: base64 ~ файл * 1.37. Cloud function принимает ~6 МБ JSON.
-      // Берём безопасный лимит на сам файл — 4 МБ.
-      const MAX_FILE_SIZE = 4 * 1024 * 1024;
-      if (file.size > MAX_FILE_SIZE) {
-        setPublishing(false);
-        alert(
-          `Файл слишком большой (${(file.size / 1024 / 1024).toFixed(1)} МБ). ` +
-          `Максимум — 4 МБ. Сожми видео или выбери покороче.`,
-        );
-        return;
+      // 1) Сжатие видео > 4 МБ
+      if (isVideo && file.size > 4 * 1024 * 1024) {
+        setPublishProgress({ stage: "compress", percent: 0 });
+        try {
+          const result = await compressVideo(file, {
+            maxWidth: 720,
+            maxHeight: 1280,
+            videoBitsPerSecond: 1_200_000,
+            onProgress: (p) => setPublishProgress({ stage: "compress", percent: p }),
+          });
+          file = result.file;
+        } catch (err) {
+          console.warn("[MediaEditor] compress failed, uploading original", err);
+        }
       }
 
-      const base64: string = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          const idx = result.indexOf(",");
-          resolve(idx >= 0 ? result.slice(idx + 1) : result);
-        };
-        reader.onerror = () => reject(reader.error || new Error("FileReader error"));
-        reader.readAsDataURL(file);
-      });
-
-      // Один POST = одна запись в БД. Если "везде" — категория от Главной,
-      // лента подхватит то же видео по author/handle.
       const finalCategory =
         destination === "feed" ? "feed"
         : destination === "home" ? category
-        : category; // both → используем выбранную категорию
+        : category;
 
-      const res = await fetch(UPLOAD_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          file: base64,
-          type,
-          ext,
+      // 2) Прямая загрузка в S3
+      setPublishProgress({ stage: "upload", percent: 0 });
+      const reg = await uploadFileDirect(
+        file,
+        {
           category: finalCategory,
           destinations: destination === "both" ? ["home", "feed"] : [destination],
           description,
@@ -324,27 +313,20 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
           author: user?.name || "Пользователь",
           handle: user?.handle || user?.name || "user",
           user_id: user?.id || "anonymous",
-        }),
-      });
+        },
+        (p) => setPublishProgress({ stage: "upload", percent: p }),
+      );
+      if (!reg || !reg.url) throw new Error("Сервер не вернул ссылку на файл");
 
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        throw new Error(`Upload failed: ${res.status} ${txt}`);
-      }
-      const raw = await res.json().catch(() => null);
-      const data = raw && typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-      if (!data || !data.url) {
-        throw new Error("Сервер не вернул ссылку на загруженный файл");
-      }
-
+      setPublishProgress({ stage: "save", percent: 100 });
       try { await refreshMedia(); } catch { /* ignore */ }
-
-      setPublishing(false);
       onPublished();
     } catch (e) {
       console.error("[MediaEditor] publish error", e);
+      alert("Не удалось опубликовать. Проверь интернет и попробуй ещё раз.");
+    } finally {
       setPublishing(false);
-      alert("Не удалось опубликовать. Попробуй ещё раз или уменьши размер файла.");
+      setPublishProgress(null);
     }
   };
 
@@ -470,13 +452,30 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
             />
           </div>
 
-          <button
-            onClick={handlePublish}
-            disabled={publishing}
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold disabled:opacity-50"
-          >
-            {publishing ? "Публикуем..." : "Опубликовать"}
-          </button>
+          {publishing && publishProgress ? (
+            <div className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6]">
+              <div className="flex items-center gap-2 text-white mb-2">
+                <Icon name="Loader" size={18} className="animate-spin" />
+                <span className="font-semibold text-sm">
+                  {publishProgress.stage === "compress" && "Сжимаем видео..."}
+                  {publishProgress.stage === "upload" && "Загружаем..."}
+                  {publishProgress.stage === "save" && "Сохраняем..."}
+                </span>
+                <span className="ml-auto font-bold text-sm">{publishProgress.percent}%</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-white/20 overflow-hidden">
+                <div className="h-full bg-white transition-all" style={{ width: `${publishProgress.percent}%` }} />
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={handlePublish}
+              disabled={publishing}
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold disabled:opacity-50"
+            >
+              {publishing ? "Публикуем..." : "Опубликовать"}
+            </button>
+          )}
         </div>
       </div>
     );

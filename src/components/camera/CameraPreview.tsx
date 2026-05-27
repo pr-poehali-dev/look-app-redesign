@@ -53,6 +53,7 @@ interface CameraPreviewProps {
   recording: boolean;
   uploadedMedia: { url: string; type: "image" | "video" } | null;
   publishing: boolean;
+  publishProgress?: { stage: "compress" | "upload" | "save"; percent: number } | null;
   published: boolean;
   selectedCategory: string;
   showCategoryPicker: boolean;
@@ -77,6 +78,7 @@ const CameraPreview = ({
   recording,
   uploadedMedia,
   publishing,
+  publishProgress,
   destination,
   onDestinationChange,
   published,
@@ -318,6 +320,24 @@ const CameraPreview = ({
               <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-green-500">
                 <Icon name="Check" size={18} className="text-white" />
                 <span className="text-white font-bold text-base">Опубликовано!</span>
+              </div>
+            ) : publishing && publishProgress ? (
+              <div className="flex flex-col gap-2 py-3 px-4 rounded-xl bg-[#8b5cf6]">
+                <div className="flex items-center gap-2 text-white">
+                  <Icon name="Loader" size={18} className="text-white animate-spin" />
+                  <span className="font-semibold text-sm">
+                    {publishProgress.stage === "compress" && "Сжимаем видео..."}
+                    {publishProgress.stage === "upload" && "Загружаем..."}
+                    {publishProgress.stage === "save" && "Сохраняем..."}
+                  </span>
+                  <span className="ml-auto font-bold text-sm">{publishProgress.percent}%</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-white/20 overflow-hidden">
+                  <div
+                    className="h-full bg-white transition-all"
+                    style={{ width: `${publishProgress.percent}%` }}
+                  />
+                </div>
               </div>
             ) : (
               <button
