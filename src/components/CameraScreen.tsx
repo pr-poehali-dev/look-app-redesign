@@ -184,20 +184,97 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
     }, 200);
   };
 
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+
+  const capturePhoto = () => {
+    const v = videoRef.current;
+    if (!v || !v.videoWidth) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = v.videoWidth;
+    canvas.height = v.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    if (facing === "user") {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const file = new File([blob], `photo-${Date.now()}.jpg`, { type: "image/jpeg" });
+      mediaFileRef.current = file;
+      const url = URL.createObjectURL(file);
+      setUploadedMedia({ url, type: "image" });
+      setPublished(false);
+    }, "image/jpeg", 0.92);
+  };
+
+  const startRecording = () => {
+    const stream = streamRef.current;
+    if (!stream) return;
+    recordedChunksRef.current = [];
+    const types = [
+      "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+      "video/mp4",
+      "video/webm;codecs=vp9,opus",
+      "video/webm;codecs=vp8,opus",
+      "video/webm",
+    ];
+    let chosen = "";
+    for (const t of types) {
+      if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(t)) {
+        chosen = t;
+        break;
+      }
+    }
+    try {
+      const rec = chosen ? new MediaRecorder(stream, { mimeType: chosen }) : new MediaRecorder(stream);
+      rec.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) recordedChunksRef.current.push(e.data);
+      };
+      rec.onstop = () => {
+        const mime = chosen || "video/webm";
+        const blob = new Blob(recordedChunksRef.current, { type: mime.split(";")[0] });
+        const ext = mime.includes("mp4") ? "mp4" : "webm";
+        const file = new File([blob], `video-${Date.now()}.${ext}`, { type: blob.type });
+        mediaFileRef.current = file;
+        const url = URL.createObjectURL(blob);
+        setUploadedMedia({ url, type: "video" });
+        setPublished(false);
+      };
+      mediaRecorderRef.current = rec;
+      rec.start(250);
+      setRecording(true);
+      setRecordSeconds(0);
+      timerRef.current = setInterval(() => setRecordSeconds((s) => s + 1), 1000);
+    } catch (e) {
+      console.error("[CameraScreen] record start failed", e);
+    }
+  };
+
+  const stopRecording = () => {
+    const rec = mediaRecorderRef.current;
+    if (rec && rec.state !== "inactive") {
+      try { rec.stop(); } catch { /* ignore */ }
+    }
+    mediaRecorderRef.current = null;
+    setRecording(false);
+    if (timerRef.current) clearInterval(timerRef.current);
+    setRecordSeconds(0);
+  };
+
   const handleShutter = () => {
     if (mode === "Фото") {
       setShutterFlash(true);
       setTimeout(() => setShutterFlash(false), 200);
+      capturePhoto();
       return;
     }
     if (!recording) {
-      setRecording(true);
-      setRecordSeconds(0);
-      timerRef.current = setInterval(() => setRecordSeconds((s) => s + 1), 1000);
+      startRecording();
     } else {
-      setRecording(false);
-      if (timerRef.current) clearInterval(timerRef.current);
-      setRecordSeconds(0);
+      stopRecording();
     }
   };
 
@@ -277,7 +354,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
         onToggleFlash={() => setFlash(v => !v)}
         onToggleMusicPanel={() => setShowMusicPanel(v => !v)}
         onModeChange={setMode}
-        onStopRecording={() => { setRecording(false); setRecordSeconds(0); }}
+        onStopRecording={stopRecording}
       />
 
       {/* Spacer */}
