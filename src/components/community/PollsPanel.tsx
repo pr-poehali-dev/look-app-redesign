@@ -166,7 +166,7 @@ const PollsPanel = ({ communityId, isAdmin, onClose }: Props) => {
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-end md:items-center justify-center" onClick={onClose}>
       <div
-        className="bg-[#1a1a1a] w-full md:max-w-lg md:rounded-2xl rounded-t-2xl max-h-[85vh] flex flex-col"
+        className="relative bg-[#1a1a1a] w-full md:max-w-lg md:rounded-2xl rounded-t-2xl max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-4 border-b border-white/8">
@@ -250,8 +250,8 @@ const PollsPanel = ({ communityId, isAdmin, onClose }: Props) => {
         </div>
 
         {showCreate && (
-          <div className="absolute inset-0 bg-black/70 flex items-center justify-center p-4" onClick={() => setShowCreate(false)}>
-            <div className="bg-[#1a1a1a] rounded-2xl w-full max-w-md p-4 space-y-3" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4" onClick={() => setShowCreate(false)}>
+            <div className="bg-[#1a1a1a] rounded-2xl w-full max-w-md p-4 space-y-3 max-h-[90vh] overflow-y-auto border border-white/10" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between">
                 <div className="text-white font-semibold">Новый опрос</div>
                 <button onClick={() => setShowCreate(false)} className="text-white/60">

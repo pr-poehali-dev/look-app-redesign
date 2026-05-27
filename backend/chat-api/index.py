@@ -1085,7 +1085,7 @@ def handler(event: dict, context) -> dict:
                         (com_id, user_id)
                     )
                     mrow = cur.fetchone()
-                    is_admin = (row[0] == user_id) or (mrow and mrow[0] == 'admin')
+                    is_admin = (row[0] == user_id) or (mrow and mrow[0] in ('owner', 'admin'))
                     if not is_admin:
                         conn.commit()
                         return {'statusCode': 403, 'headers': headers,
