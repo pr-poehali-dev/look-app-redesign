@@ -27,6 +27,51 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
   const [tab, setTab] = useState<"media" | "files" | "links">("media");
   const [openedItem, setOpenedItem] = useState<number | null>(null);
   const [gender, setGender] = useState<string | null>(null);
+  const [notifMenu, setNotifMenu] = useState(false);
+  const [moreMenu, setMoreMenu] = useState(false);
+  const [notifMode, setNotifMode] = useState<"on" | "off" | "muted">(() => {
+    try { return (localStorage.getItem(`notif:${handle}`) as "on" | "off" | "muted") || "on"; } catch { return "on"; }
+  });
+  const [muted, setMuted] = useState<boolean>(() => {
+    try { return localStorage.getItem(`muted:${handle}`) === "1"; } catch { return false; }
+  });
+  const [blocked, setBlocked] = useState<boolean>(() => {
+    try { return localStorage.getItem(`blocked:${handle}`) === "1"; } catch { return false; }
+  });
+
+  const setNotif = (mode: "on" | "off" | "muted") => {
+    setNotifMode(mode);
+    try { localStorage.setItem(`notif:${handle}`, mode); } catch { /* ignore */ }
+    setNotifMenu(false);
+  };
+  const toggleMute = () => {
+    const next = !muted;
+    setMuted(next);
+    try { localStorage.setItem(`muted:${handle}`, next ? "1" : "0"); } catch { /* ignore */ }
+    setMoreMenu(false);
+  };
+  const toggleBlock = () => {
+    const next = !blocked;
+    setBlocked(next);
+    try { localStorage.setItem(`blocked:${handle}`, next ? "1" : "0"); } catch { /* ignore */ }
+    setMoreMenu(false);
+  };
+  const sharePofile = async () => {
+    const url = `${window.location.origin}/?user=${handle}`;
+    try {
+      if (navigator.share) await navigator.share({ title: `@${handle}`, url });
+      else { await navigator.clipboard.writeText(url); }
+    } catch { /* ignore */ }
+    setMoreMenu(false);
+  };
+  const copyHandle = async () => {
+    try { await navigator.clipboard.writeText(`@${handle}`); } catch { /* ignore */ }
+    setMoreMenu(false);
+  };
+  const reportUser = () => {
+    setMoreMenu(false);
+    window.dispatchEvent(new CustomEvent("report-user", { detail: { handle } }));
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -76,9 +121,7 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
           <Icon name="ArrowLeft" size={24} className="text-[#2AABEE]" />
         </button>
         <span className="text-black font-semibold text-base">Профиль</span>
-        <button className="p-2 -mr-1">
-          <Icon name="MoreVertical" size={22} className="text-[#2AABEE]" />
-        </button>
+        <div className="w-10" />
       </div>
 
       <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
@@ -118,13 +161,17 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
               </div>
               <span className="text-[#2AABEE] text-xs font-medium">Сообщение</span>
             </button>
-            <button className="flex flex-col items-center gap-1.5 active:opacity-70">
-              <div className="w-12 h-12 rounded-full bg-[#2AABEE] flex items-center justify-center">
-                <Icon name="Bell" size={20} className="text-white" />
+            <button onClick={() => setNotifMenu(true)} className="flex flex-col items-center gap-1.5 active:opacity-70">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${notifMode === "off" ? "bg-gray-100" : "bg-[#2AABEE]"}`}>
+                <Icon
+                  name={notifMode === "off" ? "BellOff" : notifMode === "muted" ? "BellMinus" : "Bell"}
+                  size={20}
+                  className={notifMode === "off" ? "text-[#2AABEE]" : "text-white"}
+                />
               </div>
               <span className="text-[#2AABEE] text-xs font-medium">Уведомл.</span>
             </button>
-            <button className="flex flex-col items-center gap-1.5 active:opacity-70">
+            <button onClick={() => setMoreMenu(true)} className="flex flex-col items-center gap-1.5 active:opacity-70">
               <div className="w-12 h-12 rounded-full bg-[#2AABEE] flex items-center justify-center">
                 <Icon name="MoreHorizontal" size={20} className="text-white" />
               </div>
@@ -262,6 +309,67 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
           {opened.views && (
             <div className="px-5 py-3 text-white/70 text-sm">{opened.views} просмотров</div>
           )}
+        </div>
+      )}
+
+      {/* Меню «Уведомл.» */}
+      {notifMenu && (
+        <div className="fixed inset-0 z-[10002] flex items-end justify-center bg-black/40" onClick={() => setNotifMenu(false)}>
+          <div className="bg-white rounded-t-2xl w-full max-w-md pb-6" onClick={(e) => e.stopPropagation()}>
+            <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-2" />
+            <div className="px-4 py-2 text-center text-gray-500 text-xs">Уведомления от @{data.handle}</div>
+            <button onClick={() => setNotif("on")} className="w-full flex items-center gap-3 px-5 py-3.5 active:bg-gray-50">
+              <Icon name="Bell" size={20} className="text-[#2AABEE]" />
+              <span className="flex-1 text-left text-black text-base">Включены</span>
+              {notifMode === "on" && <Icon name="Check" size={20} className="text-[#2AABEE]" />}
+            </button>
+            <button onClick={() => setNotif("muted")} className="w-full flex items-center gap-3 px-5 py-3.5 active:bg-gray-50">
+              <Icon name="BellMinus" size={20} className="text-[#2AABEE]" />
+              <span className="flex-1 text-left text-black text-base">Без звука</span>
+              {notifMode === "muted" && <Icon name="Check" size={20} className="text-[#2AABEE]" />}
+            </button>
+            <button onClick={() => setNotif("off")} className="w-full flex items-center gap-3 px-5 py-3.5 active:bg-gray-50">
+              <Icon name="BellOff" size={20} className="text-[#2AABEE]" />
+              <span className="flex-1 text-left text-black text-base">Отключены</span>
+              {notifMode === "off" && <Icon name="Check" size={20} className="text-[#2AABEE]" />}
+            </button>
+            <button onClick={() => setNotifMenu(false)} className="w-full mt-2 mx-4 py-3 rounded-xl bg-gray-100 text-black font-semibold text-sm" style={{ width: "calc(100% - 32px)" }}>
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Меню «Ещё» */}
+      {moreMenu && (
+        <div className="fixed inset-0 z-[10002] flex items-end justify-center bg-black/40" onClick={() => setMoreMenu(false)}>
+          <div className="bg-white rounded-t-2xl w-full max-w-md pb-6" onClick={(e) => e.stopPropagation()}>
+            <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-2" />
+            <div className="px-4 py-2 text-center text-gray-500 text-xs">@{data.handle}</div>
+            <button onClick={copyHandle} className="w-full flex items-center gap-3 px-5 py-3.5 active:bg-gray-50">
+              <Icon name="Copy" size={20} className="text-[#2AABEE]" />
+              <span className="flex-1 text-left text-black text-base">Копировать ник</span>
+            </button>
+            <button onClick={sharePofile} className="w-full flex items-center gap-3 px-5 py-3.5 active:bg-gray-50">
+              <Icon name="Share2" size={20} className="text-[#2AABEE]" />
+              <span className="flex-1 text-left text-black text-base">Поделиться профилем</span>
+            </button>
+            <button onClick={toggleMute} className="w-full flex items-center gap-3 px-5 py-3.5 active:bg-gray-50">
+              <Icon name={muted ? "Volume2" : "VolumeX"} size={20} className="text-[#2AABEE]" />
+              <span className="flex-1 text-left text-black text-base">{muted ? "Включить звук" : "Отключить звук"}</span>
+            </button>
+            <button onClick={reportUser} className="w-full flex items-center gap-3 px-5 py-3.5 active:bg-gray-50">
+              <Icon name="Flag" size={20} className="text-orange-500" />
+              <span className="flex-1 text-left text-orange-500 text-base">Пожаловаться</span>
+            </button>
+            <button onClick={toggleBlock} className="w-full flex items-center gap-3 px-5 py-3.5 active:bg-gray-50">
+              <Icon name={blocked ? "UserCheck" : "Ban"} size={20} className="text-red-500" />
+              <span className="flex-1 text-left text-red-500 text-base">{blocked ? "Разблокировать" : "Заблокировать"}</span>
+            </button>
+            <button onClick={() => setMoreMenu(false)} className="mt-2 mx-4 py-3 rounded-xl bg-gray-100 text-black font-semibold text-sm" style={{ width: "calc(100% - 32px)" }}>
+              Отмена
+            </button>
+          </div>
         </div>
       )}
     </div>,

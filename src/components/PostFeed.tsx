@@ -28,11 +28,16 @@ const PostFeed = () => {
             ? (hashtagsField.match(/#\S+/g) || hashtagsField.split(/[\s,]+/).filter(Boolean).map((t: string) => t.replace(/^#/, ""))).map((t: string) => t.replace(/^#/, ""))
             : (desc.match(/#\S+/g) || []).map((t: string) => t.slice(1));
           const caption = desc || "Фото";
+          // Аватарка: берём из БД если есть. Подставляем свою — только если это пост текущего пользователя
+          const isMyPost = (v.handle && user?.handle && v.handle === user.handle)
+            || (v.author && user?.name && v.author === user.name)
+            || v.author === "Я";
+          const dbAvatar = v.avatar || v.user_avatar || null;
           return {
             id: v.id,
             author: (v.author === "Я" || !v.author) ? (user?.name || "Пользователь") : v.author,
             handle: (v.handle === "user" || !v.handle) ? (user?.handle || user?.name || "user") : v.handle,
-            avatar: user?.avatar || `https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/48f38c64-742e-458c-9f09-0013a0813b5f.jpg`,
+            avatar: dbAvatar || (isMyPost ? (user?.avatar || "") : ""),
             image: v.url,
             caption,
             hashtags: tags,
