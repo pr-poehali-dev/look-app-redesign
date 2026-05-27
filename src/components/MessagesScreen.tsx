@@ -20,6 +20,8 @@ export interface Chat {
   members?: number;
   avatars?: string[];
   typing?: string;
+  peerId?: string;
+  peerHandle?: string;
 }
 
 const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
@@ -104,31 +106,12 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
     let cancelled = false;
     setTab("chats");
     (async () => {
-      // 1) Сначала пробуем найти существующий чат по handle/имени в уже загруженных чатах
       const cleanHandle = initialDirectHandle.replace(/^@/, "").toLowerCase();
-      const existing = chats.find((c) => {
-        const n = (c.name || "").toLowerCase();
-        return n === cleanHandle || n === `@${cleanHandle}`;
-      });
-      if (existing) {
-        if (cancelled) return;
-        setOpenChat(existing);
-        onDirectConsumed?.();
-        return;
-      }
 
-      // 2) Локальные mock-данные (для красивого имени/аватара пока грузится бэк)
-      let name = initialDirectHandle;
-      let avatar = "";
-      try {
-        const { getAuthor } = await import("@/data/authors");
-        const a = getAuthor(initialDirectHandle);
-        name = a.name || name;
-        avatar = a.avatar || "";
-      } catch { /* ignore */ }
-
-      // 3) Запрашиваем реальный профиль из БД, чтобы получить настоящий user_id
+      // 1) Запрашиваем реальный профиль из БД, чтобы получить настоящий user_id
       let peerId: string | null = null;
+      let name = "";
+      let avatar = "";
       try {
         const res = await fetch("https://functions.poehali.dev/075d6280-020a-48ce-a5e4-64eb3291a01e", {
           method: "POST",
@@ -139,22 +122,53 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
         const json = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
         if (json?.user?.id) {
           peerId = String(json.user.id);
-          name = json.user.name || name;
-          avatar = json.user.avatar || avatar;
+          name = json.user.name || cleanHandle;
+          avatar = json.user.avatar || "";
         }
       } catch { /* ignore */ }
 
+      // 2) Если пользователя в БД нет — пробуем взять из локальных данных авторов (для демо-аккаунтов)
+      if (!peerId) {
+        try {
+          const { getAuthor } = await import("@/data/authors");
+          const a = getAuthor(initialDirectHandle);
+          if (a && a.name) {
+            name = a.name;
+            avatar = a.avatar || "";
+          }
+        } catch { /* ignore */ }
+      }
+
       if (cancelled) return;
-      const finalPeerId = peerId || `handle_${cleanHandle}`;
+
+      // 3) Если в БД нет — нельзя написать реальному пользователю. Показываем уведомление и выходим.
+      if (!peerId) {
+        onDirectConsumed?.();
+        alert(`Пользователь @${cleanHandle} не зарегистрирован — написать ему нельзя.`);
+        return;
+      }
+
+      const chatId = `dm_${[user.id, peerId].sort().join("_")}`;
+
+      // 4) Если такой чат уже есть в списке — открываем его (актуальные имя/аватар из БД)
+      const existing = chats.find((c) => String(c.id) === chatId);
+      if (existing) {
+        setOpenChat({ ...existing, name: name || existing.name, avatar: avatar || existing.avatar, peerId, peerHandle: cleanHandle });
+        onDirectConsumed?.();
+        return;
+      }
+
       const chat: Chat = {
-        id: `dm_${[user.id, finalPeerId].sort().join("_")}`,
+        id: chatId,
         type: "personal",
-        name,
+        name: name || cleanHandle,
         avatar,
         lastMsg: "",
         time: "сейчас",
         unread: 0,
         online: false,
+        peerId,
+        peerHandle: cleanHandle,
       };
       setChats((prev) => (prev.some((c) => String(c.id) === String(chat.id)) ? prev : [chat, ...prev]));
       setOpenChat(chat);

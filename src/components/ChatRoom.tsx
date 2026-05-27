@@ -388,7 +388,17 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       const res = await fetch(`${API}?module=chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
-        body: JSON.stringify({ action: "send", chat_id: chatId, content, type }),
+        body: JSON.stringify({
+          action: "send",
+          chat_id: chatId,
+          content,
+          type,
+          // Передаём данные собеседника, чтобы backend смог корректно сохранить имя/аватар чата
+          // и добавить нужного user_id в участники (актуально для чатов, открытых из профиля)
+          peer_id: chat.peerId || undefined,
+          peer_name: chat.type === "personal" ? chat.name : undefined,
+          peer_avatar: chat.type === "personal" ? chat.avatar : undefined,
+        }),
       });
       console.log("[ChatRoom] send response status", res.status);
       const raw = await res.json();

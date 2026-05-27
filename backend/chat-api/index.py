@@ -510,19 +510,39 @@ def handler(event: dict, context) -> dict:
                 chat_id = body.get('chat_id')
                 content = body.get('content', '')
                 msg_type = body.get('type', 'text')
+                # Опциональные поля для случая, когда чат создаётся впервые (открыт из профиля)
+                peer_id_explicit = (body.get('peer_id') or '').strip() or None
+                peer_name_explicit = (body.get('peer_name') or '').strip() or None
+                peer_avatar_explicit = (body.get('peer_avatar') or '').strip() or None
                 if not chat_id:
                     conn.commit()
                     return {'statusCode': 400, 'headers': headers,
                             'body': json.dumps({'error': 'chat_id required'})}
 
-                cur.execute(
-                    "INSERT INTO sa_chats (id, type) VALUES (%s, 'personal') ON CONFLICT DO NOTHING",
-                    (chat_id,)
-                )
+                # Создаём чат, при наличии — сохраняем имя/аватар собеседника
+                if peer_name_explicit or peer_avatar_explicit:
+                    cur.execute(
+                        "INSERT INTO sa_chats (id, type, name, avatar) VALUES (%s, 'personal', %s, %s) "
+                        "ON CONFLICT (id) DO UPDATE SET "
+                        "name = COALESCE(NULLIF(sa_chats.name, ''), EXCLUDED.name), "
+                        "avatar = COALESCE(NULLIF(sa_chats.avatar, ''), EXCLUDED.avatar)",
+                        (chat_id, peer_name_explicit, peer_avatar_explicit)
+                    )
+                else:
+                    cur.execute(
+                        "INSERT INTO sa_chats (id, type) VALUES (%s, 'personal') ON CONFLICT DO NOTHING",
+                        (chat_id,)
+                    )
                 cur.execute(
                     "INSERT INTO sa_chat_members (chat_id, user_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
                     (chat_id, user_id)
                 )
+                # Явно добавляем собеседника (если фронт передал peer_id)
+                if peer_id_explicit and peer_id_explicit != user_id:
+                    cur.execute(
+                        "INSERT INTO sa_chat_members (chat_id, user_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                        (chat_id, peer_id_explicit)
+                    )
                 # Авто-добавление второго участника для DM-чатов формата dm_u_<id1>_u_<id2>
                 if chat_id.startswith('dm_'):
                     rest = chat_id[3:]
