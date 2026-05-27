@@ -40,7 +40,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const MY_ID = user?.id || "anon";
   const MY_NAME = user?.name || "Пользователь";
   const rawChatId = String(chat.id);
-  const chatId = rawChatId.startsWith("mock_") || rawChatId.startsWith("chat_") || rawChatId.startsWith("dm_") || rawChatId.startsWith("community_")
+  const chatId = rawChatId.startsWith("mock_") || rawChatId.startsWith("chat_") || rawChatId.startsWith("dm_") || rawChatId.startsWith("community_") || rawChatId.startsWith("com_")
     ? rawChatId
     : `dm_${[MY_ID, rawChatId].sort().join("_")}`;
   const [messages, setMessages] = useState<Message[]>([]);
@@ -652,7 +652,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     );
   };
 
-  const isGroup = chat.type === "group" || String(chat.id).startsWith("community_");
+  const isGroup = chat.type === "group" || String(chat.id).startsWith("community_") || String(chat.id).startsWith("com_");
   const communityId = isGroup ? chatId : "";
 
   // Проверка: текущий пользователь — админ сообщества + creator_id + pinned message
