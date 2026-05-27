@@ -923,6 +923,15 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
           <button onClick={() => setShowAddMembers(true)} className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center" title="Добавить участников">
             <Icon name="UserPlus" size={17} className="text-white" />
           </button>
+          {isGroup && (
+            <button
+              onClick={() => setShowPolls(true)}
+              className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center"
+              title={communityIsAdmin ? "Создать опрос" : "Опросы"}
+            >
+              <Icon name="BarChart3" size={17} className="text-white" />
+            </button>
+          )}
           <div className="relative">
             <button onClick={() => { setMenuOpen(v => !v); setSubmenuOpen(false); }} className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center">
               <Icon name="MoreVertical" size={17} className="text-white" />

@@ -811,13 +811,32 @@ def handler(event: dict, context) -> dict:
                         conn.commit()
                         return {'statusCode': 400, 'headers': headers,
                                 'body': json.dumps({'error': 'community_id and user_ids required'})}
-                    cur.execute("SELECT creator_id FROM communities WHERE id = %s", (com_id,))
+                    cur.execute("SELECT creator_id, type FROM communities WHERE id = %s AND is_hidden = FALSE", (com_id,))
                     row = cur.fetchone()
                     if not row:
                         conn.commit()
                         return {'statusCode': 404, 'headers': headers,
                                 'body': json.dumps({'error': 'not found'})}
-                    # Любой участник может пригласить (упрощённо)
+                    creator_id, com_type = row[0], row[1]
+                    # Проверка прав: для закрытых групп — только админ/owner или участник с can_invite.
+                    # Для открытых — любой участник может пригласить.
+                    cur.execute(
+                        "SELECT role, COALESCE(can_invite, TRUE) FROM community_members "
+                        "WHERE community_id = %s AND user_id = %s",
+                        (com_id, user_id)
+                    )
+                    me = cur.fetchone()
+                    is_owner = creator_id == user_id or (me and me[0] == 'owner')
+                    is_admin = is_owner or (me and me[0] == 'admin')
+                    can_invite = is_admin or (me and me[1])
+                    if com_type == 'closed' and not is_admin:
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers,
+                                'body': json.dumps({'error': 'only admin can invite to closed group'})}
+                    if not can_invite:
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers,
+                                'body': json.dumps({'error': 'no invite permission'})}
                     added = 0
                     for uid in invites[:50]:
                         if not uid or not isinstance(uid, str):
@@ -1460,10 +1479,15 @@ def handler(event: dict, context) -> dict:
                     cur.execute("SELECT role, COALESCE(can_pin, FALSE) FROM community_members WHERE community_id = %s AND user_id = %s",
                                 (com_id, user_id))
                     me = cur.fetchone()
-                    cur.execute("SELECT creator_id FROM communities WHERE id = %s", (com_id,))
+                    cur.execute("SELECT creator_id FROM communities WHERE id = %s AND is_hidden = FALSE", (com_id,))
                     crow = cur.fetchone()
-                    is_owner = crow and crow[0] == user_id
-                    if not is_owner and not me or (me and not (me[0] in ('owner', 'admin') or me[1])):
+                    if not crow:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers, 'body': json.dumps({'error': 'community not found'})}
+                    is_owner = crow[0] == user_id or (me and me[0] == 'owner')
+                    has_admin_role = me and me[0] in ('owner', 'admin')
+                    has_pin_perm = me and me[1]
+                    if not (is_owner or has_admin_role or has_pin_perm):
                         conn.commit()
                         return {'statusCode': 403, 'headers': headers, 'body': json.dumps({'error': 'forbidden'})}
                     cur.execute(

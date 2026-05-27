@@ -77,7 +77,14 @@ const PostFeed = () => {
 
   const storySource = (postsWithCounts.length > 0 ? postsWithCounts : MOCK_POSTS)
     .filter(p => !removedIds.has(p.id));
-  const storyUsers = storySource.slice(0, 6);
+  // Группируем по уникальному автору (handle) — в сторис должен быть каждый автор один раз
+  const seenHandles = new Set<string>();
+  const storyUsers = storySource.filter(p => {
+    const key = (p.handle || p.author || "").toLowerCase().trim();
+    if (!key || seenHandles.has(key)) return false;
+    seenHandles.add(key);
+    return true;
+  }).slice(0, 12);
   const stories: Story[] = storyUsers.map(p => ({ id: p.id, handle: p.handle, avatar: p.avatar, image: p.image }));
 
   return (
