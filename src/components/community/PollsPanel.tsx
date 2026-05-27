@@ -147,21 +147,24 @@ const PollsPanel = ({ communityId, isAdmin, onClose }: Props) => {
       const raw = await res.json();
       const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
       if (data.ok) {
-        // Отправляем сообщение-уведомление об опросе в чат группы
+        // Отправляем сообщение-карточку опроса в чат группы
         try {
-          await fetch(`${API}?module=chat&action=send`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-User-Id": user.id,
-              "X-User-Name": encodeURIComponent(user.name),
-            },
-            body: JSON.stringify({
-              chat_id: communityId,
-              type: "text",
-              content: `📊 Опрос: ${q}\n${opts.map((o, i) => `${i + 1}. ${o}`).join("\n")}\n\nГолосуй в разделе «Опросы группы»`,
-            }),
-          });
+          const pollId = data.poll_id;
+          if (pollId) {
+            await fetch(`${API}?module=chat&action=send`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-User-Id": user.id,
+                "X-User-Name": encodeURIComponent(user.name),
+              },
+              body: JSON.stringify({
+                chat_id: communityId,
+                type: "poll",
+                content: JSON.stringify({ poll_id: pollId }),
+              }),
+            });
+          }
         } catch { /* тихо */ }
         setShowCreate(false);
         setQuestion("");

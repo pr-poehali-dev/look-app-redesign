@@ -5,6 +5,7 @@ import { Chat } from "./MessagesScreen";
 import CallScreen from "./CallScreen";
 import GroupCallScreen from "./GroupCallScreen";
 import PollsPanel from "./community/PollsPanel";
+import PollMessage from "./community/PollMessage";
 import MembersScreen from "./community/MembersScreen";
 import { useAuth } from "@/context/AuthContext";
 
@@ -14,7 +15,7 @@ interface Message {
   id: number;
   user_id: string;
   user_name: string;
-  type: "text" | "voice" | "image" | "file" | "location" | "contact";
+  type: "text" | "voice" | "image" | "file" | "location" | "contact" | "poll";
   content: string;
   time: string;
 }
@@ -547,6 +548,19 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
 
   const renderMsg = (msg: Message) => {
     const isMe = msg.user_id === MY_ID;
+    if (msg.type === "poll") {
+      let pollData: { poll_id?: number } = {};
+      try { pollData = JSON.parse(msg.content); } catch { void 0; }
+      if (pollData.poll_id && communityId) {
+        return <PollMessage pollId={pollData.poll_id} communityId={communityId} isMe={isMe} time={msg.time} />;
+      }
+      return (
+        <div className={`px-4 py-2.5 rounded-2xl max-w-[78%] ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
+          <p className="text-white text-sm">📊 Опрос</p>
+          <div className="text-white/40 text-[10px] mt-1 text-right">{msg.time}</div>
+        </div>
+      );
+    }
     if (msg.type === "image") {
       return (
         <div className={`max-w-[70%] rounded-2xl overflow-hidden ${isMe ? "rounded-br-sm" : "rounded-bl-sm"}`}>
