@@ -102,25 +102,66 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
   useEffect(() => {
     if (!initialDirectHandle || !user) return;
     let cancelled = false;
-    import("@/data/authors").then(({ getAuthor }) => {
+    setTab("chats");
+    (async () => {
+      // 1) Сначала пробуем найти существующий чат по handle/имени в уже загруженных чатах
+      const cleanHandle = initialDirectHandle.replace(/^@/, "").toLowerCase();
+      const existing = chats.find((c) => {
+        const n = (c.name || "").toLowerCase();
+        return n === cleanHandle || n === `@${cleanHandle}`;
+      });
+      if (existing) {
+        if (cancelled) return;
+        setOpenChat(existing);
+        onDirectConsumed?.();
+        return;
+      }
+
+      // 2) Локальные mock-данные (для красивого имени/аватара пока грузится бэк)
+      let name = initialDirectHandle;
+      let avatar = "";
+      try {
+        const { getAuthor } = await import("@/data/authors");
+        const a = getAuthor(initialDirectHandle);
+        name = a.name || name;
+        avatar = a.avatar || "";
+      } catch { /* ignore */ }
+
+      // 3) Запрашиваем реальный профиль из БД, чтобы получить настоящий user_id
+      let peerId: string | null = null;
+      try {
+        const res = await fetch("https://functions.poehali.dev/075d6280-020a-48ce-a5e4-64eb3291a01e", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "get_public_profile", handle: cleanHandle }),
+        });
+        const raw = await res.json();
+        const json = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+        if (json?.user?.id) {
+          peerId = String(json.user.id);
+          name = json.user.name || name;
+          avatar = json.user.avatar || avatar;
+        }
+      } catch { /* ignore */ }
+
       if (cancelled) return;
-      const author = getAuthor(initialDirectHandle);
-      const peerId = `handle_${initialDirectHandle}`;
+      const finalPeerId = peerId || `handle_${cleanHandle}`;
       const chat: Chat = {
-        id: `dm_${[user.id, peerId].sort().join("_")}`,
+        id: `dm_${[user.id, finalPeerId].sort().join("_")}`,
         type: "personal",
-        name: author.name || initialDirectHandle,
-        avatar: author.avatar || "",
+        name,
+        avatar,
         lastMsg: "",
         time: "сейчас",
         unread: 0,
         online: false,
       };
-      setTab("chats");
+      setChats((prev) => (prev.some((c) => String(c.id) === String(chat.id)) ? prev : [chat, ...prev]));
       setOpenChat(chat);
       onDirectConsumed?.();
-    });
+    })();
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialDirectHandle, user]);
 
   const startChatWithUser = (peer: { id: string; name: string; avatar?: string; online?: boolean }) => {
