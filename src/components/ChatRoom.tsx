@@ -5,6 +5,7 @@ import { Chat } from "./MessagesScreen";
 import CallScreen from "./CallScreen";
 import GroupCallScreen from "./GroupCallScreen";
 import PollsPanel from "./community/PollsPanel";
+import MembersScreen from "./community/MembersScreen";
 import { useAuth } from "@/context/AuthContext";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
@@ -91,7 +92,10 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const [confirmDeleteChat, setConfirmDeleteChat] = useState(false);
   const [toast, setToast] = useState("");
   const [communityIsAdmin, setCommunityIsAdmin] = useState(false);
+  const [communityCreatorId, setCommunityCreatorId] = useState<string>("");
   const [showPolls, setShowPolls] = useState(false);
+  const [showMembersScreen, setShowMembersScreen] = useState(false);
+  const [pinnedMessage, setPinnedMessage] = useState<{ message_id: number; content: string; author_name: string; type: string } | null>(null);
 
   const startLongPress = (msgId: number) => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
@@ -651,27 +655,123 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const isGroup = chat.type === "group" || String(chat.id).startsWith("community_");
   const communityId = isGroup ? chatId : "";
 
-  // Проверка: текущий пользователь — админ сообщества?
+  // Проверка: текущий пользователь — админ сообщества + creator_id + pinned message
   useEffect(() => {
     if (!isGroup || !communityId || !user) {
       setCommunityIsAdmin(false);
+      setPinnedMessage(null);
+      setCommunityCreatorId("");
       return;
     }
     let cancelled = false;
+    // Роль через members (api отдаёт role: 'owner' | 'admin' | 'member')
     fetch(`${API}?module=community&action=members&community_id=${encodeURIComponent(communityId)}`, {
       headers: { "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
     })
       .then((r) => r.json())
       .then((raw) => {
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-        const me = (data.members || []).find((m: { user_id: string; role?: string }) => m.user_id === user.id);
-        if (!cancelled) setCommunityIsAdmin(!!(me && me.role === "admin"));
+        const me = (data.members || []).find((m: { id: string; role?: string }) => m.id === user.id);
+        if (!cancelled) setCommunityIsAdmin(!!(me && (me.role === "admin" || me.role === "owner")));
       })
       .catch(() => {
         if (!cancelled) setCommunityIsAdmin(false);
       });
+
+    // creator_id (для передачи владельца)
+    fetch(`${API}?module=community&action=list`, {
+      headers: { "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
+    })
+      .then(r => r.json())
+      .then(raw => {
+        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+        const com = (data.communities || []).find((c: { id: string }) => c.id === communityId);
+        if (!cancelled && com) setCommunityCreatorId(com.creator_id || "");
+      })
+      .catch(() => {});
+
+    // pinned message
+    fetch(`${API}?module=community`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
+      body: JSON.stringify({ action: "get_pinned", community_id: communityId }),
+    })
+      .then(r => r.json())
+      .then(raw => {
+        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+        if (!cancelled) setPinnedMessage(data.pinned || null);
+      })
+      .catch(() => {});
+
     return () => { cancelled = true; };
   }, [isGroup, communityId, user]);
+
+  const pinMessage = async (msgId: number) => {
+    if (!user || !communityId) return;
+    try {
+      const res = await fetch(`${API}?module=community`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
+        body: JSON.stringify({ action: "pin_message", community_id: communityId, message_id: msgId }),
+      });
+      const raw = await res.json();
+      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      if (data.ok) {
+        // обновим pinned
+        const r2 = await fetch(`${API}?module=community`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
+          body: JSON.stringify({ action: "get_pinned", community_id: communityId }),
+        });
+        const raw2 = await r2.json();
+        const d2 = typeof raw2.body === "string" ? JSON.parse(raw2.body) : raw2;
+        setPinnedMessage(d2.pinned || null);
+      } else {
+        alert("Не удалось закрепить");
+      }
+    } catch {
+      alert("Не удалось закрепить");
+    }
+  };
+
+  const unpinMessage = async () => {
+    if (!user || !communityId) return;
+    if (!confirm("Открепить сообщение?")) return;
+    try {
+      const res = await fetch(`${API}?module=community`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
+        body: JSON.stringify({ action: "unpin_message", community_id: communityId }),
+      });
+      const raw = await res.json();
+      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      if (data.ok) setPinnedMessage(null);
+    } catch {
+      // тихо
+    }
+  };
+
+  const leaveGroup = async () => {
+    if (!user || !communityId) return;
+    if (!confirm("Покинуть группу?")) return;
+    try {
+      const res = await fetch(`${API}?module=community`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
+        body: JSON.stringify({ action: "leave", community_id: communityId }),
+      });
+      const raw = await res.json();
+      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      if (data.ok) {
+        onDeleted?.(chat.id);
+        onBack();
+      } else {
+        alert("Не удалось покинуть группу");
+      }
+    } catch {
+      alert("Не удалось покинуть группу");
+    }
+  };
 
   const displayName = !isGroup && peerInfo?.name ? peerInfo.name : chat.name;
   const displayAvatar = !isGroup && peerInfo?.avatar ? peerInfo.avatar : chat.avatar;
@@ -833,13 +933,28 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                 <div className="absolute right-0 top-11 z-50 w-60 bg-[#1c1c1e] rounded-xl shadow-2xl border border-white/8 overflow-hidden py-1 animate-in fade-in slide-in-from-top-2 duration-150">
                   {!submenuOpen ? (
                     <>
-                      <button onClick={() => { setMenuOpen(false); setShowProfile(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Просмотр контакта</button>
+                      {isGroup ? (
+                        <button onClick={() => { setMenuOpen(false); setShowMembersScreen(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5 flex items-center gap-2">
+                          <Icon name="Users" size={15} className="text-white/60" />
+                          <span>Участники группы</span>
+                        </button>
+                      ) : (
+                        <button onClick={() => { setMenuOpen(false); setShowProfile(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Просмотр контакта</button>
+                      )}
                       <button onClick={() => { setMenuOpen(false); setShowSearch(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Поиск</button>
                       <button onClick={() => { setMenuOpen(false); setShowReport(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Пожаловаться</button>
-                      <button onClick={() => { setMenuOpen(false); setShowBlock(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{blocked ? "Разблокировать" : "Заблокировать"}</button>
+                      {!isGroup && (
+                        <button onClick={() => { setMenuOpen(false); setShowBlock(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{blocked ? "Разблокировать" : "Заблокировать"}</button>
+                      )}
                       <button onClick={() => { setMenuOpen(false); setShowMute(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Без звука</button>
                       <button onClick={() => { setMenuOpen(false); setShowDisappear(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Исчезающие сообщения</button>
                       <button onClick={() => { setMenuOpen(false); setShowTheme(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Тема чата</button>
+                      {isGroup && (
+                        <button onClick={() => { setMenuOpen(false); leaveGroup(); }} className="w-full text-left px-4 py-3 text-[#fe2c55] text-sm hover:bg-white/5 flex items-center gap-2">
+                          <Icon name="LogOut" size={15} />
+                          <span>Покинуть группу</span>
+                        </button>
+                      )}
                       <button onClick={() => setSubmenuOpen(true)} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5 flex items-center justify-between">
                         <span>Ещё</span>
                         <Icon name="ChevronRight" size={16} className="text-white/50" />
@@ -869,6 +984,27 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
           </div>
         </div>
       </div>
+
+      {/* Pinned message bar (для группы) */}
+      {isGroup && pinnedMessage && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-[#0c1318] border-b border-white/8">
+          <div className="w-1 h-9 rounded bg-[#61d4f0]" />
+          <div className="flex-1 min-w-0">
+            <div className="text-[#61d4f0] text-xs font-medium">Закреплённое сообщение</div>
+            <div className="text-white/70 text-xs truncate">
+              {pinnedMessage.type === "image" ? "📷 Фото" :
+                pinnedMessage.type === "voice" ? "🎤 Голосовое" :
+                pinnedMessage.type === "file" ? "📎 Файл" :
+                pinnedMessage.content || ""}
+            </div>
+          </div>
+          {communityIsAdmin && (
+            <button onClick={unpinMessage} className="text-white/50 hover:text-white p-1">
+              <Icon name="X" size={16} />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Search bar */}
       {showSearch && (
@@ -902,7 +1038,8 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
           const prev = messages[i - 1];
           const isFirstInGroup = !isMe && (!prev || prev.user_id !== msg.user_id);
           const showName = isGroup && isFirstInGroup;
-          const longPressProps = isMe && msg.id > 0 ? {
+          const canActOnMsg = msg.id > 0 && (isMe || (isGroup && communityIsAdmin));
+          const longPressProps = canActOnMsg ? {
             onPointerDown: () => startLongPress(msg.id),
             onPointerUp: cancelLongPress,
             onPointerLeave: cancelLongPress,
@@ -971,6 +1108,15 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
           communityId={communityId}
           isAdmin={communityIsAdmin}
           onClose={() => setShowPolls(false)}
+        />
+      )}
+
+      {showMembersScreen && isGroup && (
+        <MembersScreen
+          communityId={communityId}
+          communityName={chat.name}
+          creatorId={communityCreatorId}
+          onBack={() => setShowMembersScreen(false)}
         />
       )}
 
@@ -1060,14 +1206,30 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       )}
 
       {confirmDelete !== null && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-6" onClick={() => setConfirmDelete(null)}>
-          <div className="bg-[#1a1a1a] rounded-2xl p-5 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
-            <p className="text-white text-base font-semibold mb-2">Удалить сообщение?</p>
-            <p className="text-white/50 text-sm mb-5">Это действие нельзя отменить.</p>
-            <div className="flex gap-2">
-              <button onClick={() => setConfirmDelete(null)} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm">Отмена</button>
-              <button onClick={() => deleteMessage(confirmDelete)} className="flex-1 py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold">Удалить</button>
-            </div>
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center" onClick={() => setConfirmDelete(null)}>
+          <div className="bg-[#1a1a1a] rounded-t-2xl sm:rounded-2xl p-2 w-full sm:max-w-sm" onClick={(e) => e.stopPropagation()}>
+            {isGroup && communityIsAdmin && (
+              <button
+                onClick={() => { const id = confirmDelete!; setConfirmDelete(null); pinMessage(id); }}
+                className="w-full flex items-center gap-3 px-4 py-3 text-white text-sm hover:bg-white/5 rounded-lg"
+              >
+                <Icon name="Pin" size={18} className="text-[#61d4f0]" />
+                <span>Закрепить сообщение</span>
+              </button>
+            )}
+            <button
+              onClick={() => deleteMessage(confirmDelete!)}
+              className="w-full flex items-center gap-3 px-4 py-3 text-[#fe2c55] text-sm hover:bg-white/5 rounded-lg"
+            >
+              <Icon name="Trash2" size={18} />
+              <span>Удалить сообщение</span>
+            </button>
+            <button
+              onClick={() => setConfirmDelete(null)}
+              className="w-full px-4 py-3 text-white/60 text-sm hover:bg-white/5 rounded-lg"
+            >
+              Отмена
+            </button>
           </div>
         </div>
       )}

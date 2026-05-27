@@ -583,21 +583,23 @@ def handler(event: dict, context) -> dict:
                 if action == 'list':
                     cur.execute(
                         "SELECT c.id, c.name, c.description, c.type, c.category, c.img, c.creator_id, "
-                        "COUNT(DISTINCT cm.user_id) as member_count, "
-                        "MAX(CASE WHEN cm.user_id = %s THEN 1 ELSE 0 END) as is_member "
+                        "COUNT(DISTINCT CASE WHEN cm.role != 'left' THEN cm.user_id END) as member_count, "
+                        "MAX(CASE WHEN cm.user_id = %s AND cm.role != 'left' THEN 1 ELSE 0 END) as is_member, "
+                        "MAX(CASE WHEN cm.user_id = %s THEN cm.role ELSE NULL END) as my_role "
                         "FROM communities c "
                         "LEFT JOIN community_members cm ON cm.community_id = c.id "
                         "WHERE c.creator_id <> 'system' AND COALESCE(c.is_hidden, FALSE) = FALSE "
                         "GROUP BY c.id, c.name, c.description, c.type, c.category, c.img, c.creator_id "
                         "ORDER BY c.created_at DESC",
-                        (user_id,)
+                        (user_id, user_id)
                     )
                     rows = cur.fetchall()
                     communities = [
                         {'id': r[0], 'name': r[1], 'description': r[2], 'type': r[3],
                          'category': r[4], 'img': r[5], 'creator_id': r[6],
                          'members': r[7], 'joined': bool(r[8]),
-                         'is_admin': r[6] == user_id}
+                         'my_role': r[9] or '',
+                         'is_admin': (r[6] == user_id) or (r[9] in ('owner', 'admin'))}
                         for r in rows
                     ]
                     conn.commit()
@@ -611,16 +613,34 @@ def handler(event: dict, context) -> dict:
                         return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'community_id required'})}
                     cur.execute(
                         "SELECT cm.user_id, cm.user_name, cm.role, "
-                        "u.online_at > NOW() - INTERVAL '30 seconds' as online "
+                        "u.online_at > NOW() - INTERVAL '30 seconds' as online, "
+                        "COALESCE(cm.can_invite, FALSE), COALESCE(cm.can_pin, FALSE), "
+                        "COALESCE(cm.can_remove_messages, FALSE), COALESCE(cm.can_ban, FALSE), "
+                        "COALESCE(cm.can_change_info, FALSE), COALESCE(cm.can_add_admins, FALSE), "
+                        "cm.custom_title "
                         "FROM community_members cm "
                         "LEFT JOIN sa_users u ON u.id = cm.user_id "
-                        "WHERE cm.community_id = %s ORDER BY cm.joined_at ASC",
+                        "WHERE cm.community_id = %s AND cm.role != 'left' "
+                        "ORDER BY CASE cm.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END, cm.joined_at ASC",
                         (com_id,)
                     )
                     rows = cur.fetchall()
-                    members = [{'id': r[0], 'name': r[1], 'role': r[2], 'online': bool(r[3])} for r in rows]
+                    members = [{
+                        'id': r[0], 'name': r[1], 'role': r[2], 'online': bool(r[3]),
+                        'can_invite': bool(r[4]), 'can_pin': bool(r[5]),
+                        'can_remove_messages': bool(r[6]), 'can_ban': bool(r[7]),
+                        'can_change_info': bool(r[8]), 'can_add_admins': bool(r[9]),
+                        'custom_title': r[10] or '',
+                    } for r in rows]
+                    # Список забаненных (для админов это нужно)
+                    cur.execute(
+                        "SELECT user_id, user_name, banned_at, reason FROM community_bans WHERE community_id = %s "
+                        "ORDER BY banned_at DESC",
+                        (com_id,)
+                    )
+                    bans = [{'id': b[0], 'name': b[1], 'banned_at': b[2].isoformat() if b[2] else None, 'reason': b[3] or ''} for b in cur.fetchall()]
                     conn.commit()
-                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'members': members})}
+                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'members': members, 'banned': bans})}
 
             elif method == 'POST':
                 body = json.loads(event.get('body') or '{}')
@@ -1178,6 +1198,336 @@ def handler(event: dict, context) -> dict:
                     conn.commit()
                     return {'statusCode': 200, 'headers': headers,
                             'body': json.dumps({'polls': polls})}
+
+                elif post_action == 'promote':
+                    com_id = body.get('community_id')
+                    target_id = body.get('user_id')
+                    perms = body.get('permissions') or {}
+                    title = (body.get('custom_title') or '').strip()[:32]
+                    if not com_id or not target_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'community_id and user_id required'})}
+                    cur.execute("SELECT creator_id FROM communities WHERE id = %s AND is_hidden = FALSE", (com_id,))
+                    crow = cur.fetchone()
+                    if not crow:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers, 'body': json.dumps({'error': 'community not found'})}
+                    cur.execute("SELECT role, COALESCE(can_add_admins, FALSE) FROM community_members WHERE community_id = %s AND user_id = %s",
+                                (com_id, user_id))
+                    me = cur.fetchone()
+                    is_owner = crow[0] == user_id or (me and me[0] == 'owner')
+                    can_add = is_owner or (me and (me[1] or me[0] == 'admin'))
+                    if not can_add:
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers, 'body': json.dumps({'error': 'forbidden'})}
+                    # Нельзя понижать owner-а
+                    cur.execute("SELECT role FROM community_members WHERE community_id = %s AND user_id = %s",
+                                (com_id, target_id))
+                    trow = cur.fetchone()
+                    if not trow or trow[0] == 'left':
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers, 'body': json.dumps({'error': 'target not member'})}
+                    if trow[0] == 'owner':
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers, 'body': json.dumps({'error': 'cannot modify owner'})}
+                    cur.execute(
+                        "UPDATE community_members SET role = 'admin', "
+                        "can_invite = %s, can_pin = %s, can_remove_messages = %s, can_ban = %s, "
+                        "can_change_info = %s, can_add_admins = %s, custom_title = %s, "
+                        "promoted_by = %s, promoted_at = NOW() "
+                        "WHERE community_id = %s AND user_id = %s",
+                        (
+                            bool(perms.get('can_invite', True)), bool(perms.get('can_pin', True)),
+                            bool(perms.get('can_remove_messages', True)), bool(perms.get('can_ban', True)),
+                            bool(perms.get('can_change_info', False)), bool(perms.get('can_add_admins', False)),
+                            title or None, user_id, com_id, target_id,
+                        )
+                    )
+                    cur.execute(
+                        "INSERT INTO community_admin_log (community_id, actor_id, actor_name, action, target_id, payload) "
+                        "VALUES (%s, %s, %s, 'promote', %s, %s)",
+                        (com_id, user_id, user_name, target_id, json.dumps(perms))
+                    )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True})}
+
+                elif post_action == 'demote':
+                    com_id = body.get('community_id')
+                    target_id = body.get('user_id')
+                    if not com_id or not target_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'community_id and user_id required'})}
+                    cur.execute("SELECT creator_id FROM communities WHERE id = %s AND is_hidden = FALSE", (com_id,))
+                    crow = cur.fetchone()
+                    if not crow:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers, 'body': json.dumps({'error': 'community not found'})}
+                    cur.execute("SELECT role, COALESCE(can_add_admins, FALSE) FROM community_members WHERE community_id = %s AND user_id = %s",
+                                (com_id, user_id))
+                    me = cur.fetchone()
+                    is_owner = crow[0] == user_id or (me and me[0] == 'owner')
+                    if not is_owner and not (me and me[1]):
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers, 'body': json.dumps({'error': 'forbidden'})}
+                    cur.execute("SELECT role FROM community_members WHERE community_id = %s AND user_id = %s",
+                                (com_id, target_id))
+                    trow = cur.fetchone()
+                    if not trow:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers, 'body': json.dumps({'error': 'target not member'})}
+                    if trow[0] == 'owner':
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers, 'body': json.dumps({'error': 'cannot demote owner'})}
+                    cur.execute(
+                        "UPDATE community_members SET role = 'member', "
+                        "can_invite = TRUE, can_pin = FALSE, can_remove_messages = FALSE, can_ban = FALSE, "
+                        "can_change_info = FALSE, can_add_admins = FALSE, custom_title = NULL "
+                        "WHERE community_id = %s AND user_id = %s",
+                        (com_id, target_id)
+                    )
+                    cur.execute(
+                        "INSERT INTO community_admin_log (community_id, actor_id, actor_name, action, target_id) "
+                        "VALUES (%s, %s, %s, 'demote', %s)",
+                        (com_id, user_id, user_name, target_id)
+                    )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True})}
+
+                elif post_action == 'kick' or post_action == 'ban':
+                    com_id = body.get('community_id')
+                    target_id = body.get('user_id')
+                    reason = (body.get('reason') or '').strip()[:200]
+                    if not com_id or not target_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'community_id and user_id required'})}
+                    cur.execute("SELECT creator_id FROM communities WHERE id = %s AND is_hidden = FALSE", (com_id,))
+                    crow = cur.fetchone()
+                    if not crow:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers, 'body': json.dumps({'error': 'community not found'})}
+                    cur.execute("SELECT role, COALESCE(can_ban, FALSE) FROM community_members WHERE community_id = %s AND user_id = %s",
+                                (com_id, user_id))
+                    me = cur.fetchone()
+                    is_owner = crow[0] == user_id or (me and me[0] == 'owner')
+                    can_ban = is_owner or (me and (me[1] or me[0] == 'admin'))
+                    if not can_ban:
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers, 'body': json.dumps({'error': 'forbidden'})}
+                    cur.execute("SELECT role, user_name FROM community_members WHERE community_id = %s AND user_id = %s",
+                                (com_id, target_id))
+                    trow = cur.fetchone()
+                    if not trow:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers, 'body': json.dumps({'error': 'target not member'})}
+                    if trow[0] == 'owner':
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers, 'body': json.dumps({'error': 'cannot ban owner'})}
+                    target_name = trow[1] or ''
+                    # Помечаем как 'left' (мы не удаляем — это запрещено)
+                    cur.execute("UPDATE community_members SET role = 'left' WHERE community_id = %s AND user_id = %s",
+                                (com_id, target_id))
+                    cur.execute("UPDATE sa_chat_members SET user_id = user_id WHERE chat_id = %s AND user_id = %s",
+                                (com_id, target_id))
+                    if post_action == 'ban':
+                        cur.execute(
+                            "INSERT INTO community_bans (community_id, user_id, user_name, banned_by, reason) "
+                            "VALUES (%s, %s, %s, %s, %s) "
+                            "ON CONFLICT (community_id, user_id) DO UPDATE "
+                            "SET banned_by = EXCLUDED.banned_by, banned_at = NOW(), reason = EXCLUDED.reason",
+                            (com_id, target_id, target_name, user_id, reason)
+                        )
+                    cur.execute(
+                        "INSERT INTO community_admin_log (community_id, actor_id, actor_name, action, target_id, target_name, payload) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                        (com_id, user_id, user_name, post_action, target_id, target_name, reason)
+                    )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True})}
+
+                elif post_action == 'unban':
+                    com_id = body.get('community_id')
+                    target_id = body.get('user_id')
+                    if not com_id or not target_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'community_id and user_id required'})}
+                    cur.execute("SELECT creator_id FROM communities WHERE id = %s AND is_hidden = FALSE", (com_id,))
+                    crow = cur.fetchone()
+                    if not crow:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers, 'body': json.dumps({'error': 'community not found'})}
+                    cur.execute("SELECT role, COALESCE(can_ban, FALSE) FROM community_members WHERE community_id = %s AND user_id = %s",
+                                (com_id, user_id))
+                    me = cur.fetchone()
+                    is_owner = crow[0] == user_id or (me and me[0] == 'owner')
+                    if not is_owner and not (me and me[1]):
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers, 'body': json.dumps({'error': 'forbidden'})}
+                    # Мы не можем DELETE — пометим banned_by пустым (фактически "снять" — добавим маркер через UPDATE)
+                    cur.execute(
+                        "UPDATE community_bans SET banned_by = '__unbanned__', reason = NULL WHERE community_id = %s AND user_id = %s",
+                        (com_id, target_id)
+                    )
+                    cur.execute(
+                        "INSERT INTO community_admin_log (community_id, actor_id, actor_name, action, target_id) "
+                        "VALUES (%s, %s, %s, 'unban', %s)",
+                        (com_id, user_id, user_name, target_id)
+                    )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True})}
+
+                elif post_action == 'transfer_ownership':
+                    com_id = body.get('community_id')
+                    target_id = body.get('user_id')
+                    if not com_id or not target_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'community_id and user_id required'})}
+                    cur.execute("SELECT creator_id FROM communities WHERE id = %s AND is_hidden = FALSE", (com_id,))
+                    crow = cur.fetchone()
+                    if not crow:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers, 'body': json.dumps({'error': 'community not found'})}
+                    if crow[0] != user_id:
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers, 'body': json.dumps({'error': 'only owner'})}
+                    cur.execute("SELECT role FROM community_members WHERE community_id = %s AND user_id = %s",
+                                (com_id, target_id))
+                    trow = cur.fetchone()
+                    if not trow or trow[0] == 'left':
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers, 'body': json.dumps({'error': 'target not member'})}
+                    # Передаём владельца
+                    cur.execute("UPDATE communities SET creator_id = %s WHERE id = %s", (target_id, com_id))
+                    cur.execute(
+                        "UPDATE community_members SET role = 'owner', can_invite=TRUE, can_pin=TRUE, "
+                        "can_remove_messages=TRUE, can_ban=TRUE, can_change_info=TRUE, can_add_admins=TRUE "
+                        "WHERE community_id = %s AND user_id = %s",
+                        (com_id, target_id)
+                    )
+                    cur.execute(
+                        "UPDATE community_members SET role = 'admin' "
+                        "WHERE community_id = %s AND user_id = %s",
+                        (com_id, user_id)
+                    )
+                    cur.execute(
+                        "INSERT INTO community_admin_log (community_id, actor_id, actor_name, action, target_id) "
+                        "VALUES (%s, %s, %s, 'transfer_ownership', %s)",
+                        (com_id, user_id, user_name, target_id)
+                    )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True})}
+
+                elif post_action == 'pin_message':
+                    com_id = body.get('community_id')
+                    msg_id = body.get('message_id')
+                    if not com_id or not msg_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'community_id and message_id required'})}
+                    cur.execute("SELECT creator_id FROM communities WHERE id = %s AND is_hidden = FALSE", (com_id,))
+                    crow = cur.fetchone()
+                    if not crow:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers, 'body': json.dumps({'error': 'community not found'})}
+                    cur.execute("SELECT role, COALESCE(can_pin, FALSE) FROM community_members WHERE community_id = %s AND user_id = %s",
+                                (com_id, user_id))
+                    me = cur.fetchone()
+                    if not me or not (me[0] in ('owner', 'admin') or me[1]):
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers, 'body': json.dumps({'error': 'forbidden'})}
+                    # Сначала снимаем активные пины
+                    cur.execute(
+                        "UPDATE community_pinned_messages SET active = FALSE WHERE community_id = %s",
+                        (com_id,)
+                    )
+                    cur.execute(
+                        "INSERT INTO community_pinned_messages (community_id, message_id, pinned_by, pinned_by_name, active) "
+                        "VALUES (%s, %s, %s, %s, TRUE)",
+                        (com_id, int(msg_id), user_id, user_name)
+                    )
+                    cur.execute(
+                        "INSERT INTO community_admin_log (community_id, actor_id, actor_name, action, payload) "
+                        "VALUES (%s, %s, %s, 'pin_message', %s)",
+                        (com_id, user_id, user_name, str(msg_id))
+                    )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True})}
+
+                elif post_action == 'unpin_message':
+                    com_id = body.get('community_id')
+                    if not com_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'community_id required'})}
+                    cur.execute("SELECT role, COALESCE(can_pin, FALSE) FROM community_members WHERE community_id = %s AND user_id = %s",
+                                (com_id, user_id))
+                    me = cur.fetchone()
+                    cur.execute("SELECT creator_id FROM communities WHERE id = %s", (com_id,))
+                    crow = cur.fetchone()
+                    is_owner = crow and crow[0] == user_id
+                    if not is_owner and not me or (me and not (me[0] in ('owner', 'admin') or me[1])):
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers, 'body': json.dumps({'error': 'forbidden'})}
+                    cur.execute(
+                        "UPDATE community_pinned_messages SET active = FALSE WHERE community_id = %s",
+                        (com_id,)
+                    )
+                    cur.execute(
+                        "INSERT INTO community_admin_log (community_id, actor_id, actor_name, action) "
+                        "VALUES (%s, %s, %s, 'unpin_message')",
+                        (com_id, user_id, user_name)
+                    )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True})}
+
+                elif post_action == 'get_pinned':
+                    com_id = body.get('community_id')
+                    if not com_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'community_id required'})}
+                    cur.execute(
+                        "SELECT p.message_id, p.pinned_by, p.pinned_by_name, p.pinned_at, "
+                        "m.user_id, m.user_name, m.type, m.content "
+                        "FROM community_pinned_messages p "
+                        "LEFT JOIN sa_messages m ON m.id = p.message_id "
+                        "WHERE p.community_id = %s AND p.active = TRUE "
+                        "ORDER BY p.pinned_at DESC LIMIT 1",
+                        (com_id,)
+                    )
+                    r = cur.fetchone()
+                    pinned = None
+                    if r:
+                        pinned = {
+                            'message_id': r[0], 'pinned_by': r[1], 'pinned_by_name': r[2],
+                            'pinned_at': r[3].isoformat() if r[3] else None,
+                            'author_id': r[4], 'author_name': r[5],
+                            'type': r[6] or 'text', 'content': r[7] or '',
+                        }
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'pinned': pinned})}
+
+                elif post_action == 'admin_log':
+                    com_id = body.get('community_id')
+                    if not com_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'community_id required'})}
+                    cur.execute("SELECT role FROM community_members WHERE community_id = %s AND user_id = %s",
+                                (com_id, user_id))
+                    me = cur.fetchone()
+                    if not me or me[0] not in ('owner', 'admin'):
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers, 'body': json.dumps({'error': 'forbidden'})}
+                    cur.execute(
+                        "SELECT actor_id, actor_name, action, target_id, target_name, payload, created_at "
+                        "FROM community_admin_log WHERE community_id = %s "
+                        "ORDER BY created_at DESC LIMIT 100",
+                        (com_id,)
+                    )
+                    items = [{
+                        'actor_id': r[0], 'actor_name': r[1], 'action': r[2],
+                        'target_id': r[3], 'target_name': r[4], 'payload': r[5] or '',
+                        'created_at': r[6].isoformat() if r[6] else None,
+                    } for r in cur.fetchall()]
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'items': items})}
 
         # ── SIGNALING MODULE ─────────────────────────────────────────
         elif module == 'signal':

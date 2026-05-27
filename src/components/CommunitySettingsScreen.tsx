@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from "react";
+import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
 import SettingsHeader from "./community-settings/SettingsHeader";
 import SettingsForm from "./community-settings/SettingsForm";
 import InviteModal from "./community-settings/InviteModal";
 import RequestsModal from "./community-settings/RequestsModal";
+import MembersScreen from "./community/MembersScreen";
 import { API, Community, ContactUser, JoinRequest } from "./community-settings/types";
 
 interface Props {
@@ -309,10 +311,33 @@ const CommunitySettingsScreen = ({ community, onBack, onUpdated, onDeleted }: Pr
   };
 
   const displayImg = imgPreview || img;
+  const [showMembers, setShowMembers] = useState(false);
+
+  if (showMembers) {
+    return (
+      <MembersScreen
+        communityId={community.id}
+        communityName={community.name}
+        creatorId={community.creator_id || ""}
+        onBack={() => setShowMembers(false)}
+      />
+    );
+  }
 
   return (
     <div className="h-full bg-black flex flex-col overflow-hidden">
       <SettingsHeader isOwner={isOwner} saving={saving} onBack={onBack} onSave={handleSave} />
+      <button
+        onClick={() => setShowMembers(true)}
+        className="flex items-center gap-3 px-4 py-3 bg-white/5 hover:bg-white/10 border-b border-white/8 text-left"
+      >
+        <Icon name="Users" size={20} className="text-[#61d4f0]" />
+        <div className="flex-1">
+          <div className="text-white text-sm font-medium">Участники группы</div>
+          <div className="text-white/40 text-xs">Управление участниками и админами</div>
+        </div>
+        <Icon name="ChevronRight" size={18} className="text-white/30" />
+      </button>
 
       <SettingsForm
         community={community}
