@@ -199,10 +199,12 @@ export async function compressVideo(
 }
 
 /**
- * Загрузка большого файла напрямую в S3 через presigned URL.
- * Минует cloud function — нет лимита 6 МБ.
+ * Загрузка файлов любого размера чанками через cloud function.
+ * Никаких CORS-проблем, никакого 6 МБ лимита — файл режется на куски по 3 МБ
+ * и собирается на бэкенде в финальный объект S3.
  */
-const PRESIGN_URL = "https://functions.poehali.dev/1d249960-01f5-4332-8355-9c5541159d49";
+const CHUNKED_URL = "https://functions.poehali.dev/25a6b99d-32f3-45a4-baf7-a088013ca292";
+const CHUNK_SIZE = 3 * 1024 * 1024; // 3 МБ
 
 export interface DirectUploadMeta {
   category: string;
@@ -214,6 +216,33 @@ export interface DirectUploadMeta {
   user_id?: string;
 }
 
+async function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const r = reader.result as string;
+      const idx = r.indexOf(",");
+      resolve(idx >= 0 ? r.slice(idx + 1) : r);
+    };
+    reader.onerror = () => reject(reader.error || new Error("FileReader error"));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function postJSON(payload: unknown) {
+  const res = await fetch(CHUNKED_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    throw new Error(`upload ${res.status}: ${t}`);
+  }
+  const raw = await res.json();
+  return typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+}
+
 export async function uploadFileDirect(
   file: File,
   meta: DirectUploadMeta,
@@ -222,55 +251,52 @@ export async function uploadFileDirect(
   const ext = (file.name.split(".").pop() || (file.type.startsWith("video") ? "mp4" : "jpg")).toLowerCase();
   const contentType = file.type || (file.type.startsWith("video") ? "video/mp4" : "image/jpeg");
 
-  // 1) Получаем presigned URL
-  const presignRes = await fetch(PRESIGN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "presign", ext, content_type: contentType }),
-  });
-  if (!presignRes.ok) throw new Error(`presign failed: ${presignRes.status}`);
-  const presignRaw = await presignRes.json();
-  const presign = typeof presignRaw.body === "string" ? JSON.parse(presignRaw.body) : presignRaw;
-  if (!presign.upload_url || !presign.cdn_url) throw new Error("presign: bad response");
+  // 1) Инициализация: получаем upload_id и финальный key
+  const init = await postJSON({ action: "init", ext, content_type: contentType });
+  if (!init.upload_id || !init.key) throw new Error("init: bad response");
 
-  // 2) Загружаем напрямую в S3 (XHR — есть прогресс)
-  await new Promise<void>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", presign.upload_url, true);
-    xhr.setRequestHeader("Content-Type", contentType);
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable && onProgress) {
-        onProgress(Math.round((e.loaded / e.total) * 100));
+  // 2) Грузим чанки по очереди
+  const totalParts = Math.max(1, Math.ceil(file.size / CHUNK_SIZE));
+  try {
+    for (let i = 0; i < totalParts; i++) {
+      const start = i * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, file.size);
+      const slice = file.slice(start, end);
+      const data = await blobToBase64(slice);
+      await postJSON({
+        action: "chunk",
+        upload_id: init.upload_id,
+        part_number: i + 1,
+        data,
+      });
+      if (onProgress) {
+        // 95% на загрузку, последние 5% оставим на склейку/регистрацию
+        onProgress(Math.round(((i + 1) / totalParts) * 95));
       }
-    };
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) resolve();
-      else reject(new Error(`S3 upload failed: ${xhr.status}`));
-    };
-    xhr.onerror = () => reject(new Error("S3 upload network error"));
-    xhr.send(file);
-  });
+    }
+  } catch (e) {
+    // Чистим за собой
+    try { await postJSON({ action: "abort", upload_id: init.upload_id, total_parts: totalParts }); } catch { /* ignore */ }
+    throw e;
+  }
 
-  // 3) Регистрируем запись в БД
-  const regRes = await fetch(PRESIGN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "register",
-      cdn_url: presign.cdn_url,
-      type: contentType,
-      media_type: contentType.startsWith("video") ? "video" : "image",
+  // 3) Финал: бэк склеивает чанки и сразу пишет в БД
+  const finish = await postJSON({
+    action: "finish",
+    upload_id: init.upload_id,
+    key: init.key,
+    total_parts: totalParts,
+    content_type: contentType,
+    meta: {
       category: meta.category,
       description: meta.description || "",
       hashtags: meta.hashtags || "",
       author: meta.author || "Я",
       handle: meta.handle || "user",
       user_id: meta.user_id || "anonymous",
-    }),
+    },
   });
-  if (!regRes.ok) throw new Error(`register failed: ${regRes.status}`);
-  const regRaw = await regRes.json();
-  const reg = typeof regRaw.body === "string" ? JSON.parse(regRaw.body) : regRaw;
-  if (!reg.id || !reg.url) throw new Error("register: bad response");
-  return reg;
+  if (!finish.url || !finish.id) throw new Error("finish: bad response");
+  if (onProgress) onProgress(100);
+  return { id: finish.id, url: finish.url, type: finish.type || (contentType.startsWith("video") ? "video" : "image") };
 }

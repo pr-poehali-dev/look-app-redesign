@@ -7,12 +7,12 @@
       "expectedStatus": 200
     },
     {
-      "name": "Presign returns upload_url",
+      "name": "Init returns upload_id and key",
       "method": "POST",
       "path": "/",
-      "body": {"action": "presign", "ext": "mp4", "content_type": "video/mp4"},
+      "body": {"action": "init", "ext": "mp4", "content_type": "video/mp4"},
       "expectedStatus": 200,
-      "expectedBody": {"upload_url": "string", "cdn_url": "string", "key": "string"},
+      "expectedBody": {"upload_id": "string", "key": "string"},
       "bodyMatcher": "partial"
     },
     {
