@@ -418,8 +418,24 @@ def handler(event: dict, context) -> dict:
     if not user_id: return ok({'videos': []})
     conn = get_conn(); cur = conn.cursor()
     try:
-        cur.execute("SELECT id,url,type,created_at FROM videos WHERE user_id=%s ORDER BY created_at DESC LIMIT 100", (user_id,))
+        cur.execute(
+            "SELECT id,url,type,created_at,description,hashtags,author,handle,likes,comments,shares "
+            "FROM videos WHERE user_id=%s ORDER BY created_at DESC LIMIT 100",
+            (user_id,)
+        )
         rows = cur.fetchall()
     finally:
         cur.close(); conn.close()
-    return ok({'videos': [{'id': r[0], 'url': r[1], 'type': r[2], 'label': r[3].strftime('%H:%M') if r[3] else ''} for r in rows]})
+    return ok({'videos': [{
+        'id': r[0],
+        'url': r[1],
+        'type': r[2],
+        'label': r[3].strftime('%H:%M') if r[3] else '',
+        'description': r[4] or '',
+        'hashtags': r[5] or '',
+        'author': r[6] or '',
+        'handle': r[7] or '',
+        'likes': str(r[8]) if r[8] is not None else '0',
+        'comments': str(r[9]) if r[9] is not None else '0',
+        'shares': str(r[10]) if r[10] is not None else '0',
+    } for r in rows]})

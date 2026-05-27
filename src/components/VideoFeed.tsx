@@ -281,20 +281,29 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
 
   const userVideoData: (VideoData & { category: string })[] = userVideos
     .filter(v => v.type === "video")
-    .map(v => ({
-      id: v.id,
-      image: v.url,
-      isVideo: true,
-      author: user?.name || "Я",
-      handle: user?.handle || "user",
-      description: "Моё видео",
-      song: "Оригинальный звук",
-      likes: "0",
-      comments: "0",
-      shares: "0",
-      category: "all",
-      avatar: user?.avatar || "",
-    }));
+    .map(v => {
+      const tagsArr = (v.hashtags || "")
+        .split(/[\s,]+/)
+        .map(t => t.trim().replace(/^#+/, ""))
+        .filter(Boolean);
+      const tagsText = tagsArr.length ? " " + tagsArr.map(t => `#${t}`).join(" ") : "";
+      const baseDesc = (v.description || "").trim();
+      const fullDesc = (baseDesc + tagsText).trim() || "";
+      return {
+        id: v.id,
+        image: v.url,
+        isVideo: true,
+        author: v.author || user?.name || "Я",
+        handle: v.handle || user?.handle || "user",
+        description: fullDesc,
+        song: "Оригинальный звук",
+        likes: v.likes || "0",
+        comments: v.comments || "0",
+        shares: v.shares || "0",
+        category: "all",
+        avatar: user?.avatar || "",
+      };
+    });
 
   useEffect(() => {
     setDbLoaded(false);
@@ -307,20 +316,33 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
       .then(raw => {
         const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setDbVideos((data.videos || []).map((v: any) => ({
+        setDbVideos((data.videos || []).map((v: any) => {
+          const baseDesc = (v.description || "").trim();
+          const tagsArr = (v.hashtags || "")
+            .split(/[\s,]+/)
+            .map((t: string) => t.trim().replace(/^#+/, ""))
+            .filter(Boolean);
+          // Если хэштеги уже встречаются в описании — не дублируем
+          const hasTagsInDesc = /#\S+/.test(baseDesc);
+          const tagsText = !hasTagsInDesc && tagsArr.length
+            ? (baseDesc ? " " : "") + tagsArr.map((t: string) => `#${t}`).join(" ")
+            : "";
+          const fullDesc = (baseDesc + tagsText).trim();
+          return ({
           id: v.id + 10000,
           image: v.url,
           isVideo: v.type === 'video',
           author: v.author || "Автор",
           handle: v.handle || "user",
-          description: v.description || "",
+          description: fullDesc,
           song: "Look — Original Sound",
           likes: v.likes || "0",
           comments: v.comments || "0",
           shares: v.shares || "0",
           category: v.category || "all",
           avatar: v.avatar || "",
-        })));
+        });
+        }));
         setActiveIndex(0);
         if (containerRef.current) containerRef.current.scrollTop = 0;
       })

@@ -5,11 +5,24 @@ export interface UserVideo {
   url: string;
   type: "video" | "image";
   label: string;
+  description?: string;
+  hashtags?: string;
+  author?: string;
+  handle?: string;
+  likes?: string;
+  comments?: string;
+  shares?: string;
+}
+
+export interface UploadOptions {
+  description?: string;
+  hashtags?: string;
+  category?: string;
 }
 
 interface UserMediaContextType {
   userVideos: UserVideo[];
-  addMedia: (file: File) => Promise<void>;
+  addMedia: (file: File, opts?: UploadOptions) => Promise<void>;
   removeMedia: (id: number) => void;
   refreshMedia: () => Promise<void>;
   loading: boolean;
@@ -47,15 +60,19 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  const addMedia = async (file: File) => {
+  const addMedia = async (file: File, opts?: UploadOptions) => {
     const type = file.type.startsWith("video") ? "video" : "image";
     const ext = file.name.split(".").pop() || (type === "video" ? "mp4" : "jpg");
     const now = new Date();
     const label = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
 
+    const description = opts?.description || "";
+    const hashtags = opts?.hashtags || "";
+    const category = opts?.category || (type === "video" ? "humor" : "feed");
+
     const blobUrl = URL.createObjectURL(file);
     const tempId = Date.now() + Math.random();
-    setUserVideos(s => [{ id: tempId, url: blobUrl, type, label }, ...s]);
+    setUserVideos(s => [{ id: tempId, url: blobUrl, type, label, description, hashtags }, ...s]);
 
     const reader = new FileReader();
     reader.onload = async () => {
@@ -69,13 +86,15 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
             type: file.type,
             ext,
             user_id: userId,
-            category: type === "video" ? "humor" : "feed",
+            category,
+            description,
+            hashtags,
           }),
         });
         const raw = await res.json();
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
         if (data.url) {
-          setUserVideos(s => s.map(v => v.id === tempId ? { ...v, id: Number(data.id), url: data.url } : v));
+          setUserVideos(s => s.map(v => v.id === tempId ? { ...v, id: Number(data.id), url: data.url, description, hashtags } : v));
           setMediaVersion(v => v + 1);
         }
       } catch {
