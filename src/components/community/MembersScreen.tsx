@@ -299,7 +299,9 @@ const MembersScreen = ({ communityId, communityName, creatorId, onBack }: Props)
             {banned.length === 0 && <div className="text-white/40 text-sm text-center py-8">Никто не заблокирован</div>}
             {banned.map(b => (
               <div key={b.id} className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
-                <UserAvatar name={b.name} size={40} />
+                <div className="w-10 h-10 flex-shrink-0">
+                  <UserAvatar name={b.name} />
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-white text-sm truncate">{b.name}</div>
                   <div className="text-white/40 text-xs truncate">{b.reason || "Без причины"}</div>
@@ -358,8 +360,8 @@ const MembersScreen = ({ communityId, communityName, creatorId, onBack }: Props)
 
 const MemberRow = ({ m, onClick, isAdmin }: { m: CommunityMember; onClick: () => void; isAdmin: boolean }) => (
   <button onClick={onClick} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 border-b border-white/5">
-    <div className="relative">
-      <UserAvatar name={m.name} size={40} />
+    <div className="relative w-10 h-10 flex-shrink-0">
+      <UserAvatar name={m.name} />
       {m.online && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0f0f0f]" />}
     </div>
     <div className="flex-1 min-w-0 text-left">
@@ -510,7 +512,7 @@ const SelectMemberModal = ({
         {members.length === 0 && <div className="text-white/40 text-sm text-center py-8">Нет подходящих участников</div>}
         {members.map(m => (
           <button key={m.id} onClick={() => onSelect(m)} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 border-b border-white/5">
-            <UserAvatar name={m.name} size={36} />
+            <div className="w-9 h-9 flex-shrink-0"><UserAvatar name={m.name} /></div>
             <div className="text-white text-sm">{m.name}</div>
           </button>
         ))}
@@ -556,7 +558,7 @@ const AddMemberModal = ({
                 onClick={() => setSelected(prev => prev.includes(c.id) ? prev.filter(x => x !== c.id) : [...prev, c.id])}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 border-b border-white/5"
               >
-                <UserAvatar name={c.name} src={c.avatar} size={36} />
+                <div className="w-9 h-9 flex-shrink-0"><UserAvatar name={c.name} src={c.avatar} /></div>
                 <div className="flex-1 text-left text-white text-sm">{c.name}</div>
                 <Icon name={checked ? "CheckSquare" : "Square"} size={20} className={checked ? "text-[#61d4f0]" : "text-white/30"} />
               </button>

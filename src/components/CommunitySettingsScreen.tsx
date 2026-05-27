@@ -36,6 +36,7 @@ const CommunitySettingsScreen = ({ community, onBack, onUpdated, onDeleted }: Pr
   const [requests, setRequests] = useState<JoinRequest[]>([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [showMembers, setShowMembers] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [inviteToken, setInviteToken] = useState<string | null>(null);
 
@@ -311,7 +312,6 @@ const CommunitySettingsScreen = ({ community, onBack, onUpdated, onDeleted }: Pr
   };
 
   const displayImg = imgPreview || img;
-  const [showMembers, setShowMembers] = useState(false);
 
   if (showMembers) {
     return (
