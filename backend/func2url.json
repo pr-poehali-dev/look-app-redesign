@@ -1,6 +1,5 @@
 {
   "upload-chunked": "https://functions.poehali.dev/25a6b99d-32f3-45a4-baf7-a088013ca292",
-  "upload-presign": "https://functions.poehali.dev/1d249960-01f5-4332-8355-9c5541159d49",
   "download-media": "https://functions.poehali.dev/b5faf1bc-6976-47c6-984e-e21c66d4c879",
   "support-tickets": "https://functions.poehali.dev/c799ab49-0e91-4b94-8ec4-4325db5e1c73",
   "short-video-probe": "https://functions.poehali.dev/d1cfb246-8b1e-4e41-8905-1966589c1420",

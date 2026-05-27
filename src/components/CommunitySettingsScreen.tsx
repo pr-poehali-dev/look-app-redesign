@@ -35,8 +35,36 @@ const CommunitySettingsScreen = ({ community, onBack, onUpdated, onDeleted }: Pr
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
 
-  const inviteLink = `${window.location.origin}/?community=${community.id}`;
+  const inviteLink = inviteToken
+    ? `${window.location.origin}/?invite=${inviteToken}`
+    : `${window.location.origin}/?community=${community.id}`;
+
+  const ensureInviteToken = async (): Promise<string | null> => {
+    if (inviteToken) return inviteToken;
+    if (!user) return null;
+    try {
+      const res = await fetch(`${API}?module=community`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Id": user.id,
+          "X-User-Name": encodeURIComponent(user.name),
+        },
+        body: JSON.stringify({ action: "create_invite", community_id: community.id }),
+      });
+      const raw = await res.json();
+      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      if (data.ok && data.token) {
+        setInviteToken(data.token);
+        return data.token as string;
+      }
+    } catch {
+      // тихо
+    }
+    return null;
+  };
 
   useEffect(() => {
     if (!showInvite || !user || contacts.length > 0) return;
@@ -90,26 +118,40 @@ const CommunitySettingsScreen = ({ community, onBack, onUpdated, onDeleted }: Pr
   };
 
   const copyLink = async () => {
+    const token = await ensureInviteToken();
+    const link = token
+      ? `${window.location.origin}/?invite=${token}`
+      : inviteLink;
     try {
-      await navigator.clipboard.writeText(inviteLink);
+      await navigator.clipboard.writeText(link);
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
     } catch {
-      alert("Не удалось скопировать. Скопируй вручную: " + inviteLink);
+      alert("Не удалось скопировать. Скопируй вручную: " + link);
     }
   };
 
   const shareLink = async () => {
+    const token = await ensureInviteToken();
+    const link = token
+      ? `${window.location.origin}/?invite=${token}`
+      : inviteLink;
     const text = `Присоединяйся к сообществу «${community.name}»`;
     if (navigator.share) {
       try {
-        await navigator.share({ title: community.name, text, url: inviteLink });
+        await navigator.share({ title: community.name, text, url: link });
         return;
       } catch {
         // отменено
       }
     }
-    copyLink();
+    try {
+      await navigator.clipboard.writeText(link);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      alert(link);
+    }
   };
 
   const isOwner = !!(user && community.creator_id === user.id);

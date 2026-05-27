@@ -4,6 +4,7 @@ import UserAvatar from "@/components/ui/user-avatar";
 import { Chat } from "./MessagesScreen";
 import CallScreen from "./CallScreen";
 import GroupCallScreen from "./GroupCallScreen";
+import PollsPanel from "./community/PollsPanel";
 import { useAuth } from "@/context/AuthContext";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
@@ -89,6 +90,8 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const [confirmClear, setConfirmClear] = useState(false);
   const [confirmDeleteChat, setConfirmDeleteChat] = useState(false);
   const [toast, setToast] = useState("");
+  const [communityIsAdmin, setCommunityIsAdmin] = useState(false);
+  const [showPolls, setShowPolls] = useState(false);
 
   const startLongPress = (msgId: number) => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
@@ -646,6 +649,30 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   };
 
   const isGroup = chat.type === "group" || String(chat.id).startsWith("community_");
+  const communityId = isGroup ? chatId : "";
+
+  // Проверка: текущий пользователь — админ сообщества?
+  useEffect(() => {
+    if (!isGroup || !communityId || !user) {
+      setCommunityIsAdmin(false);
+      return;
+    }
+    let cancelled = false;
+    fetch(`${API}?module=community&action=members&community_id=${encodeURIComponent(communityId)}`, {
+      headers: { "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
+    })
+      .then((r) => r.json())
+      .then((raw) => {
+        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+        const me = (data.members || []).find((m: { user_id: string; role?: string }) => m.user_id === user.id);
+        if (!cancelled) setCommunityIsAdmin(!!(me && me.role === "admin"));
+      })
+      .catch(() => {
+        if (!cancelled) setCommunityIsAdmin(false);
+      });
+    return () => { cancelled = true; };
+  }, [isGroup, communityId, user]);
+
   const displayName = !isGroup && peerInfo?.name ? peerInfo.name : chat.name;
   const displayAvatar = !isGroup && peerInfo?.avatar ? peerInfo.avatar : chat.avatar;
   const displayOnline = !isGroup && peerInfo ? !!peerInfo.online : chat.online;
@@ -921,11 +948,13 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       {showAttach && (
         <div className="bg-[#111] border-t border-white/8 px-4 py-4 grid grid-cols-4 gap-4">
           {[
-            { icon: "Image", label: "Фото", action: () => fileRef.current?.click() },
-            { icon: "FileText", label: "Файл", action: () => docRef.current?.click() },
-            { icon: "MapPin", label: "Геолокация", action: sendLocation },
-            { icon: "Contact", label: "Контакт", action: openContactPicker },
-          ].map((item) => (
+            { icon: "Image", label: "Фото", action: () => fileRef.current?.click(), show: true },
+            { icon: "FileText", label: "Файл", action: () => docRef.current?.click(), show: true },
+            { icon: "MapPin", label: "Геолокация", action: sendLocation, show: true },
+            { icon: "Contact", label: "Контакт", action: openContactPicker, show: true },
+            { icon: "BarChart3", label: "Опрос", action: () => { setShowAttach(false); setShowPolls(true); }, show: isGroup && communityIsAdmin },
+            { icon: "ListChecks", label: "Опросы", action: () => { setShowAttach(false); setShowPolls(true); }, show: isGroup && !communityIsAdmin },
+          ].filter(item => item.show).map((item) => (
             <button key={item.label} onClick={item.action} className="flex flex-col items-center gap-2">
               <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
                 <Icon name={item.icon as "Image"} size={22} className="text-white" />
@@ -934,6 +963,15 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
             </button>
           ))}
         </div>
+      )}
+
+      {/* Polls modal */}
+      {showPolls && isGroup && (
+        <PollsPanel
+          communityId={communityId}
+          isAdmin={communityIsAdmin}
+          onClose={() => setShowPolls(false)}
+        />
       )}
 
       {/* Input */}

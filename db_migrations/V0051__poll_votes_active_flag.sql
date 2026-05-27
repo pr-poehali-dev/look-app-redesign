@@ -1,0 +1,1 @@
+ALTER TABLE community_poll_votes ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE;

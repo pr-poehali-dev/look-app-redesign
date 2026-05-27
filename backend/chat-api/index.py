@@ -942,6 +942,243 @@ def handler(event: dict, context) -> dict:
                     return {'statusCode': 200, 'headers': headers,
                             'body': json.dumps({'ok': True, 'community_id': new_id})}
 
+                elif post_action == 'create_invite':
+                    com_id = body.get('community_id')
+                    if not com_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'community_id required'})}
+                    cur.execute("SELECT creator_id FROM communities WHERE id = %s AND is_hidden = FALSE", (com_id,))
+                    row = cur.fetchone()
+                    if not row:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers,
+                                'body': json.dumps({'error': 'community not found'})}
+                    # Любой админ может создать ссылку. Сейчас admin = creator + role='admin'
+                    cur.execute(
+                        "SELECT role FROM community_members WHERE community_id = %s AND user_id = %s",
+                        (com_id, user_id)
+                    )
+                    mrow = cur.fetchone()
+                    is_admin = (row[0] == user_id) or (mrow and mrow[0] == 'admin')
+                    if not is_admin:
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers,
+                                'body': json.dumps({'error': 'only admin'})}
+                    token = _uuid.uuid4().hex[:12]
+                    cur.execute(
+                        "INSERT INTO community_invites (token, community_id, created_by) VALUES (%s, %s, %s)",
+                        (token, com_id, user_id)
+                    )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True, 'token': token, 'community_id': com_id})}
+
+                elif post_action == 'join_by_invite':
+                    token = (body.get('token') or '').strip()
+                    if not token:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'token required'})}
+                    if user_id in ('anon', '', None):
+                        conn.commit()
+                        return {'statusCode': 401, 'headers': headers,
+                                'body': json.dumps({'error': 'login required'})}
+                    cur.execute(
+                        "SELECT community_id, revoked FROM community_invites WHERE token = %s",
+                        (token,)
+                    )
+                    inv = cur.fetchone()
+                    if not inv or inv[1]:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers,
+                                'body': json.dumps({'error': 'invite invalid'})}
+                    com_id = inv[0]
+                    cur.execute("SELECT id, name FROM communities WHERE id = %s AND is_hidden = FALSE", (com_id,))
+                    com = cur.fetchone()
+                    if not com:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers,
+                                'body': json.dumps({'error': 'community not found'})}
+                    # Добавляем (или восстанавливаем) участника независимо от open/closed
+                    cur.execute(
+                        "INSERT INTO community_members (community_id, user_id, user_name, role) "
+                        "VALUES (%s, %s, %s, 'member') "
+                        "ON CONFLICT (community_id, user_id) DO UPDATE SET role = "
+                        "CASE WHEN community_members.role = 'left' THEN 'member' ELSE community_members.role END, "
+                        "user_name = EXCLUDED.user_name",
+                        (com_id, user_id, user_name)
+                    )
+                    cur.execute(
+                        "INSERT INTO sa_chat_members (chat_id, user_id) VALUES (%s, %s) "
+                        "ON CONFLICT DO NOTHING",
+                        (com_id, user_id)
+                    )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True, 'community_id': com_id, 'name': com[1]})}
+
+                elif post_action == 'poll_create':
+                    com_id = body.get('community_id')
+                    question = (body.get('question') or '').strip()[:300]
+                    options = body.get('options') or []
+                    is_multi = bool(body.get('is_multi'))
+                    is_anonymous = bool(body.get('is_anonymous'))
+                    if not com_id or not question or len(options) < 2:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'community_id, question and >=2 options required'})}
+                    cur.execute("SELECT creator_id FROM communities WHERE id = %s AND is_hidden = FALSE", (com_id,))
+                    row = cur.fetchone()
+                    if not row:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers,
+                                'body': json.dumps({'error': 'community not found'})}
+                    cur.execute(
+                        "SELECT role FROM community_members WHERE community_id = %s AND user_id = %s",
+                        (com_id, user_id)
+                    )
+                    mrow = cur.fetchone()
+                    is_admin = (row[0] == user_id) or (mrow and mrow[0] == 'admin')
+                    if not is_admin:
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers,
+                                'body': json.dumps({'error': 'only admin can create polls'})}
+                    cur.execute(
+                        "INSERT INTO community_polls (community_id, author_id, author_name, question, is_multi, is_anonymous) "
+                        "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+                        (com_id, user_id, user_name, question, is_multi, is_anonymous)
+                    )
+                    poll_id = cur.fetchone()[0]
+                    for i, opt in enumerate(options[:10]):
+                        t = (str(opt) or '').strip()[:120]
+                        if not t:
+                            continue
+                        cur.execute(
+                            "INSERT INTO community_poll_options (poll_id, text, position) VALUES (%s, %s, %s)",
+                            (poll_id, t, i)
+                        )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True, 'poll_id': poll_id})}
+
+                elif post_action == 'poll_vote':
+                    poll_id = body.get('poll_id')
+                    option_ids = body.get('option_ids') or []
+                    if not poll_id or not option_ids:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'poll_id and option_ids required'})}
+                    if user_id in ('anon', '', None):
+                        conn.commit()
+                        return {'statusCode': 401, 'headers': headers,
+                                'body': json.dumps({'error': 'login required'})}
+                    cur.execute("SELECT is_multi, is_closed FROM community_polls WHERE id = %s", (poll_id,))
+                    p = cur.fetchone()
+                    if not p:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers,
+                                'body': json.dumps({'error': 'poll not found'})}
+                    if p[1]:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'poll closed'})}
+                    if not p[0]:
+                        option_ids = option_ids[:1]
+                    # Деактивируем все прошлые голоса этого пользователя
+                    cur.execute(
+                        "UPDATE community_poll_votes SET active = FALSE WHERE poll_id = %s AND user_id = %s",
+                        (poll_id, user_id)
+                    )
+                    # Активируем выбранные (вставляем новые или реактивируем существующие)
+                    for oid in option_ids:
+                        cur.execute(
+                            "INSERT INTO community_poll_votes (poll_id, option_id, user_id, user_name, active) "
+                            "VALUES (%s, %s, %s, %s, TRUE) "
+                            "ON CONFLICT (poll_id, option_id, user_id) DO UPDATE "
+                            "SET active = TRUE, user_name = EXCLUDED.user_name",
+                            (poll_id, int(oid), user_id, user_name)
+                        )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True})}
+
+                elif post_action == 'poll_close':
+                    poll_id = body.get('poll_id')
+                    if not poll_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'poll_id required'})}
+                    cur.execute(
+                        "SELECT p.community_id, p.author_id, c.creator_id "
+                        "FROM community_polls p JOIN communities c ON c.id = p.community_id "
+                        "WHERE p.id = %s",
+                        (poll_id,)
+                    )
+                    row = cur.fetchone()
+                    if not row:
+                        conn.commit()
+                        return {'statusCode': 404, 'headers': headers,
+                                'body': json.dumps({'error': 'poll not found'})}
+                    cur.execute(
+                        "SELECT role FROM community_members WHERE community_id = %s AND user_id = %s",
+                        (row[0], user_id)
+                    )
+                    mrow = cur.fetchone()
+                    is_admin = (row[2] == user_id) or (mrow and mrow[0] == 'admin') or (row[1] == user_id)
+                    if not is_admin:
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers,
+                                'body': json.dumps({'error': 'forbidden'})}
+                    cur.execute("UPDATE community_polls SET is_closed = TRUE WHERE id = %s", (poll_id,))
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True})}
+
+                elif post_action == 'poll_list':
+                    com_id = body.get('community_id')
+                    if not com_id:
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers,
+                                'body': json.dumps({'error': 'community_id required'})}
+                    cur.execute(
+                        "SELECT id, author_id, author_name, question, is_multi, is_anonymous, is_closed, created_at "
+                        "FROM community_polls WHERE community_id = %s ORDER BY created_at DESC LIMIT 50",
+                        (com_id,)
+                    )
+                    polls = []
+                    for r in cur.fetchall():
+                        pid = r[0]
+                        cur.execute(
+                            "SELECT id, text, position FROM community_poll_options WHERE poll_id = %s ORDER BY position",
+                            (pid,)
+                        )
+                        opts = [{'id': o[0], 'text': o[1]} for o in cur.fetchall()]
+                        cur.execute(
+                            "SELECT option_id, COUNT(*) FROM community_poll_votes "
+                            "WHERE poll_id = %s AND active = TRUE GROUP BY option_id",
+                            (pid,)
+                        )
+                        counts = {int(c[0]): int(c[1]) for c in cur.fetchall()}
+                        cur.execute(
+                            "SELECT option_id FROM community_poll_votes "
+                            "WHERE poll_id = %s AND user_id = %s AND active = TRUE",
+                            (pid, user_id)
+                        )
+                        my_votes = [int(v[0]) for v in cur.fetchall()]
+                        total = sum(counts.values())
+                        polls.append({
+                            'id': pid, 'author_id': r[1], 'author_name': r[2],
+                            'question': r[3], 'is_multi': r[4], 'is_anonymous': r[5], 'is_closed': r[6],
+                            'created_at': r[7].isoformat() if r[7] else None,
+                            'options': [{'id': o['id'], 'text': o['text'], 'votes': counts.get(o['id'], 0)} for o in opts],
+                            'total_votes': total,
+                            'my_votes': my_votes,
+                        })
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'polls': polls})}
+
         # ── SIGNALING MODULE ─────────────────────────────────────────
         elif module == 'signal':
             if method == 'POST':

@@ -21,12 +21,19 @@ const TABS = [
   { id: "profile", icon: "User", label: "Профиль" },
 ];
 
+const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
+
 const Index = () => {
+  const { user, logout } = useAuth();
   const initialCommunityFromUrl = (() => {
     if (typeof window === "undefined") return null;
     return new URLSearchParams(window.location.search).get("community");
   })();
-  const [activeTab, setActiveTab] = useState(initialCommunityFromUrl ? "messages" : "home");
+  const initialInviteFromUrl = (() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("invite");
+  })();
+  const [activeTab, setActiveTab] = useState(initialCommunityFromUrl || initialInviteFromUrl ? "messages" : "home");
   const [activeCategory, setActiveCategory] = useState("all");
   const [mobileCatOpen, setMobileCatOpen] = useState(false);
   const [showLive, setShowLive] = useState(false);
@@ -35,7 +42,6 @@ const Index = () => {
   const [profileHandle, setProfileHandle] = useState<string | null>(null);
   const [pendingDirectHandle, setPendingDirectHandle] = useState<string | null>(null);
   const { totalUnread } = useUnread();
-  const { logout } = useAuth();
   const [desktopOverlay, setDesktopOverlay] = useState<"support" | "terms" | "privacy" | null>(null);
 
   const handleLogout = () => {
@@ -69,6 +75,42 @@ const Index = () => {
       window.history.replaceState({}, "", url.toString());
     }
   }, [initialCommunityFromUrl]);
+
+  // Обработка ссылки-приглашения ?invite=<token>
+  useEffect(() => {
+    if (!initialInviteFromUrl || !user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${CHAT_API}?module=community`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-User-Id": user.id,
+            "X-User-Name": encodeURIComponent(user.name),
+          },
+          body: JSON.stringify({ action: "join_by_invite", token: initialInviteFromUrl }),
+        });
+        const raw = await res.json();
+        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+        if (!cancelled && data.ok && data.community_id) {
+          setPendingCommunityId(data.community_id);
+          setActiveTab("messages");
+        } else if (!cancelled) {
+          alert("Ссылка-приглашение недействительна или сообщество удалено");
+        }
+      } catch {
+        if (!cancelled) alert("Не удалось присоединиться по ссылке");
+      } finally {
+        if (typeof window !== "undefined") {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("invite");
+          window.history.replaceState({}, "", url.toString());
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [initialInviteFromUrl, user]);
 
   return (
     <div className="fixed inset-0 bg-black md:bg-[#121212] flex overflow-hidden">
