@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { QRCodeCanvas } from "qrcode.react";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { useAuth } from "@/context/AuthContext";
@@ -151,36 +152,101 @@ const BlockedScreen = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
-const QrScreen = ({ onBack }: { onBack: () => void }) => (
-  <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-    <div className="md:max-w-2xl md:mx-auto">
-    <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
-      <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
-      <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Мой QR-код</span>
-    </div>
-    <div className="flex flex-col items-center px-8 pt-10 md:pt-6 gap-6 md:gap-4">
-      <div className="w-56 h-56 md:w-44 md:h-44 rounded-2xl bg-white shadow-lg border border-gray-100 flex items-center justify-center p-4">
-        <div className="w-full h-full grid grid-cols-7 grid-rows-7 gap-0.5">
-          {Array.from({ length: 49 }).map((_, i) => (
-            <div
-              key={i}
-              className={`rounded-sm ${[0,1,2,3,4,5,6,7,13,14,20,21,22,23,24,25,26,27,28,35,36,42,43,44,45,46,47,48,10,38,8,15,11,18,33,40].includes(i) ? "bg-[#8b5cf6]" : "bg-gray-100"}`}
+const QrScreen = ({ onBack }: { onBack: () => void }) => {
+  const { user } = useAuth();
+  const handle = user?.handle || user?.name || "user";
+  const profileUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/?user=${handle}`;
+  const qrRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
+
+  const getQrPngBlob = async (): Promise<Blob | null> => {
+    const canvas = qrRef.current?.querySelector("canvas");
+    if (!canvas) return null;
+    return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
+  };
+
+  const onShare = async () => {
+    try {
+      const blob = await getQrPngBlob();
+      const file = blob ? new File([blob], `qr-${handle}.png`, { type: "image/png" }) : null;
+      const shareData: ShareData & { files?: File[] } = {
+        title: `Мой QR в Лоок`,
+        text: `Найди меня в Лоок: @${handle}`,
+        url: profileUrl,
+      };
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ ...shareData, files: [file] });
+        return;
+      }
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+      await navigator.clipboard.writeText(profileUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* пользователь отменил */ }
+  };
+
+  const onDownload = async () => {
+    const blob = await getQrPngBlob();
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `qr-${handle}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
+      <div className="md:max-w-2xl md:mx-auto">
+        <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
+          <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
+          <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Мой QR-код</span>
+        </div>
+        <div className="flex flex-col items-center px-8 pt-10 md:pt-6 gap-6 md:gap-4">
+          <div
+            ref={qrRef}
+            className="w-56 h-56 md:w-44 md:h-44 rounded-2xl bg-white shadow-lg border border-gray-100 flex items-center justify-center p-4"
+          >
+            <QRCodeCanvas
+              value={profileUrl}
+              size={208}
+              level="H"
+              bgColor="#ffffff"
+              fgColor="#8b5cf6"
+              includeMargin={false}
             />
-          ))}
+          </div>
+          <div className="text-center">
+            <p className="text-black font-bold text-lg">@{handle}</p>
+            <p className="text-gray-400 text-sm mt-1">Отсканируй код чтобы найти меня в Лоок</p>
+          </div>
+          <div className="flex flex-col gap-2 w-full max-w-xs">
+            <button
+              onClick={onShare}
+              className="flex items-center justify-center gap-2 px-6 py-3 md:py-2.5 rounded-xl bg-[#8b5cf6] text-white font-semibold md:text-sm active:opacity-80"
+            >
+              <Icon name={copied ? "Check" : "Share2"} size={18} className="text-white" />
+              {copied ? "Ссылка скопирована" : "Поделиться QR-кодом"}
+            </button>
+            <button
+              onClick={onDownload}
+              className="flex items-center justify-center gap-2 px-6 py-3 md:py-2.5 rounded-xl bg-gray-100 text-black font-semibold md:text-sm active:bg-gray-200"
+            >
+              <Icon name="Download" size={18} className="text-black" />
+              Сохранить картинку
+            </button>
+          </div>
         </div>
       </div>
-      <div className="text-center">
-        <p className="text-black font-bold text-lg">@look_user</p>
-        <p className="text-gray-400 text-sm mt-1">Отсканируй код чтобы найти меня в Лоок</p>
-      </div>
-      <button className="flex items-center gap-2 px-6 py-3 md:py-2.5 rounded-xl bg-[#8b5cf6] text-white font-semibold md:text-sm">
-        <Icon name="Share2" size={18} className="text-white" />
-        Поделиться QR-кодом
-      </button>
     </div>
-    </div>
-  </div>
-);
+  );
+};
 
 const NotificationsScreen = ({ onBack }: { onBack: () => void }) => {
   const [settings, setSettings] = useState(NOTIFICATIONS);
