@@ -280,42 +280,71 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
       const ext = isVideo ? "mp4" : "jpg";
       const type = isVideo ? "video/mp4" : "image/jpeg";
 
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = (reader.result as string).split(",")[1];
-
-        // Один POST = одна запись в БД. Если "везде" — категория от Главной,
-        // лента подхватит то же видео по author/handle.
-        const finalCategory =
-          destination === "feed" ? "feed"
-          : destination === "home" ? category
-          : category; // both → используем выбранную категорию
-
-        await fetch(UPLOAD_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            file: base64,
-            type,
-            ext,
-            category: finalCategory,
-            destinations: destination === "both" ? ["home", "feed"] : [destination],
-            description,
-            hashtags,
-            author: user?.name || "Пользователь",
-            handle: user?.handle || user?.name || "user",
-            user_id: user?.id || "anonymous",
-          }),
-        });
-
-        try { await refreshMedia(); } catch { /* ignore */ }
-
+      // Лимит размера: base64 ~ файл * 1.37. Cloud function принимает ~6 МБ JSON.
+      // Берём безопасный лимит на сам файл — 4 МБ.
+      const MAX_FILE_SIZE = 4 * 1024 * 1024;
+      if (file.size > MAX_FILE_SIZE) {
         setPublishing(false);
-        onPublished();
-      };
-      reader.readAsDataURL(file);
-    } catch {
+        alert(
+          `Файл слишком большой (${(file.size / 1024 / 1024).toFixed(1)} МБ). ` +
+          `Максимум — 4 МБ. Сожми видео или выбери покороче.`,
+        );
+        return;
+      }
+
+      const base64: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          const idx = result.indexOf(",");
+          resolve(idx >= 0 ? result.slice(idx + 1) : result);
+        };
+        reader.onerror = () => reject(reader.error || new Error("FileReader error"));
+        reader.readAsDataURL(file);
+      });
+
+      // Один POST = одна запись в БД. Если "везде" — категория от Главной,
+      // лента подхватит то же видео по author/handle.
+      const finalCategory =
+        destination === "feed" ? "feed"
+        : destination === "home" ? category
+        : category; // both → используем выбранную категорию
+
+      const res = await fetch(UPLOAD_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          file: base64,
+          type,
+          ext,
+          category: finalCategory,
+          destinations: destination === "both" ? ["home", "feed"] : [destination],
+          description,
+          hashtags,
+          author: user?.name || "Пользователь",
+          handle: user?.handle || user?.name || "user",
+          user_id: user?.id || "anonymous",
+        }),
+      });
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(`Upload failed: ${res.status} ${txt}`);
+      }
+      const raw = await res.json().catch(() => null);
+      const data = raw && typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      if (!data || !data.url) {
+        throw new Error("Сервер не вернул ссылку на загруженный файл");
+      }
+
+      try { await refreshMedia(); } catch { /* ignore */ }
+
       setPublishing(false);
+      onPublished();
+    } catch (e) {
+      console.error("[MediaEditor] publish error", e);
+      setPublishing(false);
+      alert("Не удалось опубликовать. Попробуй ещё раз или уменьши размер файла.");
     }
   };
 

@@ -71,30 +71,67 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
     if (!file) return;
     setPublishing(true);
     try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = (reader.result as string).split(",")[1];
-        const ext = file.name.split(".").pop() || "mp4";
-        const res = await fetch("https://functions.poehali.dev/78967386-1bfb-4070-9bb3-549cc5c00de6", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ file: base64, type: file.type, ext, category: destination === "home" ? selectedCategory : "feed", description, hashtags, author: user?.name || "Пользователь", handle: user?.handle || user?.name || "user", user_id: user?.id || "anonymous" }),
-        });
-        const raw = await res.json();
-        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-        if (data.url) {
-          setPublished(true);
-          await refreshMedia();
-          setTimeout(() => {
-            setUploadedMedia(null);
-            setPublished(false);
-            onClose();
-          }, 1500);
-        }
+      // Cloud function принимает ~6 МБ JSON. base64 ~ файл * 1.37, поэтому
+      // безопасный лимит на файл — 4 МБ.
+      const MAX_FILE_SIZE = 4 * 1024 * 1024;
+      if (file.size > MAX_FILE_SIZE) {
         setPublishing(false);
-      };
-      reader.readAsDataURL(file);
-    } catch {
+        alert(
+          `Файл слишком большой (${(file.size / 1024 / 1024).toFixed(1)} МБ). ` +
+          `Максимум — 4 МБ. Сожми видео или выбери покороче.`,
+        );
+        return;
+      }
+
+      const base64: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const r = reader.result as string;
+          const idx = r.indexOf(",");
+          resolve(idx >= 0 ? r.slice(idx + 1) : r);
+        };
+        reader.onerror = () => reject(reader.error || new Error("FileReader error"));
+        reader.readAsDataURL(file);
+      });
+
+      const ext = file.name.split(".").pop() || "mp4";
+      const res = await fetch("https://functions.poehali.dev/78967386-1bfb-4070-9bb3-549cc5c00de6", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          file: base64,
+          type: file.type,
+          ext,
+          category: destination === "home" ? selectedCategory : "feed",
+          description,
+          hashtags,
+          author: user?.name || "Пользователь",
+          handle: user?.handle || user?.name || "user",
+          user_id: user?.id || "anonymous",
+        }),
+      });
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(`Upload failed: ${res.status} ${txt}`);
+      }
+      const raw = await res.json().catch(() => null);
+      const data = raw && typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      if (!data || !data.url) {
+        throw new Error("Сервер не вернул ссылку на файл");
+      }
+
+      setPublished(true);
+      await refreshMedia();
+      setTimeout(() => {
+        setUploadedMedia(null);
+        setPublished(false);
+        onClose();
+      }, 1500);
+    } catch (e) {
+      console.error("[CameraScreen] publish error", e);
+      alert("Не удалось опубликовать. Попробуй ещё раз или уменьши размер файла.");
+    } finally {
       setPublishing(false);
     }
   };
