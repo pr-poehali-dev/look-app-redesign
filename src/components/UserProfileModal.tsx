@@ -27,6 +27,9 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
   const [tab, setTab] = useState<"media" | "files" | "links">("media");
   const [openedItem, setOpenedItem] = useState<number | null>(null);
   const [gender, setGender] = useState<string | null>(null);
+  const [realUser, setRealUser] = useState<{ id: number; name: string; handle: string; avatar: string | null } | null>(null);
+  const [userMedia, setUserMedia] = useState<{ id: number; image: string; isVideo: boolean }[]>([]);
+  const [mediaLoading, setMediaLoading] = useState(false);
   const [notifMenu, setNotifMenu] = useState(false);
   const [moreMenu, setMoreMenu] = useState(false);
   const [notifMode, setNotifMode] = useState<"on" | "off" | "muted">(() => {
@@ -75,17 +78,37 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
 
   useEffect(() => {
     let cancelled = false;
+    setMediaLoading(true);
     fetch(PROFILE_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "get_public_profile", handle }),
     })
       .then((r) => r.json())
-      .then((raw) => {
+      .then(async (raw) => {
         const json = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-        if (!cancelled) setGender(json?.user?.gender || null);
+        if (cancelled) return;
+        const u = json?.user;
+        setGender(u?.gender || null);
+        if (u && u.id) {
+          setRealUser({ id: u.id, name: u.name, handle: u.handle, avatar: u.avatar });
+          try {
+            const res = await fetch(`${PROFILE_URL}?user_id=${u.id}`);
+            const raw2 = await res.json();
+            const d = typeof raw2.body === "string" ? JSON.parse(raw2.body) : raw2;
+            if (!cancelled && Array.isArray(d.videos)) {
+              const media = d.videos.map((v: { id: number; url: string; type: string }) => ({
+                id: v.id,
+                image: v.url,
+                isVideo: v.type === "video" || /\.(mp4|mov|webm|m4v)(\?|$)/i.test(v.url || ""),
+              }));
+              setUserMedia(media);
+            }
+          } catch { /* ignore */ }
+        }
       })
-      .catch(() => { if (!cancelled) setGender(null); });
+      .catch(() => { if (!cancelled) setGender(null); })
+      .finally(() => { if (!cancelled) setMediaLoading(false); });
     return () => { cancelled = true; };
   }, [handle]);
 
@@ -111,7 +134,17 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
     window.dispatchEvent(new CustomEvent("open-direct-message", { detail: { handle } }));
   };
 
-  const opened = openedItem !== null ? data.gallery[openedItem] : null;
+  // Объединяем медиа из БД пользователя с галереей по умолчанию (из authors.ts)
+  const gallery = userMedia.length > 0
+    ? userMedia.map((m) => ({ image: m.image, isVideo: m.isVideo, views: undefined as string | undefined }))
+    : data.gallery;
+
+  const displayName = realUser?.name || data.name;
+  const displayAvatar = realUser?.avatar || data.avatar;
+  const displayHandle = realUser?.handle || data.handle;
+  const postsCount = userMedia.length > 0 ? String(userMedia.length) : data.posts;
+
+  const opened = openedItem !== null ? gallery[openedItem] : null;
 
   return createPortal(
     <div className="fixed inset-0 z-[10000] bg-white flex flex-col">
@@ -129,13 +162,13 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
           {/* Large avatar header — Telegram style */}
           <div className="flex flex-col items-center pt-8 pb-6 px-6 bg-white">
             <button
-              onClick={() => data.gallery[0] && setOpenedItem(0)}
+              onClick={() => gallery[0] && setOpenedItem(0)}
               className="w-28 h-28 rounded-full overflow-hidden active:opacity-80"
             >
-              <UserAvatar src={data.avatar} name={data.name} alt={data.name} />
+              <UserAvatar src={displayAvatar} name={displayName} alt={displayName} />
             </button>
             <div className="mt-4 text-center flex items-center gap-1.5">
-              <h1 className="text-black font-bold text-2xl leading-tight">{data.name}</h1>
+              <h1 className="text-black font-bold text-2xl leading-tight">{displayName}</h1>
               {data.verified && <Icon name="BadgeCheck" size={20} className="text-[#2AABEE]" />}
             </div>
             <p className="text-gray-500 text-sm mt-1">был(а) недавно</p>
@@ -188,7 +221,7 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
               </div>
               <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                 <div>
-                  <p className="text-[#2AABEE] text-base">@{data.handle}</p>
+                  <p className="text-[#2AABEE] text-base">@{displayHandle}</p>
                   <p className="text-gray-500 text-xs mt-0.5">username</p>
                 </div>
                 <Icon name="QrCode" size={20} className="text-gray-400" />
@@ -200,7 +233,7 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
           <div className="bg-[#f4f4f5] pb-2">
             <div className="bg-white grid grid-cols-3 divide-x divide-gray-100">
               <button className="py-3 active:bg-gray-50">
-                <p className="text-black font-bold text-lg">{data.posts}</p>
+                <p className="text-black font-bold text-lg">{postsCount}</p>
                 <p className="text-gray-500 text-xs">постов</p>
               </button>
               <button className="py-3 active:bg-gray-50">
@@ -243,15 +276,24 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
           </div>
 
           {tab === "media" ? (
-            data.gallery.length > 0 ? (
+            mediaLoading && gallery.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 bg-white">
+                <div className="w-8 h-8 border-2 border-[#2AABEE] border-t-transparent rounded-full animate-spin" />
+                <p className="text-gray-400 text-sm">Загружаем…</p>
+              </div>
+            ) : gallery.length > 0 ? (
               <div className="grid grid-cols-3 gap-px bg-gray-100">
-                {data.gallery.map((item, i) => (
+                {gallery.map((item, i) => (
                   <button
                     key={i}
                     onClick={() => setOpenedItem(i)}
                     className="relative aspect-square overflow-hidden bg-gray-200 active:opacity-80"
                   >
-                    <img src={item.image} alt="" className="w-full h-full object-cover" />
+                    {item.isVideo ? (
+                      <video src={item.image} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                    ) : (
+                      <img src={item.image} alt="" className="w-full h-full object-cover" loading="lazy" />
+                    )}
                     {item.isVideo && (
                       <div className="absolute top-1.5 right-1.5 bg-black/40 rounded-full p-1">
                         <Icon name="Play" size={10} className="text-white" />
@@ -296,7 +338,7 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
             <button onClick={() => setOpenedItem(null)} className="p-2 -ml-2">
               <Icon name="ArrowLeft" size={24} className="text-white" />
             </button>
-            <span className="text-white font-semibold text-sm">@{data.handle}</span>
+            <span className="text-white font-semibold text-sm">@{displayHandle}</span>
             <div className="w-10" />
           </div>
           <div className="flex-1 flex items-center justify-center overflow-hidden" onClick={e => e.stopPropagation()}>
@@ -317,7 +359,7 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
         <div className="fixed inset-0 z-[10002] flex items-end justify-center bg-black/40" onClick={() => setNotifMenu(false)}>
           <div className="bg-white rounded-t-2xl w-full max-w-md pb-6" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-2" />
-            <div className="px-4 py-2 text-center text-gray-500 text-xs">Уведомления от @{data.handle}</div>
+            <div className="px-4 py-2 text-center text-gray-500 text-xs">Уведомления от @{displayHandle}</div>
             <button onClick={() => setNotif("on")} className="w-full flex items-center gap-3 px-5 py-3.5 active:bg-gray-50">
               <Icon name="Bell" size={20} className="text-[#2AABEE]" />
               <span className="flex-1 text-left text-black text-base">Включены</span>
@@ -345,7 +387,7 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
         <div className="fixed inset-0 z-[10002] flex items-end justify-center bg-black/40" onClick={() => setMoreMenu(false)}>
           <div className="bg-white rounded-t-2xl w-full max-w-md pb-6" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-2" />
-            <div className="px-4 py-2 text-center text-gray-500 text-xs">@{data.handle}</div>
+            <div className="px-4 py-2 text-center text-gray-500 text-xs">@{displayHandle}</div>
             <button onClick={copyHandle} className="w-full flex items-center gap-3 px-5 py-3.5 active:bg-gray-50">
               <Icon name="Copy" size={20} className="text-[#2AABEE]" />
               <span className="flex-1 text-left text-black text-base">Копировать ник</span>
