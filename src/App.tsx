@@ -10,6 +10,7 @@ import Admin from "./pages/Admin";
 import { UserMediaProvider } from "./context/UserMediaContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { UnreadProvider } from "./context/UnreadContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import AuthScreen from "./components/AuthScreen";
 import Landing from "./components/Landing";
 import ResetPasswordScreen from "./components/ResetPasswordScreen";
@@ -440,9 +441,11 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AutoTranslator />
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

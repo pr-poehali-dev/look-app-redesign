@@ -7,6 +7,7 @@ import { useBulkCounts } from "@/hooks/useBulkCounts";
 import { useFollowingList } from "@/hooks/useFollowing";
 
 export const CATEGORIES = [
+  { id: "new", label: "Новые" },
   { id: "all", label: "Все" },
   { id: "subs", label: "Подписки" },
   { id: "music", label: "Музыка" },
@@ -265,11 +266,14 @@ const VIDEOS: (VideoData & { category: string })[] = [
 interface VideoFeedProps {
   activeTab: string;
   activeCategory?: string;
+  initialVideoId?: number;
+  onCloseInitial?: () => void;
 }
 
 const GET_VIDEOS_URL = "https://functions.poehali.dev/f58115ec-de09-405d-a2db-08fe1cd958e1";
 
-const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
+const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseInitial }: VideoFeedProps) => {
+  void activeTab;
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [dbVideos, setDbVideos] = useState<(VideoData & { category: string })[]>([]);
@@ -308,7 +312,8 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
   useEffect(() => {
     setDbLoaded(false);
     const isSubsCategory = activeCategory === "subs";
-    const url = activeCategory && activeCategory !== "all" && !isSubsCategory
+    const isNewCategory = activeCategory === "new";
+    const url = activeCategory && activeCategory !== "all" && !isSubsCategory && !isNewCategory
       ? `${GET_VIDEOS_URL}?type=video&category=${activeCategory}`
       : `${GET_VIDEOS_URL}?type=video`;
     fetch(url)
@@ -363,9 +368,11 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
   const filtered =
     activeCategory === "all"
       ? allVideos
-      : activeCategory === "subs"
-        ? allVideos.filter((v) => followingHandles.includes(v.handle))
-        : allVideos.filter((v) => v.category === activeCategory);
+      : activeCategory === "new"
+        ? [...allVideos].sort((a, b) => Number(b.id) - Number(a.id))
+        : activeCategory === "subs"
+          ? allVideos.filter((v) => followingHandles.includes(v.handle))
+          : allVideos.filter((v) => v.category === activeCategory);
 
   const counts = useBulkCounts("video", filtered.map(v => v.id));
   const formatShort = (n: number) => n >= 1_000_000 ? (n / 1_000_000).toFixed(1) + "M" : n >= 1000 ? (n / 1000).toFixed(1) + "K" : String(n);
@@ -385,6 +392,17 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
       containerRef.current.scrollTop = 0;
     }
   }, [activeCategory]);
+
+  // Если открыли видео из плитки — проматываем к нему
+  useEffect(() => {
+    if (!initialVideoId || !dbLoaded) return;
+    const idx = filteredWithCounts.findIndex((v) => v.id === initialVideoId);
+    if (idx >= 0 && containerRef.current) {
+      containerRef.current.scrollTop = idx * containerRef.current.clientHeight;
+      setActiveIndex(idx);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialVideoId, dbLoaded]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -427,6 +445,17 @@ const VideoFeed = ({ activeTab, activeCategory = "all" }: VideoFeedProps) => {
           </div>
         )}
       </div>
+
+      {/* Кнопка возврата к плиточной сетке (только если открыли из неё) */}
+      {onCloseInitial && (
+        <button
+          onClick={onCloseInitial}
+          className="hidden md:flex absolute top-4 left-4 z-40 items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white text-sm transition-colors"
+        >
+          <Icon name="LayoutGrid" size={16} />
+          К плитке
+        </button>
+      )}
 
       {/* Desktop nav arrows — справа от центрированной ленты (после колонки кнопок) */}
       <div

@@ -31,6 +31,40 @@
   animation-play-state: paused;
 }
 
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* === UI Theme switch (Look home) === */
+:root {
+  --look-bg: #000;
+  --look-fg: #fff;
+  --look-accent: #1f6b3a; /* тёмно-зелёный */
+  --look-accent-soft: #2e8a4d;
+  --look-chip-bg: rgba(255, 255, 255, 0.08);
+  --look-chip-fg: rgba(255, 255, 255, 0.85);
+  --look-chip-active-bg: #fff;
+  --look-chip-active-fg: #000;
+}
+html.theme-light {
+  --look-bg: #eafff0; /* очень светло-зелёный фон */
+  --look-fg: #0d2a18;
+  --look-accent: #a8e6bd; /* светло-зелёный */
+  --look-accent-soft: #c8f0d4;
+  --look-chip-bg: #d4f3de;
+  --look-chip-fg: #143a22;
+  --look-chip-active-bg: #1f6b3a;
+  --look-chip-active-fg: #fff;
+}
+html.theme-light body {
+  background: var(--look-bg);
+  color: var(--look-fg);
+}
+
 @layer base {
   :root {
     --background: 220 20% 6%;
