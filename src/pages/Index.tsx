@@ -270,24 +270,37 @@ const Index = () => {
                   <Icon name={theme === "dark" ? "Sun" : "Moon"} size={16} className="text-white" />
                 </button>
                 {mobileCatOpen && (
-                  <div className="absolute left-4 right-4 md:right-auto md:w-[420px] top-full mt-1 bg-black/90 backdrop-blur rounded-2xl p-2 max-h-[60vh] overflow-y-auto z-40 border border-white/10">
+                  <div
+                    className="absolute left-4 right-4 md:right-auto md:w-[420px] top-full mt-1 backdrop-blur rounded-2xl p-2 max-h-[60vh] overflow-y-auto z-40"
+                    style={{
+                      background: theme === "dark" ? "rgba(10,46,26,0.95)" : "rgba(255,255,255,0.98)",
+                      border: theme === "dark" ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(13,42,24,0.15)",
+                    }}
+                  >
                     <div className="flex flex-wrap gap-2">
-                      {CATEGORIES.map((cat) => (
-                        <button
-                          key={cat.id}
-                          onClick={() => {
-                            setActiveCategory(cat.id);
-                            setMobileCatOpen(false);
-                          }}
-                          className={`px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                            activeCategory === cat.id
-                              ? "bg-white text-black"
-                              : "bg-white/10 text-white/80 hover:bg-white/20"
-                          }`}
-                        >
-                          {cat.label}
-                        </button>
-                      ))}
+                      {CATEGORIES.map((cat) => {
+                        const active = activeCategory === cat.id;
+                        return (
+                          <button
+                            key={cat.id}
+                            onClick={() => {
+                              setActiveCategory(cat.id);
+                              setMobileCatOpen(false);
+                            }}
+                            className="px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap transition-all"
+                            style={{
+                              background: active
+                                ? theme === "dark" ? "#fff" : "#1f6b3a"
+                                : theme === "dark" ? "rgba(255,255,255,0.12)" : "rgba(13,42,24,0.08)",
+                              color: active
+                                ? theme === "dark" ? "#000" : "#fff"
+                                : theme === "dark" ? "rgba(255,255,255,0.9)" : "#0d2a18",
+                            }}
+                          >
+                            {cat.label}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

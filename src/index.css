@@ -197,6 +197,38 @@ html.theme-light .media-overlay-text .text-white\/30 {
   color: rgba(255, 255, 255, 0.55) !important;
 }
 
+/* === Иконки на тёмных подложках всегда остаются белыми ===
+   Любые иконки lucide лежащие внутри полупрозрачных тёмных фонов
+   (bg-black/40, bg-black/50, bg-black/60 и т.п.) должны быть белыми
+   независимо от темы сайта. */
+html.theme-light .bg-black\/30 .text-white,
+html.theme-light .bg-black\/40 .text-white,
+html.theme-light .bg-black\/50 .text-white,
+html.theme-light .bg-black\/60 .text-white,
+html.theme-light .bg-black\/70 .text-white,
+html.theme-light .bg-black\/80 .text-white,
+html.theme-light .bg-black\/90 .text-white,
+html.theme-light .bg-black\/30 svg,
+html.theme-light .bg-black\/40 svg,
+html.theme-light .bg-black\/50 svg,
+html.theme-light .bg-black\/60 svg,
+html.theme-light .bg-black\/70 svg,
+html.theme-light .bg-black\/80 svg,
+html.theme-light .bg-black\/90 svg,
+html.theme-light .media-overlay-text svg {
+  color: #ffffff !important;
+}
+
+/* Иконки на красных/розовых/зелёных акцентных кнопках */
+html.theme-light .bg-\[\#fe2c55\] svg,
+html.theme-light .bg-\[\#fe2c55\] .text-white,
+html.theme-light .bg-red-500 svg,
+html.theme-light .bg-green-500 svg,
+html.theme-light .bg-blue-500 svg,
+html.theme-light [style*="--look-accent"] svg {
+  color: #ffffff !important;
+}
+
 /* Подложка-градиент для лучшей читаемости текста на медиа */
 .media-overlay-scrim {
   background: linear-gradient(
