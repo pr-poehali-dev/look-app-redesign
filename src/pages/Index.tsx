@@ -117,10 +117,10 @@ const Index = () => {
   }, [initialInviteFromUrl, user]);
 
   return (
-    <div className="fixed inset-0 bg-black md:bg-[#121212] flex overflow-hidden">
+    <div className="fixed inset-0 flex overflow-hidden" style={{ background: "var(--look-bg)" }}>
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col w-[240px] xl:w-[280px] h-full border-r border-white/8 bg-black flex-shrink-0 z-40">
+      <aside className="hidden md:flex flex-col w-[240px] xl:w-[280px] h-full border-r border-white/8 flex-shrink-0 z-40" style={{ background: "var(--look-sidebar-bg)" }}>
         <div className="px-6 pt-4 pb-2">
           <span className="font-bold text-white text-xl tracking-tight">Лоок</span>
         </div>
@@ -138,9 +138,9 @@ const Index = () => {
               >
                 {isAdd ? (
                   <div className="relative flex items-center h-6 w-9">
-                    <div className="w-6 h-5 rounded-md bg-[#61d4f0] absolute left-0" />
-                    <div className="w-6 h-5 rounded-md bg-[#fe2c55] absolute right-0" />
-                    <div className="w-6 h-5 rounded-md bg-white flex items-center justify-center relative z-10 mx-auto">
+                    <div className="w-6 h-5 rounded-md absolute left-0" style={{ background: "var(--look-accent)", opacity: 0.6 }} />
+                    <div className="w-6 h-5 rounded-md absolute right-0" style={{ background: "var(--look-accent)" }} />
+                    <div className="w-6 h-5 rounded-md flex items-center justify-center relative z-10 mx-auto" style={{ background: "var(--look-accent-fg)" }}>
                       <Icon name="Plus" size={14} className="text-black" />
                     </div>
                   </div>
@@ -296,8 +296,8 @@ const Index = () => {
                         onClick={() => setActiveCategory(cat.id)}
                         className={`px-3.5 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                           active
-                            ? "bg-[var(--look-chip-active-bg)] text-[var(--look-chip-active-fg)]"
-                            : "bg-[var(--look-chip-bg)] text-[var(--look-chip-fg)] hover:opacity-80"
+                            ? "bg-white text-black"
+                            : "bg-white/10 text-white/80 hover:bg-white/20"
                         }`}
                       >
                         {cat.label}
@@ -307,10 +307,10 @@ const Index = () => {
                 </div>
                 <button
                   onClick={toggleTheme}
-                  className="flex-shrink-0 w-9 h-9 rounded-full bg-[var(--look-chip-bg)] flex items-center justify-center hover:opacity-80 transition-opacity"
+                  className="flex-shrink-0 w-9 h-9 rounded-full bg-white/10 backdrop-blur flex items-center justify-center hover:bg-white/20 transition-colors"
                   title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
                 >
-                  <Icon name={theme === "dark" ? "Sun" : "Moon"} size={16} className="text-[var(--look-chip-fg)]" />
+                  <Icon name={theme === "dark" ? "Sun" : "Moon"} size={16} className="text-white" />
                 </button>
               </div>
             </>
@@ -373,9 +373,9 @@ const Index = () => {
               >
                 {tab.id === "add" ? (
                   <div className="relative flex items-center h-7">
-                    <div className="w-10 h-7 rounded-lg bg-[#61d4f0] absolute left-0" />
-                    <div className="w-10 h-7 rounded-lg bg-[#fe2c55] absolute right-0" />
-                    <div className="w-10 h-7 rounded-lg bg-white flex items-center justify-center relative z-10 mx-auto">
+                    <div className="w-10 h-7 rounded-lg absolute left-0" style={{ background: "var(--look-accent)", opacity: 0.6 }} />
+                    <div className="w-10 h-7 rounded-lg absolute right-0" style={{ background: "var(--look-accent)" }} />
+                    <div className="w-10 h-7 rounded-lg flex items-center justify-center relative z-10 mx-auto" style={{ background: "var(--look-accent-fg)" }}>
                       <Icon name="Plus" size={18} className="text-black" />
                     </div>
                   </div>

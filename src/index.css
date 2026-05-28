@@ -41,28 +41,25 @@
 
 /* === UI Theme switch (Look home) === */
 :root {
-  --look-bg: #000;
-  --look-fg: #fff;
-  --look-accent: #1f6b3a; /* тёмно-зелёный */
-  --look-accent-soft: #2e8a4d;
-  --look-chip-bg: rgba(255, 255, 255, 0.08);
-  --look-chip-fg: rgba(255, 255, 255, 0.85);
-  --look-chip-active-bg: #fff;
-  --look-chip-active-fg: #000;
+  --look-bg: #0a2e1a; /* тёмно-зелёный фон сайта */
+  --look-sidebar-bg: #08230f;
+  --look-fg: #ffffff;
+  --look-accent: #1f6b3a; /* тёмно-зелёный акцент */
+  --look-accent-fg: #ffffff;
 }
 html.theme-light {
-  --look-bg: #eafff0; /* очень светло-зелёный фон */
+  --look-bg: #d4f3de; /* светло-зелёный фон сайта */
+  --look-sidebar-bg: #c0e9cd;
   --look-fg: #0d2a18;
-  --look-accent: #a8e6bd; /* светло-зелёный */
-  --look-accent-soft: #c8f0d4;
-  --look-chip-bg: #d4f3de;
-  --look-chip-fg: #143a22;
-  --look-chip-active-bg: #1f6b3a;
-  --look-chip-active-fg: #fff;
+  --look-accent: #1f6b3a;
+  --look-accent-fg: #ffffff;
 }
 html.theme-light body {
   background: var(--look-bg);
   color: var(--look-fg);
+}
+html.theme-dark body {
+  background: var(--look-bg);
 }
 
 @layer base {
