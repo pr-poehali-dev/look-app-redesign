@@ -446,17 +446,6 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
         )}
       </div>
 
-      {/* Кнопка возврата к плиточной сетке (только если открыли из неё) */}
-      {onCloseInitial && (
-        <button
-          onClick={onCloseInitial}
-          className="hidden md:flex absolute top-4 left-4 z-40 items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white text-sm transition-colors"
-        >
-          <Icon name="LayoutGrid" size={16} />
-          К плитке
-        </button>
-      )}
-
       {/* Desktop nav arrows — справа от центрированной ленты (после колонки кнопок) */}
       <div
         className="hidden md:flex flex-col gap-3 absolute top-1/2 -translate-y-1/2 z-40"
