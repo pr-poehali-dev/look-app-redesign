@@ -256,11 +256,18 @@ const Index = () => {
               {/* Единый стиль для ПК и телефона: кнопка с раскрывающимся списком */}
               <div className="pointer-events-auto px-4 pb-2 relative flex items-center gap-2">
                 <button
-                  onClick={() => setMobileCatOpen((v) => !v)}
+                  onClick={() => {
+                    // Если уже в категории "Все" и открыто видео — возвращаемся в плитку
+                    if (activeCategory === "all" && gridOpenVideoId !== null) {
+                      setGridOpenVideoId(null);
+                      return;
+                    }
+                    setMobileCatOpen((v) => !v);
+                  }}
                   className="px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap bg-white text-black flex items-center gap-1"
                 >
                   {CATEGORIES.find((c) => c.id === activeCategory)?.label || "Все"}
-                  <Icon name={mobileCatOpen ? "ChevronUp" : "ChevronDown"} size={14} />
+                  <Icon name={(activeCategory === "all" && gridOpenVideoId !== null) ? "ArrowLeft" : (mobileCatOpen ? "ChevronUp" : "ChevronDown")} size={14} />
                 </button>
                 <button
                   onClick={toggleTheme}
@@ -285,6 +292,7 @@ const Index = () => {
                             key={cat.id}
                             onClick={() => {
                               setActiveCategory(cat.id);
+                              setGridOpenVideoId(null);
                               setMobileCatOpen(false);
                             }}
                             className="px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap transition-all"
