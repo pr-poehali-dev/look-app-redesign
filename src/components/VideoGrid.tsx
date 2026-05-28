@@ -74,20 +74,33 @@ const VideoGrid = ({ onOpenVideo }: Props) => {
           >
             <div className="media-overlay-text relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-black/5">
               {v.type === "video" ? (
-                <video
-                  src={v.url}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  muted
-                  preload="none"
-                  poster={v.thumb || undefined}
-                  playsInline
-                />
+                v.thumb && v.thumb !== v.url ? (
+                  <img
+                    src={v.thumb}
+                    alt={v.author}
+                    loading="lazy"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <video
+                    src={`${v.url}#t=0.1`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    muted
+                    preload="metadata"
+                    playsInline
+                  />
+                )
               ) : (
                 <img
                   src={v.thumb || v.url}
                   alt={v.author}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
+              )}
+              {v.type === "video" && (
+                <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+                  <Icon name="Play" size={14} className="text-white ml-0.5" />
+                </div>
               )}
               <div className="absolute bottom-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm">
                 <Icon name="Heart" size={11} className="text-white" />
