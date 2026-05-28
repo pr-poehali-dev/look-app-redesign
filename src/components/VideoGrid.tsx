@@ -72,7 +72,7 @@ const VideoGrid = ({ onOpenVideo }: Props) => {
             onClick={() => onOpenVideo(v.id)}
             className="group flex flex-col gap-2 text-left"
           >
-            <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-[var(--look-chip-bg)]">
+            <div className="media-overlay-text relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-black/5">
               {v.type === "video" ? (
                 <video
                   src={v.url}

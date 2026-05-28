@@ -106,10 +106,104 @@ html.theme-light .text-white\/30 {
 }
 
 /* Бордеры на светлом фоне — тёмно-зелёные тонкие */
+html.theme-light .border-white\/5,
 html.theme-light .border-white\/8,
 html.theme-light .border-white\/10,
+html.theme-light .border-white\/15,
 html.theme-light .border-white\/20 {
   border-color: rgba(13, 42, 24, 0.12) !important;
+}
+
+/* Дополнительные тёмные фоны → светло-зелёный */
+html.theme-light .bg-\[\#000000\],
+html.theme-light .bg-\[\#111111\],
+html.theme-light .bg-\[\#222\],
+html.theme-light .bg-\[\#2a2a2a\],
+html.theme-light .bg-zinc-800,
+html.theme-light .bg-neutral-800,
+html.theme-light .bg-gray-800,
+html.theme-light .bg-slate-900 {
+  background-color: var(--look-bg) !important;
+}
+
+/* Полупрозрачные «белые» поверхности (чипы, кнопки) — на светлом фоне делаем тёмно-зеленоватыми */
+html.theme-light .bg-white\/5 {
+  background-color: rgba(13, 42, 24, 0.05) !important;
+}
+html.theme-light .bg-white\/8 {
+  background-color: rgba(13, 42, 24, 0.08) !important;
+}
+html.theme-light .bg-white\/10 {
+  background-color: rgba(13, 42, 24, 0.1) !important;
+}
+html.theme-light .bg-white\/15 {
+  background-color: rgba(13, 42, 24, 0.13) !important;
+}
+html.theme-light .bg-white\/20 {
+  background-color: rgba(13, 42, 24, 0.16) !important;
+}
+
+/* Заголовки/мета тёмно-серые */
+html.theme-light .text-white\/95 {
+  color: rgba(13, 42, 24, 0.95) !important;
+}
+html.theme-light .text-white\/20 {
+  color: rgba(13, 42, 24, 0.45) !important;
+}
+html.theme-light .text-zinc-400,
+html.theme-light .text-zinc-300,
+html.theme-light .text-neutral-400,
+html.theme-light .text-neutral-300,
+html.theme-light .text-gray-400,
+html.theme-light .text-gray-300,
+html.theme-light .text-slate-400,
+html.theme-light .text-slate-300 {
+  color: rgba(13, 42, 24, 0.7) !important;
+}
+
+/* === Текст ПОВЕРХ медиа (фото/видео/сторис/лайв): ВСЕГДА БЕЛЫЙ + тень ===
+   Применяется независимо от темы. Используется на оверлеях видео-карточек,
+   подписях автора, лайков, длительности видео, никах в сторис и т.п. */
+html .media-overlay-text,
+html .media-overlay-text *,
+html.theme-light .media-overlay-text,
+html.theme-light .media-overlay-text *,
+html.theme-light .media-overlay-text .text-white {
+  color: #ffffff !important;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.85),
+    0 0 6px rgba(0, 0, 0, 0.4);
+}
+/* Прозрачности белого внутри медиа сохраняем */
+html.theme-light .media-overlay-text .text-white\/90 {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+html.theme-light .media-overlay-text .text-white\/80 {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+html.theme-light .media-overlay-text .text-white\/70 {
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+html.theme-light .media-overlay-text .text-white\/60 {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+html.theme-light .media-overlay-text .text-white\/50 {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+html.theme-light .media-overlay-text .text-white\/40 {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+html.theme-light .media-overlay-text .text-white\/30 {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+/* Подложка-градиент для лучшей читаемости текста на медиа */
+.media-overlay-scrim {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.65) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
 }
 
 @layer base {
