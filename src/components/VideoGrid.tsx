@@ -78,7 +78,8 @@ const VideoGrid = ({ onOpenVideo }: Props) => {
                   src={v.url}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   muted
-                  preload="metadata"
+                  preload="none"
+                  poster={v.thumb || undefined}
                   playsInline
                 />
               ) : (

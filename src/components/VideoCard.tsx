@@ -25,9 +25,11 @@ export interface VideoData {
 interface VideoCardProps {
   video: VideoData;
   isActive: boolean;
+  /** Уровень предзагрузки видео: full — играем, meta — только метадата, none — не грузим */
+  preloadLevel?: "full" | "meta" | "none";
 }
 
-const VideoCard = ({ video, isActive }: VideoCardProps) => {
+const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" }: VideoCardProps) => {
   const { saved, toggle: toggleSaved } = useSavedItem("video", video.id, {
     image: video.image,
     title: video.description,
@@ -136,16 +138,26 @@ const VideoCard = ({ video, isActive }: VideoCardProps) => {
       <div className="relative w-full h-full md:flex-1 md:max-w-[470px] md:rounded-xl md:overflow-hidden md:bg-black">
       {isVideo ? (
         <>
-          <video
-            ref={videoRef}
-            src={video.image}
-            className="absolute inset-0 w-full h-full object-cover"
-            loop
-            muted={muted}
-            playsInline
-            onClick={handleVideoClick}
-            style={{ touchAction: "manipulation" }}
-          />
+          {preloadLevel === "none" ? (
+            <div
+              className="absolute inset-0 w-full h-full bg-black flex items-center justify-center"
+              onClick={handleVideoClick}
+            >
+              <Icon name="Play" size={56} className="text-white/30" />
+            </div>
+          ) : (
+            <video
+              ref={videoRef}
+              src={video.image}
+              className="absolute inset-0 w-full h-full object-cover"
+              loop
+              muted={muted}
+              playsInline
+              preload={preloadLevel === "full" ? "auto" : "metadata"}
+              onClick={handleVideoClick}
+              style={{ touchAction: "manipulation" }}
+            />
+          )}
 
           {showPauseIcon && (
             <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">

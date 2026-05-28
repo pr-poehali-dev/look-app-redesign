@@ -432,13 +432,18 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
           <div className="w-full flex items-center justify-center" style={{ height: "100%" }}>
             <p className="text-white/40 text-sm">Загрузка...</p>
           </div>
-        ) : filteredWithCounts.length > 0 ? filteredWithCounts.map((video, i) => (
-          <div key={`${video.id}-${i}`} className="w-full snap-start flex md:items-center md:justify-center" style={{ height: "100%" }}>
-            <div className="w-full md:h-[min(100%,720px)] h-full">
-              <VideoCard video={video} isActive={activeIndex === i} />
+        ) : filteredWithCounts.length > 0 ? filteredWithCounts.map((video, i) => {
+          const distance = Math.abs(i - activeIndex);
+          const preloadLevel: "full" | "meta" | "none" =
+            distance === 0 ? "full" : distance === 1 ? "meta" : "none";
+          return (
+            <div key={`${video.id}-${i}`} className="w-full snap-start flex md:items-center md:justify-center" style={{ height: "100%" }}>
+              <div className="w-full md:h-[min(100%,720px)] h-full">
+                <VideoCard video={video} isActive={activeIndex === i} preloadLevel={preloadLevel} />
+              </div>
             </div>
-          </div>
-        )) : (
+          );
+        }) : (
           <div className="w-full flex flex-col items-center justify-center gap-3" style={{ height: "100%" }}>
             <p className="text-white/40 text-sm">Видео пока нет</p>
             <p className="text-white/20 text-xs">Нажми + чтобы загрузить первое</p>

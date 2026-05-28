@@ -194,6 +194,14 @@ const Index = () => {
             <Icon name="LogOut" size={22} className="text-[#fe2c55]" />
             <span className="text-sm text-[#fe2c55]">Выйти</span>
           </button>
+          <button
+            onClick={toggleTheme}
+            className="flex items-center gap-4 px-4 py-2 rounded-xl hover:bg-white/5 transition-colors text-left"
+            title="Переключить тему"
+          >
+            <Icon name={theme === "dark" ? "Sun" : "Moon"} size={22} className="text-white/80" />
+            <span className="text-sm text-white/90">{theme === "dark" ? "Светлая тема" : "Тёмная тема"}</span>
+          </button>
         </nav>
         <div className="px-6 py-2 flex-shrink-0">
           <p className="text-white/40 text-[11px] leading-relaxed">© Лоок 2026</p>
