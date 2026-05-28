@@ -245,8 +245,8 @@ const Index = () => {
           <div className="px-4 pt-10 md:pt-4 pb-2 bg-gradient-to-b from-black/70 to-transparent pointer-events-none" />
           {activeTab === "home" && (
             <>
-              {/* Мобильная версия: компактная кнопка с раскрытием */}
-              <div className="md:hidden pointer-events-auto px-4 pb-2 relative flex items-center gap-2">
+              {/* Единый стиль для ПК и телефона: кнопка с раскрывающимся списком */}
+              <div className="pointer-events-auto px-4 pb-2 relative flex items-center gap-2">
                 <button
                   onClick={() => setMobileCatOpen((v) => !v)}
                   className="px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap bg-white text-black flex items-center gap-1"
@@ -256,13 +256,13 @@ const Index = () => {
                 </button>
                 <button
                   onClick={toggleTheme}
-                  className="ml-auto w-8 h-8 rounded-full bg-white/10 backdrop-blur flex items-center justify-center"
+                  className="ml-auto w-8 h-8 rounded-full bg-white/10 backdrop-blur flex items-center justify-center hover:bg-white/20 transition-colors"
                   title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
                 >
                   <Icon name={theme === "dark" ? "Sun" : "Moon"} size={16} className="text-white" />
                 </button>
                 {mobileCatOpen && (
-                  <div className="absolute left-4 right-4 top-full mt-1 bg-black/90 backdrop-blur rounded-2xl p-2 max-h-[60vh] overflow-y-auto z-40 border border-white/10">
+                  <div className="absolute left-4 right-4 md:right-auto md:w-[420px] top-full mt-1 bg-black/90 backdrop-blur rounded-2xl p-2 max-h-[60vh] overflow-y-auto z-40 border border-white/10">
                     <div className="flex flex-wrap gap-2">
                       {CATEGORIES.map((cat) => (
                         <button
@@ -283,35 +283,6 @@ const Index = () => {
                     </div>
                   </div>
                 )}
-              </div>
-
-              {/* Десктоп: горизонтальная полоса категорий + переключатель темы */}
-              <div className="hidden md:flex pointer-events-auto px-4 pb-2 items-center gap-2">
-                <div className="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
-                  {CATEGORIES.map((cat) => {
-                    const active = activeCategory === cat.id;
-                    return (
-                      <button
-                        key={cat.id}
-                        onClick={() => setActiveCategory(cat.id)}
-                        className={`px-3.5 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                          active
-                            ? "bg-white text-black"
-                            : "bg-white/10 text-white/80 hover:bg-white/20"
-                        }`}
-                      >
-                        {cat.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                <button
-                  onClick={toggleTheme}
-                  className="flex-shrink-0 w-9 h-9 rounded-full bg-white/10 backdrop-blur flex items-center justify-center hover:bg-white/20 transition-colors"
-                  title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
-                >
-                  <Icon name={theme === "dark" ? "Sun" : "Moon"} size={16} className="text-white" />
-                </button>
               </div>
             </>
           )}
