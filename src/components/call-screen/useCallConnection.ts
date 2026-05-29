@@ -338,19 +338,23 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
             video: mode === "video" ? { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } } : false,
           });
         } catch (err) {
-          if (mode === "video") {
-            console.warn("[CallScreen] strict video failed, fallback to simple video", err);
-            try {
-              stream = await navigator.mediaDevices.getUserMedia({
-                audio: HQ_AUDIO_CONSTRAINTS,
-                video: true,
-              });
-            } catch (err2) {
-              console.warn("[CallScreen] video failed, fallback to audio-only", err2);
-              stream = await navigator.mediaDevices.getUserMedia({ audio: HQ_AUDIO_CONSTRAINTS, video: false });
+          const e = err as Error;
+          console.warn("[CallScreen] getUserMedia attempt 1 failed", e.name, e.message);
+          // Попытка 2: простые constraints (помогает на Android WebView)
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              audio: true,
+              video: mode === "video",
+            });
+          } catch (err2) {
+            const e2 = err2 as Error;
+            console.warn("[CallScreen] getUserMedia attempt 2 failed", e2.name, e2.message);
+            if (mode === "video") {
+              // Попытка 3: только аудио
+              stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            } else {
+              throw err2;
             }
-          } else {
-            throw err;
           }
         }
         applyAudioTrackTuning(stream);
@@ -377,7 +381,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         } else if (err.name === "NotFoundError" || err.name === "OverconstrainedError") {
           msg = mode === "video" ? "Не найдена камера или микрофон. Подключи устройство и попробуй снова." : "Микрофон не найден. Подключи микрофон и попробуй снова.";
         } else if (err.name === "NotReadableError" || err.name === "AbortError") {
-          msg = "Микрофон или камера заняты другим приложением. Закрой их и попробуй снова.";
+          msg = "Нет доступа к микрофону" + (mode === "video" ? " или камере" : "") + ". В настройках приложения разреши доступ к микрофону" + (mode === "video" ? " и камере" : "") + ", затем попробуй снова.";
         } else {
           msg = mode === "video" ? "Нет доступа к камере или микрофону. Разреши доступ в настройках браузера." : "Нет доступа к микрофону. Разреши доступ в настройках браузера.";
         }

@@ -82,18 +82,17 @@ const VideoGrid = ({ onOpenVideo }: Props) => {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
-                  <video
-                    src={`${v.url}#t=0.1`}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    muted
-                    preload="metadata"
-                    playsInline
-                  />
+                  /* Android WebView не показывает кадр из preload=metadata —
+                     показываем тёмный градиент с крупной иконкой Play */
+                  <div className="w-full h-full bg-gradient-to-br from-[#0a2e1a] to-[#1a1a1a] flex items-center justify-center">
+                    <Icon name="Play" size={36} className="text-white/60" />
+                  </div>
                 )
               ) : (
                 <img
                   src={v.thumb || v.url}
                   alt={v.author}
+                  loading="lazy"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               )}

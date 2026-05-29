@@ -184,11 +184,16 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
         try {
           stream = await navigator.mediaDevices.getUserMedia({ audio: HQ_AUDIO_CONSTRAINTS, video: mode === "video" });
         } catch (err) {
-          if (mode === "video") {
-            console.warn("[GroupCall] video+audio failed, fallback to audio-only", err);
-            stream = await navigator.mediaDevices.getUserMedia({ audio: HQ_AUDIO_CONSTRAINTS, video: false });
-          } else {
-            throw err;
+          console.warn("[GroupCall] attempt 1 failed", (err as Error).name);
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: mode === "video" });
+          } catch (err2) {
+            console.warn("[GroupCall] attempt 2 failed", (err2 as Error).name);
+            if (mode === "video") {
+              stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            } else {
+              throw err2;
+            }
           }
         }
         if (!mounted) { stream.getTracks().forEach(t => t.stop()); return; }
@@ -210,7 +215,7 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
         } else if (err.name === "NotFoundError" || err.name === "OverconstrainedError") {
           msg = mode === "video" ? "Не найдена камера или микрофон. Подключи устройство и попробуй снова." : "Микрофон не найден. Подключи микрофон и попробуй снова.";
         } else if (err.name === "NotReadableError" || err.name === "AbortError") {
-          msg = "Микрофон или камера заняты другим приложением. Закрой их и попробуй снова.";
+          msg = "Нет доступа к микрофону" + (mode === "video" ? " или камере" : "") + ". В настройках приложения разреши доступ к микрофону" + (mode === "video" ? " и камере" : "") + ", затем попробуй снова.";
         } else {
           msg = "Нет доступа к микрофону. Разреши доступ в настройках браузера.";
         }
