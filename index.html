@@ -3,7 +3,20 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-    <meta name="theme-color" content="#000000"/>
+    <meta name="theme-color" content="#0a2e1a"/>
+    <style>html,body{background:#0a2e1a;margin:0;padding:0}</style>
+    <script>
+      // Android WebView: если mediaDevices недоступен — создаём заглушку,
+      // чтобы код не падал с TypeError до проверки поддержки
+      if (typeof navigator !== 'undefined' && !navigator.mediaDevices) {
+        try {
+          Object.defineProperty(navigator, 'mediaDevices', {
+            value: { getUserMedia: function() { return Promise.reject(new Error('getUserMedia_unsupported')); } },
+            writable: true, configurable: true
+          });
+        } catch(e) {}
+      }
+    </script>
     <meta name="google" content="notranslate"/>
     <title>Лоок-Смотри.Делись.Общайся.Будь собой</title>
     <meta name="description" content="Лоок — приложение для коротких видео. Доступно в RuStore.">

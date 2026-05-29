@@ -171,7 +171,12 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
           throw new Error("getUserMedia_unsupported");
         }
-        const isSecure = window.isSecureContext || location.hostname === "localhost" || location.hostname === "127.0.0.1";
+        const trustedHosts = ["localhost", "127.0.0.1", "visov.ru", "www.visov.ru"];
+        const isSecure =
+          window.isSecureContext ||
+          location.protocol === "file:" ||
+          trustedHosts.includes(location.hostname) ||
+          location.hostname.endsWith(".visov.ru");
         if (!isSecure) {
           throw new Error("insecure_context");
         }

@@ -319,7 +319,14 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
           throw new Error("getUserMedia_unsupported");
         }
-        const isSecure = window.isSecureContext || location.hostname === "localhost" || location.hostname === "127.0.0.1";
+        // В Android WebView приложение может открывать https-сайт, но isSecureContext
+        // иногда возвращает false — доверяем известным доменам и file:// (WebView)
+        const trustedHosts = ["localhost", "127.0.0.1", "visov.ru", "www.visov.ru"];
+        const isSecure =
+          window.isSecureContext ||
+          location.protocol === "file:" ||
+          trustedHosts.includes(location.hostname) ||
+          location.hostname.endsWith(".visov.ru");
         if (!isSecure) {
           throw new Error("insecure_context");
         }

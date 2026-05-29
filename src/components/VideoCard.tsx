@@ -107,11 +107,25 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const formatCount = (n: number) => n >= 1_000_000 ? (n / 1_000_000).toFixed(1) + "M" : n >= 1000 ? (n / 1000).toFixed(1) + "K" : String(n);
 
   useEffect(() => {
-    if (!videoRef.current) return;
+    const v = videoRef.current;
+    if (!v) return;
     if (isActive && !paused) {
-      videoRef.current.play().catch(() => {});
+      // Android WebView иногда требует повторной попытки после небольшой задержки
+      const tryPlay = () => {
+        const p = v.play();
+        if (p !== undefined) {
+          p.catch(() => {
+            setTimeout(() => v.play().catch(() => {}), 300);
+          });
+        }
+      };
+      if (v.readyState >= 2) {
+        tryPlay();
+      } else {
+        v.addEventListener("canplay", tryPlay, { once: true });
+      }
     } else {
-      videoRef.current.pause();
+      v.pause();
     }
   }, [isActive, paused]);
 
@@ -152,9 +166,11 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
               className="absolute inset-0 w-full h-full object-cover"
               loop
               muted={muted}
+              autoPlay={isActive}
               playsInline
               preload={preloadLevel === "full" ? "auto" : "metadata"}
               onClick={handleVideoClick}
+              x-webkit-airplay="allow"
               style={{ touchAction: "manipulation" }}
             />
           )}
