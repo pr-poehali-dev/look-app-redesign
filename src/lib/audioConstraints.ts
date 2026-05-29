@@ -1,19 +1,17 @@
 const isMobile = () => typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 const isIOS = () => typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+const isAndroid = () => typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
 
 export const HQ_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   echoCancellation: true,
   noiseSuppression: true,
   autoGainControl: true,
   channelCount: 1,
-  sampleRate: 48000,
+  // На Android WebView снижаем sampleRate — помогает аппаратному AEC
+  sampleRate: isAndroid() ? 16000 : 48000,
   sampleSize: 16,
-  ...(isMobile()
-    ? {
-        latency: 0.01,
-      }
-    : {}),
-  // Vendor-prefixed hints (Chrome/Android)
+  ...(isMobile() ? { latency: 0.01 } : {}),
+  // Vendor-prefixed hints (Chrome/Android WebView)
   ...({
     googEchoCancellation: true,
     googEchoCancellation2: true,
@@ -24,6 +22,8 @@ export const HQ_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
     googHighpassFilter: true,
     googTypingNoiseDetection: true,
     googAudioMirroring: false,
+    // Явно форсируем hardware AEC на Android
+    googEchoCancellationMobile: true,
   } as MediaTrackConstraints),
 };
 
@@ -102,8 +102,10 @@ export const boostOpusInSdp = (sdp: string): string => {
   if (!sdp) return sdp;
   try {
     const mobile = isMobile();
-    // Для слабого интернета — узкополосный, но устойчивый Opus с FEC и DTX
-    const bitrate = mobile ? '16000' : '24000';
+    const android = isAndroid();
+    // Android WebView — минимальный битрейт для надёжного AEC
+    const bitrate = android ? '12000' : mobile ? '16000' : '24000';
+    const playbackRate = android ? '8000' : '16000';
     return sdp.replace(/a=fmtp:(\d+) ([^\r\n]*opus[^\r\n]*)/gi, (_match, pt, rest) => {
       let updated = rest;
       const set = (key: string, value: string) => {
@@ -116,12 +118,12 @@ export const boostOpusInSdp = (sdp: string): string => {
       set('stereo', '0');
       set('sprop-stereo', '0');
       set('maxaveragebitrate', bitrate);
-      set('maxplaybackrate', '16000');
+      set('maxplaybackrate', playbackRate);
       set('useinbandfec', '1');
       set('usedtx', '1');
       set('cbr', '0');
-      set('minptime', '60');
-      set('ptime', '60');
+      set('minptime', android ? '40' : '60');
+      set('ptime', android ? '40' : '60');
       return `a=fmtp:${pt} ${updated}`;
     });
   } catch {

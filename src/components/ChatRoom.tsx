@@ -39,7 +39,7 @@ interface ChatRoomProps {
 const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const { user } = useAuth();
   const MY_ID = user?.id || "anon";
-  const MY_NAME = user?.name || "Пользователь";
+  const MY_NAME = user?.name || user?.handle || "Пользователь";
   const rawChatId = String(chat.id);
   const chatId = rawChatId.startsWith("mock_") || rawChatId.startsWith("chat_") || rawChatId.startsWith("dm_") || rawChatId.startsWith("community_") || rawChatId.startsWith("com_")
     ? rawChatId

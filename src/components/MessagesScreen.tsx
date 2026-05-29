@@ -206,7 +206,7 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
         room_id: `incoming_${u.id}`,
         to_user: u.id,
         type: "call_invite",
-        payload: { callerId: user.id, callerName: user.name, mode, roomId },
+        payload: { callerId: user.id, callerName: user.name || user.handle || "Пользователь", mode, roomId },
       }),
     }).catch(() => {});
     setActiveCall({ user: u, mode });
