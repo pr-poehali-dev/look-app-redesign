@@ -213,8 +213,8 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   };
 
   const themeBg: Record<string, string> = {
-    default: "#0a0a0a",
-    dark: "#000000",
+    default: "var(--look-bg)",
+    dark: "var(--look-bg)",
     blue: "#0b1a2e",
     purple: "#1a0d2e",
     green: "#0d2e1a",
@@ -904,7 +904,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       <input ref={docRef} type="file" className="hidden" onChange={handleDoc} />
 
       {/* Header */}
-      <div className="flex items-center gap-3 px-3 pt-14 md:pt-3 pb-3 border-b border-white/8 bg-black">
+      <div className="flex items-center gap-3 px-3 pt-14 md:pt-3 pb-3 border-b border-white/8" style={{ background: "var(--look-sidebar-bg)" }}>
         <button onClick={onBack} className="text-white/60 hover:text-white transition-colors flex-shrink-0" title="Назад">
           <Icon name="ChevronLeft" size={26} className="text-white" />
         </button>
