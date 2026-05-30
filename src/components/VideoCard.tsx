@@ -45,40 +45,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const [commentText, setCommentText] = useState("");
   const [downloading, setDownloading] = useState(false);
   const [downloadDone, setDownloadDone] = useState(false);
-  const [poster, setPoster] = useState<string>("");
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Canvas-захват первого кадра для Android WebView (preload=metadata не рисует кадр)
-  useEffect(() => {
-    if (!video.image || poster) return;
-    const isVid = video.isVideo ?? (video.image.includes('.mp4') || video.image.includes('.mov') || video.image.includes('.webm'));
-    if (!isVid) return;
-    const vid = document.createElement("video");
-    vid.src = video.image;
-    vid.muted = true;
-    vid.playsInline = true;
-    vid.preload = "metadata";
-    vid.crossOrigin = "anonymous";
-    const capture = () => {
-      try {
-        const canvas = document.createElement("canvas");
-        canvas.width = vid.videoWidth || 320;
-        canvas.height = vid.videoHeight || 568;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
-          const dataUrl = canvas.toDataURL("image/jpeg", 0.6);
-          if (dataUrl && dataUrl !== "data:,") setPoster(dataUrl);
-        }
-      } catch { /* noop */ }
-      vid.src = "";
-    };
-    vid.addEventListener("loadeddata", capture, { once: true });
-    vid.addEventListener("seeked", capture, { once: true });
-    vid.addEventListener("loadedmetadata", () => {
-      vid.currentTime = 0.5;
-    }, { once: true });
-  }, [video.image, video.isVideo, poster]);
 
   const handleDownload = async () => {
     if (downloading) return;
@@ -187,20 +155,15 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         <>
           {preloadLevel === "none" ? (
             <div
-              className="absolute inset-0 w-full h-full flex items-center justify-center"
-              style={{ background: poster ? "none" : "#0a0a0a" }}
+              className="absolute inset-0 w-full h-full bg-black flex items-center justify-center"
               onClick={handleVideoClick}
             >
-              {poster && <img src={poster} className="absolute inset-0 w-full h-full object-cover" alt="" />}
-              <div className="relative z-10 bg-black/40 rounded-full p-4">
-                <Icon name="Play" size={44} className="text-white ml-1" />
-              </div>
+              <Icon name="Play" size={56} className="text-white/30" />
             </div>
           ) : (
             <video
               ref={videoRef}
               src={video.image}
-              poster={poster || undefined}
               className="absolute inset-0 w-full h-full object-cover"
               loop
               muted={muted}
