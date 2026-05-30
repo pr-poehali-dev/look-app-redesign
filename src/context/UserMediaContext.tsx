@@ -3,6 +3,8 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 export interface UserVideo {
   id: number;
   url: string;
+  thumb?: string;
+  thumbnail?: string;
   type: "video" | "image";
   label: string;
   description?: string;

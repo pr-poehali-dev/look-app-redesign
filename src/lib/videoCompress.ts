@@ -215,6 +215,7 @@ export interface DirectUploadMeta {
   author?: string;
   handle?: string;
   user_id?: string;
+  thumbData?: string; // base64 jpeg кадр для превью видео
 }
 
 async function blobToBase64(blob: Blob): Promise<string> {
@@ -273,7 +274,7 @@ export async function uploadFileDirect(
   file: File,
   meta: DirectUploadMeta,
   onProgress?: (percent: number) => void,
-): Promise<{ id: number; url: string; type: string }> {
+): Promise<{ id: number; url: string; thumb?: string; type: string }> {
   const ext = (file.name.split(".").pop() || (file.type.startsWith("video") ? "mp4" : "jpg")).toLowerCase();
   const contentType = file.type || (file.type.startsWith("video") ? "video/mp4" : "image/jpeg");
 
@@ -321,6 +322,7 @@ export async function uploadFileDirect(
     key,
     total_parts: totalParts,
     content_type: contentType,
+    thumb_data: meta.thumbData || null,
     meta: {
       category: meta.category,
       description: meta.description || "",
@@ -337,10 +339,11 @@ export async function uploadFileDirect(
     throw new Error("finish: bad response");
   }
   if (onProgress) onProgress(100);
-  console.info(`[upload] done: id=${finalId}, url=${finalUrl}`);
+  console.info(`[upload] done: id=${finalId}, url=${finalUrl}, thumb=${finish.thumb || "none"}`);
   return {
     id: finalId,
     url: finalUrl,
+    thumb: (finish.thumb as string) || undefined,
     type: (finish.type as string) || (contentType.startsWith("video") ? "video" : "image"),
   };
 }

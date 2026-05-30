@@ -278,10 +278,26 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
     setPublishing(true);
     try {
       const blob = await captureFrame();
-      let file: File = active.type === "video"
+      const isVideo = active.type === "video";
+      let file: File = isVideo
         ? active.file
         : (blob ? new File([blob], "edited.jpg", { type: "image/jpeg" }) : active.file);
-      const isVideo = active.type === "video";
+
+      // Для видео — конвертируем кадр в base64 для thumbnail
+      let thumbData: string | undefined;
+      if (isVideo && blob) {
+        try {
+          thumbData = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const r = reader.result as string;
+              const idx = r.indexOf(",");
+              resolve(idx >= 0 ? r.slice(idx + 1) : r);
+            };
+            reader.readAsDataURL(blob);
+          });
+        } catch { /* ignore */ }
+      }
 
       // 1) Сжатие видео > 4 МБ
       if (isVideo && file.size > 4 * 1024 * 1024) {
@@ -316,6 +332,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
           author: user?.name || "Пользователь",
           handle: user?.handle || user?.name || "user",
           user_id: user?.id || "anonymous",
+          thumbData,
         },
         (p) => setPublishProgress({ stage: "upload", percent: p }),
       );

@@ -27,7 +27,7 @@ def handler(event: dict, context) -> dict:
         base_select = (
             f"SELECT v.id, v.url, v.author, v.handle, v.description, v.hashtags, "
             f"v.category, v.type, v.likes, v.comments, v.shares, v.created_at, "
-            f"lu.profile_photo "
+            f"lu.profile_photo, v.thumbnail "
             f"FROM {schema}.videos v "
             f"LEFT JOIN {schema}.legacy_posts lp ON lp.migrated_to_video_id = v.id "
             f"LEFT JOIN {schema}.legacy_users lu ON lu.id = lp.user_id "
@@ -53,6 +53,7 @@ def handler(event: dict, context) -> dict:
     videos = []
     for r in rows:
         legacy_avatar = r[12]
+        thumbnail = r[13]
         if r[7] == 'image':
             avatar = r[1]
         elif legacy_avatar:
@@ -73,6 +74,7 @@ def handler(event: dict, context) -> dict:
             'shares': str(r[10]),
             'avatar': avatar,
             'created_at': r[11].isoformat() if r[11] else None,
+            'thumbnail': thumbnail,
         })
 
     return {

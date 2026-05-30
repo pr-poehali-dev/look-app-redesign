@@ -33,7 +33,7 @@ const VideoGrid = ({ onOpenVideo }: Props) => {
         const list = (data.videos || []).map((v: any) => ({
           id: v.id + 10000,
           url: v.url,
-          thumb: v.thumb || v.url,
+          thumb: v.thumbnail || v.thumb || null,
           author: v.author || "Автор",
           handle: v.handle || "user",
           avatar: v.avatar || "",
@@ -74,7 +74,7 @@ const VideoGrid = ({ onOpenVideo }: Props) => {
           >
             <div className="media-overlay-text relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-black/5">
               {v.type === "video" ? (
-                v.thumb && v.thumb !== v.url ? (
+                v.thumb ? (
                   <img
                     src={v.thumb}
                     alt={v.author}
@@ -82,8 +82,6 @@ const VideoGrid = ({ onOpenVideo }: Props) => {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
-                  /* Android WebView не показывает кадр из preload=metadata —
-                     показываем тёмный градиент с крупной иконкой Play */
                   <div className="w-full h-full bg-gradient-to-br from-[#0a2e1a] to-[#1a1a1a] flex items-center justify-center">
                     <Icon name="Play" size={36} className="text-white/60" />
                   </div>

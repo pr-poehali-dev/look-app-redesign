@@ -97,6 +97,19 @@ def handler(event: dict, context) -> dict:
 
         cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
 
+        # Сохраняем thumbnail если передан (base64 jpeg кадр из видео)
+        thumb_url = None
+        thumb_data_b64 = body.get('thumb_data')
+        if thumb_data_b64:
+            try:
+                thumb_bytes = base64.b64decode(thumb_data_b64)
+                thumb_key = f"thumbs/{upload_id}.jpg"
+                s3.put_object(Bucket=BUCKET, Key=thumb_key, Body=thumb_bytes,
+                              ContentType='image/jpeg')
+                thumb_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{thumb_key}"
+            except Exception:
+                pass
+
         meta = body.get('meta') or {}
         video_id = None
         media_type = 'video' if str(content_type).startswith('video') else 'image'
@@ -105,9 +118,10 @@ def handler(event: dict, context) -> dict:
             cur = conn.cursor()
             try:
                 cur.execute(
-                    "INSERT INTO videos (url, author, handle, description, hashtags, category, type, user_id) "
-                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
-                    (cdn_url, meta.get('author', 'Я'), meta.get('handle', 'user'),
+                    "INSERT INTO videos (url, thumbnail, author, handle, description, hashtags, category, type, user_id) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+                    (cdn_url, thumb_url,
+                     meta.get('author', 'Я'), meta.get('handle', 'user'),
                      meta.get('description', ''), meta.get('hashtags', ''),
                      meta.get('category', 'humor'), media_type,
                      meta.get('user_id', 'anonymous')),
@@ -120,8 +134,8 @@ def handler(event: dict, context) -> dict:
 
         return {
             'statusCode': 200, 'headers': _cors(),
-            'body': json.dumps({'url': cdn_url, 'id': video_id, 'key': key,
-                                'type': media_type}),
+            'body': json.dumps({'url': cdn_url, 'thumb': thumb_url, 'id': video_id,
+                                'key': key, 'type': media_type}),
         }
 
     if action == 'abort':

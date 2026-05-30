@@ -557,8 +557,8 @@ const ProfilePage = () => {
             <div className="grid grid-cols-3 md:grid-cols-4 gap-px bg-gray-100">
               {videos.map((item, i) => (
                 <div key={item.id} className="relative aspect-square overflow-hidden cursor-pointer" style={{ background: "linear-gradient(135deg, #0a2e1a 0%, #1a1a1a 100%)" }} onClick={() => setMediaViewer({ tab: "video", index: i })}>
-                  {item.thumb && item.thumb !== item.url ? (
-                    <img src={item.thumb} alt="" className="w-full h-full object-cover" />
+                  {(item.thumb || item.thumbnail) ? (
+                    <img src={item.thumb || item.thumbnail} alt="" className="w-full h-full object-cover" />
                   ) : null}
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="bg-black/50 rounded-full p-2.5 md:p-2">
