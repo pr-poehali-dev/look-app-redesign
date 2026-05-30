@@ -352,16 +352,15 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif,video/mp4,video/quicktime,video/webm,video/3gpp"
+            accept="image/*,video/*"
             multiple
             className="hidden"
             onChange={(e) => addClips(e.target.files)}
           />
-          {/* Отдельный input для галереи — без wildcards чтобы Android не предлагал камеру */}
           <input
             ref={galleryInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif,video/mp4,video/quicktime,video/webm,video/3gpp"
+            accept="image/*,video/*"
             multiple
             className="hidden"
             onChange={(e) => { addClips(e.target.files); e.target.value = ""; }}
@@ -538,7 +537,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
   return (
     <div className="absolute inset-0 z-50 bg-zinc-950 flex flex-col">
       <audio ref={audioRef} />
-      <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif,video/mp4,video/quicktime,video/webm,video/3gpp" multiple className="hidden" onChange={(e) => addClips(e.target.files)} />
+      <input ref={fileInputRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => addClips(e.target.files)} />
       <input ref={musicInputRef} type="file" accept="audio/*" className="hidden" onChange={handleMusicUpload} />
 
       {/* Header */}

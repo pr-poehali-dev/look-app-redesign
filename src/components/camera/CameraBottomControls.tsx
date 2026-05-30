@@ -48,10 +48,7 @@ const CameraBottomControls = ({
   const isVideo = mode === "Видео";
   const isPhoto = mode === "Фото";
 
-  // Конкретные MIME без wildcards — Android WebView не предлагает камеру
-  const videoMime = "video/mp4,video/quicktime,video/x-matroska,video/webm,video/3gpp,video/mpeg";
-  const imageMime = "image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif";
-  const galleryAccept = isVideo ? videoMime : isPhoto ? imageMime : `${imageMime},${videoMime}`;
+  const galleryAccept = isVideo ? "video/*" : isPhoto ? "image/*" : "image/*,video/*";
 
   const openGallery = () => {
     setShowSheet(false);
