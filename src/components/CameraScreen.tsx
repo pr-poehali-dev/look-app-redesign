@@ -307,11 +307,11 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
         className="hidden"
         onChange={handleAudioUpload}
       />
-      {/* Hidden file input for media */}
+      {/* Hidden file input for media — accept зависит от вкладки */}
       <input
         ref={mediaInputRef}
         type="file"
-        accept="image/*,video/*"
+        accept={mode === "Видео" ? "video/*" : mode === "Фото" ? "image/*" : "image/*,video/*"}
         className="hidden"
         onChange={handleMediaUpload}
         onClick={(e) => e.stopPropagation()}

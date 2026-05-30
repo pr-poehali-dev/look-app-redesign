@@ -140,8 +140,8 @@ const Index = () => {
                   <div className="relative flex items-center h-6 w-9">
                     <div className="w-6 h-5 rounded-md absolute left-0" style={{ background: "var(--look-accent)", opacity: 0.6 }} />
                     <div className="w-6 h-5 rounded-md absolute right-0" style={{ background: "var(--look-accent)" }} />
-                    <div className="w-6 h-5 rounded-md flex items-center justify-center relative z-10 mx-auto" style={{ background: "var(--look-accent-fg)" }}>
-                      <Icon name="Plus" size={14} className="text-black" />
+                    <div className="w-6 h-5 rounded-md flex items-center justify-center relative z-10 mx-auto" style={{ background: "var(--look-accent-fg)", border: "1.5px solid rgba(0,0,0,0.15)" }}>
+                      <Icon name="Plus" size={14} style={{ color: "var(--look-accent)" }} />
                     </div>
                   </div>
                 ) : (
@@ -375,8 +375,8 @@ const Index = () => {
                   <div className="relative flex items-center h-7">
                     <div className="w-10 h-7 rounded-lg absolute left-0" style={{ background: "var(--look-accent)", opacity: 0.6 }} />
                     <div className="w-10 h-7 rounded-lg absolute right-0" style={{ background: "var(--look-accent)" }} />
-                    <div className="w-10 h-7 rounded-lg flex items-center justify-center relative z-10 mx-auto" style={{ background: "var(--look-accent-fg)" }}>
-                      <Icon name="Plus" size={18} className="text-black" />
+                    <div className="w-10 h-7 rounded-lg flex items-center justify-center relative z-10 mx-auto" style={{ background: "var(--look-accent-fg)", border: "1.5px solid rgba(0,0,0,0.15)" }}>
+                      <Icon name="Plus" size={18} style={{ color: "var(--look-accent)" }} />
                     </div>
                   </div>
                 ) : (
