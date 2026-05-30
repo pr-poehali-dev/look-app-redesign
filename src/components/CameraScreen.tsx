@@ -60,12 +60,15 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
   const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    applyMediaFile(file);
+  };
+
+  const applyMediaFile = (file: File) => {
     mediaFileRef.current = file;
     const url = URL.createObjectURL(file);
     const type = file.type.startsWith("video") ? "video" : "image";
     setUploadedMedia({ url, type });
     setPublished(false);
-    // Не вызываем addMedia здесь — иначе файл загрузится дважды (при выборе и при публикации).
   };
 
   const handlePublish = async () => {
@@ -398,6 +401,8 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
           flipping={flipping}
           uploadedMedia={uploadedMedia}
           mediaInputRef={mediaInputRef}
+          mode={mode}
+          onMediaFile={applyMediaFile}
           onFilterChange={setFilter}
           onShutter={handleShutter}
           onFlipCamera={flipCamera}
