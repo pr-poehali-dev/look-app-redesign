@@ -49,6 +49,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
   const [showFileSheet, setShowFileSheet] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const musicInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -365,6 +366,14 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
             className="hidden"
             onChange={(e) => { addClips(e.target.files); e.target.value = ""; }}
           />
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*,video/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => { addClips(e.target.files); e.target.value = ""; }}
+          />
           <button
             onClick={() => setShowFileSheet(true)}
             className="px-6 py-3 rounded-2xl bg-[#fe2c55] text-white font-bold flex items-center gap-2"
@@ -407,7 +416,22 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
                   </div>
                   <div className="text-left">
                     <p className="text-white font-medium text-sm">Файлы из галереи</p>
-                    <p className="text-white/40 text-xs">Фото и видео</p>
+                    <p className="text-white/40 text-xs">Выбрать из сохранённых</p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowFileSheet(false);
+                    setTimeout(() => { if (cameraInputRef.current) { cameraInputRef.current.value = ""; cameraInputRef.current.click(); } }, 80);
+                  }}
+                  className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl active:bg-white/10 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                    <Icon name="Camera" size={20} className="text-white" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-white font-medium text-sm">Камера</p>
+                    <p className="text-white/40 text-xs">Снять фото или видео</p>
                   </div>
                 </button>
               </div>
@@ -538,6 +562,8 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
     <div className="absolute inset-0 z-50 bg-zinc-950 flex flex-col">
       <audio ref={audioRef} />
       <input ref={fileInputRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => addClips(e.target.files)} />
+      <input ref={galleryInputRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => { addClips(e.target.files); e.target.value = ""; }} />
+      <input ref={cameraInputRef} type="file" accept="image/*,video/*" capture="environment" className="hidden" onChange={(e) => { addClips(e.target.files); e.target.value = ""; }} />
       <input ref={musicInputRef} type="file" accept="audio/*" className="hidden" onChange={handleMusicUpload} />
 
       {/* Header */}
@@ -814,7 +840,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
         </div>
       </div>
 
-      {/* Bottom sheet выбора файлов — без камеры */}
+      {/* Bottom sheet выбора файлов */}
       {showFileSheet && (
         <div className="fixed inset-0 z-[300] flex items-end" onClick={() => setShowFileSheet(false)}>
           <div className="absolute inset-0 bg-black/60" />
@@ -840,7 +866,22 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
                 </div>
                 <div className="text-left">
                   <p className="text-white font-medium text-sm">Файлы из галереи</p>
-                  <p className="text-white/40 text-xs">Фото и видео</p>
+                  <p className="text-white/40 text-xs">Выбрать из сохранённых</p>
+                </div>
+              </button>
+              <button
+                onClick={() => {
+                  setShowFileSheet(false);
+                  setTimeout(() => { if (cameraInputRef.current) { cameraInputRef.current.value = ""; cameraInputRef.current.click(); } }, 80);
+                }}
+                className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl active:bg-white/10 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                  <Icon name="Camera" size={20} className="text-white" />
+                </div>
+                <div className="text-left">
+                  <p className="text-white font-medium text-sm">Камера</p>
+                  <p className="text-white/40 text-xs">Снять фото или видео</p>
                 </div>
               </button>
             </div>

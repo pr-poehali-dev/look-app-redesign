@@ -43,12 +43,29 @@ const CameraBottomControls = ({
   onFlipCamera,
 }: CameraBottomControlsProps) => {
   const [showSheet, setShowSheet] = useState(false);
+
+  // input БЕЗ capture — Android открывает только галерею
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  // input С capture — Android открывает только камеру
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const isVideo = mode === "Видео";
   const isPhoto = mode === "Фото";
+  const accept = isVideo ? "video/*" : isPhoto ? "image/*" : "image/*,video/*";
 
-  const galleryAccept = isVideo ? "video/*" : isPhoto ? "image/*" : "image/*,video/*";
+  const handleFile = (file: File | null | undefined) => {
+    if (!file) return;
+    if (onMediaFile) {
+      onMediaFile(file);
+    } else if (mediaInputRef.current) {
+      try {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        Object.defineProperty(mediaInputRef.current, "files", { value: dt.files, configurable: true });
+        mediaInputRef.current.dispatchEvent(new Event("change", { bubbles: true }));
+      } catch { /* noop */ }
+    }
+  };
 
   const openGallery = () => {
     setShowSheet(false);
@@ -60,30 +77,34 @@ const CameraBottomControls = ({
     }, 80);
   };
 
+  const openCamera = () => {
+    setShowSheet(false);
+    setTimeout(() => {
+      if (cameraInputRef.current) {
+        cameraInputRef.current.value = "";
+        cameraInputRef.current.click();
+      }
+    }, 80);
+  };
+
   return (
     <>
-      {/* Input для галереи — без capture, конкретные MIME */}
+      {/* Галерея — без capture: Android открывает только галерею */}
       <input
         ref={galleryInputRef}
         type="file"
-        accept={galleryAccept}
+        accept={accept}
         className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (!file) return;
-          if (onMediaFile) {
-            onMediaFile(file);
-          } else if (mediaInputRef.current) {
-            // Fallback: пробрасываем через нативный input
-            try {
-              const dt = new DataTransfer();
-              dt.items.add(file);
-              Object.defineProperty(mediaInputRef.current, "files", { value: dt.files, configurable: true });
-              mediaInputRef.current.dispatchEvent(new Event("change", { bubbles: true }));
-            } catch { /* noop */ }
-          }
-          e.target.value = "";
-        }}
+        onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ""; }}
+      />
+      {/* Камера — с capture: Android открывает только камеру */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept={accept}
+        capture="environment"
+        className="hidden"
+        onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ""; }}
       />
 
       {/* Filters */}
@@ -159,7 +180,7 @@ const CameraBottomControls = ({
         </button>
       </div>
 
-      {/* Bottom sheet */}
+      {/* Bottom sheet — выбор источника */}
       {showSheet && (
         <div className="fixed inset-0 z-[200] flex items-end" onClick={() => setShowSheet(false)}>
           <div className="absolute inset-0 bg-black/60" />
@@ -175,6 +196,7 @@ const CameraBottomControls = ({
               {isVideo ? "Выбрать видео" : isPhoto ? "Выбрать фото" : "Выбрать медиафайл"}
             </p>
             <div className="flex flex-col gap-1 px-4">
+              {/* Галерея */}
               <button
                 onClick={openGallery}
                 className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl active:bg-white/10 transition-colors"
@@ -186,9 +208,22 @@ const CameraBottomControls = ({
                   <p className="text-white font-medium text-sm">
                     {isVideo ? "Видео из галереи" : isPhoto ? "Фото из галереи" : "Файл из галереи"}
                   </p>
-                  <p className="text-white/40 text-xs">
-                    {isVideo ? "Выбрать видеофайл" : isPhoto ? "Выбрать изображение" : "Фото или видео"}
+                  <p className="text-white/40 text-xs">Выбрать из сохранённых</p>
+                </div>
+              </button>
+              {/* Камера */}
+              <button
+                onClick={openCamera}
+                className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl active:bg-white/10 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                  <Icon name={isVideo ? "Video" : "Camera"} size={20} className="text-white" />
+                </div>
+                <div className="text-left">
+                  <p className="text-white font-medium text-sm">
+                    {isVideo ? "Снять видео" : "Сфотографировать"}
                   </p>
+                  <p className="text-white/40 text-xs">Открыть камеру</p>
                 </div>
               </button>
             </div>
