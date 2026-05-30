@@ -307,11 +307,19 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
         className="hidden"
         onChange={handleAudioUpload}
       />
-      {/* Hidden file input for media — accept зависит от вкладки */}
+      {/* Hidden file input for media — accept зависит от вкладки.
+          На Android WebView wildcard image/* / video/* показывает «камера+галерея».
+          Перечисляем конкретные MIME — браузер открывает только файловый менеджер/галерею. */}
       <input
         ref={mediaInputRef}
         type="file"
-        accept={mode === "Видео" ? "video/*" : mode === "Фото" ? "image/*" : "image/*,video/*"}
+        accept={
+          mode === "Видео"
+            ? "video/mp4,video/quicktime,video/x-matroska,video/webm,video/3gpp,video/mpeg"
+            : mode === "Фото"
+            ? "image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif"
+            : "image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif,video/mp4,video/quicktime,video/webm,video/3gpp"
+        }
         className="hidden"
         onChange={handleMediaUpload}
         onClick={(e) => e.stopPropagation()}
