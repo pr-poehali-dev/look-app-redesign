@@ -296,6 +296,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
       return {
         id: v.id,
         image: v.url,
+        thumbnail: v.thumbnail || undefined,
         isVideo: true,
         author: v.author || user?.name || "Я",
         handle: v.handle || user?.handle || "user",
@@ -336,6 +337,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
           return ({
           id: v.id + 10000,
           image: v.url,
+          thumbnail: v.thumbnail || undefined,
           isVideo: v.type === 'video',
           author: v.author || "Автор",
           handle: v.handle || "user",

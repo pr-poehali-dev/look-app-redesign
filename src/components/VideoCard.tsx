@@ -11,6 +11,7 @@ import ReportButton from "@/components/ReportButton";
 export interface VideoData {
   id: number;
   image: string;
+  thumbnail?: string;
   author: string;
   handle: string;
   description: string;
@@ -46,7 +47,41 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const [downloading, setDownloading] = useState(false);
   const [downloadDone, setDownloadDone] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const thumbSentRef = useRef(false);
 
+  // Фоновая генерация thumbnail — захватываем кадр при первом воспроизведении
+  useEffect(() => {
+    if (!isActive || !video.isVideo || video.thumbnail || thumbSentRef.current) return;
+    const vid = videoRef.current;
+    if (!vid) return;
+    const capture = () => {
+      if (thumbSentRef.current || vid.videoWidth === 0) return;
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.min(vid.videoWidth, 720);
+        canvas.height = Math.round(canvas.width * (vid.videoHeight / vid.videoWidth));
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => {
+          if (!blob || blob.size < 1000) return;
+          thumbSentRef.current = true;
+          const reader = new FileReader();
+          reader.onload = () => {
+            const b64 = (reader.result as string).split(",")[1];
+            fetch("https://functions.poehali.dev/c578b52c-b9b6-47b3-9bcf-b6ab8405c4d7", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "video_save_thumbnail", video_id: video.id, thumb_data: b64 }),
+            }).catch(() => {});
+          };
+          reader.readAsDataURL(blob);
+        }, "image/jpeg", 0.75);
+      } catch { /* noop */ }
+    };
+    vid.addEventListener("timeupdate", capture, { once: true });
+    return () => vid.removeEventListener("timeupdate", capture);
+  }, [isActive, video.id, video.isVideo, video.thumbnail]);
 
   const handleDownload = async () => {
     if (downloading) return;
@@ -156,14 +191,18 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           {preloadLevel === "none" ? (
             <div
               className="absolute inset-0 w-full h-full bg-black flex items-center justify-center"
+              style={video.thumbnail ? { backgroundImage: `url(${video.thumbnail})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
               onClick={handleVideoClick}
             >
-              <Icon name="Play" size={56} className="text-white/30" />
+              <div className="bg-black/40 rounded-full p-4">
+                <Icon name="Play" size={44} className="text-white ml-1" />
+              </div>
             </div>
           ) : (
             <video
               ref={videoRef}
               src={video.image}
+              poster={video.thumbnail || undefined}
               className="absolute inset-0 w-full h-full object-cover"
               loop
               muted={muted}

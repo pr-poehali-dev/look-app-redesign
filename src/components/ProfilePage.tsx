@@ -4,6 +4,7 @@ import UserAvatar from "@/components/ui/user-avatar";
 import SettingsScreen from "./SettingsScreen";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useFollowingList, useFollowerCount } from "@/hooks/useFollowing";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
 import { getAuthor } from "@/data/authors";
@@ -272,6 +273,7 @@ const ProfilePage = () => {
   const [showScreen, setShowScreen] = useState<"followers" | "following" | null>(null);
   const { userVideos: stories, removeMedia, addMedia } = useUserMedia();
   const { user, token, logout, updateUser } = useAuth();
+  const { theme, toggle: toggleTheme } = useTheme();
   const followingHandles = useFollowingList();
   const followersCount = useFollowerCount(user?.handle || "");
   const [followersList, setFollowersList] = useState<UserItem[]>([]);
@@ -440,6 +442,13 @@ const ProfilePage = () => {
           className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center active:scale-95 transition-transform"
         >
           <Icon name="ScanLine" size={18} className="text-white pointer-events-none" />
+        </button>
+        <button
+          onClick={toggleTheme}
+          title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
+          className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gray-100 flex items-center justify-center"
+        >
+          <Icon name={theme === "dark" ? "Sun" : "Moon"} size={18} className="text-gray-600" />
         </button>
         <button onClick={logout} className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gray-100 flex items-center justify-center">
           <Icon name="LogOut" size={18} className="text-red-500" />

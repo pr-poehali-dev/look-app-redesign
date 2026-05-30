@@ -329,6 +329,30 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         return {'statusCode': 200, 'headers': _cors(),
                 'body': json.dumps({'videos': rows}, default=str)}
 
+    if action == 'video_save_thumbnail':
+        vid = body.get('video_id')
+        thumb_data_b64 = body.get('thumb_data')
+        if not vid or not thumb_data_b64:
+            return {'statusCode': 400, 'headers': _cors(), 'body': json.dumps({'error': 'bad params'})}
+        # Проверяем что thumbnail ещё не сохранён
+        _q(cur, "SELECT thumbnail FROM {S}.videos WHERE id = %s", (vid,))
+        row = cur.fetchone()
+        if not row:
+            return {'statusCode': 404, 'headers': _cors(), 'body': json.dumps({'error': 'not found'})}
+        if row[0]:
+            return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True, 'skipped': True})}
+        import boto3, uuid as _uuid, base64 as _b64
+        thumb_bytes = _b64.b64decode(thumb_data_b64)
+        thumb_key = f"thumbs/{_uuid.uuid4().hex}.jpg"
+        s3c = boto3.client('s3', endpoint_url='https://bucket.poehali.dev',
+            aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+            aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
+        s3c.put_object(Bucket='files', Key=thumb_key, Body=thumb_bytes, ContentType='image/jpeg')
+        thumb_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{thumb_key}"
+        _q(cur, "UPDATE {S}.videos SET thumbnail = %s WHERE id = %s", (thumb_url, vid))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True, 'thumb': thumb_url})}
+
     if action == 'video_hide':
         vid = body.get('video_id')
         hidden = bool(body.get('hidden', True))
