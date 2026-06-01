@@ -336,6 +336,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
           const fullDesc = (baseDesc + tagsText).trim();
           return ({
           id: v.id + 10000,
+          dbId: v.id,
           image: v.url,
           thumbnail: v.thumbnail || undefined,
           isVideo: v.type === 'video',

@@ -10,6 +10,7 @@ import ReportButton from "@/components/ReportButton";
 
 export interface VideoData {
   id: number;
+  dbId?: number; // оригинальный ID в БД (до смещения +10000)
   image: string;
   thumbnail?: string;
   author: string;
@@ -49,13 +50,15 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const videoRef = useRef<HTMLVideoElement>(null);
   const thumbSentRef = useRef(false);
 
-  // Фоновая генерация thumbnail — захватываем кадр при первом воспроизведении
+  // Фоновая генерация thumbnail — захватываем кадр когда видео загружено
   useEffect(() => {
     if (!isActive || !video.isVideo || video.thumbnail || thumbSentRef.current) return;
     const vid = videoRef.current;
     if (!vid) return;
-    const capture = () => {
-      if (thumbSentRef.current || vid.videoWidth === 0) return;
+
+    const doCapture = () => {
+      if (thumbSentRef.current || vid.videoWidth === 0 || vid.videoHeight === 0) return;
+      thumbSentRef.current = true;
       try {
         const canvas = document.createElement("canvas");
         canvas.width = Math.min(vid.videoWidth, 720);
@@ -64,24 +67,50 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         if (!ctx) return;
         ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
         canvas.toBlob((blob) => {
-          if (!blob || blob.size < 1000) return;
-          thumbSentRef.current = true;
+          if (!blob || blob.size < 2000) return;
           const reader = new FileReader();
           reader.onload = () => {
             const b64 = (reader.result as string).split(",")[1];
             fetch("https://functions.poehali.dev/c578b52c-b9b6-47b3-9bcf-b6ab8405c4d7", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: "video_save_thumbnail", video_id: video.id, thumb_data: b64 }),
+              body: JSON.stringify({ action: "video_save_thumbnail", video_id: video.dbId ?? video.id, thumb_data: b64 }),
             }).catch(() => {});
           };
           reader.readAsDataURL(blob);
-        }, "image/jpeg", 0.75);
+        }, "image/jpeg", 0.80);
       } catch { /* noop */ }
     };
-    vid.addEventListener("timeupdate", capture, { once: true });
-    return () => vid.removeEventListener("timeupdate", capture);
-  }, [isActive, video.id, video.isVideo, video.thumbnail]);
+
+    // Если данные уже есть — capture сразу, иначе ждём seeked после seek к 0.5с
+    const tryCapture = () => {
+      if (vid.videoWidth > 0 && vid.readyState >= 2) {
+        if (vid.currentTime > 0) {
+          doCapture();
+        } else {
+          vid.currentTime = 0.5;
+          vid.addEventListener("seeked", doCapture, { once: true });
+        }
+      }
+    };
+
+    if (vid.readyState >= 2 && vid.videoWidth > 0) {
+      // Уже загружено
+      if (vid.currentTime > 0) {
+        doCapture();
+      } else {
+        vid.currentTime = 0.5;
+        vid.addEventListener("seeked", doCapture, { once: true });
+      }
+    } else {
+      vid.addEventListener("loadeddata", tryCapture, { once: true });
+    }
+
+    return () => {
+      vid.removeEventListener("loadeddata", tryCapture);
+      vid.removeEventListener("seeked", doCapture);
+    };
+  }, [isActive, video.id, video.dbId, video.isVideo, video.thumbnail]);
 
   const handleDownload = async () => {
     if (downloading) return;

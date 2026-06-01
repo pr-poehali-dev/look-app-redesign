@@ -214,7 +214,25 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
         return img;
       } else {
         const v = videoRefs.current.get(active.id);
-        return v || null;
+        if (!v) return null;
+        // Убеждаемся что видео загружено и кадр доступен
+        if (v.readyState < 2) {
+          await new Promise<void>((resolve) => {
+            const onReady = () => { v.removeEventListener("loadeddata", onReady); resolve(); };
+            v.addEventListener("loadeddata", onReady);
+            setTimeout(resolve, 3000); // таймаут 3с на случай зависания
+          });
+        }
+        // Seek к 0.1с чтобы гарантировано получить реальный кадр
+        if (v.videoWidth > 0) {
+          v.currentTime = 0.1;
+          await new Promise<void>((resolve) => {
+            const onSeeked = () => { v.removeEventListener("seeked", onSeeked); resolve(); };
+            v.addEventListener("seeked", onSeeked);
+            setTimeout(resolve, 1000);
+          });
+        }
+        return v;
       }
     };
 
