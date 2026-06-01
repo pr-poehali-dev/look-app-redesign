@@ -23,6 +23,13 @@ interface Props {
 const VideoGrid = ({ onOpenVideo }: Props) => {
   const [videos, setVideos] = useState<GridVideo[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [version, setVersion] = useState(0);
+
+  useEffect(() => {
+    const onUpdate = () => setVersion((v) => v + 1);
+    window.addEventListener("thumbnails-updated", onUpdate);
+    return () => window.removeEventListener("thumbnails-updated", onUpdate);
+  }, []);
 
   useEffect(() => {
     fetch(`${GET_VIDEOS_URL}?type=video`)
@@ -45,7 +52,7 @@ const VideoGrid = ({ onOpenVideo }: Props) => {
       })
       .catch(() => {})
       .finally(() => setLoaded(true));
-  }, []);
+  }, [version]);
 
   if (!loaded) {
     return (

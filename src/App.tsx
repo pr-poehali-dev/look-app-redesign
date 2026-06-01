@@ -18,6 +18,7 @@ import QrLoginScreen from "./components/QrLoginScreen";
 import QrApproveScreen from "./components/QrApproveScreen";
 import CallScreen from "./components/CallScreen";
 import AutoTranslator from "./components/AutoTranslator";
+import ThumbnailWorker from "./components/ThumbnailWorker";
 import Icon from "@/components/ui/icon";
 
 const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
@@ -367,6 +368,7 @@ const AppContent = () => {
   return (
     <UserMediaProvider userId={user.id} token={token}>
       <UnreadProvider>
+      <ThumbnailWorker />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />

@@ -48,84 +48,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const [downloading, setDownloading] = useState(false);
   const [downloadDone, setDownloadDone] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const thumbSentRef = useRef(false);
 
-  // Фоновая генерация thumbnail:
-  // Скачиваем видео через fetch (получаем Blob) → создаём blob: URL → грузим в <video>
-  // Blob URL всегда same-origin → canvas.toBlob() работает без CORS ограничений
-  useEffect(() => {
-    if (!isActive || !video.isVideo || video.thumbnail || thumbSentRef.current) return;
-    thumbSentRef.current = true;
-    let blobUrl: string | null = null;
-    let cancelled = false;
-
-    const tmpVid = document.createElement("video");
-    tmpVid.muted = true;
-    tmpVid.playsInline = true;
-    tmpVid.preload = "auto";
-
-    const cleanup = () => {
-      cancelled = true;
-      tmpVid.src = "";
-      tmpVid.load();
-      if (blobUrl) { URL.revokeObjectURL(blobUrl); blobUrl = null; }
-    };
-
-    const doCapture = () => {
-      if (cancelled || tmpVid.videoWidth === 0 || tmpVid.videoHeight === 0) return;
-      try {
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.min(tmpVid.videoWidth, 720);
-        canvas.height = Math.round(canvas.width * tmpVid.videoHeight / tmpVid.videoWidth);
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        ctx.drawImage(tmpVid, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((imgBlob) => {
-          cleanup();
-          if (!imgBlob || imgBlob.size < 3000) return;
-          const reader = new FileReader();
-          reader.onload = () => {
-            const b64 = (reader.result as string).split(",")[1];
-            fetch("https://functions.poehali.dev/c578b52c-b9b6-47b3-9bcf-b6ab8405c4d7", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                action: "video_save_thumbnail",
-                video_id: video.dbId ?? video.id,
-                thumb_data: b64,
-              }),
-            }).catch(() => {});
-          };
-          reader.readAsDataURL(imgBlob);
-        }, "image/jpeg", 0.82);
-      } catch { cleanup(); }
-    };
-
-    // Скачиваем видео → blob URL → в <video>, seek → capture
-    fetch(video.image)
-      .then((r) => {
-        if (!r.ok || cancelled) throw new Error("fetch failed");
-        return r.blob();
-      })
-      .then((blob) => {
-        if (cancelled) return;
-        blobUrl = URL.createObjectURL(blob);
-        tmpVid.src = blobUrl;
-        tmpVid.addEventListener("seeked", doCapture, { once: true });
-        tmpVid.addEventListener("loadedmetadata", () => {
-          if (cancelled) return;
-          tmpVid.currentTime = Math.min(1, (tmpVid.duration || 2) * 0.05);
-        }, { once: true });
-        tmpVid.addEventListener("error", () => {
-          thumbSentRef.current = false;
-          cleanup();
-        }, { once: true });
-        tmpVid.load();
-      })
-      .catch(() => { thumbSentRef.current = false; });
-
-    return cleanup;
-  }, [isActive, video.id, video.dbId, video.isVideo, video.thumbnail, video.image]);
+  // Thumbnail генерируется глобально через ThumbnailWorker (src/components/ThumbnailWorker.tsx)
 
   const handleDownload = async () => {
     if (downloading) return;
