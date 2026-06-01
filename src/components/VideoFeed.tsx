@@ -402,6 +402,12 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
   useEffect(() => {
     if (!initialVideoId || !dbLoaded) return;
     const idx = filteredWithCounts.findIndex((v) => v.id === initialVideoId);
+    console.log("[VideoFeed] open from grid", {
+      initialVideoId,
+      foundIdx: idx,
+      total: filteredWithCounts.length,
+      ids: filteredWithCounts.slice(0, 10).map((v) => v.id),
+    });
     if (idx < 0) return;
 
     setActiveIndex(idx);
