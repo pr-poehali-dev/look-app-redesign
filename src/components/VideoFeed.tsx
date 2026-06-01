@@ -295,7 +295,8 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
       const baseDesc = (v.description || "").trim();
       const fullDesc = (baseDesc + tagsText).trim() || "";
       return {
-        id: v.id,
+        id: v.id + 10000,
+        dbId: v.id,
         image: v.url,
         thumbnail: v.thumbnail || undefined,
         isVideo: true,
@@ -401,13 +402,6 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
   // Карточки появляются в DOM только после dbLoaded=true, причём не сразу,
   // поэтому ретраим пока нужный элемент реально не окажется в DOM с высотой.
   useEffect(() => {
-    console.log("[VideoFeed] scroll effect run", {
-      initialVideoId,
-      dbLoaded,
-      total: filteredWithCounts.length,
-      idx: filteredWithCounts.findIndex((v) => v.id === initialVideoId),
-      first10: filteredWithCounts.slice(0, 12).map((v) => v.id),
-    });
     if (!initialVideoId || !dbLoaded) return;
     const idx = filteredWithCounts.findIndex((v) => v.id === initialVideoId);
     if (idx < 0) return;
@@ -421,14 +415,11 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
       if (el && target && el.clientHeight > 0) {
         el.scrollTop = target.offsetTop;
         setActiveIndex(idx);
-        console.log("[VideoFeed] scrolled to", { idx, offsetTop: target.offsetTop, tries });
         return;
       }
       if (tries < 60) {
         tries++;
         requestAnimationFrame(go);
-      } else {
-        console.log("[VideoFeed] scroll FAILED — element not ready", { idx, hasEl: !!el, hasTarget: !!target });
       }
     };
     requestAnimationFrame(go);

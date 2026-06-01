@@ -331,7 +331,7 @@ const Index = () => {
               {/* На ПК для «Все» показываем плиточную сетку (TikTok-стиль). Клик — открывает видео в ленте */}
               <div className="hidden md:block w-full h-full">
                 {activeCategory === "all" && gridOpenVideoId === null ? (
-                  <VideoGrid onOpenVideo={(id) => { console.log("[Index] open video from grid", id); setGridOpenVideoId(id); }} />
+                  <VideoGrid onOpenVideo={(id) => setGridOpenVideoId(id)} />
                 ) : (
                   <VideoFeed
                     activeTab={activeTab}
