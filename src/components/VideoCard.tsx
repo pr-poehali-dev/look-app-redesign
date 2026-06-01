@@ -73,7 +73,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       setTimeout(() => setDownloadDone(false), 1500);
     };
 
-    // Шаг 1: пробуем напрямую (если CDN отдаёт CORS)
+    // Шаг 1: пробуем напрямую (если CDN отдаёт CORS) — работает для любого размера
     try {
       const res = await fetch(url, { mode: "cors" });
       if (res.ok) {
@@ -92,8 +92,14 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       const blob = await res.blob();
       triggerSave(blob);
     } catch {
-      // Шаг 3: финальный fallback — открыть в новой вкладке
-      window.open(url, "_blank", "noopener");
+      // Шаг 3: финальный fallback — ссылка с download (не открывает видео в новой вкладке)
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     } finally {
       setDownloading(false);
     }

@@ -47,14 +47,15 @@ const VideoGrid = ({ onOpenVideo }: Props) => {
     try {
       const res = await fetch(url, { mode: "cors" });
       if (res.ok) { triggerSave(await res.blob()); setDownloadingId(null); return; }
-    } catch { /* идём в прокси */ }
+    } catch { /* fallback ниже */ }
     try {
-      const proxyUrl = `https://functions.poehali.dev/b5faf1bc-6976-47c6-984e-e21c66d4c879?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(fileName)}`;
-      const res = await fetch(proxyUrl);
-      if (!res.ok) throw new Error("proxy failed");
-      triggerSave(await res.blob());
-    } catch {
-      window.open(url, "_blank", "noopener");
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     } finally {
       setDownloadingId(null);
     }
