@@ -76,7 +76,7 @@ const VideoGrid = ({ onOpenVideo }: Props) => {
         {videos.map((v) => (
           <button
             key={v.id}
-            onClick={() => { console.log("[VideoGrid] click", { id: v.id, author: v.author, url: v.url }); onOpenVideo(v.id); }}
+            onClick={() => onOpenVideo(v.id)}
             className="group flex flex-col gap-2 text-left"
           >
             <div className="media-overlay-text relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-black/5">

@@ -275,6 +275,7 @@ const GET_VIDEOS_URL = "https://functions.poehali.dev/f58115ec-de09-405d-a2db-08
 const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseInitial }: VideoFeedProps) => {
   void activeTab;
   const containerRef = useRef<HTMLDivElement>(null);
+  const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [dbVideos, setDbVideos] = useState<(VideoData & { category: string })[]>([]);
   const [dbLoaded, setDbLoaded] = useState(false);
@@ -397,36 +398,33 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
   }, [activeCategory]);
 
   // Если открыли видео из плитки — проматываем к нему.
-  // Высота контейнера может быть ещё 0 в момент срабатывания (VideoFeed только
-  // что заменил VideoGrid), поэтому ждём кадр и проверяем clientHeight.
+  // Карточки появляются в DOM только после dbLoaded=true, причём не сразу,
+  // поэтому ретраим пока нужный элемент реально не окажется в DOM с высотой.
   useEffect(() => {
     if (!initialVideoId || !dbLoaded) return;
     const idx = filteredWithCounts.findIndex((v) => v.id === initialVideoId);
-    console.log("[VideoFeed] open from grid", {
-      initialVideoId,
-      foundIdx: idx,
-      total: filteredWithCounts.length,
-      ids: filteredWithCounts.slice(0, 10).map((v) => v.id),
-    });
     if (idx < 0) return;
 
-    setActiveIndex(idx);
-
+    let cancelled = false;
     let tries = 0;
-    const scrollToTarget = () => {
+    const go = () => {
+      if (cancelled) return;
       const el = containerRef.current;
-      if (!el) return;
-      const h = el.clientHeight;
-      if (h > 0) {
-        el.scrollTop = idx * h;
-      } else if (tries < 30) {
+      const target = slideRefs.current[idx];
+      if (el && target && el.clientHeight > 0) {
+        el.scrollTop = target.offsetTop;
+        setActiveIndex(idx);
+        return;
+      }
+      if (tries < 60) {
         tries++;
-        requestAnimationFrame(scrollToTarget);
+        requestAnimationFrame(go);
       }
     };
-    requestAnimationFrame(scrollToTarget);
+    requestAnimationFrame(go);
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialVideoId, dbLoaded]);
+  }, [initialVideoId, dbLoaded, filteredWithCounts.length]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -461,7 +459,12 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
           const preloadLevel: "full" | "meta" | "none" =
             distance === 0 ? "full" : distance === 1 ? "meta" : "none";
           return (
-            <div key={`${video.id}-${i}`} className="w-full snap-start flex md:items-center md:justify-center" style={{ height: "100%" }}>
+            <div
+              key={`${video.id}-${i}`}
+              ref={(el) => { slideRefs.current[i] = el; }}
+              className="w-full snap-start flex md:items-center md:justify-center"
+              style={{ height: "100%" }}
+            >
               <div className="w-full md:h-[min(100%,720px)] h-full">
                 <VideoCard video={video} isActive={activeIndex === i} preloadLevel={preloadLevel} />
               </div>
