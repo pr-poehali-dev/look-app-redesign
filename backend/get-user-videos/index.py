@@ -419,7 +419,7 @@ def handler(event: dict, context) -> dict:
     conn = get_conn(); cur = conn.cursor()
     try:
         cur.execute(
-            "SELECT id,url,type,created_at,description,hashtags,author,handle,likes,comments,shares,thumbnail "
+            "SELECT id,url,type,created_at,description,hashtags,author,handle,likes,comments,shares,thumbnail,category "
             "FROM videos WHERE user_id=%s ORDER BY created_at DESC LIMIT 100",
             (user_id,)
         )
@@ -439,4 +439,5 @@ def handler(event: dict, context) -> dict:
         'comments': str(r[9]) if r[9] is not None else '0',
         'shares': str(r[10]) if r[10] is not None else '0',
         'thumbnail': r[11],
+        'category': r[12] or '',
     } for r in rows]})

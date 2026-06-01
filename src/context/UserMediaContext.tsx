@@ -11,6 +11,7 @@ export interface UserVideo {
   hashtags?: string;
   author?: string;
   handle?: string;
+  category?: string;
   likes?: string;
   comments?: string;
   shares?: string;
@@ -74,7 +75,7 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
 
     const blobUrl = URL.createObjectURL(file);
     const tempId = Date.now() + Math.random();
-    setUserVideos(s => [{ id: tempId, url: blobUrl, type, label, description, hashtags }, ...s]);
+    setUserVideos(s => [{ id: tempId, url: blobUrl, type, label, description, hashtags, category }, ...s]);
 
     const reader = new FileReader();
     reader.onload = async () => {
@@ -96,7 +97,7 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
         const raw = await res.json();
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
         if (data.url) {
-          setUserVideos(s => s.map(v => v.id === tempId ? { ...v, id: Number(data.id), url: data.url, description, hashtags } : v));
+          setUserVideos(s => s.map(v => v.id === tempId ? { ...v, id: Number(data.id), url: data.url, description, hashtags, category } : v));
           setMediaVersion(v => v + 1);
         }
       } catch {

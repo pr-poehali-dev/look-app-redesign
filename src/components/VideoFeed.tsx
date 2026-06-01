@@ -307,7 +307,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
         likes: v.likes || "0",
         comments: v.comments || "0",
         shares: v.shares || "0",
-        category: "all",
+        category: v.category || "all",
         avatar: user?.avatar || "",
       };
     });
