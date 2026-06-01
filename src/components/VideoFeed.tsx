@@ -396,14 +396,29 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
     }
   }, [activeCategory]);
 
-  // Если открыли видео из плитки — проматываем к нему
+  // Если открыли видео из плитки — проматываем к нему.
+  // Высота контейнера может быть ещё 0 в момент срабатывания (VideoFeed только
+  // что заменил VideoGrid), поэтому ждём кадр и проверяем clientHeight.
   useEffect(() => {
     if (!initialVideoId || !dbLoaded) return;
     const idx = filteredWithCounts.findIndex((v) => v.id === initialVideoId);
-    if (idx >= 0 && containerRef.current) {
-      containerRef.current.scrollTop = idx * containerRef.current.clientHeight;
-      setActiveIndex(idx);
-    }
+    if (idx < 0) return;
+
+    setActiveIndex(idx);
+
+    let tries = 0;
+    const scrollToTarget = () => {
+      const el = containerRef.current;
+      if (!el) return;
+      const h = el.clientHeight;
+      if (h > 0) {
+        el.scrollTop = idx * h;
+      } else if (tries < 30) {
+        tries++;
+        requestAnimationFrame(scrollToTarget);
+      }
+    };
+    requestAnimationFrame(scrollToTarget);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialVideoId, dbLoaded]);
 
