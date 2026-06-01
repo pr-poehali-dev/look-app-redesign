@@ -24,6 +24,41 @@ const VideoGrid = ({ onOpenVideo }: Props) => {
   const [videos, setVideos] = useState<GridVideo[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [version, setVersion] = useState(0);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
+
+  const handleDownload = async (v: GridVideo) => {
+    if (downloadingId !== null) return;
+    const url = v.url;
+    if (!url) return;
+    setDownloadingId(v.id);
+    const ext = ((url.split("?")[0].split(".").pop()) || (v.type === "video" ? "mp4" : "jpg")).slice(0, 5);
+    const safeName = (v.author || v.handle || "look").replace(/[^a-z0-9_-]/gi, "_");
+    const fileName = `${safeName}-${v.id}.${ext}`;
+    const triggerSave = (blob: Blob) => {
+      const objUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(objUrl), 2000);
+    };
+    try {
+      const res = await fetch(url, { mode: "cors" });
+      if (res.ok) { triggerSave(await res.blob()); setDownloadingId(null); return; }
+    } catch { /* идём в прокси */ }
+    try {
+      const proxyUrl = `https://functions.poehali.dev/b5faf1bc-6976-47c6-984e-e21c66d4c879?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(fileName)}`;
+      const res = await fetch(proxyUrl);
+      if (!res.ok) throw new Error("proxy failed");
+      triggerSave(await res.blob());
+    } catch {
+      window.open(url, "_blank", "noopener");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   useEffect(() => {
     const onUpdate = () => setVersion((v) => v + 1);
@@ -74,10 +109,13 @@ const VideoGrid = ({ onOpenVideo }: Props) => {
     <div className="w-full h-full overflow-y-auto pt-[72px] pb-6 px-6">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
         {videos.map((v) => (
-          <button
+          <div
             key={v.id}
+            role="button"
+            tabIndex={0}
             onClick={() => onOpenVideo(v.id)}
-            className="group flex flex-col gap-2 text-left"
+            onKeyDown={(e) => { if (e.key === "Enter") onOpenVideo(v.id); }}
+            className="group flex flex-col gap-2 text-left cursor-pointer"
           >
             <div className="media-overlay-text relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-black/5">
               {v.type === "video" ? (
@@ -106,6 +144,18 @@ const VideoGrid = ({ onOpenVideo }: Props) => {
                   <Icon name="Play" size={14} className="text-white ml-0.5" />
                 </div>
               )}
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDownload(v); }}
+                disabled={downloadingId === v.id}
+                title="Скачать"
+                className="absolute top-2 left-2 w-7 h-7 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-100"
+              >
+                {downloadingId === v.id ? (
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Icon name="Download" size={14} className="text-white" />
+                )}
+              </button>
               <div className="absolute bottom-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm">
                 <Icon name="Heart" size={11} className="text-white" />
                 <span className="text-white text-[10px] font-medium">{v.likes}</span>
@@ -119,7 +169,7 @@ const VideoGrid = ({ onOpenVideo }: Props) => {
                 {v.handle || v.author}
               </span>
             </div>
-          </button>
+          </div>
         ))}
       </div>
     </div>
