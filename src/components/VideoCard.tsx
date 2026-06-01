@@ -50,14 +50,15 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const videoRef = useRef<HTMLVideoElement>(null);
   const thumbSentRef = useRef(false);
 
-  // Фоновая генерация thumbnail — захватываем кадр когда видео загружено
+  // Фоновая генерация thumbnail — снимаем кадр при первом timeupdate (видео уже играет)
   useEffect(() => {
     if (!isActive || !video.isVideo || video.thumbnail || thumbSentRef.current) return;
     const vid = videoRef.current;
     if (!vid) return;
 
-    const doCapture = () => {
+    const onTimeUpdate = () => {
       if (thumbSentRef.current || vid.videoWidth === 0 || vid.videoHeight === 0) return;
+      if (vid.currentTime < 0.1) return; // ждём хотя бы 0.1с чтобы кадр был не чёрным
       thumbSentRef.current = true;
       try {
         const canvas = document.createElement("canvas");
@@ -67,7 +68,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         if (!ctx) return;
         ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
         canvas.toBlob((blob) => {
-          if (!blob || blob.size < 2000) return;
+          if (!blob || blob.size < 3000) { thumbSentRef.current = false; return; }
           const reader = new FileReader();
           reader.onload = () => {
             const b64 = (reader.result as string).split(",")[1];
@@ -79,37 +80,11 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           };
           reader.readAsDataURL(blob);
         }, "image/jpeg", 0.80);
-      } catch { /* noop */ }
+      } catch { thumbSentRef.current = false; }
     };
 
-    // Если данные уже есть — capture сразу, иначе ждём seeked после seek к 0.5с
-    const tryCapture = () => {
-      if (vid.videoWidth > 0 && vid.readyState >= 2) {
-        if (vid.currentTime > 0) {
-          doCapture();
-        } else {
-          vid.currentTime = 0.5;
-          vid.addEventListener("seeked", doCapture, { once: true });
-        }
-      }
-    };
-
-    if (vid.readyState >= 2 && vid.videoWidth > 0) {
-      // Уже загружено
-      if (vid.currentTime > 0) {
-        doCapture();
-      } else {
-        vid.currentTime = 0.5;
-        vid.addEventListener("seeked", doCapture, { once: true });
-      }
-    } else {
-      vid.addEventListener("loadeddata", tryCapture, { once: true });
-    }
-
-    return () => {
-      vid.removeEventListener("loadeddata", tryCapture);
-      vid.removeEventListener("seeked", doCapture);
-    };
+    vid.addEventListener("timeupdate", onTimeUpdate);
+    return () => vid.removeEventListener("timeupdate", onTimeUpdate);
   }, [isActive, video.id, video.dbId, video.isVideo, video.thumbnail]);
 
   const handleDownload = async () => {

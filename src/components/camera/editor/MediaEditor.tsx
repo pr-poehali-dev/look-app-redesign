@@ -47,6 +47,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
   const [publishProgress, setPublishProgress] = useState<{ stage: "compress" | "upload" | "save"; percent: number } | null>(null);
   const [step, setStep] = useState<"edit" | "publish">("edit");
   const [showFileSheet, setShowFileSheet] = useState(false);
+  const capturedThumbRef = useRef<string | null>(null); // base64 кадра для thumbnail (видео)
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -56,6 +57,9 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
   const videoRefs = useRef<Map<number, HTMLVideoElement>>(new Map());
 
   const active = clips[activeIdx];
+
+  // Сброс захваченного кадра при смене активного клипа
+  useEffect(() => { capturedThumbRef.current = null; }, [activeIdx]);
 
   const cssFilter = useMemo(() => {
     const base = FILTERS.find((f) => f.id === filter)?.css || "none";
@@ -215,21 +219,12 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
       } else {
         const v = videoRefs.current.get(active.id);
         if (!v) return null;
-        // Убеждаемся что видео загружено и кадр доступен
-        if (v.readyState < 2) {
+        // Если кадр ещё не доступен — ждём loadeddata (без seek, не прерываем воспроизведение)
+        if (v.readyState < 2 || v.videoWidth === 0) {
           await new Promise<void>((resolve) => {
             const onReady = () => { v.removeEventListener("loadeddata", onReady); resolve(); };
             v.addEventListener("loadeddata", onReady);
-            setTimeout(resolve, 3000); // таймаут 3с на случай зависания
-          });
-        }
-        // Seek к 0.1с чтобы гарантировано получить реальный кадр
-        if (v.videoWidth > 0) {
-          v.currentTime = 0.1;
-          await new Promise<void>((resolve) => {
-            const onSeeked = () => { v.removeEventListener("seeked", onSeeked); resolve(); };
-            v.addEventListener("seeked", onSeeked);
-            setTimeout(resolve, 1000);
+            setTimeout(resolve, 2000);
           });
         }
         return v;
@@ -295,27 +290,18 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
     if (clips.length === 0 || !active) return;
     setPublishing(true);
     try {
-      const blob = await captureFrame();
       const isVideo = active.type === "video";
+      // Для фото — захватываем отредактированный кадр через captureFrame
+      // Для видео — используем кадр уже захваченный через onTimeUpdate
+      const blob = isVideo ? null : await captureFrame();
       let file: File = isVideo
         ? active.file
         : (blob ? new File([blob], "edited.jpg", { type: "image/jpeg" }) : active.file);
 
-      // Для видео — конвертируем кадр в base64 для thumbnail
-      let thumbData: string | undefined;
-      if (isVideo && blob) {
-        try {
-          thumbData = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-              const r = reader.result as string;
-              const idx = r.indexOf(",");
-              resolve(idx >= 0 ? r.slice(idx + 1) : r);
-            };
-            reader.readAsDataURL(blob);
-          });
-        } catch { /* ignore */ }
-      }
+      // Для видео берём thumbnail из ref (захвачен заранее через onTimeUpdate)
+      const thumbData: string | undefined = isVideo
+        ? (capturedThumbRef.current ?? undefined)
+        : undefined;
 
       // 1) Сжатие видео > 4 МБ
       if (isVideo && file.size > 4 * 1024 * 1024) {
@@ -639,6 +625,28 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
               muted
               loop
               playsInline
+              onTimeUpdate={(e) => {
+                const v = e.currentTarget;
+                if (capturedThumbRef.current || v.currentTime < 0.2 || v.videoWidth === 0) return;
+                try {
+                  const canvas = document.createElement("canvas");
+                  canvas.width = Math.min(v.videoWidth, 720);
+                  canvas.height = Math.round(canvas.width * v.videoHeight / v.videoWidth);
+                  const ctx = canvas.getContext("2d");
+                  if (!ctx) return;
+                  ctx.filter = cssFilter;
+                  ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+                  canvas.toBlob((blob) => {
+                    if (!blob || blob.size < 3000) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      const r = reader.result as string;
+                      capturedThumbRef.current = r.slice(r.indexOf(",") + 1);
+                    };
+                    reader.readAsDataURL(blob);
+                  }, "image/jpeg", 0.85);
+                } catch { /* noop */ }
+              }}
             />
           ))}
 
