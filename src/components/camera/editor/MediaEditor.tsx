@@ -283,16 +283,6 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
         ? active.file
         : (blob ? new File([blob], "edited.jpg", { type: "image/jpeg" }) : active.file);
 
-      // Для видео: берём кадр из ref (захвачен через onTimeUpdate).
-      // Если ещё не захвачен — ждём до 3с и пробуем ещё раз.
-      let thumbData: string | undefined = undefined;
-      if (isVideo) {
-        if (!capturedThumbRef.current) {
-          await new Promise<void>((resolve) => setTimeout(resolve, 3000));
-        }
-        thumbData = capturedThumbRef.current ?? undefined;
-      }
-
       if (isVideo && file.size > 4 * 1024 * 1024) {
         setPublishProgress({ stage: "compress", percent: 0 });
         try {
@@ -324,11 +314,19 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
           author: user?.name || "Пользователь",
           handle: user?.handle || user?.name || "user",
           user_id: user?.id || "anonymous",
-          thumbData,
         },
         (p) => setPublishProgress({ stage: "upload", percent: p }),
       );
       if (!reg || !reg.url) throw new Error("Сервер не вернул ссылку на файл");
+
+      // Для видео — генерируем превью на сервере (OpenCV снимает кадр)
+      if (isVideo && reg.id) {
+        fetch("https://functions.poehali.dev/be575f5c-eb60-4522-ad3e-1b6527c85abb", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ video_url: reg.url, video_id: reg.id }),
+        }).catch(() => {});
+      }
 
       setPublishProgress({ stage: "save", percent: 100 });
       try { await refreshMedia(); } catch { /* ignore */ }
