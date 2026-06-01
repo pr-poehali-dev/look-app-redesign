@@ -50,25 +50,34 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const videoRef = useRef<HTMLVideoElement>(null);
   const thumbSentRef = useRef(false);
 
-  // Фоновая генерация thumbnail — снимаем кадр при первом timeupdate (видео уже играет)
+  // Фоновая генерация thumbnail — скачиваем видео как blob, снимаем кадр без CORS-ограничений
   useEffect(() => {
     if (!isActive || !video.isVideo || video.thumbnail || thumbSentRef.current) return;
-    const vid = videoRef.current;
-    if (!vid) return;
+    thumbSentRef.current = true;
+    let blobUrl: string | null = null;
+    const tmpVid = document.createElement("video");
+    tmpVid.muted = true;
+    tmpVid.playsInline = true;
+    tmpVid.preload = "metadata";
 
-    const onTimeUpdate = () => {
-      if (thumbSentRef.current || vid.videoWidth === 0 || vid.videoHeight === 0) return;
-      if (vid.currentTime < 0.1) return; // ждём хотя бы 0.1с чтобы кадр был не чёрным
-      thumbSentRef.current = true;
+    const cleanup = () => {
+      tmpVid.src = "";
+      tmpVid.load();
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+
+    const capture = () => {
+      if (tmpVid.videoWidth === 0 || tmpVid.videoHeight === 0) { cleanup(); return; }
       try {
         const canvas = document.createElement("canvas");
-        canvas.width = Math.min(vid.videoWidth, 720);
-        canvas.height = Math.round(canvas.width * (vid.videoHeight / vid.videoWidth));
+        canvas.width = Math.min(tmpVid.videoWidth, 720);
+        canvas.height = Math.round(canvas.width * tmpVid.videoHeight / tmpVid.videoWidth);
         const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
+        if (!ctx) { cleanup(); return; }
+        ctx.drawImage(tmpVid, 0, 0, canvas.width, canvas.height);
         canvas.toBlob((blob) => {
-          if (!blob || blob.size < 3000) { thumbSentRef.current = false; return; }
+          cleanup();
+          if (!blob || blob.size < 3000) return;
           const reader = new FileReader();
           reader.onload = () => {
             const b64 = (reader.result as string).split(",")[1];
@@ -80,12 +89,25 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           };
           reader.readAsDataURL(blob);
         }, "image/jpeg", 0.80);
-      } catch { thumbSentRef.current = false; }
+      } catch { cleanup(); }
     };
 
-    vid.addEventListener("timeupdate", onTimeUpdate);
-    return () => vid.removeEventListener("timeupdate", onTimeUpdate);
-  }, [isActive, video.id, video.dbId, video.isVideo, video.thumbnail]);
+    // Скачиваем видео как blob — обходим CORS для canvas
+    fetch(video.image, { mode: "cors" })
+      .then(r => r.blob())
+      .then(blob => {
+        blobUrl = URL.createObjectURL(blob);
+        tmpVid.src = blobUrl;
+        tmpVid.addEventListener("seeked", capture, { once: true });
+        tmpVid.addEventListener("loadedmetadata", () => {
+          tmpVid.currentTime = Math.min(0.5, tmpVid.duration * 0.1 || 0.5);
+        }, { once: true });
+        tmpVid.load();
+      })
+      .catch(() => { thumbSentRef.current = false; });
+
+    return cleanup;
+  }, [isActive, video.id, video.dbId, video.isVideo, video.thumbnail, video.image]);
 
   const handleDownload = async () => {
     if (downloading) return;
