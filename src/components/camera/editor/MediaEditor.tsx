@@ -283,9 +283,15 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
         ? active.file
         : (blob ? new File([blob], "edited.jpg", { type: "image/jpeg" }) : active.file);
 
-      const thumbData: string | undefined = isVideo
-        ? (capturedThumbRef.current ?? undefined)
-        : undefined;
+      // Для видео: берём кадр из ref (захвачен через onTimeUpdate).
+      // Если ещё не захвачен — ждём до 3с и пробуем ещё раз.
+      let thumbData: string | undefined = undefined;
+      if (isVideo) {
+        if (!capturedThumbRef.current) {
+          await new Promise<void>((resolve) => setTimeout(resolve, 3000));
+        }
+        thumbData = capturedThumbRef.current ?? undefined;
+      }
 
       if (isVideo && file.size > 4 * 1024 * 1024) {
         setPublishProgress({ stage: "compress", percent: 0 });

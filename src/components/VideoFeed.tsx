@@ -279,7 +279,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
   const [dbVideos, setDbVideos] = useState<(VideoData & { category: string })[]>([]);
   const [dbLoaded, setDbLoaded] = useState(false);
 
-  const { userVideos } = useUserMedia();
+  const { userVideos, mediaVersion } = useUserMedia();
   const { user } = useAuth();
   const followingHandles = useFollowingList();
 
@@ -316,7 +316,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
     const isNewCategory = activeCategory === "new";
     const url = activeCategory && activeCategory !== "all" && !isSubsCategory && !isNewCategory
       ? `${GET_VIDEOS_URL}?type=video&category=${activeCategory}`
-      : `${GET_VIDEOS_URL}?type=video`;
+      : `${GET_VIDEOS_URL}?type=video&t=${mediaVersion}`;
     fetch(url)
       .then(r => r.json())
       .then(raw => {
@@ -356,7 +356,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
       })
       .catch(e => console.error('VideoFeed fetch error:', e))
       .finally(() => setDbLoaded(true));
-  }, [activeCategory]);
+  }, [activeCategory, mediaVersion]);
 
   // Дедупликация: убираем повторы по URL видео, чтобы один ролик не появлялся
   // дважды (например, из локального состояния и из БД одновременно).
