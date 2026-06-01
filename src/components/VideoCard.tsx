@@ -50,23 +50,30 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const videoRef = useRef<HTMLVideoElement>(null);
   const thumbSentRef = useRef(false);
 
-  // Фоновая генерация thumbnail — скачиваем видео как blob, снимаем кадр без CORS-ограничений
+  // Фоновая генерация thumbnail — грузим через CORS-прокси, снимаем кадр canvas'ом
   useEffect(() => {
     if (!isActive || !video.isVideo || video.thumbnail || thumbSentRef.current) return;
     thumbSentRef.current = true;
-    let blobUrl: string | null = null;
+
+    const PROXY = "https://functions.poehali.dev/365fd6ad-5114-4795-9e32-26b7130b1ea1";
+    const proxyUrl = `${PROXY}?url=${encodeURIComponent(video.image)}`;
+
     const tmpVid = document.createElement("video");
     tmpVid.muted = true;
     tmpVid.playsInline = true;
-    tmpVid.preload = "metadata";
+    tmpVid.preload = "auto";
+    tmpVid.crossOrigin = "anonymous";
+    tmpVid.src = proxyUrl;
 
     const cleanup = () => {
+      tmpVid.removeEventListener("seeked", onSeeked);
+      tmpVid.removeEventListener("loadedmetadata", onMeta);
+      tmpVid.removeEventListener("error", onError);
       tmpVid.src = "";
       tmpVid.load();
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
     };
 
-    const capture = () => {
+    const onSeeked = () => {
       if (tmpVid.videoWidth === 0 || tmpVid.videoHeight === 0) { cleanup(); return; }
       try {
         const canvas = document.createElement("canvas");
@@ -88,23 +95,23 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             }).catch(() => {});
           };
           reader.readAsDataURL(blob);
-        }, "image/jpeg", 0.80);
+        }, "image/jpeg", 0.82);
       } catch { cleanup(); }
     };
 
-    // Скачиваем видео как blob — обходим CORS для canvas
-    fetch(video.image, { mode: "cors" })
-      .then(r => r.blob())
-      .then(blob => {
-        blobUrl = URL.createObjectURL(blob);
-        tmpVid.src = blobUrl;
-        tmpVid.addEventListener("seeked", capture, { once: true });
-        tmpVid.addEventListener("loadedmetadata", () => {
-          tmpVid.currentTime = Math.min(0.5, tmpVid.duration * 0.1 || 0.5);
-        }, { once: true });
-        tmpVid.load();
-      })
-      .catch(() => { thumbSentRef.current = false; });
+    const onMeta = () => {
+      tmpVid.currentTime = Math.min(0.5, (tmpVid.duration || 1) * 0.05);
+    };
+
+    const onError = () => {
+      thumbSentRef.current = false;
+      cleanup();
+    };
+
+    tmpVid.addEventListener("loadedmetadata", onMeta, { once: true });
+    tmpVid.addEventListener("seeked", onSeeked, { once: true });
+    tmpVid.addEventListener("error", onError, { once: true });
+    tmpVid.load();
 
     return cleanup;
   }, [isActive, video.id, video.dbId, video.isVideo, video.thumbnail, video.image]);

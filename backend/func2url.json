@@ -1,4 +1,5 @@
 {
+  "video-proxy": "https://functions.poehali.dev/365fd6ad-5114-4795-9e32-26b7130b1ea1",
   "upload-chunked": "https://functions.poehali.dev/25a6b99d-32f3-45a4-baf7-a088013ca292",
   "download-media": "https://functions.poehali.dev/b5faf1bc-6976-47c6-984e-e21c66d4c879",
   "support-tickets": "https://functions.poehali.dev/c799ab49-0e91-4b94-8ec4-4325db5e1c73",

@@ -1,0 +1,22 @@
+{
+  "tests": [
+    {
+      "name": "CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Missing url returns 400",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 400
+    },
+    {
+      "name": "Blocked host returns 403",
+      "method": "GET",
+      "path": "/?url=https://evil.com/video.mp4",
+      "expectedStatus": 403
+    }
+  ]
+}
