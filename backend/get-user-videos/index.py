@@ -374,6 +374,38 @@ def handler(event: dict, context) -> dict:
                 cur.close(); conn.close()
             return ok({'deleted': len(rows)})
 
+        # смена категории видео
+        if action == 'update_category':
+            video_id = body.get('id')
+            new_category = (body.get('category') or '').strip()
+            token = body.get('token') or ''
+            user_id = body.get('user_id') or ''
+            if not video_id or not new_category:
+                return err('id и category обязательны')
+            try:
+                video_id = int(video_id)
+            except (ValueError, TypeError):
+                return err('Некорректный id')
+            conn = get_conn(); cur = conn.cursor()
+            try:
+                if token:
+                    cur.execute("SELECT id FROM app_users WHERE token=%s", (token,))
+                    urow = cur.fetchone()
+                    if not urow:
+                        return err('Токен недействителен', 401)
+                    uid = urow[0]
+                elif user_id:
+                    uid = user_id
+                else:
+                    return err('token или user_id обязательны', 401)
+                cur.execute("UPDATE videos SET category=%s WHERE id=%s AND user_id=%s", (new_category, video_id, uid))
+                if cur.rowcount == 0:
+                    return err('Видео не найдено', 404)
+                conn.commit()
+            finally:
+                cur.close(); conn.close()
+            return ok({'ok': True, 'category': new_category})
+
         # delete media
         video_id = body.get('id')
         token = body.get('token') or ''

@@ -267,11 +267,29 @@ const MediaViewer = ({ items, startIndex, onClose, onDelete }: { items: Story[];
 
 const AUTH_URL = "https://functions.poehali.dev/075d6280-020a-48ce-a5e4-64eb3291a01e";
 
+const VIDEO_CATEGORIES = [
+  { id: "music", label: "Музыка" },
+  { id: "dance", label: "Танцы" },
+  { id: "sport", label: "Спорт" },
+  { id: "humor", label: "Юмор" },
+  { id: "travel", label: "Путешествия" },
+  { id: "food", label: "Еда" },
+  { id: "style", label: "Стиль" },
+  { id: "gaming", label: "Игры" },
+  { id: "nature", label: "Природа" },
+  { id: "animals", label: "Животные" },
+  { id: "beauty", label: "Красота" },
+  { id: "diy", label: "Сделай сам" },
+  { id: "science", label: "Наука" },
+  { id: "auto", label: "Авто" },
+];
+const categoryLabel = (id?: string) => VIDEO_CATEGORIES.find(c => c.id === id)?.label || "Без категории";
+
 const ProfilePage = () => {
   const [tab, setTab] = useState<"videos" | "posts">("videos");
   const [showSettings, setShowSettings] = useState(false);
   const [showScreen, setShowScreen] = useState<"followers" | "following" | null>(null);
-  const { userVideos: stories, removeMedia, addMedia } = useUserMedia();
+  const { userVideos: stories, removeMedia, addMedia, refreshMedia } = useUserMedia();
   const { user, token, logout, updateUser } = useAuth();
   const { theme, toggle: toggleTheme } = useTheme();
   const followingHandles = useFollowingList();
@@ -315,7 +333,23 @@ const ProfilePage = () => {
     if (liveItems.length === 0) setMediaViewer(null);
   }, [stories, mediaViewer]);
   const [deleteStoryId, setDeleteStoryId] = useState<number | null>(null);
+  const [categoryEditId, setCategoryEditId] = useState<number | null>(null);
+  const [savingCategory, setSavingCategory] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleChangeCategory = async (id: number, category: string) => {
+    setSavingCategory(true);
+    try {
+      await fetch(AUTH_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_category", id, category, token, user_id: user?.id }),
+      });
+      await refreshMedia();
+    } catch { /* ignore */ }
+    setSavingCategory(false);
+    setCategoryEditId(null);
+  };
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const storyInputRef = useRef<HTMLInputElement>(null);
 
@@ -496,7 +530,9 @@ const ProfilePage = () => {
               <div className="w-16 h-16 md:w-14 md:h-14 rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]">
                 <div className="w-full h-full rounded-full overflow-hidden border-2 border-white bg-gray-100">
                   {s.type === "video"
-                    ? <video src={s.url} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                    ? ((s.thumbnail || s.thumb)
+                        ? <img src={s.thumbnail || s.thumb} className="w-full h-full object-cover" alt="" />
+                        : <video src={s.url} className="w-full h-full object-cover" muted playsInline preload="metadata" poster={s.thumbnail || s.thumb} />)
                     : <img src={s.url} className="w-full h-full object-cover" alt="" />
                   }
                 </div>
@@ -526,6 +562,38 @@ const ProfilePage = () => {
             </div>
           </div>
         )}
+
+        {/* Выбор категории видео */}
+        {categoryEditId !== null && (() => {
+          const current = stories.find(s => s.id === categoryEditId)?.category;
+          return (
+            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={() => !savingCategory && setCategoryEditId(null)}>
+              <div className="bg-white rounded-t-2xl w-full max-w-sm flex flex-col max-h-[70vh]" onClick={e => e.stopPropagation()}>
+                <p className="text-center font-semibold text-gray-800 py-4 border-b border-gray-100">Категория видео</p>
+                <div className="overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
+                  {VIDEO_CATEGORIES.map(cat => (
+                    <button
+                      key={cat.id}
+                      disabled={savingCategory}
+                      onClick={() => handleChangeCategory(categoryEditId, cat.id)}
+                      className={`w-full flex items-center justify-between px-5 py-3 text-left border-b border-gray-50 ${current === cat.id ? "text-[#8b5cf6] font-semibold" : "text-gray-700"}`}
+                    >
+                      {cat.label}
+                      {current === cat.id && <Icon name="Check" size={18} className="text-[#8b5cf6]" />}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  className="w-full py-3 text-gray-500 font-semibold border-t border-gray-100"
+                  onClick={() => setCategoryEditId(null)}
+                  disabled={savingCategory}
+                >
+                  Отмена
+                </button>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Tabs */}
@@ -574,6 +642,13 @@ const ProfilePage = () => {
                       <Icon name="Play" size={18} className="text-white ml-0.5" />
                     </div>
                   </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setCategoryEditId(item.id); }}
+                    className="absolute bottom-1 left-1 right-1 flex items-center gap-1 px-2 py-1 rounded-md bg-black/55 backdrop-blur"
+                  >
+                    <Icon name="Tag" size={11} className="text-white/80 flex-shrink-0" />
+                    <span className="text-white text-[10px] font-medium truncate">{categoryLabel(item.category)}</span>
+                  </button>
                 </div>
               ))}
             </div>
