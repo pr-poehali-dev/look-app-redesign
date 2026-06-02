@@ -140,8 +140,8 @@ const Index = () => {
                   <div className="relative flex items-center h-6 w-9">
                     <div className="w-6 h-5 rounded-md absolute left-0" style={{ background: "var(--look-accent)", opacity: 0.6 }} />
                     <div className="w-6 h-5 rounded-md absolute right-0" style={{ background: "var(--look-accent)" }} />
-                    <div className="w-6 h-5 rounded-md flex items-center justify-center relative z-10 mx-auto" style={{ background: "var(--look-accent-fg)", border: "1.5px solid rgba(0,0,0,0.15)" }}>
-                      <Icon name="Plus" size={14} style={{ color: "var(--look-accent)" }} />
+                    <div className="w-6 h-5 rounded-md flex items-center justify-center relative z-10 mx-auto" style={{ background: "#ffffff", border: "1.5px solid rgba(0,0,0,0.15)" }}>
+                      <Icon name="Plus" size={14} strokeWidth={3} style={{ color: "#1f6b3a" }} />
                     </div>
                   </div>
                 ) : (
@@ -328,10 +328,10 @@ const Index = () => {
         <div className={`flex-1 relative overflow-hidden ${activeTab === "feed" ? "pt-[72px] md:pt-[56px]" : ""}`}>
           {activeTab === "home" && (
             <>
-              {/* На ПК для «Все» показываем плиточную сетку (TikTok-стиль). Клик — открывает видео в ленте */}
+              {/* На ПК показываем плиточную сетку (TikTok-стиль) для всех категорий, кроме «Подписки». Клик — открывает видео в ленте */}
               <div className="hidden md:block w-full h-full">
-                {activeCategory === "all" && gridOpenVideoId === null ? (
-                  <VideoGrid onOpenVideo={(id) => setGridOpenVideoId(id)} />
+                {activeCategory !== "subs" && gridOpenVideoId === null ? (
+                  <VideoGrid category={activeCategory} onOpenVideo={(id) => setGridOpenVideoId(id)} />
                 ) : (
                   <VideoFeed
                     activeTab={activeTab}
@@ -375,8 +375,8 @@ const Index = () => {
                   <div className="relative flex items-center h-7">
                     <div className="w-10 h-7 rounded-lg absolute left-0" style={{ background: "var(--look-accent)", opacity: 0.6 }} />
                     <div className="w-10 h-7 rounded-lg absolute right-0" style={{ background: "var(--look-accent)" }} />
-                    <div className="w-10 h-7 rounded-lg flex items-center justify-center relative z-10 mx-auto" style={{ background: "var(--look-accent-fg)", border: "1.5px solid rgba(0,0,0,0.15)" }}>
-                      <Icon name="Plus" size={18} style={{ color: "var(--look-accent)" }} />
+                    <div className="w-10 h-7 rounded-lg flex items-center justify-center relative z-10 mx-auto" style={{ background: "#ffffff", border: "1.5px solid rgba(0,0,0,0.15)" }}>
+                      <Icon name="Plus" size={18} strokeWidth={3} style={{ color: "#1f6b3a" }} />
                     </div>
                   </div>
                 ) : (

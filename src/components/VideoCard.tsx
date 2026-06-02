@@ -475,8 +475,24 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
                 { icon: "MessageCircle", label: "Telegram", color: "#229ED9", href: `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`@${video.handle}: ${video.description}`)}` },
                 { icon: "Send", label: "WhatsApp", color: "#25D366", href: `https://wa.me/?text=${encodeURIComponent(`@${video.handle}: ${video.description}\n${window.location.href}`)}` },
                 { icon: "Share2", label: "VK", color: "#0077FF", href: `https://vk.com/share.php?url=${encodeURIComponent(window.location.href)}` },
-                { icon: "Mail", label: "Email", color: "#fe2c55", href: `mailto:?subject=${encodeURIComponent(`@${video.handle}`)}&body=${encodeURIComponent(`${video.description}\n${window.location.href}`)}` },
-              ].map(opt => (
+                { icon: "MessageSquare", label: "МАКС", color: "#7C66FC", copy: true },
+              ].map(opt => opt.copy ? (
+                <button
+                  key={opt.label}
+                  type="button"
+                  className="flex flex-col items-center gap-2"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(window.location.href);
+                    setCopied(true);
+                    setTimeout(() => { setCopied(false); setShowShare(false); }, 1200);
+                  }}
+                >
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: opt.color + "22", border: `1.5px solid ${opt.color}55` }}>
+                    <Icon name={copied ? "Check" : opt.icon} size={24} style={{ color: opt.color }} />
+                  </div>
+                  <span className="text-white/70 text-xs">{copied ? "Скопировано" : opt.label}</span>
+                </button>
+              ) : (
                 <a
                   key={opt.label}
                   href={opt.href}

@@ -18,9 +18,10 @@ interface GridVideo {
 
 interface Props {
   onOpenVideo: (id: number) => void;
+  category?: string;
 }
 
-const VideoGrid = ({ onOpenVideo }: Props) => {
+const VideoGrid = ({ onOpenVideo, category = "all" }: Props) => {
   const [videos, setVideos] = useState<GridVideo[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [version, setVersion] = useState(0);
@@ -68,7 +69,8 @@ const VideoGrid = ({ onOpenVideo }: Props) => {
   }, []);
 
   useEffect(() => {
-    fetch(`${GET_VIDEOS_URL}?type=video`)
+    const catParam = category && category !== "all" ? `&category=${encodeURIComponent(category)}` : "";
+    fetch(`${GET_VIDEOS_URL}?type=video${catParam}`)
       .then((r) => r.json())
       .then((raw) => {
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
@@ -88,7 +90,7 @@ const VideoGrid = ({ onOpenVideo }: Props) => {
       })
       .catch(() => {})
       .finally(() => setLoaded(true));
-  }, [version]);
+  }, [version, category]);
 
   if (!loaded) {
     return (
