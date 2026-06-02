@@ -69,13 +69,15 @@ const VideoGrid = ({ onOpenVideo, category = "all" }: Props) => {
   }, []);
 
   useEffect(() => {
-    const catParam = category && category !== "all" ? `&category=${encodeURIComponent(category)}` : "";
+    // «Новые» — это не реальная категория, а сортировка: грузим все видео и сортируем по новизне
+    const isNew = category === "new";
+    const catParam = category && category !== "all" && !isNew ? `&category=${encodeURIComponent(category)}` : "";
     fetch(`${GET_VIDEOS_URL}?type=video${catParam}`)
       .then((r) => r.json())
       .then((raw) => {
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const list = (data.videos || []).map((v: any) => ({
+        let list = (data.videos || []).map((v: any) => ({
           id: v.id + 10000,
           url: v.url,
           thumb: v.thumbnail || v.thumb || null,
@@ -86,6 +88,7 @@ const VideoGrid = ({ onOpenVideo, category = "all" }: Props) => {
           description: v.description || "",
           type: v.type,
         }));
+        if (isNew) list = [...list].sort((a, b) => b.id - a.id);
         setVideos(list);
       })
       .catch(() => {})

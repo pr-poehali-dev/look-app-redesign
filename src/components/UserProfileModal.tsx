@@ -290,7 +290,7 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
                     className="relative aspect-square overflow-hidden bg-gray-200 active:opacity-80"
                   >
                     {item.isVideo ? (
-                      <video src={item.image} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                      <video src={`${item.image}#t=0.1`} className="w-full h-full object-cover" muted playsInline preload="metadata" />
                     ) : (
                       <img src={item.image} alt="" className="w-full h-full object-cover" loading="lazy" />
                     )}
