@@ -320,7 +320,7 @@ const Index = () => {
         {/* Top header only for feed tab */}
         {activeTab === "feed" && (
           <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 pt-10 md:pt-4 pb-3 bg-black border-b border-white/8">
-            <span className="font-bold text-white text-lg md:hidden">Look</span>
+            <span className="font-bold text-white text-lg md:hidden">Лоок</span>
           </div>
         )}
 
@@ -328,9 +328,9 @@ const Index = () => {
         <div className={`flex-1 relative overflow-hidden ${activeTab === "feed" ? "pt-[72px] md:pt-[56px]" : ""}`}>
           {activeTab === "home" && (
             <>
-              {/* На ПК показываем плиточную сетку (TikTok-стиль) для всех категорий, кроме «Подписки». Клик — открывает видео в ленте */}
+              {/* На ПК показываем плиточную сетку (TikTok-стиль) для всех категорий, кроме «Подписки» и «Новые». Клик — открывает видео в ленте */}
               <div className="hidden md:block w-full h-full">
-                {activeCategory !== "subs" && gridOpenVideoId === null ? (
+                {activeCategory !== "subs" && activeCategory !== "new" && gridOpenVideoId === null ? (
                   <VideoGrid category={activeCategory} onOpenVideo={(id) => setGridOpenVideoId(id)} />
                 ) : (
                   <VideoFeed
