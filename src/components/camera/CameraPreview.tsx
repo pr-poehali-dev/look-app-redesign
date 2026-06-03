@@ -64,6 +64,7 @@ interface CameraPreviewProps {
   onDescriptionChange: (v: string) => void;
   onDestinationChange: (d: "home" | "feed") => void;
   onCloseMedia: () => void;
+  onEditPhoto?: () => void;
   onPublish: () => void;
   onCategoryChange: (id: string) => void;
   onToggleCategoryPicker: () => void;
@@ -89,6 +90,7 @@ const CameraPreview = ({
   onHashtagsChange,
   onDescriptionChange,
   onCloseMedia,
+  onEditPhoto,
   onPublish,
   onCategoryChange,
   onToggleCategoryPicker,
@@ -154,6 +156,15 @@ const CameraPreview = ({
             >
               <Icon name="X" size={20} className="text-white" />
             </button>
+            {uploadedMedia.type === "image" && onEditPhoto && (
+              <button
+                onClick={onEditPhoto}
+                className="absolute top-4 right-4 md:top-5 md:right-5 flex items-center gap-1.5 pl-3 pr-3.5 py-2 rounded-full bg-[#fe2c55] backdrop-blur-sm active:scale-95 transition-transform"
+              >
+                <Icon name="Wand2" size={16} className="text-white" />
+                <span className="text-white text-sm font-semibold">Редактировать</span>
+              </button>
+            )}
           </div>
 
           <div className="bg-black/90 px-4 pt-4 pb-[max(28px,env(safe-area-inset-bottom))] flex flex-col gap-3 md:w-[420px] md:flex-shrink-0 md:overflow-y-auto md:py-6 md:border-l md:border-white/10">

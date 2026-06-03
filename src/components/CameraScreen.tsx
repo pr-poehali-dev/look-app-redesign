@@ -7,6 +7,7 @@ import CameraMusicPanel from "@/components/camera/CameraMusicPanel";
 import CameraBottomControls from "@/components/camera/CameraBottomControls";
 import LiveStream from "@/components/LiveStream";
 import MediaEditor from "@/components/camera/editor/MediaEditor";
+import PhotoEditor from "@/components/camera/editor/PhotoEditor";
 import { compressVideo, uploadFileDirect } from "@/lib/videoCompress";
 
 const TRACKS = [
@@ -55,7 +56,17 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
   const [hashtags, setHashtags] = useState("");
   const [description, setDescription] = useState("");
   const [showLive, setShowLive] = useState(false);
+  const [editingPhoto, setEditingPhoto] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const handlePhotoEdited = (file: File, previewUrl: string) => {
+    mediaFileRef.current = file;
+    if (uploadedMedia?.url?.startsWith("blob:")) {
+      try { URL.revokeObjectURL(uploadedMedia.url); } catch { /* noop */ }
+    }
+    setUploadedMedia({ url: previewUrl, type: "image" });
+    setEditingPhoto(false);
+  };
 
   const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -300,6 +311,14 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
   return (
     <div className="relative w-full h-full bg-black overflow-hidden flex flex-col">
 
+      {editingPhoto && uploadedMedia?.type === "image" && (
+        <PhotoEditor
+          src={uploadedMedia.url}
+          onCancel={() => setEditingPhoto(false)}
+          onApply={handlePhotoEdited}
+        />
+      )}
+
       {/* Hidden audio player */}
       <audio ref={audioRef} loop />
       {/* Hidden file input for audio */}
@@ -339,6 +358,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
         description={description}
         onDescriptionChange={setDescription}
         onCloseMedia={() => { setUploadedMedia(null); setPublished(false); setHashtags(""); setDescription(""); }}
+        onEditPhoto={() => setEditingPhoto(true)}
         onPublish={handlePublish}
         onCategoryChange={(id) => { setSelectedCategory(id); setShowCategoryPicker(false); }}
         onToggleCategoryPicker={() => setShowCategoryPicker(v => !v)}
