@@ -3,13 +3,14 @@ import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { compressVideo, uploadFileDirect } from "@/lib/videoCompress";
-import { FILTERS, FONTS, TEMPLATES, type Filter, type Layer, type TextLayer, type StickerLayer, type Clip } from "./editorTypes";
+import { renderVideoWithOverlays } from "@/lib/videoRender";
+import { FILTERS, FONTS, TEMPLATES, EXPORT_FORMATS, type Filter, type Layer, type TextLayer, type StickerLayer, type Clip, type ExportFormat } from "./editorTypes";
 import EditorEmptyState from "./EditorEmptyState";
 import EditorPublishStep from "./EditorPublishStep";
 import EditorCanvas from "./EditorCanvas";
 import EditorToolbar from "./EditorToolbar";
 
-type Tab = "templates" | "clips" | "crop" | "filter" | "adjust" | "text" | "stickers" | "music";
+type Tab = "templates" | "clips" | "trim" | "crop" | "filter" | "adjust" | "text" | "stickers" | "music";
 
 interface Props {
   onClose: () => void;
@@ -31,6 +32,10 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
   const [activeLayerId, setActiveLayerId] = useState<number | null>(null);
   const [musicFile, setMusicFile] = useState<File | null>(null);
   const [musicName, setMusicName] = useState("");
+  const [musicVolume, setMusicVolume] = useState(100);
+  const [clipVolume, setClipVolume] = useState(100);
+  const [speed, setSpeed] = useState(1);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("9:16");
   const [tab, setTab] = useState<Tab>("templates");
   const [destination, setDestination] = useState<"home" | "feed" | "both">("both");
   const [category, setCategory] = useState("humor");
@@ -79,6 +84,10 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
   const removeClip = (id: number) => {
     setClips((prev) => prev.filter((c) => c.id !== id));
     setActiveIdx(0);
+  };
+
+  const updateClip = (id: number, patch: Partial<Clip>) => {
+    setClips((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
   };
 
   const moveClip = (id: number, dir: -1 | 1) => {
@@ -278,24 +287,50 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
     setPublishing(true);
     try {
       const isVideo = active.type === "video";
-      const blob = isVideo ? null : await captureFrame();
-      let file: File = isVideo
-        ? active.file
-        : (blob ? new File([blob], "edited.jpg", { type: "image/jpeg" }) : active.file);
+      const fmt = EXPORT_FORMATS.find((f) => f.id === exportFormat) || EXPORT_FORMATS[0];
 
-      if (isVideo && file.size > 4 * 1024 * 1024) {
+      let file: File;
+
+      if (isVideo) {
+        // Рендерим финальное видео со всеми эффектами: фильтр, текст/стикеры, обрезка, скорость, музыка
         setPublishProgress({ stage: "compress", percent: 0 });
         try {
-          const result = await compressVideo(file, {
-            maxWidth: 720,
-            maxHeight: 1280,
-            videoBitsPerSecond: 1_200_000,
+          file = await renderVideoWithOverlays({
+            clipUrl: active.url,
+            clipType: "video",
+            outWidth: fmt.w,
+            outHeight: fmt.h,
+            filter,
+            brightness,
+            contrast,
+            saturation,
+            rotation,
+            flipH,
+            layers,
+            trimStart: active.trimStart,
+            trimEnd: active.trimEnd,
+            speed,
+            clipVolume: clipVolume / 100,
+            musicFile,
+            musicVolume: musicVolume / 100,
             onProgress: (p) => setPublishProgress({ stage: "compress", percent: p }),
           });
-          file = result.file;
         } catch (err) {
-          console.warn("[MediaEditor] compress failed, uploading original", err);
+          console.warn("[MediaEditor] render failed, fallback to original", err);
+          file = active.file;
+          if (file.size > 4 * 1024 * 1024) {
+            try {
+              const result = await compressVideo(file, {
+                maxWidth: 720, maxHeight: 1280, videoBitsPerSecond: 1_200_000,
+                onProgress: (p) => setPublishProgress({ stage: "compress", percent: p }),
+              });
+              file = result.file;
+            } catch { /* keep original */ }
+          }
         }
+      } else {
+        const blob = await captureFrame();
+        file = blob ? new File([blob], "edited.jpg", { type: "image/jpeg" }) : active.file;
       }
 
       const finalCategory =
@@ -454,6 +489,15 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
         setMusicFile={setMusicFile}
         setMusicName={setMusicName}
         audioRef={audioRef}
+        updateClip={updateClip}
+        musicVolume={musicVolume}
+        setMusicVolume={setMusicVolume}
+        clipVolume={clipVolume}
+        setClipVolume={setClipVolume}
+        speed={speed}
+        setSpeed={setSpeed}
+        exportFormat={exportFormat}
+        setExportFormat={setExportFormat}
       />
     </div>
   );

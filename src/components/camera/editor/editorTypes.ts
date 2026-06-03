@@ -42,7 +42,19 @@ export interface Clip {
   url: string;
   type: "image" | "video";
   duration: number;
+  trimStart?: number;
+  trimEnd?: number;
+  volume?: number;
+  speed?: number;
 }
+
+export type ExportFormat = "9:16" | "1:1" | "16:9";
+
+export const EXPORT_FORMATS: { id: ExportFormat; label: string; hint: string; w: number; h: number }[] = [
+  { id: "9:16", label: "TikTok / Shorts", hint: "Вертикальное", w: 1080, h: 1920 },
+  { id: "1:1", label: "Квадрат", hint: "Лента / Stories", w: 1080, h: 1080 },
+  { id: "16:9", label: "YouTube", hint: "Горизонтальное", w: 1920, h: 1080 },
+];
 
 export interface EditorState {
   clips: Clip[];

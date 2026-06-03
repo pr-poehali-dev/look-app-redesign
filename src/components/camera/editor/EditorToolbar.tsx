@@ -1,8 +1,8 @@
-import { RefObject } from "react";
+import { RefObject, useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
-import { FILTERS, FONTS, TEXT_COLORS, BG_COLORS, STICKERS, TEMPLATES, Filter, Layer, Clip } from "./editorTypes";
+import { FILTERS, FONTS, TEXT_COLORS, BG_COLORS, STICKERS, TEMPLATES, EXPORT_FORMATS, Filter, Layer, Clip, ExportFormat } from "./editorTypes";
 
-type Tab = "templates" | "clips" | "crop" | "filter" | "adjust" | "text" | "stickers" | "music";
+type Tab = "templates" | "clips" | "trim" | "crop" | "filter" | "adjust" | "text" | "stickers" | "music";
 
 interface Props {
   tab: Tab;
@@ -41,6 +41,15 @@ interface Props {
   setMusicFile: (f: File | null) => void;
   setMusicName: (n: string) => void;
   audioRef: RefObject<HTMLAudioElement>;
+  updateClip: (id: number, patch: Partial<Clip>) => void;
+  musicVolume: number;
+  setMusicVolume: (v: number) => void;
+  clipVolume: number;
+  setClipVolume: (v: number) => void;
+  speed: number;
+  setSpeed: (v: number) => void;
+  exportFormat: ExportFormat;
+  setExportFormat: (f: ExportFormat) => void;
 }
 
 const EditorToolbar = ({
@@ -80,6 +89,15 @@ const EditorToolbar = ({
   setMusicFile,
   setMusicName,
   audioRef,
+  updateClip,
+  musicVolume,
+  setMusicVolume,
+  clipVolume,
+  setClipVolume,
+  speed,
+  setSpeed,
+  exportFormat,
+  setExportFormat,
 }: Props) => {
   return (
     <div className="bg-zinc-900 border-t border-white/10">
@@ -115,6 +133,34 @@ const EditorToolbar = ({
                   </button>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+        {tab === "trim" && (
+          <div className="space-y-3">
+            {active?.type === "video" ? (
+              <TrimControls key={active.id} active={active} updateClip={updateClip} />
+            ) : (
+              <p className="text-white/40 text-xs">Обрезка доступна для видео-клипов.</p>
+            )}
+            <div>
+              <label className="text-white/60 text-xs flex justify-between"><span>Скорость</span><span>{speed}x</span></label>
+              <div className="flex gap-1.5 mt-1">
+                {[0.5, 1, 1.5, 2].map((s) => (
+                  <button key={s} onClick={() => setSpeed(s)} className={`flex-1 py-1.5 rounded-lg text-xs ${speed === s ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white/70"}`}>{s}x</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-white/60 text-xs block mb-1">Формат экспорта</label>
+              <div className="flex gap-1.5">
+                {EXPORT_FORMATS.map((f) => (
+                  <button key={f.id} onClick={() => setExportFormat(f.id)} className={`flex-1 py-1.5 rounded-lg text-[11px] flex flex-col items-center ${exportFormat === f.id ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white/70"}`}>
+                    <span className="font-semibold">{f.id}</span>
+                    <span className="opacity-80 text-[9px]">{f.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -214,7 +260,17 @@ const EditorToolbar = ({
                 </button>
               </div>
             )}
-            {!musicFile && <p className="text-white/40 text-xs">Поддерживаются mp3, m4a, wav. Музыка проигрывается в редакторе для предпросмотра.</p>}
+            {!musicFile && <p className="text-white/40 text-xs">Поддерживаются mp3, m4a, wav. Музыка наложится на финальное видео.</p>}
+            {musicFile && (
+              <div>
+                <label className="text-white/60 text-xs flex justify-between"><span>Громкость музыки</span><span>{musicVolume}%</span></label>
+                <input type="range" min={0} max={200} value={musicVolume} onChange={(e) => setMusicVolume(Number(e.target.value))} className="w-full" />
+              </div>
+            )}
+            <div>
+              <label className="text-white/60 text-xs flex justify-between"><span>Громкость видео</span><span>{clipVolume}%</span></label>
+              <input type="range" min={0} max={200} value={clipVolume} onChange={(e) => setClipVolume(Number(e.target.value))} className="w-full" />
+            </div>
           </div>
         )}
       </div>
@@ -224,6 +280,7 @@ const EditorToolbar = ({
         {([
           { id: "templates", icon: "LayoutTemplate", label: "Шабл." },
           { id: "clips", icon: "Film", label: "Клипы" },
+          { id: "trim", icon: "Scissors", label: "Обрезка" },
           { id: "crop", icon: "Crop", label: "Кадр" },
           { id: "filter", icon: "Sparkles", label: "Фильтр" },
           { id: "adjust", icon: "SlidersHorizontal", label: "Цвет" },
@@ -298,6 +355,58 @@ const EditorToolbar = ({
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+const fmtTime = (s: number) => {
+  if (!isFinite(s)) return "0:00";
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, "0")}`;
+};
+
+const TrimControls = ({ active, updateClip }: { active: Clip; updateClip: (id: number, patch: Partial<Clip>) => void }) => {
+  const [dur, setDur] = useState(0);
+
+  useEffect(() => {
+    const v = document.createElement("video");
+    v.src = active.url;
+    v.preload = "metadata";
+    const onMeta = () => {
+      const d = isFinite(v.duration) ? v.duration : 0;
+      setDur(d);
+      if (active.trimEnd == null && d > 0) updateClip(active.id, { trimStart: 0, trimEnd: d });
+    };
+    v.addEventListener("loadedmetadata", onMeta);
+    return () => v.removeEventListener("loadedmetadata", onMeta);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active.id]);
+
+  const start = active.trimStart ?? 0;
+  const end = active.trimEnd ?? dur;
+
+  if (dur <= 0) return <p className="text-white/40 text-xs">Загрузка длительности…</p>;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between text-white/60 text-xs">
+        <span>Начало: {fmtTime(start)}</span>
+        <span>Конец: {fmtTime(end)}</span>
+      </div>
+      <div>
+        <label className="text-white/40 text-[10px]">Старт</label>
+        <input type="range" min={0} max={dur} step={0.1} value={start}
+          onChange={(e) => { const v = Math.min(Number(e.target.value), end - 0.5); updateClip(active.id, { trimStart: Math.max(0, v) }); }}
+          className="w-full accent-[#fe2c55]" />
+      </div>
+      <div>
+        <label className="text-white/40 text-[10px]">Финал</label>
+        <input type="range" min={0} max={dur} step={0.1} value={end}
+          onChange={(e) => { const v = Math.max(Number(e.target.value), start + 0.5); updateClip(active.id, { trimEnd: Math.min(dur, v) }); }}
+          className="w-full accent-[#fe2c55]" />
+      </div>
+      <p className="text-white/40 text-[11px]">Длительность: {fmtTime(end - start)} из {fmtTime(dur)}</p>
     </div>
   );
 };
