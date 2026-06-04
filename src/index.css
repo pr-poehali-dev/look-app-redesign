@@ -112,6 +112,10 @@ video.bg-black,
 .bg-zinc-900 {
   background-color: var(--look-sidebar-bg) !important;
 }
+/* Панели-шторки (Поделиться/Жалоба/Сохранить/Чаты) — заметный фон цвета темы */
+.sheet-theme {
+  background-color: var(--look-bg) !important;
+}
 .bg-\[\#0a0a0a\],
 .bg-\[\#1a1a1a\],
 .bg-\[\#1e1e1e\],

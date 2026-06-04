@@ -95,7 +95,7 @@ export default function ReportButton({ targetType, targetId, className, variant 
         >
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
           <div
-            className="relative w-full max-w-sm bg-zinc-900 border border-white/10 rounded-3xl p-5 space-y-3"
+            className="relative w-full max-w-sm sheet-theme border border-white/10 rounded-3xl p-5 space-y-3"
             onClick={(e) => e.stopPropagation()}
           >
             {done ? (

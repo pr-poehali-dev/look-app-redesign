@@ -547,7 +547,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           onClick={() => setShowShare(false)}
         >
           <div
-            className="bg-zinc-900 rounded-t-3xl px-4 pt-5 pb-10"
+            className="sheet-theme rounded-t-3xl px-4 pt-5 pb-10"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-5">
@@ -637,7 +637,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           onPointerDown={() => setShowComments(false)}
         >
           <div
-            className="bg-zinc-900 rounded-t-3xl flex flex-col max-h-[70%]"
+            className="sheet-theme rounded-t-3xl flex flex-col max-h-[70%]"
             onPointerDown={e => e.stopPropagation()}
           >
             {/* Header */}

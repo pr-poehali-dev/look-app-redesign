@@ -145,7 +145,7 @@ const PostCard = ({ post }: { post: Post }) => {
       {/* Menu popup */}
       {showMenu && createPortal(
         <div className="fixed inset-0 z-[9999] flex flex-col justify-end" onClick={() => setShowMenu(false)}>
-          <div className="bg-zinc-900 rounded-t-3xl overflow-hidden pb-8" onClick={e => e.stopPropagation()}>
+          <div className="sheet-theme rounded-t-3xl overflow-hidden pb-8" onClick={e => e.stopPropagation()}>
             {[
               { icon: "Bookmark", label: saved ? "Убрать из сохранённых" : "Сохранить", action: () => { toggleSaved(); setShowMenu(false); } },
               { icon: "User", label: "Перейти в профиль", action: () => { setShowMenu(false); window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: post.handle } })); } },
@@ -179,7 +179,7 @@ const PostCard = ({ post }: { post: Post }) => {
       {/* Comments popup */}
       {showComments && createPortal(
         <div className="fixed inset-0 z-[9999] flex flex-col justify-end" onPointerDown={() => setShowComments(false)}>
-          <div className="bg-zinc-900 rounded-t-3xl flex flex-col max-h-[70%]" onPointerDown={e => e.stopPropagation()}>
+          <div className="sheet-theme rounded-t-3xl flex flex-col max-h-[70%]" onPointerDown={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/10">
               <span className="text-white font-bold text-base">{commentCount} комментариев</span>
               <button onPointerDown={() => setShowComments(false)}>
@@ -222,7 +222,7 @@ const PostCard = ({ post }: { post: Post }) => {
       {/* Share popup */}
       {showShare && createPortal(
         <div className="fixed inset-0 z-[9999] flex flex-col justify-end" onClick={() => setShowShare(false)}>
-          <div className="bg-zinc-900 rounded-t-3xl px-4 pt-5 pb-10" onClick={e => e.stopPropagation()}>
+          <div className="sheet-theme rounded-t-3xl px-4 pt-5 pb-10" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
               <span className="text-white font-bold text-base">Поделиться</span>
               <button onClick={() => setShowShare(false)}>
