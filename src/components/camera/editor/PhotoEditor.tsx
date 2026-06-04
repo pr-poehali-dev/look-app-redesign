@@ -398,24 +398,31 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
         ctx.fillRect(0, 0, outW, outH);
       }
 
-      // strokes — копируем напрямую с холста рисования (что нарисовано, то и сохранится).
-      // Холст dc уже выровнен по изображению (его размеры = naturalWidth*k × naturalHeight*k),
-      // поэтому переводим его координаты в систему вывода через crop (sx,sy) и масштаб outK.
+      // strokes — рисуем из массива штрихов. Координаты точек заданы в пикселях
+      // холста рисования (dc), его ширина = naturalWidth*k. Переводим в систему вывода.
       const dc = drawCanvasRef.current;
       if (dc && dc.width && strokes.length) {
-        const scaleX = (img.naturalWidth / dc.width);
-        const scaleY = (img.naturalHeight / dc.height);
+        const dcToSrc = img.naturalWidth / dc.width; // dc-пиксель → пиксель исходника
         ctx.save();
         ctx.translate(outW / 2, outH / 2);
         ctx.rotate((rot * Math.PI) / 180);
         ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
-        // переводим dc-пиксели → пиксели исходника (sx,sy) → масштаб вывода (outK)
-        // итоговая область кропа в dc-координатах:
-        const dsx = sx / scaleX;
-        const dsy = sy / scaleY;
-        const dsw = sWidth / scaleX;
-        const dsh = sHeight / scaleY;
-        ctx.drawImage(dc, dsx, dsy, dsw, dsh, -cw / 2, -ch / 2, cw, ch);
+        ctx.translate(-cw / 2, -ch / 2);
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        for (const s of strokes) {
+          ctx.strokeStyle = s.color;
+          ctx.lineWidth = Math.max(1, s.size * dcToSrc * outK);
+          ctx.beginPath();
+          s.points.forEach((p, i) => {
+            // dc-пиксель → исходник → вычесть кроп → масштаб вывода
+            const x = (p.x * dcToSrc - sx) * outK;
+            const y = (p.y * dcToSrc - sy) * outK;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+        }
         ctx.restore();
       }
 
@@ -446,6 +453,19 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
           ctx.fillText(o.value, 0, 0);
         }
         ctx.restore();
+      }
+
+      // Диагностика: первая точка штриха и геометрия вывода
+      if (strokes.length && dc) {
+        const fp = strokes[0].points[0];
+        const dcToSrc = img.naturalWidth / dc.width;
+        console.log("[PhotoEditor] stroke geom", {
+          outW, outH, cw: Math.round(cw), ch: Math.round(ch),
+          sx, sy, dcW: dc.width, dcH: dc.height,
+          firstPoint: fp,
+          mappedX: fp ? Math.round((fp.x * dcToSrc - sx) * outK) : null,
+          mappedY: fp ? Math.round((fp.y * dcToSrc - sy) * outK) : null,
+        });
       }
 
       // 4) Экспорт. Сразу пробуем dataURL (синхронно, надёжно во всех браузерах).
