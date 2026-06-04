@@ -173,15 +173,51 @@ textarea::placeholder {
 
 /* Дополнительные тёмные фоны Tailwind → фон темы */
 .bg-neutral-900,
+.bg-neutral-800,
+.bg-neutral-950,
 .bg-gray-900,
+.bg-gray-800,
+.bg-gray-950,
 .bg-slate-900,
+.bg-slate-800,
+.bg-slate-950,
+.bg-stone-900,
+.bg-zinc-800,
+.bg-zinc-950,
+.bg-zinc-700,
 .bg-\[\#000\],
 .bg-\[\#000000\],
 .bg-\[\#111\],
 .bg-\[\#111111\],
 .bg-\[\#121212\],
-.bg-\[\#171717\] {
+.bg-\[\#171717\],
+.bg-\[\#1e1e1e\],
+.bg-\[\#1c1c1e\],
+.bg-\[\#181818\],
+.bg-\[\#202020\],
+.bg-\[\#1f1f1f\],
+.bg-\[\#161616\],
+.bg-\[\#0d0d0d\],
+.bg-\[\#0c0c0c\],
+.bg-\[\#0d1220\],
+.bg-\[\#080c14\] {
   background-color: var(--look-bg) !important;
+}
+
+/* Тёмные градиенты-заливки (фоны экранов, не оверлеи над видео) → фон темы.
+   Оверлеи bg-black/NN и градиенты поверх медиа НЕ трогаем — они нужны для читаемости. */
+.from-zinc-900,
+.from-zinc-800,
+.via-zinc-900,
+.to-zinc-900,
+.to-zinc-950,
+.from-\[\#080c14\],
+.to-\[\#080c14\],
+.from-\[\#0d1220\],
+.to-\[\#0d1220\] {
+  --tw-gradient-from: var(--look-bg) !important;
+  --tw-gradient-to: var(--look-bg) !important;
+  --tw-gradient-stops: var(--look-bg), var(--look-bg) !important;
 }
 
 /* Светлый фон требует тёмного текста */

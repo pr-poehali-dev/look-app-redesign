@@ -277,165 +277,162 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
     await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())));
     await new Promise(r => setTimeout(r, 30));
 
-    const rot = ((rotation % 360) + 360) % 360;
-    const swap = rot === 90 || rot === 270;
-    let cw = img.naturalWidth;
-    let ch = img.naturalHeight;
-
-    // crop by aspect
-    const ratio = ASPECTS.find(a => a.id === aspect)?.ratio ?? null;
-    let sx = 0, sy = 0, sWidth = img.naturalWidth, sHeight = img.naturalHeight;
-    if (ratio) {
-      const imgRatio = img.naturalWidth / img.naturalHeight;
-      if (imgRatio > ratio) {
-        sWidth = img.naturalHeight * ratio;
-        sx = (img.naturalWidth - sWidth) / 2;
-      } else {
-        sHeight = img.naturalWidth / ratio;
-        sy = (img.naturalHeight - sHeight) / 2;
-      }
-      cw = sWidth; ch = sHeight;
-    }
-
-    let outW = swap ? ch : cw;
-    let outH = swap ? cw : ch;
-
-    // Ограничиваем итоговый размер, чтобы toBlob не вешал браузер на огромных фото
-    const MAX_OUT = 2048;
-    const outK = Math.min(1, MAX_OUT / Math.max(outW, outH));
-    outW = Math.max(1, Math.round(outW * outK));
-    outH = Math.max(1, Math.round(outH * outK));
-    cw = cw * outK;
-    ch = ch * outK;
-
-    const canvas = document.createElement("canvas");
-    canvas.width = outW;
-    canvas.height = outH;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) { setProcessing(false); return; }
-
-    // Сначала уменьшаем исходник в промежуточный холст БЕЗ фильтра.
-    // Применять CSS-фильтр к огромному исходнику — самая тяжёлая операция, она и вешает браузер.
-    const tmp = document.createElement("canvas");
-    tmp.width = Math.max(1, Math.round(cw));
-    tmp.height = Math.max(1, Math.round(ch));
-    const tctx = tmp.getContext("2d");
-    if (!tctx) { setProcessing(false); return; }
-    tctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, tmp.width, tmp.height);
-
-    ctx.save();
-    ctx.filter = filterCss() || "none";
-    ctx.translate(outW / 2, outH / 2);
-    ctx.rotate((rot * Math.PI) / 180);
-    ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
-    ctx.drawImage(tmp, 0, 0, tmp.width, tmp.height, -cw / 2, -ch / 2, cw, ch);
-    ctx.restore();
-
-    // vignette
-    if (adj.vignette > 0) {
-      const g = ctx.createRadialGradient(outW / 2, outH / 2, outW * 0.3, outW / 2, outH / 2, outW * 0.75);
-      g.addColorStop(0, "rgba(0,0,0,0)");
-      g.addColorStop(1, `rgba(0,0,0,${adj.vignette / 100})`);
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, outW, outH);
-    }
-
-    // strokes — рисуем напрямую из данных штрихов (надёжнее, чем копировать с экранного холста)
-    const dc = drawCanvasRef.current;
-    if (dc && strokes.length) {
-      // координаты штрихов хранятся в системе холста рисования (dc.width x dc.height),
-      // переводим их в координаты оригинального изображения
-      // переводим координаты штрихов в систему уменьшенного итогового изображения
-      const kx = (img.naturalWidth / dc.width) * outK;
-      const ky = (img.naturalHeight / dc.height) * outK;
-      ctx.save();
-      ctx.filter = "none";
-      ctx.translate(outW / 2, outH / 2);
-      ctx.rotate((rot * Math.PI) / 180);
-      ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
-      // переходим в систему координат итогового изображения с учётом кропа
-      ctx.translate(-cw / 2, -ch / 2);
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      for (const s of strokes) {
-        ctx.strokeStyle = s.color;
-        ctx.lineWidth = s.size * kx;
-        ctx.beginPath();
-        s.points.forEach((p, i) => {
-          const x = p.x * kx - sx * outK;
-          const y = p.y * ky - sy * outK;
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-
-    // overlays (text/stickers) — positioned by % of stage, draw on final output (post-rotation visual)
-    for (const o of overlays) {
-      const px = (o.x / 100) * outW;
-      const py = (o.y / 100) * outH;
-      ctx.save();
-      ctx.translate(px, py);
-      ctx.rotate((o.rotation * Math.PI) / 180);
-      if (o.kind === "sticker") {
-        const fs = outW * 0.12 * o.scale;
-        ctx.font = `${fs}px sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(o.value, 0, 0);
-      } else {
-        const fs = outW * 0.06 * o.scale;
-        ctx.font = `bold ${fs}px ${o.font || "sans-serif"}`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        const tw = ctx.measureText(o.value).width;
-        if (o.bg) {
-          ctx.fillStyle = "rgba(0,0,0,0.5)";
-          ctx.fillRect(-tw / 2 - fs * 0.2, -fs * 0.65, tw + fs * 0.4, fs * 1.3);
-        }
-        ctx.fillStyle = o.color || "#fff";
-        ctx.fillText(o.value, 0, 0);
-      }
-      ctx.restore();
-    }
-
     let finished = false;
     const finish = (file: File, url: string) => {
       if (finished) return;
       finished = true;
-      setProcessing(false);
       onApply(file, url);
     };
 
-    // Фолбэк через dataURL, если toBlob завис или вернул null
-    const fallback = () => {
-      try {
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-        const bin = atob(dataUrl.split(",")[1]);
-        const arr = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-        const blob = new Blob([arr], { type: "image/jpeg" });
-        const file = new File([blob], `edited-${Date.now()}.jpg`, { type: "image/jpeg" });
-        finish(file, URL.createObjectURL(blob));
-      } catch {
-        setProcessing(false);
-      }
-    };
-
-    const timer = setTimeout(() => { if (!finished) fallback(); }, 4000);
-
     try {
-      canvas.toBlob((blob) => {
-        clearTimeout(timer);
-        if (!blob) { fallback(); return; }
-        const file = new File([blob], `edited-${Date.now()}.jpg`, { type: "image/jpeg" });
-        finish(file, URL.createObjectURL(blob));
-      }, "image/jpeg", 0.9);
-    } catch {
-      clearTimeout(timer);
-      fallback();
+      const rot = ((rotation % 360) + 360) % 360;
+      const swap = rot === 90 || rot === 270;
+      let cw = img.naturalWidth;
+      let ch = img.naturalHeight;
+
+      // crop by aspect
+      const ratio = ASPECTS.find(a => a.id === aspect)?.ratio ?? null;
+      let sx = 0, sy = 0, sWidth = img.naturalWidth, sHeight = img.naturalHeight;
+      if (ratio) {
+        const imgRatio = img.naturalWidth / img.naturalHeight;
+        if (imgRatio > ratio) {
+          sWidth = img.naturalHeight * ratio;
+          sx = (img.naturalWidth - sWidth) / 2;
+        } else {
+          sHeight = img.naturalWidth / ratio;
+          sy = (img.naturalHeight - sHeight) / 2;
+        }
+        cw = sWidth; ch = sHeight;
+      }
+
+      let outW = swap ? ch : cw;
+      let outH = swap ? cw : ch;
+
+      // Ограничиваем итоговый размер, чтобы экспорт не вешал браузер на огромных фото
+      const MAX_OUT = 1600;
+      const outK = Math.min(1, MAX_OUT / Math.max(outW, outH));
+      outW = Math.max(1, Math.round(outW * outK));
+      outH = Math.max(1, Math.round(outH * outK));
+      cw = cw * outK;
+      ch = ch * outK;
+
+      // 1) Уменьшаем исходник в промежуточный холст БЕЗ фильтра.
+      const tmp = document.createElement("canvas");
+      tmp.width = Math.max(1, Math.round(cw));
+      tmp.height = Math.max(1, Math.round(ch));
+      const tctx = tmp.getContext("2d");
+      if (!tctx) { setProcessing(false); return; }
+      tctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, tmp.width, tmp.height);
+
+      // 2) Применяем CSS-фильтр на маленьком холсте (дёшево). Если движок не поддерживает — пропускаем.
+      const css = filterCss();
+      if (css) {
+        try {
+          const fc = document.createElement("canvas");
+          fc.width = tmp.width;
+          fc.height = tmp.height;
+          const fctx = fc.getContext("2d");
+          if (fctx && "filter" in fctx) {
+            fctx.filter = css;
+            fctx.drawImage(tmp, 0, 0);
+            // если фильтр сработал — заменяем tmp на отфильтрованный
+            tctx.clearRect(0, 0, tmp.width, tmp.height);
+            tctx.drawImage(fc, 0, 0);
+          }
+        } catch { /* фильтр не критичен — продолжаем без него */ }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = outW;
+      canvas.height = outH;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { setProcessing(false); return; }
+
+      // 3) Рисуем уменьшенный (и отфильтрованный) исходник с учётом поворота/отражения — БЕЗ ctx.filter.
+      ctx.save();
+      ctx.translate(outW / 2, outH / 2);
+      ctx.rotate((rot * Math.PI) / 180);
+      ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+      ctx.drawImage(tmp, 0, 0, tmp.width, tmp.height, -cw / 2, -ch / 2, cw, ch);
+      ctx.restore();
+
+      // vignette
+      if (adj.vignette > 0) {
+        const g = ctx.createRadialGradient(outW / 2, outH / 2, outW * 0.3, outW / 2, outH / 2, outW * 0.75);
+        g.addColorStop(0, "rgba(0,0,0,0)");
+        g.addColorStop(1, `rgba(0,0,0,${adj.vignette / 100})`);
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, outW, outH);
+      }
+
+      // strokes — рисуем напрямую из данных штрихов
+      const dc = drawCanvasRef.current;
+      if (dc && strokes.length) {
+        const kx = (img.naturalWidth / dc.width) * outK;
+        const ky = (img.naturalHeight / dc.height) * outK;
+        ctx.save();
+        ctx.translate(outW / 2, outH / 2);
+        ctx.rotate((rot * Math.PI) / 180);
+        ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+        ctx.translate(-cw / 2, -ch / 2);
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        for (const s of strokes) {
+          ctx.strokeStyle = s.color;
+          ctx.lineWidth = s.size * kx;
+          ctx.beginPath();
+          s.points.forEach((p, i) => {
+            const x = p.x * kx - sx * outK;
+            const y = p.y * ky - sy * outK;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      // overlays (text/stickers)
+      for (const o of overlays) {
+        const px = (o.x / 100) * outW;
+        const py = (o.y / 100) * outH;
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate((o.rotation * Math.PI) / 180);
+        if (o.kind === "sticker") {
+          const fs = outW * 0.12 * o.scale;
+          ctx.font = `${fs}px sans-serif`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(o.value, 0, 0);
+        } else {
+          const fs = outW * 0.06 * o.scale;
+          ctx.font = `bold ${fs}px ${o.font || "sans-serif"}`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          const tw = ctx.measureText(o.value).width;
+          if (o.bg) {
+            ctx.fillStyle = "rgba(0,0,0,0.5)";
+            ctx.fillRect(-tw / 2 - fs * 0.2, -fs * 0.65, tw + fs * 0.4, fs * 1.3);
+          }
+          ctx.fillStyle = o.color || "#fff";
+          ctx.fillText(o.value, 0, 0);
+        }
+        ctx.restore();
+      }
+
+      // 4) Экспорт. Сразу пробуем dataURL (синхронно, надёжно во всех браузерах).
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+      const bin = atob(dataUrl.split(",")[1]);
+      const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      const blob = new Blob([arr], { type: "image/jpeg" });
+      const file = new File([blob], `edited-${Date.now()}.jpg`, { type: "image/jpeg" });
+      finish(file, URL.createObjectURL(blob));
+    } catch (e) {
+      console.error("[PhotoEditor] export failed", e);
+    } finally {
+      setProcessing(false);
     }
   };
 
