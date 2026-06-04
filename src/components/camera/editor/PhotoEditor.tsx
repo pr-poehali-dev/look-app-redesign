@@ -321,16 +321,34 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
       ctx.fillRect(0, 0, outW, outH);
     }
 
-    // strokes — холст рисования может быть уменьшен относительно оригинала, пересчитываем crop в его координаты
+    // strokes — рисуем напрямую из данных штрихов (надёжнее, чем копировать с экранного холста)
     const dc = drawCanvasRef.current;
     if (dc && strokes.length) {
-      const kx = dc.width / img.naturalWidth;
-      const ky = dc.height / img.naturalHeight;
+      // координаты штрихов хранятся в системе холста рисования (dc.width x dc.height),
+      // переводим их в координаты оригинального изображения
+      const kx = img.naturalWidth / dc.width;
+      const ky = img.naturalHeight / dc.height;
       ctx.save();
+      ctx.filter = "none";
       ctx.translate(outW / 2, outH / 2);
       ctx.rotate((rot * Math.PI) / 180);
       ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
-      ctx.drawImage(dc, sx * kx, sy * ky, sWidth * kx, sHeight * ky, -cw / 2, -ch / 2, cw, ch);
+      // переходим в систему координат исходного изображения с учётом кропа
+      ctx.translate(-cw / 2, -ch / 2);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      for (const s of strokes) {
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth = s.size * kx;
+        ctx.beginPath();
+        s.points.forEach((p, i) => {
+          const x = p.x * kx - sx;
+          const y = p.y * ky - sy;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      }
       ctx.restore();
     }
 
