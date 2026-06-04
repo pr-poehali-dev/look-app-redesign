@@ -271,11 +271,11 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
   // ---- render to file ----
   const handleApply = async () => {
     const img = imgRef.current;
-    if (!img) return;
+    if (!img || !img.naturalWidth || !img.naturalHeight) return;
     setProcessing(true);
-    // Двойной rAF + пауза, чтобы спиннер успел отрисоваться до тяжёлой синхронной работы
-    await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())));
-    await new Promise(r => setTimeout(r, 30));
+    // Пауза, чтобы спиннер успел отрисоваться. setTimeout надёжнее rAF
+    // (rAF может «зависнуть», если вкладка/слой не отрисовывается).
+    await new Promise(r => setTimeout(r, 60));
 
     let finished = false;
     const finish = (file: File, url: string) => {
