@@ -163,6 +163,7 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       for (const s of strokes) {
+        if (!s || !s.points || s.points.length === 0) continue;
         ctx.strokeStyle = s.color;
         ctx.lineWidth = s.size;
         ctx.beginPath();
@@ -236,8 +237,9 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
     } catch { /* рисование никогда не должно ронять приложение */ }
   };
   const onStageUp = () => {
-    if (currentStrokeRef.current && currentStrokeRef.current.points.length > 0) {
-      setStrokes(s => [...s, currentStrokeRef.current!]);
+    const cur = currentStrokeRef.current;
+    if (cur && cur.points && cur.points.length > 0) {
+      setStrokes(s => [...s, cur]);
     }
     currentStrokeRef.current = null;
     drawingRef.current = false;
@@ -296,13 +298,7 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
     const img: HTMLImageElement | null =
       candidate && candidate.naturalWidth ? candidate :
       (display && display.naturalWidth ? display : null);
-    console.log("[PhotoEditor] apply", {
-      hasImgRef: !!candidate, imgRefW: candidate?.naturalWidth,
-      hasDisplay: !!display, displayW: display?.naturalWidth,
-      strokes: strokes.length, dcW: drawCanvasRef.current?.width,
-    });
     if (!img || !img.naturalWidth || !img.naturalHeight) {
-      console.warn("[PhotoEditor] no image ready — abort");
       return;
     }
     setProcessing(true);
@@ -411,6 +407,7 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
         for (const s of strokes) {
+          if (!s || !s.points || s.points.length === 0) continue;
           ctx.strokeStyle = s.color;
           ctx.lineWidth = Math.max(1, s.size * dcToSrc * outK);
           ctx.beginPath();
@@ -453,19 +450,6 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
           ctx.fillText(o.value, 0, 0);
         }
         ctx.restore();
-      }
-
-      // Диагностика: первая точка штриха и геометрия вывода
-      if (strokes.length && dc) {
-        const fp = strokes[0].points[0];
-        const dcToSrc = img.naturalWidth / dc.width;
-        console.log("[PhotoEditor] stroke geom", {
-          outW, outH, cw: Math.round(cw), ch: Math.round(ch),
-          sx, sy, dcW: dc.width, dcH: dc.height,
-          firstPoint: fp,
-          mappedX: fp ? Math.round((fp.x * dcToSrc - sx) * outK) : null,
-          mappedY: fp ? Math.round((fp.y * dcToSrc - sy) * outK) : null,
-        });
       }
 
       // 4) Экспорт. Сразу пробуем dataURL (синхронно, надёжно во всех браузерах).
