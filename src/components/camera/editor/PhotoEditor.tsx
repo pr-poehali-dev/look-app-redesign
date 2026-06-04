@@ -142,18 +142,20 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
   const redrawStrokes = useCallback(() => {
     const c = drawCanvasRef.current;
     if (!c) return;
-    const ctx = c.getContext("2d");
-    if (!ctx) return;
-    ctx.clearRect(0, 0, c.width, c.height);
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    for (const s of strokes) {
-      ctx.strokeStyle = s.color;
-      ctx.lineWidth = s.size;
-      ctx.beginPath();
-      s.points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
-      ctx.stroke();
-    }
+    try {
+      const ctx = c.getContext("2d");
+      if (!ctx) return;
+      ctx.clearRect(0, 0, c.width, c.height);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      for (const s of strokes) {
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth = s.size;
+        ctx.beginPath();
+        s.points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+        ctx.stroke();
+      }
+    } catch { /* ignore */ }
   }, [strokes]);
 
   useEffect(() => { redrawStrokes(); }, [strokes, redrawStrokes, imgLoaded]);
@@ -162,42 +164,62 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
     const c = drawCanvasRef.current;
     const img = imgRef.current;
     if (c && img && imgLoaded) {
-      c.width = img.naturalWidth;
-      c.height = img.naturalHeight;
+      // Ограничиваем размер холста, чтобы огромные фото не вызывали падение из-за нехватки памяти
+      const MAX_DIM = 1600;
+      const nw = img.naturalWidth || 1;
+      const nh = img.naturalHeight || 1;
+      const k = Math.min(1, MAX_DIM / Math.max(nw, nh));
+      c.width = Math.max(1, Math.round(nw * k));
+      c.height = Math.max(1, Math.round(nh * k));
       redrawStrokes();
     }
   }, [imgLoaded, redrawStrokes]);
 
   const onStageDown = (e: React.PointerEvent) => {
     if (tab !== "draw") return;
+    const c = drawCanvasRef.current;
+    if (!c) return;
+    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* ignore */ }
     drawingRef.current = true;
     const p = stageToCanvas(e.clientX, e.clientY);
-    const c = drawCanvasRef.current;
-    const scaledSize = c ? brushSize * (c.width / (stageRef.current?.clientWidth || c.width)) : brushSize;
+    const scaledSize = brushSize * (c.width / (stageRef.current?.clientWidth || c.width));
     currentStrokeRef.current = { color: brushColor, size: scaledSize, points: [p] };
   };
   const onStageMove = (e: React.PointerEvent) => {
     if (!drawingRef.current || !currentStrokeRef.current) return;
-    const p = stageToCanvas(e.clientX, e.clientY);
-    currentStrokeRef.current.points.push(p);
     const c = drawCanvasRef.current;
-    const ctx = c?.getContext("2d");
-    if (ctx && currentStrokeRef.current.points.length >= 2) {
-      const pts = currentStrokeRef.current.points;
-      ctx.strokeStyle = currentStrokeRef.current.color;
-      ctx.lineWidth = currentStrokeRef.current.size;
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      ctx.moveTo(pts[pts.length - 2].x, pts[pts.length - 2].y);
-      ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
-      ctx.stroke();
+    if (!c) return;
+    const p = stageToCanvas(e.clientX, e.clientY);
+    const pts = currentStrokeRef.current.points;
+    const last = pts[pts.length - 1];
+    // Не добавляем слишком близкие точки — защита от взрывного роста массива
+    if (last) {
+      const dx = p.x - last.x;
+      const dy = p.y - last.y;
+      if (dx * dx + dy * dy < 4) return;
     }
+    // Ограничиваем максимальное число точек в штрихе
+    if (pts.length > 5000) return;
+    pts.push(p);
+    try {
+      const ctx = c.getContext("2d");
+      if (ctx && pts.length >= 2) {
+        ctx.strokeStyle = currentStrokeRef.current.color;
+        ctx.lineWidth = currentStrokeRef.current.size;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.beginPath();
+        ctx.moveTo(pts[pts.length - 2].x, pts[pts.length - 2].y);
+        ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+        ctx.stroke();
+      }
+    } catch { /* рисование никогда не должно ронять приложение */ }
   };
   const onStageUp = () => {
-    if (currentStrokeRef.current) {
+    if (currentStrokeRef.current && currentStrokeRef.current.points.length > 0) {
       setStrokes(s => [...s, currentStrokeRef.current!]);
-      currentStrokeRef.current = null;
     }
+    currentStrokeRef.current = null;
     drawingRef.current = false;
   };
 
@@ -299,14 +321,16 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
       ctx.fillRect(0, 0, outW, outH);
     }
 
-    // strokes — drawn on canvas matching original image size; map crop+rotation
+    // strokes — холст рисования может быть уменьшен относительно оригинала, пересчитываем crop в его координаты
     const dc = drawCanvasRef.current;
     if (dc && strokes.length) {
+      const kx = dc.width / img.naturalWidth;
+      const ky = dc.height / img.naturalHeight;
       ctx.save();
       ctx.translate(outW / 2, outH / 2);
       ctx.rotate((rot * Math.PI) / 180);
       ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
-      ctx.drawImage(dc, sx, sy, sWidth, sHeight, -cw / 2, -ch / 2, cw, ch);
+      ctx.drawImage(dc, sx * kx, sy * ky, sWidth * kx, sHeight * ky, -cw / 2, -ch / 2, cw, ch);
       ctx.restore();
     }
 

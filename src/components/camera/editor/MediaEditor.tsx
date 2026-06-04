@@ -45,6 +45,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
   const [publishProgress, setPublishProgress] = useState<{ stage: "compress" | "upload" | "save"; percent: number } | null>(null);
   const [step, setStep] = useState<"edit" | "publish">("edit");
   const [showFileSheet, setShowFileSheet] = useState(false);
+  const pendingTemplateRef = useRef<string | null>(null);
   const capturedThumbRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -150,6 +151,22 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
     if (t.preset.filter !== undefined) setFilter(t.preset.filter);
     if (t.preset.layers) setLayers(t.preset.layers.map((l) => ({ ...l, id: Date.now() + Math.random() } as Layer)));
   };
+
+  // Выбор шаблона на стартовом экране: запоминаем и открываем выбор файла
+  const selectTemplateThenPick = (templateId: string) => {
+    pendingTemplateRef.current = templateId;
+    setShowFileSheet(true);
+  };
+
+  // Как только добавлен первый клип — применяем отложенный шаблон
+  useEffect(() => {
+    if (clips.length > 0 && pendingTemplateRef.current) {
+      applyTemplate(pendingTemplateRef.current);
+      setTab("templates");
+      pendingTemplateRef.current = null;
+    }
+     
+  }, [clips.length]);
 
   const handleMusicUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -386,6 +403,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
         cameraInputRef={cameraInputRef}
         onOpenSheet={() => setShowFileSheet(true)}
         onFilesAdd={addClips}
+        onSelectTemplate={selectTemplateThenPick}
       />
     );
   }

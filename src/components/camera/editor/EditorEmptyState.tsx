@@ -10,6 +10,7 @@ interface Props {
   cameraInputRef: RefObject<HTMLInputElement>;
   onOpenSheet: () => void;
   onFilesAdd: (files: FileList | null) => void;
+  onSelectTemplate: (templateId: string) => void;
 }
 
 const EditorEmptyState = ({
@@ -20,6 +21,7 @@ const EditorEmptyState = ({
   cameraInputRef,
   onOpenSheet,
   onFilesAdd,
+  onSelectTemplate,
 }: Props) => {
   return (
     <div className="absolute inset-0 z-50 bg-zinc-950 flex flex-col">
@@ -58,12 +60,20 @@ const EditorEmptyState = ({
         >
           <Icon name="Upload" size={18} /> Выбрать файлы
         </button>
-        <div className="grid grid-cols-3 gap-3 w-full max-w-md">
-          {TEMPLATES.slice(1, 4).map((t) => (
-            <div key={t.id} className="aspect-[9/16] bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-white/40 text-xs">
-              {t.name}
-            </div>
-          ))}
+        <div className="w-full max-w-md">
+          <p className="text-white/50 text-xs mb-2 text-center">Или начни с готового шаблона</p>
+          <div className="grid grid-cols-3 gap-3">
+            {TEMPLATES.slice(1, 4).map((t) => (
+              <button
+                key={t.id}
+                onClick={() => onSelectTemplate(t.id)}
+                className="aspect-[9/16] rounded-xl flex flex-col items-center justify-center gap-2 text-white text-sm font-semibold bg-gradient-to-br from-[#fe2c55]/30 to-[#8b5cf6]/30 border border-white/15 active:scale-95 transition-transform"
+              >
+                <Icon name="Sparkles" size={18} className="text-white/80" />
+                {t.name}
+              </button>
+            ))}
+          </div>
         </div>
         <p className="text-white/40 text-xs text-center">Можно выбрать несколько файлов — мы склеим их в один ролик.</p>
       </div>

@@ -47,7 +47,24 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const [commentText, setCommentText] = useState("");
   const [downloading, setDownloading] = useState(false);
   const [downloadDone, setDownloadDone] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [seeking, setSeeking] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  const fmtTime = (s: number) => {
+    if (!isFinite(s) || s < 0) s = 0;
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, "0")}`;
+  };
+
+  const handleSeek = (value: number) => {
+    const v = videoRef.current;
+    if (!v || !duration) return;
+    v.currentTime = (value / 100) * duration;
+    setCurrentTime(v.currentTime);
+  };
 
   // Thumbnail генерируется глобально через ThumbnailWorker (src/components/ThumbnailWorker.tsx)
 
@@ -139,6 +156,22 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
     }
   }, [isActive, paused]);
 
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const onTime = () => { if (!seeking) setCurrentTime(v.currentTime); };
+    const onMeta = () => setDuration(v.duration || 0);
+    v.addEventListener("timeupdate", onTime);
+    v.addEventListener("loadedmetadata", onMeta);
+    v.addEventListener("durationchange", onMeta);
+    if (v.duration) setDuration(v.duration);
+    return () => {
+      v.removeEventListener("timeupdate", onTime);
+      v.removeEventListener("loadedmetadata", onMeta);
+      v.removeEventListener("durationchange", onMeta);
+    };
+  }, [seeking, video.image, preloadLevel]);
+
   const handleVideoClick = () => {
     if (showComments) return;
     if (!videoRef.current) return;
@@ -202,6 +235,26 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           >
             <Icon name={muted ? "VolumeX" : "Volume2"} size={20} className="text-white" />
           </button>
+
+          {/* Полоса времени */}
+          <div
+            className="absolute bottom-2 left-0 right-0 z-30 px-3 flex items-center gap-2"
+            onClick={e => e.stopPropagation()}
+          >
+            <span className="text-white/80 text-[11px] tabular-nums w-9 text-right">{fmtTime(currentTime)}</span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={0.1}
+              value={duration ? (currentTime / duration) * 100 : 0}
+              onPointerDown={() => setSeeking(true)}
+              onPointerUp={() => setSeeking(false)}
+              onChange={e => handleSeek(Number(e.target.value))}
+              className="video-progress flex-1 h-1 accent-[#fe2c55] cursor-pointer"
+            />
+            <span className="text-white/80 text-[11px] tabular-nums w-9">{fmtTime(duration)}</span>
+          </div>
         </>
       ) : (
         <img
