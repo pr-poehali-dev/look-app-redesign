@@ -107,10 +107,23 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
   const dragRef = useRef<{ id: number; startX: number; startY: number; ox: number; oy: number } | null>(null);
 
   useEffect(() => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => { imgRef.current = img; setImgLoaded(true); };
-    img.src = src;
+    let cancelled = false;
+    const load = (useCors: boolean) => {
+      const img = new Image();
+      if (useCors) img.crossOrigin = "anonymous";
+      img.onload = () => {
+        if (cancelled) return;
+        imgRef.current = img;
+        setImgLoaded(true);
+      };
+      img.onerror = () => {
+        // Повторная попытка без CORS, если сервер не отдаёт заголовки
+        if (!cancelled && useCors) load(false);
+      };
+      img.src = src;
+    };
+    load(true);
+    return () => { cancelled = true; };
   }, [src]);
 
   const filterCss = useCallback(() => {
@@ -365,30 +378,24 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
         ctx.fillRect(0, 0, outW, outH);
       }
 
-      // strokes — рисуем напрямую из данных штрихов
+      // strokes — копируем напрямую с холста рисования (что нарисовано, то и сохранится).
+      // Холст dc уже выровнен по изображению (его размеры = naturalWidth*k × naturalHeight*k),
+      // поэтому переводим его координаты в систему вывода через crop (sx,sy) и масштаб outK.
       const dc = drawCanvasRef.current;
-      if (dc && strokes.length) {
-        const kx = (img.naturalWidth / dc.width) * outK;
-        const ky = (img.naturalHeight / dc.height) * outK;
+      if (dc && dc.width && strokes.length) {
+        const scaleX = (img.naturalWidth / dc.width);
+        const scaleY = (img.naturalHeight / dc.height);
         ctx.save();
         ctx.translate(outW / 2, outH / 2);
         ctx.rotate((rot * Math.PI) / 180);
         ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
-        ctx.translate(-cw / 2, -ch / 2);
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        for (const s of strokes) {
-          ctx.strokeStyle = s.color;
-          ctx.lineWidth = s.size * kx;
-          ctx.beginPath();
-          s.points.forEach((p, i) => {
-            const x = p.x * kx - sx * outK;
-            const y = p.y * ky - sy * outK;
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          });
-          ctx.stroke();
-        }
+        // переводим dc-пиксели → пиксели исходника (sx,sy) → масштаб вывода (outK)
+        // итоговая область кропа в dc-координатах:
+        const dsx = sx / scaleX;
+        const dsy = sy / scaleY;
+        const dsw = sWidth / scaleX;
+        const dsh = sHeight / scaleY;
+        ctx.drawImage(dc, dsx, dsy, dsw, dsh, -cw / 2, -ch / 2, cw, ch);
         ctx.restore();
       }
 

@@ -75,8 +75,8 @@
 
 /* === UI Theme switch (Look home) === */
 :root {
-  --look-bg: #0f4d2a; /* зелёный фон сайта (заметно зелёный, не чёрный) */
-  --look-sidebar-bg: #0a3a20;
+  --look-bg: #14723f; /* насыщенный зелёный фон сайта */
+  --look-sidebar-bg: #0f5c32;
   --look-fg: #ffffff;
   --look-accent: #1f6b3a; /* тёмно-зелёный акцент */
   --look-accent-fg: #ffffff;
@@ -87,6 +87,11 @@ html.theme-light {
   --look-fg: #0d2a18;
   --look-accent: #1f6b3a;
   --look-accent-fg: #ffffff;
+}
+html,
+body,
+#root {
+  background: var(--look-bg);
 }
 html.theme-light body {
   background: var(--look-bg);
