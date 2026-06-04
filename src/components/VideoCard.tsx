@@ -265,7 +265,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
           {/* Полоса времени */}
           <div
-            className="absolute bottom-2 left-0 right-0 z-30 px-3 flex items-center gap-2"
+            className="absolute left-0 right-0 z-30 px-3 flex items-center gap-2 bottom-[70px] md:bottom-3"
             onClick={e => e.stopPropagation()}
           >
             <span className="text-white/80 text-[11px] tabular-nums w-9 text-right">{fmtTime(currentTime)}</span>
@@ -301,7 +301,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
 
       {/* Bottom left info — внутри видео */}
-      <div className="absolute bottom-20 left-4 z-10" style={{ right: '80px' }}>
+      <div className="absolute bottom-28 md:bottom-20 left-4 z-10" style={{ right: '80px' }}>
         <div className="flex items-center gap-2 mb-3">
           <button
             onClick={() => window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: video.handle } }))}
@@ -347,7 +347,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       </div>
 
       {/* Right side actions — мобайл (внутри видео) */}
-      <div className="absolute right-3 bottom-24 flex flex-col items-center gap-5 z-30 md:hidden">
+      <div className="absolute right-3 bottom-32 flex flex-col items-center gap-5 z-30 md:hidden">
         {/* Avatar */}
         <button
           className="relative mb-2"

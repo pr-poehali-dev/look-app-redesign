@@ -273,6 +273,8 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
     const img = imgRef.current;
     if (!img) return;
     setProcessing(true);
+    // Двойной rAF + пауза, чтобы спиннер успел отрисоваться до тяжёлой синхронной работы
+    await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())));
     await new Promise(r => setTimeout(r, 30));
 
     const rot = ((rotation % 360) + 360) % 360;
@@ -312,12 +314,21 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
     const ctx = canvas.getContext("2d");
     if (!ctx) { setProcessing(false); return; }
 
+    // Сначала уменьшаем исходник в промежуточный холст БЕЗ фильтра.
+    // Применять CSS-фильтр к огромному исходнику — самая тяжёлая операция, она и вешает браузер.
+    const tmp = document.createElement("canvas");
+    tmp.width = Math.max(1, Math.round(cw));
+    tmp.height = Math.max(1, Math.round(ch));
+    const tctx = tmp.getContext("2d");
+    if (!tctx) { setProcessing(false); return; }
+    tctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, tmp.width, tmp.height);
+
     ctx.save();
     ctx.filter = filterCss() || "none";
     ctx.translate(outW / 2, outH / 2);
     ctx.rotate((rot * Math.PI) / 180);
     ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
-    ctx.drawImage(img, sx, sy, sWidth, sHeight, -cw / 2, -ch / 2, cw, ch);
+    ctx.drawImage(tmp, 0, 0, tmp.width, tmp.height, -cw / 2, -ch / 2, cw, ch);
     ctx.restore();
 
     // vignette
