@@ -295,8 +295,16 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
       cw = sWidth; ch = sHeight;
     }
 
-    const outW = swap ? ch : cw;
-    const outH = swap ? cw : ch;
+    let outW = swap ? ch : cw;
+    let outH = swap ? cw : ch;
+
+    // Ограничиваем итоговый размер, чтобы toBlob не вешал браузер на огромных фото
+    const MAX_OUT = 2048;
+    const outK = Math.min(1, MAX_OUT / Math.max(outW, outH));
+    outW = Math.max(1, Math.round(outW * outK));
+    outH = Math.max(1, Math.round(outH * outK));
+    cw = cw * outK;
+    ch = ch * outK;
 
     const canvas = document.createElement("canvas");
     canvas.width = outW;
@@ -326,14 +334,15 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
     if (dc && strokes.length) {
       // координаты штрихов хранятся в системе холста рисования (dc.width x dc.height),
       // переводим их в координаты оригинального изображения
-      const kx = img.naturalWidth / dc.width;
-      const ky = img.naturalHeight / dc.height;
+      // переводим координаты штрихов в систему уменьшенного итогового изображения
+      const kx = (img.naturalWidth / dc.width) * outK;
+      const ky = (img.naturalHeight / dc.height) * outK;
       ctx.save();
       ctx.filter = "none";
       ctx.translate(outW / 2, outH / 2);
       ctx.rotate((rot * Math.PI) / 180);
       ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
-      // переходим в систему координат исходного изображения с учётом кропа
+      // переходим в систему координат итогового изображения с учётом кропа
       ctx.translate(-cw / 2, -ch / 2);
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
@@ -342,8 +351,8 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
         ctx.lineWidth = s.size * kx;
         ctx.beginPath();
         s.points.forEach((p, i) => {
-          const x = p.x * kx - sx;
-          const y = p.y * ky - sy;
+          const x = p.x * kx - sx * outK;
+          const y = p.y * ky - sy * outK;
           if (i === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         });
@@ -381,13 +390,42 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
       ctx.restore();
     }
 
-    canvas.toBlob((blob) => {
-      if (!blob) { setProcessing(false); return; }
-      const file = new File([blob], `edited-${Date.now()}.jpg`, { type: "image/jpeg" });
-      const url = URL.createObjectURL(blob);
+    let finished = false;
+    const finish = (file: File, url: string) => {
+      if (finished) return;
+      finished = true;
       setProcessing(false);
       onApply(file, url);
-    }, "image/jpeg", 0.92);
+    };
+
+    // Фолбэк через dataURL, если toBlob завис или вернул null
+    const fallback = () => {
+      try {
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+        const bin = atob(dataUrl.split(",")[1]);
+        const arr = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        const blob = new Blob([arr], { type: "image/jpeg" });
+        const file = new File([blob], `edited-${Date.now()}.jpg`, { type: "image/jpeg" });
+        finish(file, URL.createObjectURL(blob));
+      } catch {
+        setProcessing(false);
+      }
+    };
+
+    const timer = setTimeout(() => { if (!finished) fallback(); }, 4000);
+
+    try {
+      canvas.toBlob((blob) => {
+        clearTimeout(timer);
+        if (!blob) { fallback(); return; }
+        const file = new File([blob], `edited-${Date.now()}.jpg`, { type: "image/jpeg" });
+        finish(file, URL.createObjectURL(blob));
+      }, "image/jpeg", 0.9);
+    } catch {
+      clearTimeout(timer);
+      fallback();
+    }
   };
 
   const activeObj = overlays.find(o => o.id === activeOverlay) || null;

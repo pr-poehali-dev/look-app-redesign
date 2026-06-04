@@ -15,6 +15,7 @@ export interface UserVideo {
   likes?: string;
   comments?: string;
   shares?: string;
+  is_repost?: boolean;
 }
 
 export interface UploadOptions {
@@ -26,6 +27,7 @@ export interface UploadOptions {
 interface UserMediaContextType {
   userVideos: UserVideo[];
   addMedia: (file: File, opts?: UploadOptions) => Promise<void>;
+  repostMedia: (videoId: number) => Promise<boolean>;
   removeMedia: (id: number) => void;
   refreshMedia: () => Promise<void>;
   loading: boolean;
@@ -108,6 +110,22 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
     setMediaVersion(v => v + 1);
   };
 
+  const repostMedia = async (videoId: number): Promise<boolean> => {
+    try {
+      const res = await fetch(USER_VIDEOS_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "repost", id: videoId, token, user_id: userId }),
+      });
+      const raw = await res.json();
+      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      await refreshMedia();
+      return !!data.reposted;
+    } catch {
+      return false;
+    }
+  };
+
   const removeMedia = (id: number) => {
     setUserVideos(s => s.filter(x => x.id !== id));
     setRemovedIds(s => {
@@ -126,7 +144,7 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
   };
 
   return (
-    <UserMediaContext.Provider value={{ userVideos, addMedia, removeMedia, refreshMedia, loading, removedIds, mediaVersion }}>
+    <UserMediaContext.Provider value={{ userVideos, addMedia, repostMedia, removeMedia, refreshMedia, loading, removedIds, mediaVersion }}>
       {children}
     </UserMediaContext.Provider>
   );

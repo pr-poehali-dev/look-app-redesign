@@ -6,6 +6,8 @@ import { useComments } from "@/hooks/useComments";
 import { useLikes } from "@/hooks/useLikes";
 import { useSavedItem } from "@/hooks/useSaved";
 import { useFollowing } from "@/hooks/useFollowing";
+import { useUserMedia } from "@/context/UserMediaContext";
+import { useAuth } from "@/context/AuthContext";
 import ReportButton from "@/components/ReportButton";
 
 export interface VideoData {
@@ -38,6 +40,21 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
     handle: video.handle,
   });
   const { following, toggle: toggleFollow } = useFollowing(video.handle);
+  const { repostMedia } = useUserMedia();
+  const { user } = useAuth();
+  const [reposting, setReposting] = useState(false);
+  const [reposted, setReposted] = useState(false);
+
+  const handleRepost = async () => {
+    if (reposting) return;
+    if (!user) { alert("Войди в аккаунт, чтобы делать репосты"); return; }
+    const targetId = video.dbId ?? video.id;
+    setReposting(true);
+    const ok = await repostMedia(targetId);
+    setReposting(false);
+    setReposted(ok);
+    setTimeout(() => { setReposted(false); setShowShare(false); }, 1200);
+  };
   const [paused, setPaused] = useState(false);
   const [showPauseIcon, setShowPauseIcon] = useState(false);
   const [muted, setMuted] = useState(true);
@@ -49,6 +66,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const [downloadDone, setDownloadDone] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [buffered, setBuffered] = useState(0);
   const [seeking, setSeeking] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -159,14 +177,23 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    const onTime = () => { if (!seeking) setCurrentTime(v.currentTime); };
-    const onMeta = () => setDuration(v.duration || 0);
+    const updateBuffered = () => {
+      try {
+        if (v.buffered.length && v.duration) {
+          setBuffered(v.buffered.end(v.buffered.length - 1) / v.duration * 100);
+        }
+      } catch { /* ignore */ }
+    };
+    const onTime = () => { if (!seeking) setCurrentTime(v.currentTime); updateBuffered(); };
+    const onMeta = () => { setDuration(v.duration || 0); updateBuffered(); };
     v.addEventListener("timeupdate", onTime);
+    v.addEventListener("progress", updateBuffered);
     v.addEventListener("loadedmetadata", onMeta);
     v.addEventListener("durationchange", onMeta);
     if (v.duration) setDuration(v.duration);
     return () => {
       v.removeEventListener("timeupdate", onTime);
+      v.removeEventListener("progress", updateBuffered);
       v.removeEventListener("loadedmetadata", onMeta);
       v.removeEventListener("durationchange", onMeta);
     };
@@ -242,17 +269,25 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             onClick={e => e.stopPropagation()}
           >
             <span className="text-white/80 text-[11px] tabular-nums w-9 text-right">{fmtTime(currentTime)}</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={0.1}
-              value={duration ? (currentTime / duration) * 100 : 0}
-              onPointerDown={() => setSeeking(true)}
-              onPointerUp={() => setSeeking(false)}
-              onChange={e => handleSeek(Number(e.target.value))}
-              className="video-progress flex-1 h-1 accent-[#fe2c55] cursor-pointer"
-            />
+            <div className="relative flex-1 flex items-center h-4">
+              {/* фон дорожки */}
+              <div className="absolute left-0 right-0 h-1 rounded-full bg-white/25" />
+              {/* буферизация (сколько загрузилось) */}
+              <div className="absolute left-0 h-1 rounded-full bg-white/50" style={{ width: `${Math.min(100, buffered)}%` }} />
+              {/* воспроизведено */}
+              <div className="absolute left-0 h-1 rounded-full bg-[#fe2c55]" style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }} />
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={0.1}
+                value={duration ? (currentTime / duration) * 100 : 0}
+                onPointerDown={() => setSeeking(true)}
+                onPointerUp={() => setSeeking(false)}
+                onChange={e => handleSeek(Number(e.target.value))}
+                className="video-progress relative w-full h-4 cursor-pointer bg-transparent"
+              />
+            </div>
             <span className="text-white/80 text-[11px] tabular-nums w-9">{fmtTime(duration)}</span>
           </div>
         </>
@@ -561,6 +596,21 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
                 </a>
               ))}
             </div>
+
+            {/* Repost */}
+            <button
+              onClick={handleRepost}
+              disabled={reposting}
+              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3 disabled:opacity-60"
+            >
+              <div className="w-10 h-10 rounded-xl bg-[#fe2c55]/20 flex items-center justify-center flex-shrink-0">
+                <Icon name={reposted ? "Check" : "Repeat2"} size={20} className={reposted ? "text-green-400" : "text-[#fe2c55]"} />
+              </div>
+              <div className="text-left">
+                <p className="text-white text-sm font-medium">{reposted ? "Готово!" : reposting ? "Репостим…" : "Репост к себе"}</p>
+                <p className="text-white/40 text-xs">Видео появится в твоём профиле</p>
+              </div>
+            </button>
 
             {/* Copy link */}
             <button

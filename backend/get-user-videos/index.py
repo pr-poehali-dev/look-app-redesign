@@ -374,6 +374,45 @@ def handler(event: dict, context) -> dict:
                 cur.close(); conn.close()
             return ok({'deleted': len(rows)})
 
+        # репост чужого видео — появляется в профиле пользователя
+        if action == 'repost':
+            video_id = body.get('id') or body.get('video_id')
+            token = body.get('token') or ''
+            user_id = body.get('user_id') or ''
+            if not video_id:
+                return err('id обязателен')
+            try:
+                video_id = int(video_id)
+            except (ValueError, TypeError):
+                return err('Некорректный id')
+            conn = get_conn(); cur = conn.cursor()
+            try:
+                if token:
+                    cur.execute("SELECT id FROM app_users WHERE token=%s", (token,))
+                    urow = cur.fetchone()
+                    if not urow:
+                        return err('Токен недействителен', 401)
+                    uid = urow[0]
+                elif user_id:
+                    uid = user_id
+                else:
+                    return err('token или user_id обязательны', 401)
+                cur.execute("SELECT id FROM videos WHERE id=%s", (video_id,))
+                if not cur.fetchone():
+                    return err('Видео не найдено', 404)
+                cur.execute("SELECT id FROM reposts WHERE original_video_id=%s AND user_id=%s", (video_id, uid))
+                if cur.fetchone():
+                    cur.execute("DELETE FROM reposts WHERE original_video_id=%s AND user_id=%s", (video_id, uid))
+                    cur.execute("UPDATE videos SET shares=GREATEST(COALESCE(shares,0)-1,0) WHERE id=%s", (video_id,))
+                    conn.commit()
+                    return ok({'ok': True, 'reposted': False})
+                cur.execute("INSERT INTO reposts (original_video_id, user_id) VALUES (%s,%s)", (video_id, uid))
+                cur.execute("UPDATE videos SET shares=COALESCE(shares,0)+1 WHERE id=%s", (video_id,))
+                conn.commit()
+            finally:
+                cur.close(); conn.close()
+            return ok({'ok': True, 'reposted': True})
+
         # смена категории видео
         if action == 'update_category':
             video_id = body.get('id')
@@ -451,9 +490,14 @@ def handler(event: dict, context) -> dict:
     conn = get_conn(); cur = conn.cursor()
     try:
         cur.execute(
-            "SELECT id,url,type,created_at,description,hashtags,author,handle,likes,comments,shares,thumbnail,category "
-            "FROM videos WHERE user_id=%s ORDER BY created_at DESC LIMIT 100",
-            (user_id,)
+            "SELECT id,url,type,created_at,description,hashtags,author,handle,likes,comments,shares,thumbnail,category, FALSE AS is_repost "
+            "FROM videos WHERE user_id=%s "
+            "UNION ALL "
+            "SELECT v.id,v.url,v.type,r.created_at,v.description,v.hashtags,v.author,v.handle,v.likes,v.comments,v.shares,v.thumbnail,v.category, TRUE AS is_repost "
+            "FROM reposts r JOIN videos v ON v.id=r.original_video_id "
+            "WHERE r.user_id=%s AND (v.hidden IS NULL OR v.hidden=FALSE) "
+            "ORDER BY created_at DESC LIMIT 100",
+            (user_id, user_id)
         )
         rows = cur.fetchall()
     finally:
@@ -472,4 +516,5 @@ def handler(event: dict, context) -> dict:
         'shares': str(r[10]) if r[10] is not None else '0',
         'thumbnail': r[11],
         'category': r[12] or '',
+        'is_repost': bool(r[13]),
     } for r in rows]})

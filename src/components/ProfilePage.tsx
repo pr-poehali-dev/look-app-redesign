@@ -650,6 +650,12 @@ const ProfilePage = () => {
                       <Icon name="Play" size={18} className="text-white ml-0.5" />
                     </div>
                   </div>
+                  {item.is_repost && (
+                    <div className="absolute top-1 right-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#fe2c55]">
+                      <Icon name="Repeat2" size={10} className="text-white" />
+                      <span className="text-white text-[8px] font-semibold">Репост</span>
+                    </div>
+                  )}
                   <button
                     onClick={(e) => { e.stopPropagation(); setCategoryEditId(item.id); }}
                     className="absolute bottom-1 left-1 right-1 flex items-center gap-1 px-2 py-1 rounded-md bg-black/55 backdrop-blur"

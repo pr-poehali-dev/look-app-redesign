@@ -72,6 +72,15 @@
       "body": {"action": "qr_approve", "code": "any", "token": "bad_token_xyz"},
       "expectedStatus": 401,
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Repost missing id",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "repost", "user_id": "anonymous"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "id обязателен"},
+      "bodyMatcher": "partial"
     }
   ]
 }
