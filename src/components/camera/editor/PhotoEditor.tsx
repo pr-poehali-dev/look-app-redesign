@@ -99,6 +99,7 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
   const [processing, setProcessing] = useState(false);
 
   const imgRef = useRef<HTMLImageElement | null>(null);
+  const displayImgRef = useRef<HTMLImageElement | null>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const drawCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -173,20 +174,26 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
 
   useEffect(() => { redrawStrokes(); }, [strokes, redrawStrokes, imgLoaded]);
 
+  // Устанавливаем размер холста ОДИН раз при загрузке изображения.
+  // Менять canvas.width позже нельзя — это очищает уже нарисованное.
   useEffect(() => {
     const c = drawCanvasRef.current;
-    const img = imgRef.current;
-    if (c && img && imgLoaded) {
-      // Ограничиваем размер холста, чтобы огромные фото не вызывали падение из-за нехватки памяти
+    const img = imgRef.current || displayImgRef.current;
+    if (c && img && imgLoaded && (img.naturalWidth || 0) > 0) {
       const MAX_DIM = 1600;
       const nw = img.naturalWidth || 1;
       const nh = img.naturalHeight || 1;
       const k = Math.min(1, MAX_DIM / Math.max(nw, nh));
-      c.width = Math.max(1, Math.round(nw * k));
-      c.height = Math.max(1, Math.round(nh * k));
+      const w = Math.max(1, Math.round(nw * k));
+      const h = Math.max(1, Math.round(nh * k));
+      if (c.width !== w || c.height !== h) {
+        c.width = w;
+        c.height = h;
+      }
       redrawStrokes();
     }
-  }, [imgLoaded, redrawStrokes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imgLoaded]);
 
   const onStageDown = (e: React.PointerEvent) => {
     if (tab !== "draw") return;
@@ -283,8 +290,21 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
 
   // ---- render to file ----
   const handleApply = async () => {
-    const img = imgRef.current;
-    if (!img || !img.naturalWidth || !img.naturalHeight) return;
+    // Используем загруженное изображение (imgRef) либо то, что реально показано на экране (displayImgRef).
+    const candidate = imgRef.current;
+    const display = displayImgRef.current;
+    const img: HTMLImageElement | null =
+      candidate && candidate.naturalWidth ? candidate :
+      (display && display.naturalWidth ? display : null);
+    console.log("[PhotoEditor] apply", {
+      hasImgRef: !!candidate, imgRefW: candidate?.naturalWidth,
+      hasDisplay: !!display, displayW: display?.naturalWidth,
+      strokes: strokes.length, dcW: drawCanvasRef.current?.width,
+    });
+    if (!img || !img.naturalWidth || !img.naturalHeight) {
+      console.warn("[PhotoEditor] no image ready — abort");
+      return;
+    }
     setProcessing(true);
     // Пауза, чтобы спиннер успел отрисоваться. setTimeout надёжнее rAF
     // (rAF может «зависнуть», если вкладка/слой не отрисовывается).
@@ -491,6 +511,7 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
           >
             {imgLoaded && (
               <img
+                ref={displayImgRef}
                 src={src}
                 alt="edit"
                 className="block max-w-[90vw] max-h-[55vh] object-contain pointer-events-none"
