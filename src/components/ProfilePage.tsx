@@ -286,7 +286,7 @@ const VIDEO_CATEGORIES = [
 const categoryLabel = (id?: string) => VIDEO_CATEGORIES.find(c => c.id === id)?.label || "Без категории";
 
 const ProfilePage = () => {
-  const [tab, setTab] = useState<"videos" | "posts">("videos");
+  const [tab, setTab] = useState<"videos" | "posts" | "reposts">("videos");
   const [showSettings, setShowSettings] = useState(false);
   const [showScreen, setShowScreen] = useState<"followers" | "following" | null>(null);
   const { userVideos: stories, removeMedia, addMedia, refreshMedia } = useUserMedia();
@@ -618,11 +618,21 @@ const ProfilePage = () => {
             <Icon name="LayoutGrid" size={16} className={tab === "posts" ? "text-white" : "text-gray-400"} />
           </div>
         </button>
+        <button
+          onClick={() => setTab("reposts")}
+          className={`flex-1 flex items-center justify-center py-3 md:py-2 border-b-2 transition-all ${
+            tab === "reposts" ? "border-[#8b5cf6]" : "border-transparent"
+          }`}
+        >
+          <div className={`w-8 h-8 md:w-7 md:h-7 rounded-lg flex items-center justify-center ${tab === "reposts" ? "bg-[#8b5cf6]" : "bg-gray-200"}`}>
+            <Icon name="Repeat2" size={16} className={tab === "reposts" ? "text-white" : "text-gray-400"} />
+          </div>
+        </button>
       </div>
 
       {tab === "videos" ? (
         (() => {
-          const videos = stories.filter(s => s.type === "video");
+          const videos = stories.filter(s => s.type === "video" && !s.is_repost);
           return videos.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
               <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
@@ -668,9 +678,9 @@ const ProfilePage = () => {
             </div>
           );
         })()
-      ) : (
+      ) : tab === "posts" ? (
         (() => {
-          const photos = stories.filter(s => s.type === "image");
+          const photos = stories.filter(s => s.type === "image" && !s.is_repost);
           return photos.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
               <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
@@ -683,6 +693,53 @@ const ProfilePage = () => {
               {photos.map((item, i) => (
                 <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200 cursor-pointer" onClick={() => setMediaViewer({ tab: "image", index: i })}>
                   <img src={item.url} alt="" className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          );
+        })()
+      ) : (
+        (() => {
+          const reposts = stories.filter(s => s.is_repost);
+          return reposts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                <Icon name="Repeat2" size={28} className="text-gray-300" />
+              </div>
+              <p className="text-sm text-gray-400">Нет репостов</p>
+              <p className="text-xs text-gray-400/70 text-center px-8">Нажми «Репост к себе» под чужим видео — оно появится здесь</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-px bg-gray-100">
+              {reposts.map((item) => (
+                <div
+                  key={item.id}
+                  className="relative aspect-square overflow-hidden cursor-pointer"
+                  style={{ background: "linear-gradient(135deg, #0a2e1a 0%, #1a1a1a 100%)" }}
+                >
+                  {(item.thumb || item.thumbnail) ? (
+                    <img src={item.thumb || item.thumbnail} alt="" className="w-full h-full object-cover" />
+                  ) : item.type === "image" ? (
+                    <img src={item.url} alt="" className="w-full h-full object-cover" />
+                  ) : item.url ? (
+                    <video src={`${item.url}#t=0.1`} className="w-full h-full object-cover pointer-events-none" muted playsInline preload="metadata" />
+                  ) : null}
+                  {item.type === "video" && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="bg-black/50 rounded-full p-2.5 md:p-2">
+                        <Icon name="Play" size={18} className="text-white ml-0.5" />
+                      </div>
+                    </div>
+                  )}
+                  <div className="absolute top-1 right-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#fe2c55]">
+                    <Icon name="Repeat2" size={10} className="text-white" />
+                    <span className="text-white text-[8px] font-semibold">Репост</span>
+                  </div>
+                  {item.handle && (
+                    <div className="absolute bottom-1 left-1 right-1 px-2 py-1 rounded-md bg-black/55 backdrop-blur">
+                      <span className="text-white text-[10px] font-medium truncate block">@{item.handle}</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

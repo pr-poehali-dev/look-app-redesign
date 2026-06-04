@@ -166,6 +166,13 @@ video.bg-black,
 .text-gray-500 {
   color: color-mix(in srgb, var(--look-fg) 55%, transparent 45%) !important;
 }
+/* Тёмно-серый текст (gray-600/700/800/900) на фоне темы — делаем читаемым */
+.text-gray-600,
+.text-gray-700,
+.text-gray-800,
+.text-gray-900 {
+  color: color-mix(in srgb, var(--look-fg) 85%, transparent 15%) !important;
+}
 /* Инпуты на фоне темы */
 input,
 textarea {
