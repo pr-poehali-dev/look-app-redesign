@@ -57,6 +57,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   };
   const [paused, setPaused] = useState(false);
   const [showPauseIcon, setShowPauseIcon] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [muted, setMuted] = useState(true);
   const [showComments, setShowComments] = useState(false);
   const [showShare, setShowShare] = useState(false);
@@ -327,14 +328,25 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         </div>
         {video.description && (() => {
           const parts = video.description.split(/(#\S+)/g);
+          const isLong = video.description.length > 80;
           return (
-            <p className="text-white text-sm leading-snug mb-3 line-clamp-2">
-              {parts.map((part, i) =>
-                part.startsWith('#')
-                  ? <span key={i} className="text-[#61d4f0] font-medium">{part}</span>
-                  : part
+            <div className="mb-3">
+              <p className={`text-white text-sm leading-snug ${expanded ? "" : "line-clamp-2"}`}>
+                {parts.map((part, i) =>
+                  part.startsWith('#')
+                    ? <span key={i} className="text-[#61d4f0] font-medium">{part}</span>
+                    : part
+                )}
+              </p>
+              {isLong && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setExpanded(v => !v); }}
+                  className="text-white/60 text-sm font-semibold mt-0.5 active:opacity-70"
+                >
+                  {expanded ? "свернуть" : "ещё"}
+                </button>
               )}
-            </p>
+            </div>
           );
         })()}
         <div className="flex items-center gap-2">
