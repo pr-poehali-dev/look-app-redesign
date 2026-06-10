@@ -25,9 +25,9 @@ const FEATURES = [
   { icon: "Users", title: "Сообщества", desc: "Находи единомышленников по интересам — от музыки до спорта" },
   { icon: "Radio", title: "Прямые эфиры", desc: "Веди стримы, общайся в реальном времени и собирай аудиторию" },
   { icon: "MessageCircle", title: "Чаты и звонки", desc: "Общайся приватно или в группах — голос, видео, сообщения" },
-  { icon: "Clapperboard", title: "Видео редактор", desc: "Монтируй ролики, обрезай, добавляй музыку и переходы" },
-  { icon: "ImagePlus", title: "Фото редактор", desc: "Накладывай фильтры, ретушируй и оформляй снимки" },
-  { icon: "LayoutTemplate", title: "Конструктор", desc: "Собирай посты и истории из готовых блоков и шаблонов" },
+  { icon: "Clapperboard", title: "Видео редактор", desc: "Монтируй ролики, обрезай, добавляй музыку и переходы", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/6b4d29f0-ffee-4ef3-b4b7-801ad103ab6a.jpg" },
+  { icon: "ImagePlus", title: "Фото редактор", desc: "Накладывай фильтры, ретушируй и оформляй снимки", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/19644308-1a86-4207-b5d3-47ceb1a3f651.jpg" },
+  { icon: "LayoutTemplate", title: "Конструктор", desc: "Собирай посты и истории из готовых блоков и шаблонов", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/3252970f-c696-449c-885e-2ccd2b8253b7.jpg" },
 ];
 
 const Landing = ({ onLogin, onRegister }: LandingProps) => {
@@ -147,6 +147,11 @@ const Landing = ({ onLogin, onRegister }: LandingProps) => {
                 key={f.title}
                 className="p-5 rounded-3xl bg-white/5 backdrop-blur border border-white/10 hover:bg-white/10 transition-colors"
               >
+                {"img" in f && f.img && (
+                  <div className="aspect-[4/3] rounded-2xl overflow-hidden mb-4 ring-1 ring-white/10">
+                    <img src={f.img} alt={f.title} loading="lazy" className="w-full h-full object-cover" />
+                  </div>
+                )}
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#22e0a1] to-[#22d3ee] flex items-center justify-center mb-4">
                   <Icon name={f.icon as "Video"} size={22} className="text-black" />
                 </div>
