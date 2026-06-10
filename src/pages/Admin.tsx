@@ -122,11 +122,17 @@ export default function Admin() {
   );
 }
 
+const SUPPORT_EMAIL = "support@visov.ru";
+
 function Login({ onLogin }: { onLogin: (token: string) => void }) {
-  const [login, setLogin] = useState("");
+  const [login, setLogin] = useState(SUPPORT_EMAIL);
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
+  const [forgot, setForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState(SUPPORT_EMAIL);
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,6 +144,72 @@ function Login({ onLogin }: { onLogin: (token: string) => void }) {
       setErr(e instanceof Error ? e.message : "Ошибка");
     } finally { setLoading(false); }
   };
+
+  const submitForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    try {
+      await api("forgot_password", { email: forgotEmail.trim() });
+    } catch { /* молча — не раскрываем детали */ }
+    setForgotLoading(false);
+    setForgotSent(true);
+  };
+
+  if (forgot) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+        <form onSubmit={submitForgot} className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 space-y-4">
+          <div className="flex flex-col items-center gap-3 mb-2">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center">
+              <Icon name="KeyRound" size={26} className="text-white" />
+            </div>
+            <div className="text-center">
+              <p className="text-white font-bold text-lg">Восстановление пароля</p>
+              <p className="text-white/40 text-xs">Инструкция придёт на почту администратора</p>
+            </div>
+          </div>
+          {forgotSent ? (
+            <div className="text-center space-y-3">
+              <div className="flex items-center justify-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3">
+                <Icon name="MailCheck" size={18} className="text-emerald-400" />
+                <span className="text-emerald-300 text-sm">Запрос отправлен на {SUPPORT_EMAIL}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setForgot(false); setForgotSent(false); }}
+                className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-white font-semibold"
+              >
+                Назад ко входу
+              </button>
+            </div>
+          ) : (
+            <>
+              <input
+                autoFocus
+                type="email"
+                value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)}
+                placeholder="Email администратора"
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-[#fe2c55]"
+              />
+              <button
+                type="submit" disabled={forgotLoading || !forgotEmail.trim()}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold disabled:opacity-50"
+              >
+                {forgotLoading ? "Отправляем..." : "Отправить инструкцию"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setForgot(false)}
+                className="w-full text-white/40 text-sm font-medium"
+              >
+                Назад ко входу
+              </button>
+            </>
+          )}
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
@@ -153,8 +225,9 @@ function Login({ onLogin }: { onLogin: (token: string) => void }) {
         </div>
         <input
           autoFocus
+          type="email"
           value={login} onChange={(e) => setLogin(e.target.value)}
-          placeholder="Логин"
+          placeholder="support@visov.ru"
           className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-[#fe2c55]"
         />
         <input
@@ -169,6 +242,13 @@ function Login({ onLogin }: { onLogin: (token: string) => void }) {
           className="w-full py-3 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold disabled:opacity-50"
         >
           {loading ? "Входим..." : "Войти"}
+        </button>
+        <button
+          type="button"
+          onClick={() => { setForgot(true); setForgotSent(false); setForgotEmail(login || SUPPORT_EMAIL); }}
+          className="w-full text-center text-white/40 text-sm font-medium hover:text-white/70 transition"
+        >
+          Забыли пароль?
         </button>
       </form>
     </div>

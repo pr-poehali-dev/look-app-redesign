@@ -19,6 +19,15 @@
       "method": "OPTIONS",
       "path": "/",
       "expectedStatus": 200
+    },
+    {
+      "name": "Forgot password returns ok without token",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "forgot_password", "email": "support@visov.ru"},
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
     }
   ]
 }

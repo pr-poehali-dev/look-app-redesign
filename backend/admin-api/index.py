@@ -95,6 +95,56 @@ def _esc_like(s: str) -> str:
     return s.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
 
 
+def _send_admin_reset_request(to_email: str, requested_by: str) -> bool:
+    """Отправляет уведомление о запросе сброса пароля админки на почту поддержки."""
+    import smtplib
+    import ssl
+    from email.mime.text import MIMEText
+    from email.utils import formataddr
+
+    host = os.environ.get('SMTP_HOST', '').strip()
+    user = os.environ.get('SMTP_USER', '').strip()
+    password = os.environ.get('SMTP_PASSWORD', '')
+    if not host or not user or not password:
+        return False
+    try:
+        port = int(os.environ.get('SMTP_PORT', '465') or '465')
+    except ValueError:
+        port = 465
+    from_name = os.environ.get('SMTP_FROM_NAME', '').strip() or 'Look Admin'
+
+    subject = 'Запрос на сброс пароля админ-панели'
+    html_body = (
+        '<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#111">'
+        '<h2 style="margin:0 0 12px">Запрос на сброс пароля админ-панели</h2>'
+        f'<p style="margin:0 0 8px">Указанная почта: <b>{requested_by or "—"}</b></p>'
+        f'<p style="margin:0 0 8px;color:#666">Время: {int(time.time())}</p>'
+        '<p style="margin:16px 0 0;color:#999;font-size:13px">Если это были не вы — проигнорируйте письмо.</p>'
+        '</div>'
+    )
+
+    msg = MIMEText(html_body, 'html', 'utf-8')
+    msg['Subject'] = subject
+    msg['From'] = formataddr((from_name, user))
+    msg['To'] = to_email
+    msg.set_type('text/html')
+
+    try:
+        ctx = ssl.create_default_context()
+        if port == 465:
+            with smtplib.SMTP_SSL(host, port, context=ctx, timeout=20) as srv:
+                srv.login(user, password)
+                srv.sendmail(user, [to_email], msg.as_string())
+        else:
+            with smtplib.SMTP(host, port, timeout=20) as srv:
+                srv.ehlo(); srv.starttls(context=ctx); srv.ehlo()
+                srv.login(user, password)
+                srv.sendmail(user, [to_email], msg.as_string())
+        return True
+    except Exception:
+        return False
+
+
 def handler(event: dict, context) -> dict:
     method = event.get('httpMethod', 'GET')
     if method == 'OPTIONS':
@@ -149,6 +199,15 @@ def handler(event: dict, context) -> dict:
                     'body': json.dumps({'error': 'Неверный логин или пароль'})}
         return {'statusCode': 200, 'headers': _cors(),
                 'body': json.dumps({'ok': True, 'token': _make_token(login)})}
+
+    # Восстановление пароля админа — без токена. Уведомление уходит на почту поддержки.
+    if action == 'forgot_password':
+        req_email = (body.get('email') or '').strip()[:200]
+        support_email = os.environ.get('SUPPORT_EMAIL', 'support@visov.ru')
+        _send_admin_reset_request(support_email, req_email)
+        # Всегда отвечаем ok, чтобы не раскрывать существование почты
+        return {'statusCode': 200, 'headers': _cors(),
+                'body': json.dumps({'ok': True})}
 
     # Публичные настройки (политика, условия) — без токена
     if action == 'settings_public_get':
