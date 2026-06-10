@@ -341,13 +341,13 @@ const AppContent = () => {
     return <QrLoginScreen onBack={() => setShowQrLogin(false)} />;
   }
 
-  const isAdminRoute = typeof window !== "undefined" && window.location.pathname.startsWith("/Olesya.Pavel.Nastya");
+  const isAdminRoute = typeof window !== "undefined" && window.location.pathname.startsWith("/Olesya_Pavel_Nastya");
   if (isAdminRoute) {
     return (
       <BrowserRouter>
         <Routes>
-          <Route path="/Olesya.Pavel.Nastya" element={<Admin />} />
-          <Route path="/Olesya.Pavel.Nastya/*" element={<Admin />} />
+          <Route path="/Olesya_Pavel_Nastya" element={<Admin />} />
+          <Route path="/Olesya_Pavel_Nastya/*" element={<Admin />} />
         </Routes>
       </BrowserRouter>
     );
