@@ -21,10 +21,10 @@ const REELS = [
 ];
 
 const FEATURES = [
-  { icon: "Video", title: "Короткие видео", desc: "Снимай и смотри ролики с фильтрами, эффектами и музыкой" },
-  { icon: "Users", title: "Сообщества", desc: "Находи единомышленников по интересам — от музыки до спорта" },
-  { icon: "Radio", title: "Прямые эфиры", desc: "Веди стримы, общайся в реальном времени и собирай аудиторию" },
-  { icon: "MessageCircle", title: "Чаты и звонки", desc: "Общайся приватно или в группах — голос, видео, сообщения" },
+  { icon: "Video", title: "Короткие видео", desc: "Снимай и смотри ролики с фильтрами, эффектами и музыкой", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/ed8f6c56-8997-4aea-9684-467842867346.jpg" },
+  { icon: "Users", title: "Сообщества", desc: "Находи единомышленников по интересам — от музыки до спорта", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/d6054fbd-e98b-4cd1-bca8-903eea804263.jpg" },
+  { icon: "Radio", title: "Прямые эфиры", desc: "Веди стримы, общайся в реальном времени и собирай аудиторию", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/e7f22b68-548d-45b1-adb1-21deec66ddeb.jpg" },
+  { icon: "MessageCircle", title: "Чаты и звонки", desc: "Общайся приватно или в группах — голос, видео, сообщения", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/68410e83-e973-4f4d-9c4b-c349ba82458b.jpg" },
   { icon: "Clapperboard", title: "Видео редактор", desc: "Монтируй ролики, обрезай, добавляй музыку и переходы", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/6b4d29f0-ffee-4ef3-b4b7-801ad103ab6a.jpg" },
   { icon: "ImagePlus", title: "Фото редактор", desc: "Накладывай фильтры, ретушируй и оформляй снимки", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/19644308-1a86-4207-b5d3-47ceb1a3f651.jpg" },
   { icon: "LayoutTemplate", title: "Конструктор", desc: "Собирай посты и истории из готовых блоков и шаблонов", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/3252970f-c696-449c-885e-2ccd2b8253b7.jpg" },
