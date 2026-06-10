@@ -323,7 +323,7 @@ function Dashboard({ token }: { token: string }) {
   );
 }
 
-interface UserRow { id: string; name: string; handle: string; email: string; avatar?: string; created_at?: string; email_verified?: boolean }
+interface UserRow { id: string; name: string; handle: string; email: string; avatar?: string; created_at?: string; email_verified?: boolean; banned?: boolean }
 
 function Users({ token }: { token: string }) {
   const [users, setUsers] = useState<UserRow[]>([]);
@@ -346,6 +346,17 @@ function Users({ token }: { token: string }) {
     load();
   };
 
+  const toggleBan = async (u: UserRow) => {
+    const next = !u.banned;
+    if (next && !confirm(`Заблокировать ${u.name}? Пользователь не сможет войти в приложение.`)) return;
+    setUsers((list) => list.map((x) => x.id === u.id ? { ...x, banned: next } : x));
+    try {
+      await api("user_ban", { user_id: u.id, banned: next }, token);
+    } catch {
+      load();
+    }
+  };
+
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold hidden md:block">Пользователи</h2>
@@ -364,15 +375,25 @@ function Users({ token }: { token: string }) {
         {!loading && users.length === 0 && <p className="p-4 text-white/50 text-sm">Никого не найдено</p>}
         <div className="divide-y divide-white/5">
           {users.map((u) => (
-            <div key={u.id} className="flex items-center gap-3 p-3">
+            <div key={u.id} className={`flex items-center gap-3 p-3 ${u.banned ? "bg-[#fe2c55]/5" : ""}`}>
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center text-white font-bold overflow-hidden flex-shrink-0">
                 {u.avatar ? <img src={u.avatar} alt="" className="w-full h-full object-cover" /> : (u.name?.[0] || "?")}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{u.name} <span className="text-white/40 text-xs">@{u.handle}</span></p>
+                <p className="font-medium truncate flex items-center gap-1.5">
+                  {u.name} <span className="text-white/40 text-xs">@{u.handle}</span>
+                  {u.banned && <span className="px-1.5 py-0.5 rounded bg-[#fe2c55]/20 text-[#fe2c55] text-[10px] font-semibold">Заблокирован</span>}
+                </p>
                 <p className="text-white/50 text-xs truncate">{u.email} · {u.id}</p>
               </div>
               {u.email_verified && <Icon name="BadgeCheck" size={16} className="text-blue-400 flex-shrink-0" />}
+              <button
+                onClick={() => toggleBan(u)}
+                title={u.banned ? "Разблокировать" : "Заблокировать вход"}
+                className={`p-2 rounded-lg flex-shrink-0 ${u.banned ? "text-emerald-400 hover:bg-emerald-400/10" : "text-amber-400 hover:bg-amber-400/10"}`}
+              >
+                <Icon name={u.banned ? "LockOpen" : "Ban"} size={16} />
+              </button>
               <button onClick={() => del(u.id)} className="p-2 text-[#fe2c55] hover:bg-[#fe2c55]/10 rounded-lg flex-shrink-0">
                 <Icon name="Trash2" size={16} />
               </button>

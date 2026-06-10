@@ -105,12 +105,12 @@ def handler(event: dict, context) -> dict:
                 return err('Введи email и пароль')
             conn = get_conn(); cur = conn.cursor()
             try:
-                cur.execute("SELECT id,name,handle,email,avatar,token,password_hash,firebase_hash,firebase_salt,phone FROM app_users WHERE email=%s",
+                cur.execute("SELECT id,name,handle,email,avatar,token,password_hash,firebase_hash,firebase_salt,phone,COALESCE(banned,FALSE) FROM app_users WHERE email=%s",
                     (email,))
                 row = cur.fetchone()
                 if not row:
                     return err('Неверный email или пароль', 401)
-                uid, name, handle, em, avatar, token, pw_hash, fb_hash, fb_salt, phone = row
+                uid, name, handle, em, avatar, token, pw_hash, fb_hash, fb_salt, phone, banned = row
                 if pw_hash == hash_pw(password):
                     pass
                 elif fb_hash and fb_salt and verify_firebase_scrypt(password, fb_salt, fb_hash):
@@ -119,6 +119,8 @@ def handler(event: dict, context) -> dict:
                     conn.commit()
                 else:
                     return err('Неверный email или пароль', 401)
+                if banned:
+                    return err('Аккаунт заблокирован. Обратитесь в поддержку: support@visov.ru', 403)
             finally:
                 cur.close(); conn.close()
             return ok({'token': token, 'user': {'id': uid, 'name': name, 'handle': handle, 'email': em, 'avatar': avatar, 'phone': phone}})
@@ -128,11 +130,12 @@ def handler(event: dict, context) -> dict:
             if not token: return err('Нет токена', 401)
             conn = get_conn(); cur = conn.cursor()
             try:
-                cur.execute("SELECT id,name,handle,email,avatar,phone,gender,links FROM app_users WHERE token=%s", (token,))
+                cur.execute("SELECT id,name,handle,email,avatar,phone,gender,links,COALESCE(banned,FALSE) FROM app_users WHERE token=%s", (token,))
                 row = cur.fetchone()
             finally:
                 cur.close(); conn.close()
             if not row: return err('Токен недействителен', 401)
+            if row[8]: return err('Аккаунт заблокирован. Обратитесь в поддержку: support@visov.ru', 403)
             links_val = row[7] if row[7] is not None else []
             return ok({'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'email': row[3], 'avatar': row[4], 'phone': row[5], 'gender': row[6], 'links': links_val}})
 

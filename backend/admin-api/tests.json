@@ -28,6 +28,13 @@
       "expectedStatus": 200,
       "expectedBody": {"ok": true},
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "User ban without token returns 401",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "user_ban", "user_id": "x", "banned": true},
+      "expectedStatus": 401
     }
   ]
 }
