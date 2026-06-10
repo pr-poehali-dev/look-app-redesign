@@ -85,7 +85,7 @@ const Landing = ({ onLogin, onRegister }: LandingProps) => {
               Будь собой.
             </h1>
             <p className="text-white/60 text-lg leading-relaxed mb-8 max-w-lg">
-              Короткие видео, прямые эфиры, чаты, сообщества — всё, что нужно, чтобы заявить о себе и найти своих.
+              Короткие видео, прямые эфиры, чаты, сообщества, видео редактор, фото редактор, конструктор — всё, что нужно, чтобы заявить о себе и найти своих.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
