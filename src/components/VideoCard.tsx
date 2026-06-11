@@ -62,6 +62,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const [showComments, setShowComments] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const [copied, setCopied] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [downloading, setDownloading] = useState(false);
@@ -558,20 +559,27 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             </button>
 
             {/* Жалоба */}
-            <div className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3">
+            <button
+              onClick={() => { setShowMore(false); setShowReport(true); }}
+              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3"
+            >
               <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                <ReportButton
-                  targetType="video"
-                  targetId={video.id}
-                  className="text-white flex items-center justify-center"
-                />
+                <Icon name="Flag" size={20} className="text-[#fe2c55]" />
               </div>
               <span className="text-white text-sm font-medium">Пожаловаться</span>
-            </div>
+            </button>
           </div>
         </div>,
         document.body
       )}
+
+      <ReportButton
+        targetType="video"
+        targetId={video.id}
+        variant="controlled"
+        open={showReport}
+        onOpenChange={setShowReport}
+      />
 
       {showShare && createPortal(
         <div
