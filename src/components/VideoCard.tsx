@@ -467,7 +467,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       </div>
 
       {/* Desktop right actions — вне видео, все 7 кнопок */}
-      <div className="hidden md:flex flex-col items-center gap-3 z-30 flex-shrink-0 justify-end pb-6">
+      <div className="hidden md:flex flex-col items-center gap-3 z-30 flex-shrink-0 justify-end pb-6 px-3 pt-6" style={{ background: "var(--look-bg)" }}>
         {/* Avatar */}
         <button
           onClick={toggleFollow}
