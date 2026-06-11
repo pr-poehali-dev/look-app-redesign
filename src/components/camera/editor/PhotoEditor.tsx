@@ -443,6 +443,12 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
           if (o.bg) {
             ctx.fillStyle = "rgba(0,0,0,0.5)";
             ctx.fillRect(-tw / 2 - fs * 0.2, -fs * 0.65, tw + fs * 0.4, fs * 1.3);
+          } else {
+            const light = (o.color || "#fff").toLowerCase() === "#ffffff" || (o.color || "#fff").toLowerCase() === "#fff";
+            ctx.lineJoin = "round";
+            ctx.lineWidth = Math.max(2, fs * 0.12);
+            ctx.strokeStyle = light ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.65)";
+            ctx.strokeText(o.value, 0, 0);
           }
           ctx.fillStyle = o.color || "#fff";
           ctx.fillText(o.value, 0, 0);
@@ -542,7 +548,7 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
               {o.kind === "sticker" ? (
                 <span style={{ fontSize: "11vw", lineHeight: 1 }}>{o.value}</span>
               ) : (
-                <span style={{ color: o.color, fontFamily: o.font, fontWeight: 700, fontSize: "6vw", whiteSpace: "nowrap", padding: o.bg ? "2px 8px" : 0, background: o.bg ? "rgba(0,0,0,0.5)" : "transparent", borderRadius: 6 }}>{o.value}</span>
+                <span style={{ color: o.color, fontFamily: o.font, fontWeight: 700, fontSize: "6vw", whiteSpace: "nowrap", padding: o.bg ? "2px 8px" : 0, background: o.bg ? "rgba(0,0,0,0.5)" : "transparent", borderRadius: 6, textShadow: o.bg ? "none" : ((o.color || "#fff").toLowerCase() === "#ffffff" || (o.color || "#fff").toLowerCase() === "#fff" ? "0 1px 3px rgba(0,0,0,0.7), 0 0 2px rgba(0,0,0,0.6)" : "0 1px 3px rgba(255,255,255,0.5), 0 0 2px rgba(255,255,255,0.4)") }}>{o.value}</span>
               )}
             </div>
           ))}
