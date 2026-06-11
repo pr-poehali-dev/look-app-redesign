@@ -118,7 +118,7 @@ const Index = () => {
 
   return (
     <div className="fixed inset-0 flex justify-center overflow-hidden" style={{ background: "var(--look-bg)" }}>
-     <div className="relative flex w-full h-full overflow-hidden max-w-[1280px]">
+     <div className="relative flex w-full h-full overflow-hidden max-w-[1100px] md:border-x border-white/8">
 
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-[240px] xl:w-[280px] h-full border-r border-white/8 flex-shrink-0 z-40" style={{ background: "var(--look-sidebar-bg)" }}>
@@ -210,7 +210,7 @@ const Index = () => {
       </aside>
 
       {/* Main app area */}
-      <div className="relative flex-1 flex flex-col h-full overflow-hidden mx-auto w-full max-w-[480px] md:max-w-[600px]">
+      <div className="relative flex-1 flex flex-col h-full overflow-hidden mx-auto w-full max-w-[480px] md:max-w-none">
 
         {/* Live Stream overlay */}
         {showLive && (
