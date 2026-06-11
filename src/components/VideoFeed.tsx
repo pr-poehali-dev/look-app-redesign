@@ -446,7 +446,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
   };
 
   return (
-    <div className="relative w-full h-full md:bg-[color:var(--look-bg)]">
+    <div className="relative w-full h-full" style={{ background: "var(--look-bg)" }}>
       <div
         ref={containerRef}
         className="absolute inset-0 mx-auto overflow-y-scroll snap-y snap-mandatory md:max-w-[542px]"
