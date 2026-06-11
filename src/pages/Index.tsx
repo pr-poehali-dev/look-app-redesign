@@ -52,6 +52,36 @@ const Index = () => {
     if (confirm("Выйти из аккаунта?")) logout();
   };
 
+  // Есть ли «глубокий» экран, который можно закрыть кнопкой «Назад»
+  const canGoBack =
+    showLive || showCamera || !!desktopOverlay || !!profileHandle ||
+    gridOpenVideoId !== null || activeTab !== "home";
+
+  // Видимую кнопку не показываем на главной — там уже есть своя стрелка в шапке
+  const showBackButton =
+    showLive || showCamera || !!desktopOverlay || !!profileHandle ||
+    (activeTab !== "home");
+
+  // Закрыть верхний открытый экран (приоритет — от самого верхнего слоя)
+  const goBack = () => {
+    if (showLive) { setShowLive(false); return; }
+    if (showCamera) { setShowCamera(false); return; }
+    if (desktopOverlay) { setDesktopOverlay(null); return; }
+    if (profileHandle) { setProfileHandle(null); return; }
+    if (gridOpenVideoId !== null) { setGridOpenVideoId(null); return; }
+    if (activeTab !== "home") { setActiveTab("home"); return; }
+  };
+
+  // Перехват системной кнопки/жеста «Назад»: вместо ухода с сайта — закрываем экран
+  useEffect(() => {
+    if (!canGoBack) return;
+    window.history.pushState({ lookBack: true }, "");
+    const onPop = () => goBack();
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canGoBack]);
+
   useEffect(() => {
     const onOpen = (e: Event) => {
       const detail = (e as CustomEvent).detail as { handle?: string };
@@ -211,6 +241,18 @@ const Index = () => {
 
       {/* Main app area */}
       <div className="relative flex-1 flex flex-col h-full overflow-hidden mx-auto w-full max-w-[480px] md:max-w-none">
+
+        {/* Кнопка «Назад» для телефонов без системной кнопки */}
+        {showBackButton && (
+          <button
+            onClick={goBack}
+            className="md:hidden absolute top-9 left-3 z-[60] w-9 h-9 rounded-full bg-black/45 backdrop-blur flex items-center justify-center active:scale-95 transition-transform"
+            aria-label="Назад"
+            title="Назад"
+          >
+            <Icon name="ChevronLeft" size={22} className="text-white" />
+          </button>
+        )}
 
         {/* Live Stream overlay */}
         {showLive && (
