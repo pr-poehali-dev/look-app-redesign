@@ -52,15 +52,13 @@ const Index = () => {
     if (confirm("Выйти из аккаунта?")) logout();
   };
 
-  // Есть ли «глубокий» экран, который можно закрыть кнопкой «Назад»
+  // «Глубокий» экран, который закрывается кнопкой «Назад».
+  // Между вкладками переключаемся нижним меню — их сюда НЕ включаем.
   const canGoBack =
-    showLive || showCamera || !!desktopOverlay || !!profileHandle ||
-    gridOpenVideoId !== null || activeTab !== "home";
+    showLive || showCamera || !!desktopOverlay || !!profileHandle;
 
-  // Видимую кнопку не показываем на главной — там уже есть своя стрелка в шапке
-  const showBackButton =
-    showLive || showCamera || !!desktopOverlay || !!profileHandle ||
-    (activeTab !== "home");
+  // Видимая кнопка «Назад» — только для полноэкранных оверлеев
+  const showBackButton = canGoBack;
 
   // Закрыть верхний открытый экран (приоритет — от самого верхнего слоя)
   const goBack = () => {
@@ -68,8 +66,6 @@ const Index = () => {
     if (showCamera) { setShowCamera(false); return; }
     if (desktopOverlay) { setDesktopOverlay(null); return; }
     if (profileHandle) { setProfileHandle(null); return; }
-    if (gridOpenVideoId !== null) { setGridOpenVideoId(null); return; }
-    if (activeTab !== "home") { setActiveTab("home"); return; }
   };
 
   // Перехват системной кнопки/жеста «Назад»: вместо ухода с сайта — закрываем экран
