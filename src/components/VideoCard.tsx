@@ -148,36 +148,6 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
     setDownloading(false);
   };
 
-  // Сохранение прямо из плеера: тянем blob с CDN и скачиваем файлом
-  const handleSaveFromPlayer = async () => {
-    if (downloading || !playerUrl) return;
-    setDownloading(true);
-    const url = playerUrl;
-    const ext = ((url.split("?")[0].split(".").pop()) || "mp4").slice(0, 5);
-    const safeName = (video.author || video.handle || "look").replace(/[^a-z0-9_-]/gi, "_");
-    const fileName = `${safeName}-${video.id}.${ext}`;
-    try {
-      const res = await fetch(url, { mode: "cors" });
-      if (res.ok) {
-        const blob = await res.blob();
-        const objUrl = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = objUrl;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(objUrl), 2000);
-        toast.success("Файл сохранён в «Загрузки»");
-        setDownloading(false);
-        return;
-      }
-    } catch { /* падаем на подсказку */ }
-    toast.info("Зажми видео и выбери «Сохранить видео»", {
-      description: "Этот ролик можно сохранить только так — браузер не даёт скачать его напрямую.",
-    });
-    setDownloading(false);
-  };
   const parseShortNum = (raw: string | number) => {
     const s = String(raw || "0").trim().toUpperCase();
     if (s.endsWith("K")) return Math.round(parseFloat(s) * 1000) || 0;
@@ -646,26 +616,6 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
               playsInline
               className="max-w-full max-h-full rounded-lg"
             />
-          </div>
-          <div className="px-4 pb-10 pt-3 flex flex-col items-center gap-2">
-            <button
-              onClick={handleSaveFromPlayer}
-              disabled={downloading}
-              className="w-full max-w-xs py-3 rounded-full bg-white text-black font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-60 active:scale-95 transition-transform"
-            >
-              {downloading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                  Сохраняем…
-                </>
-              ) : (
-                <>
-                  <Icon name="Download" size={18} className="text-black" />
-                  Сохранить видео
-                </>
-              )}
-            </button>
-            <p className="text-white/50 text-xs text-center">Если не сработает — зажми видео и выбери «Сохранить видео».</p>
           </div>
         </div>,
         document.body
