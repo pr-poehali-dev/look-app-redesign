@@ -272,8 +272,16 @@ const Landing = ({ onLogin, onRegister }: LandingProps) => {
         </section>
 
         {/* Footer */}
-        <footer className="px-5 md:px-10 py-8 text-center text-white/30 text-sm">
-          © {new Date().getFullYear()} Лоок — Смотри. Делись. Общайся. Будь собой.
+        <footer className="px-5 md:px-10 py-10 text-center border-t border-white/10">
+          <h2 className="font-black text-xl mb-2 bg-gradient-to-r from-[#22e0a1] to-[#22d3ee] bg-clip-text text-transparent">
+            Лоок
+          </h2>
+          <p className="text-white/40 text-sm mb-1">
+            Смотри. Делись. Общайся. Будь собой.
+          </p>
+          <p className="text-white/25 text-xs">
+            © {new Date().getFullYear()} Лоок. Все права защищены.
+          </p>
         </footer>
       </div>
     </div>
