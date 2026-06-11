@@ -108,11 +108,18 @@ html.theme-dark body {
 }
 /* Исключение: видео и медиа-контейнеры внутри карточек оставляем чёрными */
 video.bg-black,
-.md\:bg-transparent.bg-black,
-.md\:overflow-visible.bg-black,
 .overflow-hidden.bg-black:has(video),
 .overflow-hidden.bg-black:has(img.object-cover) {
   background-color: #000 !important;
+}
+/* Корневой контейнер карточки видео: на мобиле чёрный, на ПК — прозрачный */
+.md\:bg-transparent.bg-black {
+  background-color: #000 !important;
+}
+@media (min-width: 768px) {
+  .md\:bg-transparent.bg-black {
+    background-color: transparent !important;
+  }
 }
 .bg-zinc-900 {
   background-color: var(--look-sidebar-bg) !important;
