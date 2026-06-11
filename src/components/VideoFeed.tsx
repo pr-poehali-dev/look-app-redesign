@@ -446,11 +446,11 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
   };
 
   return (
-    <div className="relative w-full h-full" style={{ background: "var(--look-bg)" }}>
+    <div className="relative w-full h-full" style={{ background: "red" }}>
       <div
         ref={containerRef}
         className="absolute inset-0 overflow-y-scroll snap-y snap-mandatory"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none", background: "var(--look-bg)" }}
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none", background: "blue" }}
       >
         {!dbLoaded ? (
           <div className="w-full flex items-center justify-center" style={{ height: "100%" }}>
@@ -465,9 +465,9 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
               key={`${video.id}-${i}`}
               ref={(el) => { slideRefs.current[i] = el; }}
               className="w-full snap-start flex md:items-center md:justify-center"
-              style={{ height: "100%", background: "var(--look-bg)" }}
+              style={{ height: "100%", background: "orange" }}
             >
-              <div className="w-full md:h-[min(100%,720px)] h-full" style={{ background: "var(--look-bg)" }}>
+              <div className="w-full md:h-[min(100%,720px)] h-full" style={{ background: "magenta" }}>
                 <VideoCard video={video} isActive={activeIndex === i} preloadLevel={preloadLevel} />
               </div>
             </div>
