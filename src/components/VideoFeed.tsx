@@ -450,7 +450,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
       <div
         ref={containerRef}
         className="absolute inset-0 mx-auto overflow-y-scroll snap-y snap-mandatory md:max-w-[560px]"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none", background: "var(--look-bg)" }}
       >
         {!dbLoaded ? (
           <div className="w-full flex items-center justify-center" style={{ height: "100%" }}>
