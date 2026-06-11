@@ -61,6 +61,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const [muted, setMuted] = useState(true);
   const [showComments, setShowComments] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const [copied, setCopied] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [downloading, setDownloading] = useState(false);
@@ -434,35 +435,18 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           <span className="text-white text-xs font-semibold">Сохранить</span>
         </button>
 
-        {/* Download */}
+        {/* Ещё */}
         <button
-          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); handleDownload(); }}
-          onClick={handleDownload}
-          disabled={downloading}
-          className="flex flex-col items-center gap-1 disabled:opacity-70"
+          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowMore(true); }}
+          onClick={() => setShowMore(true)}
+          className="flex flex-col items-center gap-1"
           style={{ touchAction: "manipulation" }}
         >
           <div className="w-11 h-11 rounded-full flex items-center justify-center">
-            {downloading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : downloadDone ? (
-              <Icon name="Check" size={24} className="text-green-400" />
-            ) : (
-              <Icon name="Download" size={24} className="text-white" />
-            )}
+            <Icon name="MoreHorizontal" size={26} className="text-white" />
           </div>
-          <span className="text-white text-xs font-semibold">{downloading ? "..." : downloadDone ? "Готово" : "Скачать"}</span>
+          <span className="text-white text-xs font-semibold">Ещё</span>
         </button>
-
-        {/* Report */}
-        <div className="flex flex-col items-center gap-1">
-          <ReportButton
-            targetType="video"
-            targetId={video.id}
-            className="w-11 h-11 rounded-full flex items-center justify-center text-white"
-          />
-          <span className="text-white text-xs font-semibold">Жалоба</span>
-        </div>
 
         {/* Spinning disc */}
         <div className="w-10 h-10 rounded-full border-4 border-white/30 overflow-hidden animate-spin" style={{ animationDuration: "3s" }}>
@@ -523,35 +507,71 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           <span className="text-white text-xs font-semibold">Сохранить</span>
         </button>
 
-        {/* Download */}
-        <button onClick={handleDownload} disabled={downloading} className="flex flex-col items-center gap-1 disabled:opacity-70">
+        {/* Ещё */}
+        <button onClick={() => setShowMore(true)} className="flex flex-col items-center gap-1">
           <div className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition-colors">
-            {downloading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : downloadDone ? (
-              <Icon name="Check" size={22} className="text-green-400" />
-            ) : (
-              <Icon name="Download" size={22} className="text-white" />
-            )}
+            <Icon name="MoreHorizontal" size={24} className="text-white" />
           </div>
-          <span className="text-white text-xs font-semibold">{downloading ? "..." : downloadDone ? "Готово" : "Скачать"}</span>
+          <span className="text-white text-xs font-semibold">Ещё</span>
         </button>
-
-        {/* Report */}
-        <div className="flex flex-col items-center gap-1">
-          <ReportButton
-            targetType="video"
-            targetId={video.id}
-            className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition-colors text-white"
-          />
-          <span className="text-white text-xs font-semibold">Жалоба</span>
-        </div>
 
         {/* Spinning disc */}
         <div className="w-10 h-10 rounded-full border-4 border-white/30 overflow-hidden animate-spin" style={{ animationDuration: "3s" }}>
           <UserAvatar src={video.avatar} name={video.author || video.handle} alt="disc" />
         </div>
       </div>
+
+      {showMore && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex flex-col justify-end"
+          onClick={() => setShowMore(false)}
+        >
+          <div
+            className="sheet-theme rounded-t-3xl px-4 pt-5 pb-10"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <span className="text-white font-bold text-base">Ещё</span>
+              <button onClick={() => setShowMore(false)}>
+                <Icon name="X" size={20} className="text-white/60" />
+              </button>
+            </div>
+
+            {/* Скачать */}
+            <button
+              onClick={() => { handleDownload(); }}
+              disabled={downloading}
+              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3 disabled:opacity-60"
+            >
+              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                {downloading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : downloadDone ? (
+                  <Icon name="Check" size={20} className="text-green-400" />
+                ) : (
+                  <Icon name="Download" size={20} className="text-white" />
+                )}
+              </div>
+              <span className="text-white text-sm font-medium">
+                {downloading ? "Скачивание…" : downloadDone ? "Готово!" : "Скачать"}
+              </span>
+            </button>
+
+            {/* Жалоба */}
+            <div className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3">
+              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                <ReportButton
+                  targetType="video"
+                  targetId={video.id}
+                  className="text-white flex items-center justify-center"
+                />
+              </div>
+              <span className="text-white text-sm font-medium">Пожаловаться</span>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {showShare && createPortal(
         <div
