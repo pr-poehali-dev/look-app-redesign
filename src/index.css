@@ -120,6 +120,10 @@ video.bg-black,
   .md\:bg-transparent.bg-black {
     background-color: transparent !important;
   }
+  /* Корень карточки видео на ПК — фон цвета темы (убирает чёрные поля по бокам) */
+  .look-card-root {
+    background-color: var(--look-bg) !important;
+  }
 }
 .bg-zinc-900 {
   background-color: var(--look-sidebar-bg) !important;
