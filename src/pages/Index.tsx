@@ -289,7 +289,7 @@ const Index = () => {
 
         {/* Top Header */}
         <div className="absolute top-0 left-0 right-0 z-30 pointer-events-none">
-          <div className="px-4 pt-10 md:pt-4 pb-2 bg-gradient-to-b from-black/70 to-transparent pointer-events-none" />
+          <div className="px-4 pt-10 md:pt-4 pb-2 pointer-events-none" />
           {activeTab === "home" && (
             <>
               {/* Единый стиль для ПК и телефона: кнопка с раскрывающимся списком */}
