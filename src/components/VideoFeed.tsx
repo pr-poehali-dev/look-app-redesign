@@ -446,7 +446,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
   };
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full md:bg-[#0d2a18]">
       <div
         ref={containerRef}
         className="absolute inset-0 mx-auto overflow-y-scroll snap-y snap-mandatory md:max-w-[560px]"
