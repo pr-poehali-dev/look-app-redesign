@@ -33,19 +33,17 @@ const DEFAULT_ADJ: Adjustments = {
 
 const FILTERS: { id: string; label: string; css: (a: Adjustments) => string }[] = [
   { id: "none", label: "Оригинал", css: () => "" },
-  { id: "clarendon", label: "Clarendon", css: () => "contrast(1.2) saturate(1.35) brightness(1.05)" },
-  { id: "gingham", label: "Gingham", css: () => "sepia(0.15) contrast(0.95) brightness(1.05)" },
-  { id: "moon", label: "Moon", css: () => "grayscale(1) contrast(1.1) brightness(1.1)" },
-  { id: "lark", label: "Lark", css: () => "saturate(1.2) brightness(1.08) contrast(0.95)" },
-  { id: "reyes", label: "Reyes", css: () => "sepia(0.22) contrast(0.85) brightness(1.1) saturate(0.75)" },
-  { id: "juno", label: "Juno", css: () => "saturate(1.4) hue-rotate(-10deg) contrast(1.05)" },
-  { id: "warm", label: "Тёплый", css: () => "sepia(0.4) saturate(1.4) brightness(1.05)" },
-  { id: "cold", label: "Холодный", css: () => "hue-rotate(30deg) saturate(1.2) brightness(1.05)" },
-  { id: "bw", label: "Ч/Б", css: () => "grayscale(1) contrast(1.1)" },
-  { id: "vivid", label: "Сочный", css: () => "saturate(2) contrast(1.1)" },
-  { id: "fade", label: "Выцветший", css: () => "saturate(0.7) contrast(0.85) brightness(1.1) sepia(0.1)" },
-  { id: "noir", label: "Нуар", css: () => "grayscale(1) contrast(1.4) brightness(0.9)" },
-  { id: "vintage", label: "Винтаж", css: () => "sepia(0.5) contrast(1.1) saturate(1.3) hue-rotate(-15deg)" },
+  { id: "clean", label: "Clean", css: () => "contrast(1.08) saturate(1.12) brightness(1.04)" },
+  { id: "crisp", label: "Crisp", css: () => "contrast(1.18) saturate(1.25) brightness(1.03)" },
+  { id: "cinematic", label: "Cinematic", css: () => "contrast(1.15) saturate(0.92) brightness(0.98) hue-rotate(-8deg)" },
+  { id: "teal", label: "Teal & Orange", css: () => "contrast(1.12) saturate(1.3) hue-rotate(-12deg) brightness(1.02)" },
+  { id: "pastel", label: "Pastel", css: () => "saturate(0.85) brightness(1.08) contrast(0.92)" },
+  { id: "vivid", label: "Vivid", css: () => "saturate(1.7) contrast(1.12) brightness(1.02)" },
+  { id: "cold", label: "Холодный", css: () => "hue-rotate(20deg) saturate(1.15) brightness(1.04)" },
+  { id: "warm", label: "Тёплый", css: () => "saturate(1.25) brightness(1.05) hue-rotate(-6deg)" },
+  { id: "neon", label: "Neon", css: () => "saturate(1.9) contrast(1.2) hue-rotate(15deg) brightness(1.05)" },
+  { id: "mono", label: "Mono", css: () => "grayscale(1) contrast(1.15) brightness(1.05)" },
+  { id: "noir", label: "Noir", css: () => "grayscale(1) contrast(1.4) brightness(0.92)" },
 ];
 
 const STICKERS = ["😀", "😍", "🔥", "❤️", "✨", "👍", "🎉", "💯", "😎", "🌈", "⭐", "💖", "👑", "🦄", "🍿", "🎵", "📸", "💎", "🌸", "⚡", "🎈", "🥳", "😂", "🤩"];

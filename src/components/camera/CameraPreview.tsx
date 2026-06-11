@@ -3,10 +3,11 @@ import Icon from "@/components/ui/icon";
 
 const FILTER_STYLES: Record<string, string> = {
   none: "none",
-  warm: "sepia(0.4) saturate(1.4) brightness(1.05)",
-  cold: "hue-rotate(30deg) saturate(1.2) brightness(1.05)",
-  bw: "grayscale(1) contrast(1.1)",
-  vivid: "saturate(2) contrast(1.1)",
+  clean: "contrast(1.08) saturate(1.12) brightness(1.04)",
+  cinematic: "contrast(1.15) saturate(0.92) brightness(0.98) hue-rotate(-8deg)",
+  vivid: "saturate(1.7) contrast(1.12) brightness(1.02)",
+  neon: "saturate(1.9) contrast(1.2) hue-rotate(15deg) brightness(1.05)",
+  mono: "grayscale(1) contrast(1.15) brightness(1.05)",
 };
 
 const SUGGESTED_TAGS: Record<string, string[]> = {
