@@ -115,7 +115,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       });
     };
 
-    // Шаг 1: пробуем напрямую (если CDN отдаёт CORS) — работает для любого размера
+    // Шаг 1: качаем напрямую как файл (blob) — НЕ уводит со страницы, работает для любого размера
     try {
       const res = await fetch(url, { mode: "cors" });
       if (res.ok) {
@@ -126,25 +126,28 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       }
     } catch { /* идём в прокси */ }
 
-    // Шаг 2: через бэкенд-прокси (обходит CORS, добавляет Content-Disposition)
+    // Шаг 2: через бэкенд-прокси (обходит CORS для небольших файлов)
     try {
       const proxyUrl = `https://functions.poehali.dev/b5faf1bc-6976-47c6-984e-e21c66d4c879?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(fileName)}`;
       const res = await fetch(proxyUrl);
-      if (!res.ok) throw new Error("proxy failed");
-      const blob = await res.blob();
-      triggerSave(blob);
-    } catch {
-      // Шаг 3: финальный fallback — ссылка с download (не открывает видео в новой вкладке)
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      a.rel = "noopener";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      toast.success("Загрузка началась", {
-        description: "Файл появится в «Загрузках». Вернуться в Лоок — кнопкой «Назад».",
+      if (res.ok) {
+        const blob = await res.blob();
+        triggerSave(blob);
+        setDownloading(false);
+        return;
+      }
+    } catch { /* идём в финальный вариант */ }
+
+    // Шаг 3: blob не получился (большой файл без CORS).
+    // НЕ открываем плеер на месте сайта — открываем в НОВОЙ вкладке,
+    // чтобы Лоок остался открытым и пользователь мог вернуться, закрыв вкладку.
+    try {
+      window.open(url, "_blank", "noopener,noreferrer");
+      toast.success("Открыли видео в новой вкладке", {
+        description: "Зажми видео и выбери «Сохранить». Чтобы вернуться в Лоок — закрой эту вкладку.",
       });
+    } catch {
+      toast.error("Не удалось скачать", { description: "Попробуй ещё раз чуть позже." });
     } finally {
       setDownloading(false);
     }
