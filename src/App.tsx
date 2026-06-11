@@ -3,23 +3,30 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
-import Index from "./pages/Index";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import NotFound from "./pages/NotFound";
-import Admin from "./pages/Admin";
 import { UserMediaProvider } from "./context/UserMediaContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { UnreadProvider } from "./context/UnreadContext";
 import { ThemeProvider } from "./context/ThemeContext";
-import AuthScreen from "./components/AuthScreen";
 import Landing from "./components/Landing";
-import ResetPasswordScreen from "./components/ResetPasswordScreen";
-import QrLoginScreen from "./components/QrLoginScreen";
-import QrApproveScreen from "./components/QrApproveScreen";
-import CallScreen from "./components/CallScreen";
 import AutoTranslator from "./components/AutoTranslator";
-import ThumbnailWorker from "./components/ThumbnailWorker";
 import Icon from "@/components/ui/icon";
+
+const Index = lazy(() => import("./pages/Index"));
+const Admin = lazy(() => import("./pages/Admin"));
+const AuthScreen = lazy(() => import("./components/AuthScreen"));
+const ResetPasswordScreen = lazy(() => import("./components/ResetPasswordScreen"));
+const QrLoginScreen = lazy(() => import("./components/QrLoginScreen"));
+const QrApproveScreen = lazy(() => import("./components/QrApproveScreen"));
+const CallScreen = lazy(() => import("./components/CallScreen"));
+const ThumbnailWorker = lazy(() => import("./components/ThumbnailWorker"));
+
+const ScreenFallback = () => (
+  <div className="fixed inset-0 bg-black flex items-center justify-center">
+    <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-[#22e0a1] animate-spin" />
+  </div>
+);
 
 const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
@@ -445,7 +452,9 @@ const App = () => (
       <AutoTranslator />
       <ThemeProvider>
         <AuthProvider>
-          <AppContent />
+          <Suspense fallback={<ScreenFallback />}>
+            <AppContent />
+          </Suspense>
         </AuthProvider>
       </ThemeProvider>
     </TooltipProvider>
