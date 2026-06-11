@@ -489,39 +489,39 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
         {/* Like */}
         <button onClick={() => toggleLike()} className="flex flex-col items-center gap-1">
-          <div className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition-colors">
-            <Icon name="Heart" size={26} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-[#22d3ee]"} />
+          <div className="w-12 h-12 rounded-full bg-[#1f6b3a] hover:bg-[#27814a] flex items-center justify-center transition-colors">
+            <Icon name="Heart" size={26} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"} />
           </div>
           <span className="text-white text-xs font-semibold">{formatCount(likeCount)}</span>
         </button>
 
         {/* Comment */}
         <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1">
-          <div className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition-colors">
-            <Icon name="MessageCircle" size={24} className="text-[#22d3ee]" />
+          <div className="w-12 h-12 rounded-full bg-[#1f6b3a] hover:bg-[#27814a] flex items-center justify-center transition-colors">
+            <Icon name="MessageCircle" size={24} className="text-white" />
           </div>
           <span className="text-white text-xs font-semibold">{formatCount(commentCount)}</span>
         </button>
 
         {/* Share */}
         <button onClick={() => setShowShare(true)} className="flex flex-col items-center gap-1">
-          <div className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition-colors">
-            <Icon name="Send" size={24} className="text-[#22d3ee]" />
+          <div className="w-12 h-12 rounded-full bg-[#1f6b3a] hover:bg-[#27814a] flex items-center justify-center transition-colors">
+            <Icon name="Send" size={24} className="text-white" />
           </div>
           <span className="text-white text-xs font-semibold">{video.shares}</span>
         </button>
 
         {/* Bookmark */}
         <button onClick={toggleSaved} className="flex flex-col items-center gap-1">
-          <div className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition-colors">
-            <Icon name="Bookmark" size={24} className={saved ? "text-[#ffd700] fill-[#ffd700]" : "text-[#22d3ee]"} />
+          <div className="w-12 h-12 rounded-full bg-[#1f6b3a] hover:bg-[#27814a] flex items-center justify-center transition-colors">
+            <Icon name="Bookmark" size={24} className={saved ? "text-[#ffd700] fill-[#ffd700]" : "text-white"} />
           </div>
           <span className="text-white text-xs font-semibold">Сохранить</span>
         </button>
 
         {/* Ещё */}
         <button onClick={() => setShowMore(true)} className="flex flex-col items-center gap-1">
-          <div className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition-colors">
+          <div className="w-12 h-12 rounded-full bg-[#1f6b3a] hover:bg-[#27814a] flex items-center justify-center transition-colors">
             <span className="text-white text-xs font-semibold">Ещё</span>
           </div>
         </button>
