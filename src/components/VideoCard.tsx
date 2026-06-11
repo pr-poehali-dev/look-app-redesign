@@ -64,6 +64,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const [showShare, setShowShare] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [playerUrl, setPlayerUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [downloading, setDownloading] = useState(false);
@@ -139,18 +140,12 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
     } catch { /* идём в финальный вариант */ }
 
     // Шаг 3: blob не получился (большой файл без CORS).
-    // НЕ открываем плеер на месте сайта — открываем в НОВОЙ вкладке,
-    // чтобы Лоок остался открытым и пользователь мог вернуться, закрыв вкладку.
-    try {
-      window.open(url, "_blank", "noopener,noreferrer");
-      toast.success("Открыли видео в новой вкладке", {
-        description: "Зажми видео и выбери «Сохранить». Чтобы вернуться в Лоок — закрой эту вкладку.",
-      });
-    } catch {
-      toast.error("Не удалось скачать", { description: "Попробуй ещё раз чуть позже." });
-    } finally {
-      setDownloading(false);
-    }
+    // Открываем плеер ВНУТРИ сайта (оверлеем) — со своей кнопкой и жестом «Назад».
+    setPlayerUrl(url);
+    toast.success("Видео открыто", {
+      description: "Зажми видео и выбери «Сохранить». Кнопка «Назад» вверху вернёт в Лоок.",
+    });
+    setDownloading(false);
   };
   const parseShortNum = (raw: string | number) => {
     const s = String(raw || "0").trim().toUpperCase();
@@ -163,6 +158,15 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const { comments: allComments, count: commentCount, send } = useComments("video", video.id, showComments, initialCommentCount);
   const { liked, count: likeCount, toggle: toggleLike } = useLikes("video", video.id, initialLikeCount);
   const formatCount = (n: number) => n >= 1_000_000 ? (n / 1_000_000).toFixed(1) + "M" : n >= 1000 ? (n / 1000).toFixed(1) + "K" : String(n);
+
+  // Системный жест/кнопка «Назад» закрывает наш плеер вместо ухода с сайта
+  useEffect(() => {
+    if (!playerUrl) return;
+    window.history.pushState({ lookPlayer: true }, "");
+    const onPop = () => setPlayerUrl(null);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [playerUrl]);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -590,6 +594,36 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         open={showReport}
         onOpenChange={setShowReport}
       />
+
+      {playerUrl && createPortal(
+        <div className="fixed inset-0 z-[10000] bg-black flex flex-col">
+          {/* Верхняя панель с кнопкой Назад */}
+          <div className="flex items-center gap-3 px-4 pt-10 pb-3 bg-gradient-to-b from-black/80 to-transparent">
+            <button
+              onClick={() => setPlayerUrl(null)}
+              className="w-10 h-10 rounded-full bg-white/15 backdrop-blur flex items-center justify-center active:scale-95 transition-transform"
+              aria-label="Назад"
+            >
+              <Icon name="ChevronLeft" size={24} className="text-white" />
+            </button>
+            <span className="text-white font-semibold text-sm">Назад в Лоок</span>
+          </div>
+          {/* Сам плеер */}
+          <div className="flex-1 flex items-center justify-center px-2">
+            <video
+              src={playerUrl}
+              controls
+              autoPlay
+              playsInline
+              className="max-w-full max-h-full rounded-lg"
+            />
+          </div>
+          <div className="px-4 pb-10 pt-2 text-center">
+            <p className="text-white/60 text-xs">Чтобы сохранить — зажми видео и выбери «Сохранить видео».</p>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {showShare && createPortal(
         <div
