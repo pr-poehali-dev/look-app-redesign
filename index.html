@@ -7,6 +7,26 @@
     <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
     <meta name="referrer" content="strict-origin-when-cross-origin"/>
     <style>html,body{background:#14723f;margin:0;padding:0}</style>
+    <!-- Полифилы для старых браузеров (Smart TV, старые WebView): добавляют недостающие
+         возможности, чтобы приложение запускалось и на старых, и на новых устройствах. -->
+    <script src="https://polyfill-fastly.io/v3/polyfill.min.js?features=es2015%2Ces2016%2Ces2017%2Ces2018%2Ces2019%2Ces2020%2Cfetch%2CPromise%2CSymbol%2CObject.assign%2CObject.entries%2CObject.values%2CArray.prototype.includes%2CArray.prototype.find%2CArray.prototype.flat%2CString.prototype.includes%2CString.prototype.padStart%2CURL%2CURLSearchParams%2CIntersectionObserver%2CResizeObserver%2Crequestidlecallback" crossorigin="anonymous"></script>
+    <script>
+      // Алиас старого WebKit AudioContext -> стандартный AudioContext
+      (function () {
+        try {
+          if (typeof window.AudioContext === 'undefined' && typeof window.webkitAudioContext !== 'undefined') {
+            window.AudioContext = window.webkitAudioContext;
+          }
+        } catch (e) {}
+        // requestAnimationFrame fallback для очень старых движков
+        try {
+          if (!window.requestAnimationFrame) {
+            window.requestAnimationFrame = function (cb) { return window.setTimeout(function () { cb(Date.now()); }, 16); };
+            window.cancelAnimationFrame = function (id) { window.clearTimeout(id); };
+          }
+        } catch (e) {}
+      })();
+    </script>
     <script>
       // Android WebView: если mediaDevices недоступен — создаём заглушку,
       // чтобы код не падал с TypeError до проверки поддержки
@@ -84,14 +104,17 @@
   // Если современные возможности недоступны (старый Smart TV браузер) —
   // показываем понятное сообщение вместо пустого зелёного экрана.
   (function () {
+    // Проверяем фичи ПОСЛЕ загрузки полифилов. Если даже с полифилами браузер
+    // не поддерживает базовое — показываем сообщение вместо пустого экрана.
     var ok = true;
     try {
-      // Базовые фичи, нужные приложению
       if (typeof Promise === 'undefined') ok = false;
       if (typeof Symbol === 'undefined') ok = false;
       if (!window.fetch) ok = false;
       if (!Object.assign) ok = false;
       if (!Array.prototype.includes) ok = false;
+      // Проверка поддержки ES-модулей: без них собранный код не запустится
+      if (!('noModule' in document.createElement('script'))) ok = false;
     } catch (e) { ok = false; }
     if (!ok) {
       var el = document.getElementById('fallback-msg');
