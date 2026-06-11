@@ -489,9 +489,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           style={{ touchAction: "manipulation" }}
         >
           <div className="w-11 h-11 rounded-full flex items-center justify-center">
-            <Icon name="MoreHorizontal" size={26} className="text-white" />
+            <span className="text-white text-xs font-semibold">Ещё</span>
           </div>
-          <span className="text-white text-xs font-semibold">Ещё</span>
         </button>
 
         {/* Spinning disc */}
@@ -556,9 +555,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         {/* Ещё */}
         <button onClick={() => setShowMore(true)} className="flex flex-col items-center gap-1">
           <div className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition-colors">
-            <Icon name="MoreHorizontal" size={24} className="text-white" />
+            <span className="text-white text-xs font-semibold">Ещё</span>
           </div>
-          <span className="text-white text-xs font-semibold">Ещё</span>
         </button>
 
         {/* Spinning disc */}
