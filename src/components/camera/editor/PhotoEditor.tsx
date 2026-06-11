@@ -636,6 +636,20 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
                   <button key={f} onClick={() => { setTextFont(f); updateActive({ font: f }); }} className={`px-3 py-1.5 rounded-lg text-xs flex-shrink-0 ${textFont === f ? "bg-white/25 text-white" : "bg-white/10 text-white/70"}`} style={{ fontFamily: f }}>Aa</button>
                 ))}
               </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-white/40 text-xs mr-1">Размер</span>
+                {[{ s: 0.7, l: "S" }, { s: 1, l: "M" }, { s: 1.5, l: "L" }, { s: 2, l: "XL" }].map(opt => (
+                  <button
+                    key={opt.l}
+                    onClick={() => updateActive({ scale: opt.s })}
+                    disabled={!activeObj || activeObj.kind !== "text"}
+                    className={`px-3 py-1.5 rounded-lg flex-shrink-0 disabled:opacity-30 ${activeObj && activeObj.kind === "text" && Math.abs(activeObj.scale - opt.s) < 0.01 ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white/70"}`}
+                    style={{ fontWeight: 700, fontSize: 10 + opt.s * 4 }}
+                  >
+                    {opt.l}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
