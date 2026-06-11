@@ -47,7 +47,7 @@ const FILTERS: { id: string; label: string; css: (a: Adjustments) => string }[] 
 ];
 
 const STICKERS = ["😭", "💀", "🥹", "🥲", "😮‍💨", "🫶", "🤌", "🫠", "😩", "🤍", "🔥", "✨", "💅", "👀", "🙏", "💯", "😎", "🥳", "🤩", "😏", "🫡", "🤝", "💋", "🩷", "🌟", "⚡", "🎯", "🚀", "🌈", "🍀", "🦋", "🌸"];
-const FONTS = ["Inter, sans-serif", "Georgia, serif", "Impact, sans-serif", "Courier New, monospace", "Comic Sans MS, cursive"];
+const FONTS = ["'Golos Text', sans-serif", "'Oswald', sans-serif", "Georgia, serif", "'Courier New', monospace", "system-ui, sans-serif"];
 const TEXT_COLORS = ["#ffffff", "#000000", "#fe2c55", "#8b5cf6", "#34d399", "#f59e0b", "#0095f6", "#ec4899"];
 const ASPECTS: { id: string; label: string; ratio: number | null }[] = [
   { id: "free", label: "Свободно", ratio: null },
