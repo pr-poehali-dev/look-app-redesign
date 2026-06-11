@@ -34,10 +34,10 @@ const PostCard = ({ post }: { post: Post }) => {
   };
 
   return (
-    <div className="bg-black border-b border-white/8">
+    <div className="bg-black border-b border-white/8 flex flex-col max-h-full">
 
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2.5">
+      <div className="flex items-center justify-between px-3 py-2.5 flex-shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]">
             <div className="w-full h-full rounded-full overflow-hidden border-2 border-black">
@@ -75,12 +75,12 @@ const PostCard = ({ post }: { post: Post }) => {
       </div>
 
       {/* Photo */}
-      <div className="w-full aspect-square overflow-hidden">
-        <img src={post.image} alt={post.caption} className="w-full h-full object-cover" />
+      <div className="w-full flex-1 min-h-0 overflow-hidden bg-black flex items-center justify-center">
+        <img src={post.image} alt={post.caption} className="w-full h-full object-contain" />
       </div>
 
       {/* Action buttons */}
-      <div className="flex items-center justify-between px-3 pt-2.5 pb-1">
+      <div className="flex items-center justify-between px-3 pt-2.5 pb-1 flex-shrink-0">
         <div className="flex items-center gap-4">
           <button onClick={handleLike} className="active:scale-90 transition-transform">
             <Icon

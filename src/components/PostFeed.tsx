@@ -94,11 +94,8 @@ const PostFeed = () => {
         <StoryViewer stories={stories} startIndex={storyIndex} onClose={() => setStoryIndex(null)} />
       )}
 
-      <div ref={scrollRef} className="h-full overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-      <div className="md:max-w-[470px] md:mx-auto">
-
-      {/* Stories row */}
-      <div className="sticky top-0 z-20 bg-black/85 backdrop-blur-md flex gap-4 px-3 py-3 overflow-x-scroll border-b border-white/8" style={{ scrollbarWidth: "none" }}>
+      {/* Stories row — фиксирована сверху, вне прокрутки постов */}
+      <div className="absolute top-0 left-0 right-0 z-20 md:max-w-[470px] md:mx-auto bg-black/85 backdrop-blur-md flex gap-4 px-3 py-3 overflow-x-scroll border-b border-white/8" style={{ scrollbarWidth: "none" }}>
         {/* "Your story" first */}
         <input
           ref={myStoryInputRef}
@@ -137,18 +134,31 @@ const PostFeed = () => {
         ))}
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
+      {/* Posts — прокрутка с привязкой, под фиксированной панелью сторис */}
+      <div
+        ref={scrollRef}
+        className="h-full overflow-y-scroll snap-y snap-mandatory"
+        style={{ scrollbarWidth: "none" }}
+      >
+        <div className="md:max-w-[470px] md:mx-auto">
+          {/* Резерв под фиксированную панель сторис */}
+          <div className="h-[86px] flex-shrink-0" aria-hidden />
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            postsWithCounts.filter(p => !removedIds.has(p.id)).map((post) => (
+              <div
+                key={post.id}
+                className="snap-start snap-always flex flex-col justify-center scroll-mt-[86px]"
+                style={{ height: "calc(100% - 86px)", minHeight: "calc(100% - 86px)" }}
+              >
+                <PostCard post={post} />
+              </div>
+            ))
+          )}
         </div>
-      ) : (
-        postsWithCounts.filter(p => !removedIds.has(p.id)).map((post) => (
-          <PostCard key={post.id} post={post} />
-        ))
-      )}
-
-      <div className="pb-24" />
-      </div>
       </div>
 
       {/* Desktop nav arrows */}
