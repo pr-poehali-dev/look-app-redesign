@@ -9,6 +9,7 @@ import { useFollowing } from "@/hooks/useFollowing";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
 import ReportButton from "@/components/ReportButton";
+import { toast } from "sonner";
 
 export interface VideoData {
   id: number;
@@ -109,6 +110,9 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       setTimeout(() => URL.revokeObjectURL(objUrl), 2000);
       setDownloadDone(true);
       setTimeout(() => setDownloadDone(false), 1500);
+      toast.success("Файл сохранён в «Загрузки»", {
+        description: "Открой загрузки телефона, чтобы посмотреть. Вернуться в Лоок — кнопкой «Назад».",
+      });
     };
 
     // Шаг 1: пробуем напрямую (если CDN отдаёт CORS) — работает для любого размера
@@ -138,6 +142,9 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+      toast.success("Загрузка началась", {
+        description: "Файл появится в «Загрузках». Вернуться в Лоок — кнопкой «Назад».",
+      });
     } finally {
       setDownloading(false);
     }
