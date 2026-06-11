@@ -234,7 +234,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   return (
     <div className="media-overlay-text relative w-full h-full flex-shrink-0 snap-start overflow-hidden bg-black md:bg-transparent md:overflow-visible md:flex md:gap-4 md:items-stretch">
       {/* Video + info column */}
-      <div className="relative w-full h-full md:flex-1 md:max-w-[470px] md:rounded-xl md:overflow-hidden md:bg-black">
+      <div className="relative w-full h-full md:w-[470px] md:flex-none md:rounded-xl md:overflow-hidden md:bg-black">
       {isVideo ? (
         <>
           {preloadLevel === "none" ? (
