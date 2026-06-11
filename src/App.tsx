@@ -60,6 +60,14 @@ const AppContent = () => {
   const [showQrLogin, setShowQrLogin] = useState(false);
 
   useEffect(() => {
+    // Маркер успешного монтирования React — для фолбэка на старых ТВ-браузерах
+    const root = document.getElementById("root");
+    if (root) root.setAttribute("data-app-mounted", "1");
+    const fb = document.getElementById("fallback-msg");
+    if (fb) fb.style.display = "none";
+  }, []);
+
+  useEffect(() => {
     const onOpen = () => setShowQrLogin(true);
     const onApprove = (e: Event) => {
       const detail = (e as CustomEvent).detail as { code?: string } | null;

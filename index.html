@@ -69,6 +69,53 @@
   </head>
 
 <body>
+<noscript>
+  <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;background:#0d2a18;color:#fff;font-family:system-ui,sans-serif">
+    Для работы Лоок включите JavaScript в браузере.
+  </div>
+</noscript>
+<div id="fallback-msg" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:1;align-items:center;justify-content:center;text-align:center;padding:24px;background:#0d2a18;color:#fff;font-family:system-ui,sans-serif">
+  <div style="max-width:480px">
+    <div style="font-size:24px;font-weight:700;margin-bottom:12px">Лоок</div>
+    <div style="font-size:16px;line-height:1.5;opacity:.9">Похоже, ваш браузер устарел и не поддерживается. Откройте сайт на телефоне или компьютере в современном браузере (Chrome, Safari, Firefox).</div>
+  </div>
+</div>
+<script>
+  // Если современные возможности недоступны (старый Smart TV браузер) —
+  // показываем понятное сообщение вместо пустого зелёного экрана.
+  (function () {
+    var ok = true;
+    try {
+      // Базовые фичи, нужные приложению
+      if (typeof Promise === 'undefined') ok = false;
+      if (typeof Symbol === 'undefined') ok = false;
+      if (!window.fetch) ok = false;
+      if (!Object.assign) ok = false;
+      if (!Array.prototype.includes) ok = false;
+    } catch (e) { ok = false; }
+    if (!ok) {
+      var el = document.getElementById('fallback-msg');
+      if (el) el.style.display = 'flex';
+    } else {
+      // Если через 12 секунд React так и не отрисовался — показываем сообщение
+      window.setTimeout(function () {
+        var root = document.getElementById('root');
+        var rendered = root && root.querySelector('[data-app-mounted]');
+        if (!rendered) {
+          var el = document.getElementById('fallback-msg');
+          if (el) el.style.display = 'flex';
+        }
+      }, 12000);
+    }
+    window.addEventListener('error', function (ev) {
+      var msg = ev && ev.message ? String(ev.message) : '';
+      if (msg.indexOf('SyntaxError') !== -1 || msg.indexOf('Unexpected') !== -1) {
+        var el = document.getElementById('fallback-msg');
+        if (el) el.style.display = 'flex';
+      }
+    });
+  })();
+</script>
 <div id="root">
   <div style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">
     <h1>Лоок — социальная сеть нового поколения</h1>
