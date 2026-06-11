@@ -105,41 +105,47 @@ const PostCard = ({ post }: { post: Post }) => {
         </button>
       </div>
 
-      {/* Likes count */}
-      <div className="px-3 pb-1">
-        <span className="text-white font-semibold text-[13px]">{formatLikes(likes)} отметок «Нравится»</span>
-      </div>
-
-      {/* Caption */}
-      <div className="px-3 pb-1">
-        <span className="text-white font-semibold text-[13px] mr-1.5">{post.handle}</span>
-        <span className="text-white text-[13px]">
-          {expanded ? post.caption : post.caption.slice(0, 90) + (post.caption.length > 90 ? "…" : "")}
-        </span>
-        {post.caption.length > 90 && !expanded && (
-          <button onClick={() => setExpanded(true)} className="text-white/40 text-[13px] ml-1">ещё</button>
-        )}
-      </div>
-
-      {/* Hashtags */}
-      {post.hashtags.length > 0 && (
-        <div className="px-3 pb-1 flex flex-row flex-wrap gap-x-1">
-          {post.hashtags.map(tag => (
-            <span key={tag} className="text-[#00a2ff] text-[13px]">#{tag}</span>
-          ))}
+      {/* Текстовый блок — ограничен по высоте, при длинной подписи прокручивается */}
+      <div className="flex-shrink-0 max-h-[28%] overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+        {/* Likes count */}
+        <div className="px-3 pb-1">
+          <span className="text-white font-semibold text-[13px]">{formatLikes(likes)} отметок «Нравится»</span>
         </div>
-      )}
 
-      {/* View comments */}
-      {commentCount > 0 && (
-        <button onClick={() => setShowComments(true)} className="px-3 pb-1 block">
-          <span className="text-white/40 text-[13px]">Посмотреть все комментарии ({commentCount})</span>
-        </button>
-      )}
+        {/* Caption */}
+        <div className="px-3 pb-1">
+          <span className="text-white font-semibold text-[13px] mr-1.5">{post.handle}</span>
+          <span className="text-white text-[13px]">
+            {expanded ? post.caption : post.caption.slice(0, 90) + (post.caption.length > 90 ? "…" : "")}
+          </span>
+          {post.caption.length > 90 && !expanded && (
+            <button onClick={() => setExpanded(true)} className="text-white/40 text-[13px] ml-1">ещё</button>
+          )}
+          {post.caption.length > 90 && expanded && (
+            <button onClick={() => setExpanded(false)} className="text-white/40 text-[13px] ml-1">свернуть</button>
+          )}
+        </div>
 
-      {/* Time */}
-      <div className="px-3 pb-3 pt-0.5">
-        <span className="text-white/30 text-[11px] uppercase tracking-wide">{post.time}</span>
+        {/* Hashtags */}
+        {post.hashtags.length > 0 && (
+          <div className="px-3 pb-1 flex flex-row flex-wrap gap-x-1">
+            {post.hashtags.map(tag => (
+              <span key={tag} className="text-[#00a2ff] text-[13px]">#{tag}</span>
+            ))}
+          </div>
+        )}
+
+        {/* View comments */}
+        {commentCount > 0 && (
+          <button onClick={() => setShowComments(true)} className="px-3 pb-1 block">
+            <span className="text-white/40 text-[13px]">Посмотреть все комментарии ({commentCount})</span>
+          </button>
+        )}
+
+        {/* Time */}
+        <div className="px-3 pb-3 pt-0.5">
+          <span className="text-white/30 text-[11px] uppercase tracking-wide">{post.time}</span>
+        </div>
       </div>
 
       {/* Menu popup */}
