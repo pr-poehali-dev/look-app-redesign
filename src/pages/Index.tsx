@@ -356,15 +356,8 @@ const Index = () => {
           )}
         </div>
 
-        {/* Top header only for feed tab (только на телефоне) */}
-        {activeTab === "feed" && (
-          <div className="md:hidden absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 pt-10 pb-3 bg-black border-b border-white/8">
-            <span className="font-bold text-white text-lg">Лоок</span>
-          </div>
-        )}
-
         {/* Content */}
-        <div className={`flex-1 relative overflow-hidden ${activeTab === "feed" ? "pt-[72px] md:pt-0" : ""}`}>
+        <div className="flex-1 relative overflow-hidden">
           {activeTab === "home" && (
             <>
               {/* На ПК показываем плиточную сетку (TikTok-стиль) для всех категорий, кроме «Подписки» и «Новые». Клик — открывает видео в ленте */}
