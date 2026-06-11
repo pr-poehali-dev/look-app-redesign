@@ -119,14 +119,14 @@ const Landing = ({ onLogin, onRegister }: LandingProps) => {
           <div className="relative">
             <div className="grid grid-cols-2 gap-3">
               <div className="aspect-[3/4] rounded-3xl overflow-hidden ring-1 ring-white/10 shadow-2xl">
-                <img src={FEATURE_IMAGES[0]} alt="Создавай контент" className="w-full h-full object-cover" />
+                <img src={FEATURE_IMAGES[0]} alt="Создавай контент" width={1024} height={1024} className="w-full h-full object-cover" />
               </div>
               <div className="space-y-3 pt-8">
                 <div className="aspect-square rounded-3xl overflow-hidden ring-1 ring-white/10 shadow-2xl">
-                  <img src={FEATURE_IMAGES[1]} alt="Делись эмоциями" className="w-full h-full object-cover" />
+                  <img src={FEATURE_IMAGES[1]} alt="Делись эмоциями" width={1024} height={1024} className="w-full h-full object-cover" />
                 </div>
                 <div className="aspect-square rounded-3xl overflow-hidden ring-1 ring-white/10 shadow-2xl">
-                  <img src={FEATURE_IMAGES[2]} alt="Будь собой" className="w-full h-full object-cover" />
+                  <img src={FEATURE_IMAGES[2]} alt="Будь собой" width={1024} height={1024} className="w-full h-full object-cover" />
                 </div>
               </div>
             </div>
@@ -149,7 +149,7 @@ const Landing = ({ onLogin, onRegister }: LandingProps) => {
               >
                 {"img" in f && f.img && (
                   <div className="aspect-[4/3] rounded-2xl overflow-hidden mb-4 ring-1 ring-white/10">
-                    <img src={f.img} alt={f.title} loading="lazy" className="w-full h-full object-cover" />
+                    <img src={f.img} alt={f.title} width={1024} height={1024} loading="lazy" className="w-full h-full object-cover" />
                   </div>
                 )}
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#22e0a1] to-[#22d3ee] flex items-center justify-center mb-4">
@@ -190,7 +190,7 @@ const Landing = ({ onLogin, onRegister }: LandingProps) => {
                   key={`row1-${i}`}
                   className="relative flex-shrink-0 w-44 md:w-56 aspect-[9/16] rounded-3xl overflow-hidden ring-1 ring-white/10 shadow-2xl group"
                 >
-                  <img src={r.img} alt={r.author} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                  <img src={r.img} alt={r.author} width={1024} height={1024} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40" />
                   <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-white/15 backdrop-blur text-white text-[10px] font-semibold">
                     #{r.tag}
@@ -221,7 +221,7 @@ const Landing = ({ onLogin, onRegister }: LandingProps) => {
                   key={`row2-${i}`}
                   className="relative flex-shrink-0 w-44 md:w-56 aspect-[9/16] rounded-3xl overflow-hidden ring-1 ring-white/10 shadow-2xl group"
                 >
-                  <img src={r.img} alt={r.author} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                  <img src={r.img} alt={r.author} width={1024} height={1024} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
                   <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-white/15 backdrop-blur text-white text-[10px] font-semibold">
                     #{r.tag}
