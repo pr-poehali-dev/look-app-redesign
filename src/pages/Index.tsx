@@ -357,7 +357,7 @@ const Index = () => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 relative overflow-hidden">
+        <div className="flex-1 relative overflow-hidden" style={{ background: "var(--look-bg)" }}>
           {activeTab === "home" && (
             <>
               {/* На ПК показываем плиточную сетку (TikTok-стиль) для всех категорий, кроме «Подписки» и «Новые». Клик — открывает видео в ленте */}
