@@ -142,9 +142,6 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
     // Шаг 3: blob не получился (большой файл без CORS).
     // Открываем плеер ВНУТРИ сайта (оверлеем) — со своей кнопкой и жестом «Назад».
     setPlayerUrl(url);
-    toast.success("Видео открыто", {
-      description: "Нажми «Сохранить видео» внизу или зажми видео. Кнопка «Назад» вверху вернёт в Лоок.",
-    });
     setDownloading(false);
   };
 
