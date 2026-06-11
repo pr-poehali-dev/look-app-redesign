@@ -467,7 +467,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
               className="w-full snap-start flex md:items-center md:justify-center"
               style={{ height: "100%" }}
             >
-              <div className="w-full md:h-[min(100%,720px)] h-full">
+              <div className="w-full md:w-auto md:h-[min(100%,720px)] h-full">
                 <VideoCard video={video} isActive={activeIndex === i} preloadLevel={preloadLevel} />
               </div>
             </div>
