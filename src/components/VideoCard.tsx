@@ -467,7 +467,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       </div>
 
       {/* Desktop right actions — вне видео, все 7 кнопок */}
-      <div className="hidden md:flex flex-col items-center gap-3 z-30 flex-shrink-0 justify-end pb-6">
+      <div className="hidden md:flex flex-col items-center gap-3 z-30 flex-shrink-0 justify-end pb-6 px-3 pt-6 rounded-2xl bg-[#1f6b3a]">
         {/* Avatar */}
         <button
           onClick={toggleFollow}
@@ -489,7 +489,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
         {/* Like */}
         <button onClick={() => toggleLike()} className="flex flex-col items-center gap-1">
-          <div className="w-12 h-12 rounded-full bg-[#1f6b3a] hover:bg-[#27814a] flex items-center justify-center transition-colors">
+          <div className="w-12 h-12 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors">
             <Icon name="Heart" size={26} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"} />
           </div>
           <span className="text-white text-xs font-semibold">{formatCount(likeCount)}</span>
@@ -497,7 +497,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
         {/* Comment */}
         <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1">
-          <div className="w-12 h-12 rounded-full bg-[#1f6b3a] hover:bg-[#27814a] flex items-center justify-center transition-colors">
+          <div className="w-12 h-12 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors">
             <Icon name="MessageCircle" size={24} className="text-white" />
           </div>
           <span className="text-white text-xs font-semibold">{formatCount(commentCount)}</span>
@@ -505,7 +505,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
         {/* Share */}
         <button onClick={() => setShowShare(true)} className="flex flex-col items-center gap-1">
-          <div className="w-12 h-12 rounded-full bg-[#1f6b3a] hover:bg-[#27814a] flex items-center justify-center transition-colors">
+          <div className="w-12 h-12 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors">
             <Icon name="Send" size={24} className="text-white" />
           </div>
           <span className="text-white text-xs font-semibold">{video.shares}</span>
@@ -513,7 +513,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
         {/* Bookmark */}
         <button onClick={toggleSaved} className="flex flex-col items-center gap-1">
-          <div className="w-12 h-12 rounded-full bg-[#1f6b3a] hover:bg-[#27814a] flex items-center justify-center transition-colors">
+          <div className="w-12 h-12 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors">
             <Icon name="Bookmark" size={24} className={saved ? "text-[#ffd700] fill-[#ffd700]" : "text-white"} />
           </div>
           <span className="text-white text-xs font-semibold">Сохранить</span>
@@ -521,7 +521,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
         {/* Ещё */}
         <button onClick={() => setShowMore(true)} className="flex flex-col items-center gap-1">
-          <div className="w-12 h-12 rounded-full bg-[#1f6b3a] hover:bg-[#27814a] flex items-center justify-center transition-colors">
+          <div className="w-12 h-12 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors">
             <span className="text-white text-xs font-semibold">Ещё</span>
           </div>
         </button>
