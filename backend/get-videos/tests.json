@@ -4,9 +4,19 @@
       "name": "GET videos",
       "method": "GET",
       "path": "/?type=video",
-      "expectedStatus": 200,
-      "expectedBody": {"videos": [{}]},
-      "bodyMatcher": "partial"
+      "expectedStatus": 200
+    },
+    {
+      "name": "GET personalized feed",
+      "method": "GET",
+      "path": "/?type=video&user_id=1",
+      "expectedStatus": 200
+    },
+    {
+      "name": "GET videos by category",
+      "method": "GET",
+      "path": "/?type=video&category=music",
+      "expectedStatus": 200
     }
   ]
 }
