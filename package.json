@@ -45,6 +45,7 @@
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.3.0",
+    "html-parse-stringify": "3.0.1",
     "i18next": "^26.0.10",
     "i18next-browser-languagedetector": "^8.2.1",
     "input-otp": "^1.2.4",
