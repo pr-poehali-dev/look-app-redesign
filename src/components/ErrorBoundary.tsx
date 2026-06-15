@@ -55,9 +55,25 @@ class ErrorBoundary extends React.Component<Props, State> {
               Лоок
             </h1>
             <p style={{ fontSize: 16, lineHeight: 1.5, opacity: 0.9, marginBottom: 16 }}>
-              Похоже, ваш браузер не поддерживается. Откройте сайт на телефоне
-              или компьютере в современном браузере (Chrome, Safari, Firefox).
+              Произошла ошибка при загрузке приложения. Попробуйте обновить страницу.
             </p>
+            {this.state.message && (
+              <pre
+                style={{
+                  fontSize: 12,
+                  textAlign: "left",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  background: "rgba(0,0,0,0.3)",
+                  padding: "12px",
+                  borderRadius: 8,
+                  marginBottom: 16,
+                  opacity: 0.8,
+                }}
+              >
+                {this.state.message}
+              </pre>
+            )}
             <button
               onClick={() => window.location.reload()}
               style={{
