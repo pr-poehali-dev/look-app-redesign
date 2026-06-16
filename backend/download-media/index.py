@@ -41,34 +41,11 @@ def handler(event: dict, context) -> dict:
 
     safe_name = ''.join(c for c in filename if c.isalnum() or c in '._-') or 'file.bin'
 
-    # Лимит размера ответа Cloud Function ~6 МБ (с учётом base64-раздувания ~33%).
-    # Большие файлы через base64 вернуть нельзя — отдаём редирект на CDN.
-    MAX_INLINE = 4_000_000
-
-    try:
-        head = urllib.request.Request(url, method='HEAD', headers={'User-Agent': 'Look-Proxy/1.0'})
-        with urllib.request.urlopen(head, timeout=10) as hr:
-            size = int(hr.headers.get('Content-Length') or 0)
-        if size > MAX_INLINE:
-            return {
-                'statusCode': 302,
-                'headers': {'Access-Control-Allow-Origin': '*', 'Location': url},
-                'body': '',
-            }
-    except Exception:
-        pass
-
     try:
         req = urllib.request.Request(url, headers={'User-Agent': 'Look-Proxy/1.0'})
-        with urllib.request.urlopen(req, timeout=25) as resp:
+        with urllib.request.urlopen(req, timeout=28) as resp:
             data = resp.read()
             content_type = resp.headers.get('Content-Type', 'application/octet-stream')
-        if len(data) > MAX_INLINE:
-            return {
-                'statusCode': 302,
-                'headers': {'Access-Control-Allow-Origin': '*', 'Location': url},
-                'body': '',
-            }
     except Exception as e:
         return {
             'statusCode': 502,

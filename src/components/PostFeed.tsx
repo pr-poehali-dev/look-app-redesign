@@ -132,6 +132,7 @@ const PostFeed = () => {
             <span className="text-white/80 text-[10px] w-16 text-center truncate">{post.handle}</span>
           </button>
         ))}
+        <div className="flex-shrink-0 w-1" aria-hidden="true" />
       </div>
 
       {/* Posts — прокрутка с привязкой, под фиксированной панелью сторис */}

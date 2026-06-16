@@ -22,7 +22,7 @@ const GENDER_LABELS: Record<string, string> = {
 
 const UserProfileModal = ({ handle, onClose }: Props) => {
   const data = getAuthor(handle);
-  const { following, toggle: toggleFollow } = useFollowing(handle);
+  const { following, toggle: toggleFollow, isSelf } = useFollowing(handle);
   const realFollowers = useFollowerCount(handle);
   const [tab, setTab] = useState<"media" | "files" | "links">("media");
   const [openedItem, setOpenedItem] = useState<number | null>(null);
@@ -176,15 +176,17 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
 
           {/* Action buttons — Telegram style round */}
           <div className="flex justify-center gap-3 px-6 pb-6 bg-white">
-            <button
-              onClick={toggleFollow}
-              className="flex flex-col items-center gap-1.5 active:opacity-70"
-            >
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${following ? "bg-gray-100" : "bg-[#2AABEE]"}`}>
-                <Icon name={following ? "Check" : "UserPlus"} size={20} className={following ? "text-[#2AABEE]" : "text-white"} />
-              </div>
-              <span className="text-[#2AABEE] text-xs font-medium">{following ? "Вы подписаны" : "Подписаться"}</span>
-            </button>
+            {!isSelf && (
+              <button
+                onClick={toggleFollow}
+                className="flex flex-col items-center gap-1.5 active:opacity-70"
+              >
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${following ? "bg-gray-100" : "bg-[#2AABEE]"}`}>
+                  <Icon name={following ? "Check" : "UserPlus"} size={20} className={following ? "text-[#2AABEE]" : "text-white"} />
+                </div>
+                <span className="text-[#2AABEE] text-xs font-medium">{following ? "Вы подписаны" : "Подписаться"}</span>
+              </button>
+            )}
             <button
               onClick={openMessage}
               className="flex flex-col items-center gap-1.5 active:opacity-70"

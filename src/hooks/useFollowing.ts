@@ -31,6 +31,16 @@ const getUserId = (): string | null => {
   }
 };
 
+const normHandle = (h: string): string => (h || "").trim().replace(/^@/, "").toLowerCase();
+
+const getMyHandle = (): string => {
+  try {
+    return normHandle(localStorage.getItem("user_handle") || "");
+  } catch {
+    return "";
+  }
+};
+
 const emit = () => {
   window.dispatchEvent(new CustomEvent(EVENT_NAME));
 };
@@ -84,6 +94,7 @@ const apiUnfollow = (handle: string) => {
 };
 
 export const useFollowing = (handle: string) => {
+  const isSelf = normHandle(handle) !== "" && normHandle(handle) === getMyHandle();
   const [following, setFollowing] = useState<boolean>(() => cache.includes(handle) || readLocal().includes(handle));
 
   useEffect(() => {
@@ -98,10 +109,11 @@ export const useFollowing = (handle: string) => {
   }, [handle]);
 
   const follow = useCallback(() => {
+    if (isSelf) return;
     if (cache.includes(handle)) return;
     setCache([handle, ...cache]);
     apiFollow(handle);
-  }, [handle]);
+  }, [handle, isSelf]);
 
   const unfollow = useCallback(() => {
     if (!cache.includes(handle)) return;
@@ -110,11 +122,12 @@ export const useFollowing = (handle: string) => {
   }, [handle]);
 
   const toggle = useCallback(() => {
+    if (isSelf) return;
     if (cache.includes(handle)) unfollow();
     else follow();
-  }, [handle, follow, unfollow]);
+  }, [handle, isSelf, follow, unfollow]);
 
-  return { following, toggle, follow, unfollow };
+  return { following, toggle, follow, unfollow, isSelf };
 };
 
 export const useFollowingList = (): string[] => {

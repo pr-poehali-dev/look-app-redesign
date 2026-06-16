@@ -55,9 +55,11 @@ const AuthScreen = ({ initialMode = "login" }: AuthScreenProps = {}) => {
   };
 
   const phoneDigits = phone.replace(/\D/g, "");
+  const emailRe = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  const emailValid = emailRe.test(email.trim());
   const isValid = mode === "login"
     ? email.trim() && password
-    : name.trim() && handle.trim() && email.trim() && password.length >= 6 && phoneDigits.length >= 10;
+    : name.trim() && handle.trim() && emailValid && password.length >= 6 && phoneDigits.length >= 10;
 
   return (
     <div className="fixed inset-0 bg-black overflow-y-auto" style={{ maxWidth: 480, margin: "0 auto" }}>
@@ -134,11 +136,14 @@ const AuthScreen = ({ initialMode = "login" }: AuthScreenProps = {}) => {
           <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</label>
           <input
             value={email}
-            onChange={e => setEmail(e.target.value)}
+            onChange={e => setEmail(e.target.value.replace(/\s/g, ""))}
             type="email"
             placeholder="example@mail.com"
             className="w-full px-4 py-3 rounded-xl bg-gray-100 text-black text-sm outline-none focus:ring-2 focus:ring-[#8b5cf6]/30"
           />
+          {mode === "register" && email.length > 0 && !emailValid && (
+            <p className="text-[11px] text-[#fe2c55]">Введите корректный email, например example@mail.com</p>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">

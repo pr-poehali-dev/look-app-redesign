@@ -54,6 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(data.user);
           setToken(saved);
           localStorage.setItem("user_id", data.user.id);
+          if (data.user.handle) localStorage.setItem("user_handle", data.user.handle);
         }
         else localStorage.removeItem("auth_token");
       })
@@ -74,6 +75,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(data.token);
     localStorage.setItem("auth_token", data.token);
     localStorage.setItem("user_id", data.user.id);
+    if (data.user.handle) localStorage.setItem("user_handle", data.user.handle);
     return null;
   };
 
@@ -90,6 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(data.token);
     localStorage.setItem("auth_token", data.token);
     localStorage.setItem("user_id", data.user.id);
+    if (data.user.handle) localStorage.setItem("user_handle", data.user.handle);
     return null;
   };
 
@@ -98,6 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(newToken);
     localStorage.setItem("auth_token", newToken);
     localStorage.setItem("user_id", newUser.id);
+    if (newUser.handle) localStorage.setItem("user_handle", newUser.handle);
   };
 
   const logout = () => {
@@ -105,6 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(null);
     localStorage.removeItem("auth_token");
     localStorage.removeItem("user_id");
+    localStorage.removeItem("user_handle");
   };
 
   const updateUser = (u: Partial<AppUser>) => {

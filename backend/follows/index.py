@@ -125,6 +125,18 @@ def handler(event: dict, context) -> dict:
             if safe_user == target_handle:
                 return _resp(400, {'error': 'cannot follow yourself'})
 
+            if action in ('follow', 'toggle'):
+                try:
+                    cur.execute(
+                        f"SELECT handle FROM \"{schema}\".app_users WHERE id = '{safe_user}' LIMIT 1"
+                    )
+                    me = cur.fetchone()
+                    my_handle = (me[0] if me and me[0] else '').lstrip('@').lower()
+                    if my_handle and my_handle == target_handle.lstrip('@').lower():
+                        return _resp(400, {'error': 'cannot follow yourself'})
+                except Exception:
+                    pass
+
             if action == 'follow':
                 cur.execute(
                     f"INSERT INTO {table} (follower_id, target_handle) VALUES ('{safe_user}', '{target_handle}') ON CONFLICT DO NOTHING"

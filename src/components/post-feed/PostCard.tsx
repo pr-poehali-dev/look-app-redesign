@@ -15,7 +15,7 @@ const PostCard = ({ post }: { post: Post }) => {
     title: post.caption,
     handle: post.handle,
   });
-  const { following, toggle: toggleFollow } = useFollowing(post.handle);
+  const { following, toggle: toggleFollow, isSelf } = useFollowing(post.handle);
   const [expanded, setExpanded] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showShare, setShowShare] = useState(false);
@@ -48,7 +48,7 @@ const PostCard = ({ post }: { post: Post }) => {
             <div className="flex items-center gap-1.5">
               <span className="text-white font-semibold text-[13px]">{post.handle}</span>
               <Icon name="BadgeCheck" size={12} className="text-[#61d4f0]" />
-              {!following ? (
+              {isSelf ? null : !following ? (
                 <button
                   onClick={toggleFollow}
                   className="ml-1 px-2 py-0.5 rounded-full bg-[#fe2c55] text-white text-[11px] font-semibold leading-none active:scale-95 transition-transform"
@@ -240,20 +240,8 @@ const PostCard = ({ post }: { post: Post }) => {
                 { icon: "MessageCircle", label: "Telegram", color: "#229ED9", href: `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`@${post.handle}: ${post.caption}`)}` },
                 { icon: "Send", label: "WhatsApp", color: "#25D366", href: `https://wa.me/?text=${encodeURIComponent(`@${post.handle}: ${post.caption}\n${window.location.href}`)}` },
                 { icon: "Share2", label: "VK", color: "#0077FF", href: `https://vk.com/share.php?url=${encodeURIComponent(window.location.href)}` },
-                { icon: "MessageSquare", label: "МАКС", color: "#7C66FC", copy: true },
-              ].map(opt => opt.copy ? (
-                <button
-                  key={opt.label}
-                  type="button"
-                  className="flex flex-col items-center gap-2"
-                  onClick={() => { navigator.clipboard?.writeText(window.location.href).catch(() => {}); setCopied(true); setTimeout(() => { setCopied(false); setShowShare(false); }, 1200); }}
-                >
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: opt.color + "22", border: `1.5px solid ${opt.color}55` }}>
-                    <Icon name={copied ? "Check" : opt.icon} size={24} style={{ color: opt.color }} />
-                  </div>
-                  <span className="text-white/70 text-xs">{copied ? "Скопировано" : opt.label}</span>
-                </button>
-              ) : (
+                { icon: "MessageSquare", label: "МАКС", color: "#7C66FC", href: `https://max.ru/share?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`@${post.handle}: ${post.caption}`)}` },
+              ].map(opt => (
                 <a key={opt.label} href={opt.href} target="_blank" rel="noreferrer" className="flex flex-col items-center gap-2" onClick={() => setShowShare(false)}>
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: opt.color + "22", border: `1.5px solid ${opt.color}55` }}>
                     <Icon name={opt.icon} size={24} style={{ color: opt.color }} />

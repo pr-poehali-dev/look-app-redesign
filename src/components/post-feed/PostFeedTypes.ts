@@ -98,9 +98,19 @@ export const MOCK_COMMENTS = [
 export const formatLikes = (n: number) =>
   n >= 1000 ? (n / 1000).toFixed(1).replace(".0", "") + "K" : String(n);
 
+export const parseServerDate = (iso: string): Date => {
+  let s = iso.trim().replace(" ", "T");
+  const hasTz = /[zZ]$/.test(s) || /[+-]\d{2}:?\d{2}$/.test(s);
+  if (!hasTz) s += "Z";
+  return new Date(s);
+};
+
 export const formatTime = (iso: string | null | undefined): string => {
   if (!iso) return "недавно";
-  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  const d = parseServerDate(iso);
+  if (isNaN(d.getTime())) return "недавно";
+  const diff = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (diff < 0) return "только что";
   if (diff < 60) return "только что";
   if (diff < 3600) return `${Math.floor(diff / 60)} мин назад`;
   if (diff < 86400) return `${Math.floor(diff / 3600)} ч назад`;

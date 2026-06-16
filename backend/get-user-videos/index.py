@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import base64
 import hashlib
 import secrets
@@ -58,7 +59,7 @@ def handler(event: dict, context) -> dict:
         if action == 'register':
             name = (body.get('name') or '').strip()
             handle = (body.get('handle') or '').strip().lstrip('@')
-            email = (body.get('email') or '').strip().lower()
+            email = ''.join((body.get('email') or '').split()).lower()
             password = body.get('password') or ''
             origin = (body.get('origin') or '').strip().rstrip('/')
             phone_raw = (body.get('phone') or '').strip()
@@ -69,7 +70,7 @@ def handler(event: dict, context) -> dict:
                 return err('Заполни все поля')
             if len(password) < 6:
                 return err('Пароль минимум 6 символов')
-            if '@' not in email or '.' not in email.split('@')[-1]:
+            if not re.match(r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$', email):
                 return err('Введи корректный email')
             digits_only = ''.join(ch for ch in phone if ch.isdigit())
             if len(digits_only) < 10:
@@ -99,7 +100,7 @@ def handler(event: dict, context) -> dict:
             return ok({'token': token, 'user': {'id': uid, 'name': name, 'handle': handle, 'email': email, 'avatar': None, 'phone': phone}, 'verify_sent': True})
 
         if action == 'login':
-            email = (body.get('email') or '').strip().lower()
+            email = ''.join((body.get('email') or '').split()).lower()
             password = body.get('password') or ''
             if not email or not password:
                 return err('Введи email и пароль')

@@ -215,6 +215,19 @@ def handler(event: dict, context) -> dict:
                                 last_msg = '📷 Фото'
                             elif r[5] == 'voice':
                                 last_msg = '🎤 Голосовое'
+                            elif r[5] == 'video':
+                                last_msg = '🎬 Видео'
+                            elif r[5] == 'poll':
+                                poll_q = ''
+                                try:
+                                    pd = json.loads(r[6]) if r[6] else None
+                                    if isinstance(pd, dict):
+                                        poll_q = pd.get('question') or pd.get('title') or ''
+                                except Exception:
+                                    poll_q = ''
+                                last_msg = f'📊 Опрос: {poll_q}' if poll_q else '📊 Опрос'
+                            elif r[5] == 'file':
+                                last_msg = '📎 Файл'
                             else:
                                 last_msg = r[6] or ''
                         if r[7]:

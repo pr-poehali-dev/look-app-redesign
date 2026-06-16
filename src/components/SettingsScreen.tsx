@@ -249,8 +249,22 @@ const QrScreen = ({ onBack }: { onBack: () => void }) => {
 };
 
 const NotificationsScreen = ({ onBack }: { onBack: () => void }) => {
-  const [settings, setSettings] = useState(NOTIFICATIONS);
-  const toggle = (label: string) => setSettings(s => s.map(n => n.label === label ? { ...n, value: !n.value } : n));
+  const [settings, setSettings] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("notif_settings") || "null");
+      if (saved && typeof saved === "object") {
+        return NOTIFICATIONS.map(n => ({ ...n, value: saved[n.label] ?? n.value }));
+      }
+    } catch { /* ignore */ }
+    return NOTIFICATIONS;
+  });
+  const toggle = (label: string) => setSettings(s => {
+    const next = s.map(n => n.label === label ? { ...n, value: !n.value } : n);
+    try {
+      localStorage.setItem("notif_settings", JSON.stringify(Object.fromEntries(next.map(n => [n.label, n.value]))));
+    } catch { /* ignore */ }
+    return next;
+  });
   return (
     <div className="h-full bg-gray-100 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
       <div className="md:max-w-2xl md:mx-auto">
@@ -918,10 +932,15 @@ const SupportScreen = ({ onBack }: { onBack: () => void }) => {
 // Main Settings
 const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   const { user, logout } = useAuth();
-  const [showSubscriptions, setShowSubscriptions] = useState(true);
-  const [showChatButton, setShowChatButton] = useState(true);
-  const [whoSees, setWhoSees] = useState("Все");
+  const lsGet = (k: string, def: string) => { try { return localStorage.getItem(k) ?? def; } catch { return def; } };
+  const lsSet = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* ignore */ } };
+  const [showSubscriptions, setShowSubscriptionsState] = useState(() => lsGet("priv_subs", "1") === "1");
+  const [showChatButton, setShowChatButtonState] = useState(() => lsGet("priv_chatbtn", "1") === "1");
+  const [whoSees, setWhoSeesState] = useState(() => lsGet("priv_whosees", "Все"));
   const [showWhoSees, setShowWhoSees] = useState(false);
+  const setShowSubscriptions = (v: boolean) => { setShowSubscriptionsState(v); lsSet("priv_subs", v ? "1" : "0"); };
+  const setShowChatButton = (v: boolean) => { setShowChatButtonState(v); lsSet("priv_chatbtn", v ? "1" : "0"); };
+  const setWhoSees = (v: string) => { setWhoSeesState(v); lsSet("priv_whosees", v); };
   const [screen, setScreen] = useState<string | null>(null);
   useEffect(() => {
     const onOpenScreen = (e: Event) => {
@@ -1091,12 +1110,12 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
         <div className="flex items-center gap-4 px-4 py-4 bg-white border-b border-gray-100">
           <Icon name="Users" size={22} className="text-[#8b5cf6] flex-shrink-0" />
           <span className="flex-1 text-black text-base">Показывать подписки</span>
-          <Toggle value={showSubscriptions} onChange={() => setShowSubscriptions(v => !v)} />
+          <Toggle value={showSubscriptions} onChange={() => setShowSubscriptions(!showSubscriptions)} />
         </div>
         <div className="flex items-center gap-4 px-4 py-4 bg-white border-b border-gray-100">
           <Icon name="MessageCircle" size={22} className="text-[#8b5cf6] flex-shrink-0" />
           <span className="flex-1 text-black text-base">Показывать кнопку чата</span>
-          <Toggle value={showChatButton} onChange={() => setShowChatButton(v => !v)} />
+          <Toggle value={showChatButton} onChange={() => setShowChatButton(!showChatButton)} />
         </div>
         <Row icon="Bell" label="Уведомления" onPress={() => setScreen("notifications")} />
       </div>

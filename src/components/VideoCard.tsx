@@ -40,7 +40,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
     title: video.description,
     handle: video.handle,
   });
-  const { following, toggle: toggleFollow } = useFollowing(video.handle);
+  const { following, toggle: toggleFollow, isSelf } = useFollowing(video.handle);
   const { repostMedia } = useUserMedia();
   const { user } = useAuth();
   const [reposting, setReposting] = useState(false);
@@ -67,6 +67,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const [playerUrl, setPlayerUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [likedComments, setLikedComments] = useState<(string | number)[]>([]);
   const [downloading, setDownloading] = useState(false);
   const [downloadDone, setDownloadDone] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -80,6 +81,10 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
     const m = Math.floor(s / 60);
     const sec = Math.floor(s % 60);
     return `${m}:${sec.toString().padStart(2, "0")}`;
+  };
+
+  const toggleCommentLike = (id: string | number) => {
+    setLikedComments(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
   const handleSeek = (value: number) => {
@@ -127,9 +132,9 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       }
     } catch { /* идём в прокси */ }
 
-    // Шаг 2: через бэкенд-прокси (обходит CORS для небольших файлов)
+    // Шаг 2: через бэкенд-прокси (обходит CORS)
+    const proxyUrl = `https://functions.poehali.dev/b5faf1bc-6976-47c6-984e-e21c66d4c879?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(fileName)}`;
     try {
-      const proxyUrl = `https://functions.poehali.dev/b5faf1bc-6976-47c6-984e-e21c66d4c879?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(fileName)}`;
       const res = await fetch(proxyUrl);
       if (res.ok) {
         const blob = await res.blob();
@@ -139,9 +144,25 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       }
     } catch { /* идём в финальный вариант */ }
 
-    // Шаг 3: blob не получился (большой файл без CORS).
-    // Открываем плеер ВНУТРИ сайта (оверлеем) — со своей кнопкой и жестом «Назад».
-    setPlayerUrl(url);
+    // Шаг 3: blob не получился (большой файл) — открываем прокси прямой ссылкой,
+    // он отдаёт Content-Disposition: attachment, браузер сохранит файл сам.
+    try {
+      const a = document.createElement("a");
+      a.href = proxyUrl;
+      a.download = fileName;
+      a.target = "_blank";
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setDownloadDone(true);
+      setTimeout(() => setDownloadDone(false), 1500);
+      toast.success("Скачивание началось", {
+        description: "Файл сохранится в «Загрузки». Если не началось — проверь блокировку всплывающих окон.",
+      });
+    } catch {
+      setPlayerUrl(url);
+    }
     setDownloading(false);
   };
 
@@ -199,13 +220,29 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         }
       } catch { /* ignore */ }
     };
+    let fixedInfinity = false;
     const onTime = () => { if (!seeking) setCurrentTime(v.currentTime); updateBuffered(); };
-    const onMeta = () => { setDuration(v.duration || 0); updateBuffered(); };
+    const onMeta = () => {
+      const d = v.duration;
+      if (d === Infinity && !fixedInfinity) {
+        fixedInfinity = true;
+        const onSeeked = () => {
+          v.currentTime = 0;
+          setDuration(isFinite(v.duration) ? v.duration : 0);
+          v.removeEventListener("seeked", onSeeked);
+        };
+        v.addEventListener("seeked", onSeeked);
+        try { v.currentTime = 1e7; } catch { /* ignore */ }
+        return;
+      }
+      setDuration(isFinite(d) ? d : 0);
+      updateBuffered();
+    };
     v.addEventListener("timeupdate", onTime);
     v.addEventListener("progress", updateBuffered);
     v.addEventListener("loadedmetadata", onMeta);
     v.addEventListener("durationchange", onMeta);
-    if (v.duration) setDuration(v.duration);
+    if (isFinite(v.duration) && v.duration > 0) setDuration(v.duration);
     return () => {
       v.removeEventListener("timeupdate", onTime);
       v.removeEventListener("progress", updateBuffered);
@@ -324,7 +361,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           >
             @{video.handle}
           </button>
-          {!following ? (
+          {isSelf ? null : !following ? (
             <button
               onClick={toggleFollow}
               className="px-3 py-0.5 rounded-full border border-white text-white text-xs font-semibold hover:bg-white hover:text-black transition-all"
@@ -377,19 +414,19 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         {/* Avatar */}
         <button
           className="relative mb-2"
-          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); toggleFollow(); }}
-          onClick={toggleFollow}
+          onTouchEnd={(e) => { if (isSelf) return; e.stopPropagation(); e.preventDefault(); toggleFollow(); }}
+          onClick={() => { if (!isSelf) toggleFollow(); }}
           style={{ touchAction: "manipulation" }}
         >
           <div className={`w-12 h-12 rounded-full overflow-hidden border-2 ${following ? "border-[#fe2c55]" : "border-white"}`}>
             <UserAvatar src={video.avatar} name={video.author || video.handle} alt={video.author} />
           </div>
-          {!following && (
+          {!isSelf && !following && (
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#fe2c55] flex items-center justify-center">
               <Icon name="Plus" size={12} className="text-white" />
             </div>
           )}
-          {following && (
+          {!isSelf && following && (
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
               <Icon name="Check" size={12} className="text-white" />
             </div>
@@ -470,13 +507,13 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       <div className="hidden md:flex flex-col items-center gap-3 z-30 flex-shrink-0 justify-end pb-6 pl-2 pt-6" style={{ background: "var(--look-bg)" }}>
         {/* Avatar */}
         <button
-          onClick={toggleFollow}
+          onClick={() => { if (!isSelf) toggleFollow(); }}
           className="relative mb-2"
         >
           <div className={`w-12 h-12 rounded-full overflow-hidden border-2 ${following ? "border-[#fe2c55]" : "border-white"}`}>
             <UserAvatar src={video.avatar} name={video.author || video.handle} alt={video.author} />
           </div>
-          {!following ? (
+          {isSelf ? null : !following ? (
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#fe2c55] flex items-center justify-center">
               <Icon name="Plus" size={12} className="text-white" />
             </div>
@@ -640,24 +677,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
                 { icon: "MessageCircle", label: "Telegram", color: "#229ED9", href: `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`@${video.handle}: ${video.description}`)}` },
                 { icon: "Send", label: "WhatsApp", color: "#25D366", href: `https://wa.me/?text=${encodeURIComponent(`@${video.handle}: ${video.description}\n${window.location.href}`)}` },
                 { icon: "Share2", label: "VK", color: "#0077FF", href: `https://vk.com/share.php?url=${encodeURIComponent(window.location.href)}` },
-                { icon: "MessageSquare", label: "МАКС", color: "#7C66FC", copy: true },
-              ].map(opt => opt.copy ? (
-                <button
-                  key={opt.label}
-                  type="button"
-                  className="flex flex-col items-center gap-2"
-                  onClick={() => {
-                    navigator.clipboard?.writeText(window.location.href);
-                    setCopied(true);
-                    setTimeout(() => { setCopied(false); setShowShare(false); }, 1200);
-                  }}
-                >
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: opt.color + "22", border: `1.5px solid ${opt.color}55` }}>
-                    <Icon name={copied ? "Check" : opt.icon} size={24} style={{ color: opt.color }} />
-                  </div>
-                  <span className="text-white/70 text-xs">{copied ? "Скопировано" : opt.label}</span>
-                </button>
-              ) : (
+                { icon: "MessageSquare", label: "МАКС", color: "#7C66FC", href: `https://max.ru/share?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`@${video.handle}: ${video.description}`)}` },
+              ].map(opt => (
                 <a
                   key={opt.label}
                   href={opt.href}
@@ -740,8 +761,12 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
                     <p className="text-white/80 text-sm">{c.text}</p>
                   </div>
                   <div className="flex-shrink-0 mt-1 flex items-center gap-1">
-                    <button>
-                      <Icon name="Heart" size={14} className="text-white/40" />
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); toggleCommentLike(c.id); }}
+                      className="p-1"
+                    >
+                      <Icon name="Heart" size={14} className={likedComments.includes(c.id) ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white/40"} />
                     </button>
                     <ReportButton
                       targetType="comment"
