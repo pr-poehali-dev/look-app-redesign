@@ -77,9 +77,15 @@ def handler(event: dict, context) -> dict:
                 return err('Введи корректный номер телефона')
             conn = get_conn(); cur = conn.cursor()
             try:
-                cur.execute("SELECT id FROM app_users WHERE email=%s OR handle=%s OR phone=%s", (email, handle, phone))
+                cur.execute("SELECT id FROM app_users WHERE email=%s", (email,))
                 if cur.fetchone():
-                    return err('Email, никнейм или номер телефона уже заняты')
+                    return err('Такой email уже занят')
+                cur.execute("SELECT id FROM app_users WHERE handle=%s", (handle,))
+                if cur.fetchone():
+                    return err('Такой никнейм уже занят')
+                cur.execute("SELECT id FROM app_users WHERE phone=%s", (phone,))
+                if cur.fetchone():
+                    return err('Такой номер телефона уже занят')
                 uid = 'u_' + secrets.token_hex(8)
                 token = secrets.token_hex(32)
                 cur.execute("INSERT INTO app_users (id,name,handle,email,password_hash,token,phone) VALUES (%s,%s,%s,%s,%s,%s,%s)",

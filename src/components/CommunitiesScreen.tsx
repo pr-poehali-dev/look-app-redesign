@@ -248,7 +248,7 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-1.5 bg-[#fe2c55] px-3 py-1.5 rounded-full"
+          className="flex items-center gap-1.5 bg-[#fe2c55] hover:bg-[#e0264c] active:scale-95 transition-all cursor-pointer px-3 py-1.5 rounded-full"
         >
           <Icon name="Plus" size={14} className="text-white" />
           <span className="text-white text-xs font-bold">Создать</span>
@@ -260,7 +260,7 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
           <button
             key={cat}
             onClick={() => setCategory(cat)}
-            className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${category === cat ? "bg-white text-black" : "bg-white/10 text-white/60"}`}
+            className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${category === cat ? "bg-white text-black" : "bg-white/10 text-white/60 hover:bg-white/20"}`}
           >
             {cat}
           </button>
@@ -292,7 +292,7 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
               <button
                 key={t}
                 onClick={() => setNewType(t)}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold transition-all ${newType === t ? "bg-[#fe2c55] text-white" : "bg-white/8 text-white/50"}`}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer border ${newType === t ? "bg-[#fe2c55] text-white border-[#fe2c55]" : "bg-white/8 text-white/50 border-white/15 hover:bg-white/15"}`}
               >
                 <Icon name={t === "open" ? "Globe" : "Lock"} size={14} />
                 {t === "open" ? "Открытое" : "Закрытое"}
@@ -302,7 +302,7 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
           <button
             onClick={handleCreate}
             disabled={!newName.trim() || creating}
-            className="py-2.5 rounded-xl bg-[#fe2c55] text-white font-bold text-sm disabled:opacity-40"
+            className="py-2.5 rounded-xl bg-[#fe2c55] hover:bg-[#e0264c] active:scale-[0.99] transition-all cursor-pointer text-white font-bold text-sm disabled:opacity-40 disabled:hover:bg-[#fe2c55]"
           >
             {creating ? "Создаём..." : "Создать"}
           </button>

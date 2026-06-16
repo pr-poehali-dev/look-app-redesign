@@ -158,7 +158,7 @@ const Index = () => {
             return (
               <button
                 key={tab.id}
-                onClick={() => isAdd ? setShowCamera(true) : setActiveTab(tab.id)}
+                onClick={() => { setDesktopOverlay(null); return isAdd ? setShowCamera(true) : setActiveTab(tab.id); }}
                 className={`flex items-center gap-4 px-4 py-2 rounded-xl transition-colors ${
                   active ? "bg-white/10" : "hover:bg-white/5"
                 }`}

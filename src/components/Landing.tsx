@@ -145,7 +145,7 @@ const Landing = ({ onLogin, onRegister }: LandingProps) => {
             {FEATURES.map((f) => (
               <div
                 key={f.title}
-                className="p-5 rounded-3xl bg-white/5 backdrop-blur border border-white/10 hover:bg-white/10 transition-colors"
+                className="p-5 rounded-3xl bg-white/5 backdrop-blur border border-white/10"
               >
                 {"img" in f && f.img && (
                   <div className="aspect-[4/3] rounded-2xl overflow-hidden mb-4 ring-1 ring-white/10">

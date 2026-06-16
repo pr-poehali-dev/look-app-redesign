@@ -11,7 +11,7 @@ const LiveStreamCameraPrompt = ({ camState, camErrorMsg, onClose, onStart }: Pro
   if (camState === "idle") {
     return (
       <div className="relative w-full h-full bg-black flex flex-col items-center justify-center px-8">
-        <button onClick={onClose} className="absolute top-12 right-4 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+        <button onClick={onClose} className="absolute top-12 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 transition-all cursor-pointer flex items-center justify-center" title="Закрыть">
           <Icon name="X" size={18} className="text-white" />
         </button>
         <div className="text-6xl mb-6">📸</div>
@@ -21,19 +21,19 @@ const LiveStreamCameraPrompt = ({ camState, camErrorMsg, onClose, onStart }: Pro
         </p>
         <button
           onClick={onStart}
-          className="w-full py-4 rounded-2xl bg-[#fe2c55] text-white font-bold text-lg active:scale-95 transition-all flex items-center justify-center gap-3"
+          className="w-full py-4 rounded-2xl bg-[#fe2c55] hover:bg-[#e0264c] text-white font-bold text-lg active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-3"
         >
           <Icon name="Camera" size={22} />
           Включить камеру
         </button>
-        <button onClick={onClose} className="mt-4 text-white/30 text-sm">Отмена</button>
+        <button onClick={onClose} className="mt-4 text-white/30 hover:text-white/60 transition-colors cursor-pointer text-sm">Отмена</button>
       </div>
     );
   }
 
   return (
     <div className="relative w-full h-full bg-black flex flex-col overflow-y-auto px-6 pt-16 pb-8">
-      <button onClick={onClose} className="absolute top-12 right-4 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+      <button onClick={onClose} className="absolute top-12 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 transition-all cursor-pointer flex items-center justify-center" title="Закрыть">
         <Icon name="X" size={18} className="text-white" />
       </button>
       <div className="text-5xl mb-3 text-center">🔒</div>
@@ -53,7 +53,7 @@ const LiveStreamCameraPrompt = ({ camState, camErrorMsg, onClose, onStart }: Pro
       </div>
       <button
         onClick={() => { navigator.clipboard.writeText(window.location.href).catch(() => {}); }}
-        className="w-full py-3 rounded-2xl bg-white/10 text-white text-sm font-medium active:scale-95 transition-all mb-4 flex items-center justify-center gap-2"
+        className="w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white text-sm font-medium active:scale-95 transition-all cursor-pointer mb-4 flex items-center justify-center gap-2"
       >
         <Icon name="Copy" size={16} className="text-white/60" />
         Скопировать ссылку
@@ -61,11 +61,11 @@ const LiveStreamCameraPrompt = ({ camState, camErrorMsg, onClose, onStart }: Pro
       <div className="w-full h-px bg-white/10 mb-4" />
       <button
         onClick={onStart}
-        className="w-full py-4 rounded-2xl bg-[#fe2c55] text-white font-bold text-base active:scale-95 transition-all mb-3"
+        className="w-full py-4 rounded-2xl bg-[#fe2c55] hover:bg-[#e0264c] text-white font-bold text-base active:scale-95 transition-all cursor-pointer mb-3"
       >
         Попробовать снова
       </button>
-      <button onClick={onClose} className="text-white/30 text-sm text-center">Закрыть</button>
+      <button onClick={onClose} className="text-white/30 hover:text-white/60 transition-colors cursor-pointer text-sm text-center">Закрыть</button>
     </div>
   );
 };

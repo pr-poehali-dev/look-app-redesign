@@ -267,13 +267,14 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
         <div className="flex items-center gap-2">
           <button
             onClick={() => setTab("calls")}
-            className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center"
+            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
+            title="Звонки"
           >
             <Icon name="Phone" size={17} className="text-white" />
           </button>
           <button
             onClick={() => setTab("communities")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#00d4ff] to-[#8b5cf6] text-white text-sm font-medium"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#00d4ff] to-[#8b5cf6] hover:opacity-90 active:scale-95 transition-all cursor-pointer text-white text-sm font-medium"
           >
             <Icon name="Users" size={15} className="text-white" />
             Сообщества
@@ -282,7 +283,7 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
       </div>
 
       <div className="px-4 pb-3">
-        <div className="flex items-center gap-2 bg-white/8 rounded-full px-4 py-2.5">
+        <div className="flex items-center gap-2 bg-white/8 border border-white/15 rounded-full px-4 py-2.5 focus-within:border-white/40 transition-colors">
           <Icon name="Search" size={16} className="text-white/40" />
           <input
             value={search}
@@ -291,7 +292,7 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
             className="flex-1 bg-transparent text-white text-base outline-none placeholder-white/30"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="p-1">
+            <button onClick={() => setSearch("")} className="p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer">
               <Icon name="X" size={14} className="text-white/40" />
             </button>
           )}

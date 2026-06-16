@@ -54,12 +54,27 @@ const AuthScreen = ({ initialMode = "login" }: AuthScreenProps = {}) => {
     setLoading(false);
   };
 
+  const formatPhone = (raw: string): string => {
+    let d = raw.replace(/\D/g, "");
+    if (d.startsWith("8")) d = "7" + d.slice(1);
+    if (!d.startsWith("7")) d = "7" + d;
+    d = d.slice(0, 11);
+    const rest = d.slice(1);
+    let out = "+7";
+    if (rest.length > 0) out += " " + rest.slice(0, 3);
+    if (rest.length >= 3) out += " " + rest.slice(3, 6);
+    if (rest.length >= 6) out += "-" + rest.slice(6, 8);
+    if (rest.length >= 8) out += "-" + rest.slice(8, 10);
+    return out;
+  };
+
   const phoneDigits = phone.replace(/\D/g, "");
+  const phoneValid = phoneDigits.length === 11;
   const emailRe = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
   const emailValid = emailRe.test(email.trim());
   const isValid = mode === "login"
     ? email.trim() && password
-    : name.trim() && handle.trim() && emailValid && password.length >= 6 && phoneDigits.length >= 10;
+    : name.trim() && handle.trim() && emailValid && password.length >= 6 && phoneValid;
 
   return (
     <div className="fixed inset-0 bg-black overflow-y-auto" style={{ maxWidth: 480, margin: "0 auto" }}>
@@ -97,7 +112,7 @@ const AuthScreen = ({ initialMode = "login" }: AuthScreenProps = {}) => {
         {mode === "register" && (
           <>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Имя</label>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Имя <span className="text-[#fe2c55]">*</span></label>
               <input
                 value={name}
                 onChange={e => setName(e.target.value)}
@@ -106,7 +121,7 @@ const AuthScreen = ({ initialMode = "login" }: AuthScreenProps = {}) => {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Никнейм</label>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Никнейм <span className="text-[#fe2c55]">*</span></label>
               <div className="flex items-center bg-gray-100 rounded-xl px-4">
                 <span className="text-gray-400 text-sm">@</span>
                 <input
@@ -118,22 +133,26 @@ const AuthScreen = ({ initialMode = "login" }: AuthScreenProps = {}) => {
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Номер телефона</label>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Номер телефона <span className="text-[#fe2c55]">*</span></label>
               <input
                 value={phone}
-                onChange={e => setPhone(e.target.value.replace(/[^\d+\-() ]/g, ""))}
+                onChange={e => setPhone(formatPhone(e.target.value))}
                 type="tel"
                 inputMode="tel"
-                placeholder="+7 999 123-45-67"
+                placeholder="+7 9XX XXX-XX-XX"
                 className="w-full px-4 py-3 rounded-xl bg-gray-100 text-black text-sm outline-none focus:ring-2 focus:ring-[#8b5cf6]/30"
               />
-              <p className="text-[11px] text-gray-400">По номеру тебя смогут найти друзья из контактов</p>
+              {phone.length > 0 && !phoneValid ? (
+                <p className="text-[11px] text-[#fe2c55]">Введите номер в формате +7 9XX XXX-XX-XX</p>
+              ) : (
+                <p className="text-[11px] text-gray-400">По номеру тебя смогут найти друзья из контактов</p>
+              )}
             </div>
           </>
         )}
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</label>
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email <span className="text-[#fe2c55]">*</span></label>
           <input
             value={email}
             onChange={e => setEmail(e.target.value.replace(/\s/g, ""))}
@@ -147,7 +166,7 @@ const AuthScreen = ({ initialMode = "login" }: AuthScreenProps = {}) => {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Пароль</label>
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Пароль <span className="text-[#fe2c55]">*</span></label>
           <div className="flex items-center bg-gray-100 rounded-xl px-4">
             <input
               value={password}
@@ -156,7 +175,7 @@ const AuthScreen = ({ initialMode = "login" }: AuthScreenProps = {}) => {
               placeholder={mode === "register" ? "Минимум 6 символов" : "Пароль"}
               className="flex-1 py-3 bg-transparent text-black text-sm outline-none"
             />
-            <button onClick={() => setShowPassword(s => !s)} className="ml-2 p-1">
+            <button onClick={() => setShowPassword(s => !s)} className="ml-2 p-1 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
               <Icon name={showPassword ? "EyeOff" : "Eye"} size={18} className="text-gray-400" />
             </button>
           </div>
@@ -195,7 +214,7 @@ const AuthScreen = ({ initialMode = "login" }: AuthScreenProps = {}) => {
             </div>
             <button
               onClick={() => window.dispatchEvent(new CustomEvent("open-qr-login"))}
-              className="w-full py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-black font-semibold text-sm flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl bg-gray-100 border border-gray-200 hover:bg-gray-200 hover:border-gray-300 hover:shadow-sm active:scale-[0.99] transition-all text-black font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer"
             >
               <Icon name="QrCode" size={18} />
               Войти по QR-коду

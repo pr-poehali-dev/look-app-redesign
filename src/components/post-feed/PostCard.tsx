@@ -69,7 +69,7 @@ const PostCard = ({ post }: { post: Post }) => {
             )}
           </div>
         </div>
-        <button className="p-1" onClick={() => setShowMenu(true)}>
+        <button className="p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer" onClick={() => setShowMenu(true)} title="Ещё действия">
           <Icon name="MoreHorizontal" size={20} className="text-white" />
         </button>
       </div>

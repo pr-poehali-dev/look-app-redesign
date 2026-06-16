@@ -60,6 +60,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const [showPauseIcon, setShowPauseIcon] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [muted, setMuted] = useState(true);
+  const [volume, setVolume] = useState(1);
+  const [showVolume, setShowVolume] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -251,6 +253,13 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
     };
   }, [seeking, video.image, preloadLevel]);
 
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.volume = volume;
+    v.muted = muted || volume === 0;
+  }, [volume, muted]);
+
   const handleVideoClick = () => {
     if (showComments) return;
     if (!videoRef.current) return;
@@ -308,12 +317,36 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
               </div>
             </div>
           )}
-          <button
-            className="absolute top-4 left-4 z-30 bg-black/40 rounded-full p-2 backdrop-blur-sm"
-            onClick={e => { e.stopPropagation(); setMuted(m => !m); }}
+          <div
+            className="absolute top-4 left-4 z-30 flex items-center gap-2"
+            onMouseEnter={() => setShowVolume(true)}
+            onMouseLeave={() => setShowVolume(false)}
+            onClick={e => e.stopPropagation()}
           >
-            <Icon name={muted ? "VolumeX" : "Volume2"} size={20} className="text-white" />
-          </button>
+            <button
+              className="bg-black/40 rounded-full p-2 backdrop-blur-sm hover:bg-black/60 transition-colors cursor-pointer"
+              onClick={e => { e.stopPropagation(); setMuted(m => !m); }}
+              title={muted ? "Включить звук" : "Выключить звук"}
+            >
+              <Icon name={muted || volume === 0 ? "VolumeX" : "Volume2"} size={20} className="text-white" />
+            </button>
+            {showVolume && (
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={muted ? 0 : volume}
+                onChange={e => {
+                  const val = Number(e.target.value);
+                  setVolume(val);
+                  setMuted(val === 0);
+                }}
+                className="volume-slider w-24 h-1 cursor-pointer accent-[#fe2c55]"
+                title="Громкость"
+              />
+            )}
+          </div>
 
           {/* Полоса времени */}
           <div
@@ -439,6 +472,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           onClick={() => toggleLike()}
           className="flex flex-col items-center gap-1"
           style={{ touchAction: "manipulation" }}
+          title="Нравится"
         >
           <div className="w-11 h-11 rounded-full flex items-center justify-center">
             <Icon name="Heart" size={28} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-[#22d3ee]"} />
@@ -452,6 +486,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           onClick={() => setShowComments(true)}
           className="flex flex-col items-center gap-1"
           style={{ touchAction: "manipulation" }}
+          title="Комментарии"
         >
           <div className="w-11 h-11 rounded-full flex items-center justify-center">
             <Icon name="MessageCircle" size={26} className="text-[#22d3ee]" />
@@ -465,6 +500,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           onClick={() => setShowShare(true)}
           className="flex flex-col items-center gap-1"
           style={{ touchAction: "manipulation" }}
+          title="Поделиться"
         >
           <div className="w-11 h-11 rounded-full flex items-center justify-center">
             <Icon name="Send" size={26} className="text-[#22d3ee]" />
@@ -478,6 +514,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           onClick={toggleSaved}
           className="flex flex-col items-center gap-1"
           style={{ touchAction: "manipulation" }}
+          title="Сохранить в закладки"
         >
           <div className="w-11 h-11 rounded-full flex items-center justify-center">
             <Icon name="Bookmark" size={26} className={saved ? "text-[#ffd700] fill-[#ffd700]" : "text-[#22d3ee]"} />
@@ -491,14 +528,16 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           onClick={() => setShowMore(true)}
           className="flex flex-col items-center gap-1"
           style={{ touchAction: "manipulation" }}
+          title="Ещё действия"
         >
           <div className="w-11 h-11 rounded-full flex items-center justify-center">
-            <span className="text-white text-xs font-semibold">Ещё</span>
+            <Icon name="Ellipsis" size={26} className="text-[#22d3ee]" />
           </div>
+          <span className="text-white text-xs font-semibold">Ещё</span>
         </button>
 
-        {/* Spinning disc */}
-        <div className="w-10 h-10 rounded-full border-4 border-white/30 overflow-hidden animate-spin" style={{ animationDuration: "3s" }}>
+        {/* Spinning disc — аудиодорожка автора */}
+        <div className="w-10 h-10 rounded-full border-4 border-white/30 overflow-hidden animate-spin" style={{ animationDuration: "3s" }} title="Звук автора">
           <UserAvatar src={video.avatar} name={video.author || video.handle} alt="disc" />
         </div>
       </div>
@@ -557,14 +596,15 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         </button>
 
         {/* Ещё */}
-        <button onClick={() => setShowMore(true)} className="flex flex-col items-center gap-1">
+        <button onClick={() => setShowMore(true)} className="flex flex-col items-center gap-1" title="Ещё действия">
           <div className="w-12 h-12 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors">
-            <span className="text-white text-xs font-semibold">Ещё</span>
+            <Icon name="Ellipsis" size={24} className="text-white" />
           </div>
+          <span className="text-white text-xs font-semibold">Ещё</span>
         </button>
 
-        {/* Spinning disc */}
-        <div className="w-10 h-10 rounded-full border-4 border-white/30 overflow-hidden animate-spin" style={{ animationDuration: "3s" }}>
+        {/* Spinning disc — аудиодорожка автора */}
+        <div className="w-10 h-10 rounded-full border-4 border-white/30 overflow-hidden animate-spin" style={{ animationDuration: "3s" }} title="Звук автора">
           <UserAvatar src={video.avatar} name={video.author || video.handle} alt="disc" />
         </div>
       </div>

@@ -26,9 +26,9 @@ const EditorEmptyState = ({
   return (
     <div className="absolute inset-0 z-50 bg-zinc-950 flex flex-col">
       <div className="flex items-center justify-between px-4 pt-12 pb-3 border-b border-white/10">
-        <button onClick={onClose} className="p-2"><Icon name="X" size={22} className="text-white" /></button>
-        <p className="text-white font-bold">Конструктор</p>
         <div className="w-9" />
+        <p className="text-white font-bold">Конструктор</p>
+        <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer" title="Закрыть"><Icon name="X" size={22} className="text-white" /></button>
       </div>
       <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6">
         <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center">
@@ -56,7 +56,7 @@ const EditorEmptyState = ({
         />
         <button
           onClick={onOpenSheet}
-          className="px-6 py-3 rounded-2xl bg-[#fe2c55] text-white font-bold flex items-center gap-2"
+          className="px-6 py-3 rounded-2xl bg-[#fe2c55] hover:bg-[#e0264c] active:scale-95 transition-all cursor-pointer text-white font-bold flex items-center gap-2"
         >
           <Icon name="Upload" size={18} /> Выбрать файлы
         </button>

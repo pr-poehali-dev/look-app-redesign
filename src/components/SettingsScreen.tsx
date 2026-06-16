@@ -685,6 +685,8 @@ const SupportScreen = ({ onBack }: { onBack: () => void }) => {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const [subjectErr, setSubjectErr] = useState("");
+  const [messageErr, setMessageErr] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -706,10 +708,12 @@ const SupportScreen = ({ onBack }: { onBack: () => void }) => {
   };
 
   const submit = async () => {
-    if (!subject.trim() || !message.trim()) {
-      setError("Заполни тему и сообщение");
-      return;
-    }
+    setSubjectErr("");
+    setMessageErr("");
+    let hasErr = false;
+    if (!subject.trim()) { setSubjectErr("Укажи тему обращения"); hasErr = true; }
+    if (!message.trim()) { setMessageErr("Напиши сообщение"); hasErr = true; }
+    if (hasErr) return;
     setSending(true);
     setError("");
     try {
@@ -814,26 +818,28 @@ const SupportScreen = ({ onBack }: { onBack: () => void }) => {
               )}
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wide">Тема</label>
+              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wide">Тема <span className="text-red-500">*</span></label>
               <input
                 value={subject}
-                onChange={(e) => setSubject(e.target.value)}
+                onChange={(e) => { setSubject(e.target.value); if (subjectErr) setSubjectErr(""); }}
                 placeholder="Кратко опиши проблему"
                 maxLength={120}
-                className="bg-gray-100 rounded-xl px-3 py-3 text-black text-sm outline-none placeholder-gray-400"
+                className={`bg-gray-100 rounded-xl px-3 py-3 text-black text-sm outline-none placeholder-gray-400 border ${subjectErr ? "border-red-400" : "border-transparent focus:border-[#8b5cf6]"}`}
               />
+              {subjectErr && <p className="text-red-500 text-xs">{subjectErr}</p>}
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wide">Сообщение</label>
+              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wide">Сообщение <span className="text-red-500">*</span></label>
               <textarea
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                onChange={(e) => { setMessage(e.target.value); if (messageErr) setMessageErr(""); }}
                 placeholder="Опиши подробно, что случилось..."
                 rows={6}
                 maxLength={4000}
-                className="bg-gray-100 rounded-xl px-3 py-3 text-black text-sm outline-none placeholder-gray-400 resize-none"
+                className={`bg-gray-100 rounded-xl px-3 py-3 text-black text-sm outline-none placeholder-gray-400 resize-none border ${messageErr ? "border-red-400" : "border-transparent focus:border-[#8b5cf6]"}`}
               />
+              {messageErr && <p className="text-red-500 text-xs">{messageErr}</p>}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -847,7 +853,7 @@ const SupportScreen = ({ onBack }: { onBack: () => void }) => {
               />
               <button
                 onClick={() => fileRef.current?.click()}
-                className="flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-3 text-left"
+                className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer rounded-xl px-3 py-3 text-left"
               >
                 <Icon name="Paperclip" size={18} className="text-[#8b5cf6]" />
                 <span className="flex-1 text-sm text-gray-600 truncate">
@@ -873,7 +879,7 @@ const SupportScreen = ({ onBack }: { onBack: () => void }) => {
             <button
               onClick={submit}
               disabled={sending}
-              className="mt-2 w-full py-3 rounded-xl bg-[#8b5cf6] text-white font-semibold text-base disabled:opacity-50"
+              className="mt-2 w-full py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] active:scale-[0.99] transition-all cursor-pointer text-white font-semibold text-base disabled:opacity-50"
             >
               {sending ? "Отправляем..." : "Отправить"}
             </button>

@@ -50,7 +50,7 @@ const EditorPublishStep = ({
   return (
     <div className="absolute inset-0 z-50 bg-zinc-950 flex flex-col overflow-y-auto">
       <div className="flex items-center justify-between px-4 pt-12 pb-3 border-b border-white/10 sticky top-0 bg-zinc-950 z-10">
-        <button onClick={onBack} className="p-2"><Icon name="ArrowLeft" size={22} className="text-white" /></button>
+        <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer" title="Назад"><Icon name="ArrowLeft" size={22} className="text-white" /></button>
         <p className="text-white font-bold">Публикация</p>
         <div className="w-9" />
       </div>
@@ -75,7 +75,7 @@ const EditorPublishStep = ({
               <button
                 key={d.id}
                 onClick={() => setDestination(d.id)}
-                className={`py-3 rounded-xl flex flex-col items-center gap-1 ${destination === d.id ? "bg-[#fe2c55] text-white" : "bg-white/5 text-white/70"}`}
+                className={`py-3 rounded-xl flex flex-col items-center gap-1 cursor-pointer transition-all ${destination === d.id ? "bg-[#fe2c55] text-white" : "bg-white/5 text-white/70 hover:bg-white/10"}`}
               >
                 <Icon name={d.icon} size={18} />
                 <span className="text-xs font-semibold">{d.label}</span>
@@ -93,7 +93,7 @@ const EditorPublishStep = ({
                 <button
                   key={c.id}
                   onClick={() => setCategory(c.id)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold ${category === c.id ? "bg-white text-black" : "bg-white/10 text-white/70"}`}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all ${category === c.id ? "bg-white text-black" : "bg-white/10 text-white/70 hover:bg-white/20"}`}
                 >{c.label}</button>
               ))}
             </div>
@@ -142,7 +142,7 @@ const EditorPublishStep = ({
           <button
             onClick={onPublish}
             disabled={publishing}
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold disabled:opacity-50"
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer text-white font-bold disabled:opacity-50"
           >
             {publishing ? "Публикуем..." : "Опубликовать"}
           </button>

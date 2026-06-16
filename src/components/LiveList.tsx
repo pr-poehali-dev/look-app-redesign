@@ -384,10 +384,10 @@ const LiveList = () => {
             key={cat}
             onClick={() => setActiveCategory(cat)}
             style={{ touchAction: "manipulation" }}
-            className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+            className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
               activeCategory === cat
                 ? "bg-[#fe2c55] text-white border-[#fe2c55]"
-                : "bg-white/10 text-white/70 border-white/10"
+                : "bg-white/10 text-white/70 border-white/10 hover:bg-white/20"
             }`}
           >
             {cat}

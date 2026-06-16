@@ -442,12 +442,12 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
 
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-12 pb-3 border-b border-white/10">
-        <button onClick={onClose} className="p-2"><Icon name="X" size={22} className="text-white" /></button>
-        <p className="text-white font-bold">Конструктор</p>
         <button
           onClick={() => setStep("publish")}
-          className="px-4 py-1.5 rounded-full bg-[#fe2c55] text-white text-sm font-bold"
+          className="px-4 py-1.5 rounded-full bg-[#fe2c55] hover:bg-[#e0264c] active:scale-95 transition-all cursor-pointer text-white text-sm font-bold"
         >Далее</button>
+        <p className="text-white font-bold">Конструктор</p>
+        <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer" title="Закрыть"><Icon name="X" size={22} className="text-white" /></button>
       </div>
 
       <EditorCanvas

@@ -68,24 +68,24 @@ const EditProfileScreen = ({ onBack, profile, onSave }: EditProfileScreenProps) 
           <span className="text-gray-400 text-xs font-semibold tracking-widest uppercase">Основное</span>
         </div>
 
-        <div className="bg-white border-b border-gray-100 px-4 py-3 md:py-2.5">
-          <p className="text-gray-400 text-xs mb-1">Имя</p>
+        <div className="bg-white px-4 py-3 md:py-2.5">
+          <p className="text-gray-400 text-xs mb-1.5">Имя</p>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Введите имя"
-            className="w-full text-black text-base md:text-sm outline-none bg-transparent"
+            className="w-full text-black text-base md:text-sm outline-none bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 focus:border-[#8b5cf6] focus:ring-2 focus:ring-[#8b5cf6]/20 transition-colors"
             maxLength={50}
           />
         </div>
 
-        <div className="bg-white border-b border-gray-100 px-4 py-3 md:py-2.5">
-          <p className="text-gray-400 text-xs mb-1">О себе</p>
+        <div className="bg-white px-4 py-3 md:py-2.5">
+          <p className="text-gray-400 text-xs mb-1.5">О себе</p>
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             placeholder="Расскажи о себе..."
-            className="w-full text-black text-base md:text-sm outline-none bg-transparent resize-none"
+            className="w-full text-black text-base md:text-sm outline-none bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 focus:border-[#8b5cf6] focus:ring-2 focus:ring-[#8b5cf6]/20 transition-colors resize-none"
             rows={3}
             maxLength={150}
           />
@@ -97,7 +97,7 @@ const EditProfileScreen = ({ onBack, profile, onSave }: EditProfileScreenProps) 
       <div className="px-4 mt-6 md:mt-4">
         <button
           onClick={handleSave}
-          className="w-full py-3.5 md:py-2.5 rounded-2xl bg-[#8b5cf6] text-white font-bold text-base md:text-sm"
+          className="w-full py-3.5 md:py-2.5 rounded-2xl bg-[#8b5cf6] hover:bg-[#7c3aed] active:scale-[0.99] transition-all cursor-pointer text-white font-bold text-base md:text-sm"
         >
           Сохранить изменения
         </button>

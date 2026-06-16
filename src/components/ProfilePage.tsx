@@ -188,10 +188,20 @@ const MediaViewer = ({ items, startIndex, onClose, onDelete }: { items: Story[];
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-12 pb-3 bg-gradient-to-b from-black/60 to-transparent z-20">
-        <button onClick={onClose} className="p-2" style={{ touchAction: "manipulation" }}><Icon name="ArrowLeft" size={24} className="text-white" /></button>
+        <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer" style={{ touchAction: "manipulation" }} title="Назад"><Icon name="ArrowLeft" size={24} className="text-white" /></button>
         <span className="text-white text-sm font-medium">{index + 1} / {items.length}</span>
-        <button onClick={() => setConfirmDelete(true)} className="p-2" style={{ touchAction: "manipulation" }}><Icon name="Trash2" size={20} className="text-white" /></button>
+        <span className="w-10" />
       </div>
+
+      {/* Delete button — внизу, явная кнопка */}
+      <button
+        onClick={() => setConfirmDelete(true)}
+        className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center gap-2 px-4 pt-4 pb-10 bg-gradient-to-t from-black/70 to-transparent text-red-400 font-semibold text-sm hover:text-red-300 transition-colors cursor-pointer"
+        style={{ touchAction: "manipulation" }}
+      >
+        <Icon name="Trash2" size={20} />
+        Удалить
+      </button>
 
       {/* Confirm delete */}
       {confirmDelete && (
@@ -457,7 +467,7 @@ const ProfilePage = () => {
       <div className="flex gap-2 px-4 pb-4 md:px-3 md:pb-3">
         <button
           onClick={() => setShowSettings(true)}
-          className="flex-1 py-2.5 md:py-2 rounded-xl bg-gray-100 text-black font-semibold text-sm md:text-xs"
+          className="flex-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-sm md:text-xs"
         >
           Настройки
         </button>
@@ -473,18 +483,22 @@ const ProfilePage = () => {
           }}
           title="Сканировать QR"
           aria-label="Сканировать QR"
-          className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center active:scale-95 transition-transform"
+          className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer"
         >
           <Icon name="ScanLine" size={18} className="text-white pointer-events-none" />
         </button>
         <button
           onClick={toggleTheme}
           title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
-          className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gray-100 flex items-center justify-center"
+          className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
         >
           <Icon name={theme === "dark" ? "Sun" : "Moon"} size={18} className="text-gray-600" />
         </button>
-        <button onClick={logout} className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gray-100 flex items-center justify-center">
+        <button
+          onClick={() => { if (confirm("Выйти из аккаунта?")) logout(); }}
+          title="Выйти"
+          className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-red-50 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
+        >
           <Icon name="LogOut" size={18} className="text-red-500" />
         </button>
       </div>
@@ -641,7 +655,7 @@ const ProfilePage = () => {
               <p className="text-sm text-gray-400">Нет загруженных видео</p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 md:grid-cols-4 gap-px bg-gray-100">
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-1 bg-gray-200 p-1">
               {videos.map((item, i) => (
                 <div key={item.id} className="relative aspect-square overflow-hidden cursor-pointer" style={{ background: "linear-gradient(135deg, #0a2e1a 0%, #1a1a1a 100%)" }} onClick={() => setMediaViewer({ tab: "video", index: i })}>
                   {(item.thumb || item.thumbnail) ? (
@@ -689,7 +703,7 @@ const ProfilePage = () => {
               <p className="text-sm text-gray-400">Нет загруженных фото</p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 md:grid-cols-4 gap-px bg-gray-100">
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-1 bg-gray-200 p-1">
               {photos.map((item, i) => (
                 <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200 cursor-pointer" onClick={() => setMediaViewer({ tab: "image", index: i })}>
                   <img src={item.url} alt="" className="w-full h-full object-cover" />
@@ -710,7 +724,7 @@ const ProfilePage = () => {
               <p className="text-xs text-gray-400/70 text-center px-8">Нажми «Репост к себе» под чужим видео — оно появится здесь</p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 md:grid-cols-4 gap-px bg-gray-100">
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-1 bg-gray-200 p-1">
               {reposts.map((item) => (
                 <div
                   key={item.id}
