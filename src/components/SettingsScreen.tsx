@@ -1,10 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { useTranslation } from "react-i18next";
 import { QRCodeCanvas } from "qrcode.react";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { useAuth } from "@/context/AuthContext";
-import { SUPPORTED_LANGUAGES } from "@/i18n";
 import { useSavedList, SavedItem } from "@/hooks/useSaved";
 import SavedItemViewer from "@/components/SavedItemViewer";
 import QrScannerScreen from "@/components/QrScannerScreen";
@@ -12,8 +10,6 @@ import QrScannerScreen from "@/components/QrScannerScreen";
 interface SettingsScreenProps {
   onBack: () => void;
 }
-
-const LANGUAGES = SUPPORTED_LANGUAGES;
 
 const BLOCKED = [
   { name: "spam_user_99", avatar: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/48f38c64-742e-458c-9f09-0013a0813b5f.jpg" },
@@ -74,45 +70,6 @@ const SavedScreen = ({ onBack }: { onBack: () => void }) => {
       <div className="pb-28" />
       </div>
       {opened && <SavedItemViewer item={opened} onClose={() => setOpened(null)} />}
-    </div>
-  );
-};
-
-const LanguagesScreen = ({ onBack }: { onBack: () => void }) => {
-  const { t, i18n } = useTranslation();
-  const [selected, setSelected] = useState(i18n.language?.split("-")[0] || "ru");
-
-  const handleSelect = (code: string) => {
-    setSelected(code);
-    i18n.changeLanguage(code);
-    try {
-      localStorage.setItem("app_lang", code);
-    } catch {
-      // ignore
-    }
-    window.dispatchEvent(new CustomEvent("app-lang-change", { detail: code }));
-  };
-
-  return (
-    <div className="h-full bg-gray-100 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-      <div className="md:max-w-2xl md:mx-auto">
-      <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
-        <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
-        <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">{t("settings.languages")}</span>
-      </div>
-      <div className="mt-2">
-        {LANGUAGES.map((lang) => (
-          <button
-            key={lang.code}
-            onClick={() => handleSelect(lang.code)}
-            className="w-full flex items-center gap-4 px-4 py-4 md:py-3 bg-white border-b border-gray-100"
-          >
-            <span className="flex-1 text-black text-base md:text-sm text-left">{lang.label}</span>
-            {selected === lang.code && <Icon name="Check" size={20} className="text-[#8b5cf6]" />}
-          </button>
-        ))}
-      </div>
-      </div>
     </div>
   );
 };
@@ -995,7 +952,6 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   };
 
   if (screen === "saved") return <SavedScreen onBack={() => setScreen(null)} />;
-  if (screen === "languages") return <LanguagesScreen onBack={() => setScreen(null)} />;
   if (screen === "blocked") return <BlockedScreen onBack={() => setScreen(null)} />;
   if (screen === "qr") return <QrScreen onBack={() => setScreen(null)} />;
   if (screen === "scan_qr") return (
@@ -1073,7 +1029,6 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
         <Row icon="UserPen" label="Редактировать профиль" onPress={() => setScreen("edit_profile")} />
         <Row icon="Star" label="Подписка и тарифы" onPress={() => setScreen("subscription")} />
         <Row icon="Bookmark" label="Сохранённые" onPress={() => setScreen("saved")} />
-        <Row icon="Languages" label="Языки" onPress={() => setScreen("languages")} />
         <Row icon="Ban" label="Заблокированные" onPress={() => setScreen("blocked")} />
         <Row icon="QrCode" label="Мой QR-код" onPress={() => setScreen("qr")} />
         <Row icon="ScanLine" label="Сканировать QR" onPress={() => setScreen("scan_qr")} />
