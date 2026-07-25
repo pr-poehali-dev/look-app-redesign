@@ -1,4 +1,4 @@
-# Установка Visov media-стека на VPS 155.212.128.190
+# Установка Look media-стека на VPS 85.198.66.166
 
 Полный стек: signaling (Socket.io) + SFU (mediasoup) + TURN (coturn) + Nginx + автообслуживание.
 
@@ -7,9 +7,9 @@
 ## 0. Предусловия
 
 DNS-записи в `look.com.ru` (создать заранее, дать 5–30 минут на распространение):
-- `signal.look.com.ru` → 155.212.128.190
-- `sfu.look.com.ru` → 155.212.128.190
-- `turn.look.com.ru` → 155.212.128.190
+- `signal.look.com.ru` → 85.198.66.166
+- `sfu.look.com.ru` → 85.198.66.166
+- `turn.look.com.ru` → 85.198.66.166
 
 VPS: Ubuntu 22.04+ (или Debian 12), root-доступ, белый IP.
 
@@ -19,7 +19,7 @@ VPS: Ubuntu 22.04+ (или Debian 12), root-доступ, белый IP.
 
 Подключись по SSH:
 ```bash
-ssh root@155.212.128.190
+ssh root@85.198.66.166
 ```
 
 Установи Docker и утилиты:
@@ -72,8 +72,8 @@ cd /opt/visov
 Вариант Б (через scp с локального компьютера):
 ```bash
 # на локальной машине
-scp -r ./server root@155.212.128.190:/opt/visov
-ssh root@155.212.128.190
+scp -r ./server root@85.198.66.166:/opt/visov
+ssh root@85.198.66.166
 cd /opt/visov
 ```
 
@@ -103,7 +103,7 @@ nano .env
 dig +short signal.look.com.ru
 dig +short sfu.look.com.ru
 dig +short turn.look.com.ru
-# должен вернуться 155.212.128.190
+# должен вернуться 85.198.66.166
 ```
 
 Получить сертификаты:
