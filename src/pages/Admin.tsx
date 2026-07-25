@@ -122,7 +122,7 @@ export default function Admin() {
   );
 }
 
-const SUPPORT_EMAIL = "support@visov.ru";
+const SUPPORT_EMAIL = "support@look.com.ru";
 
 function Login({ onLogin }: { onLogin: (token: string) => void }) {
   const [login, setLogin] = useState(SUPPORT_EMAIL);
@@ -227,7 +227,7 @@ function Login({ onLogin }: { onLogin: (token: string) => void }) {
           autoFocus
           type="email"
           value={login} onChange={(e) => setLogin(e.target.value)}
-          placeholder="support@visov.ru"
+          placeholder="support@look.com.ru"
           className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-[#fe2c55]"
         />
         <input

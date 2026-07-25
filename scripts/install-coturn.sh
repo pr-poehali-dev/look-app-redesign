@@ -4,10 +4,10 @@
 
 set -e
 
-DOMAIN="turn.visov.ru"
+DOMAIN="turn.look.com.ru"
 TURN_USER="lookuser"
 TURN_PASS=$(openssl rand -hex 16)
-REALM="visov.ru"
+REALM="look.com.ru"
 
 echo ""
 echo "=========================================="
@@ -43,7 +43,7 @@ read -p "    Готово? Нажми Enter чтобы продолжить (и�
 
 if [ ! -d "/etc/letsencrypt/live/$DOMAIN" ]; then
   certbot certonly --standalone --non-interactive --agree-tos \
-    --email admin@visov.ru -d "$DOMAIN" --preferred-challenges http || {
+    --email admin@look.com.ru -d "$DOMAIN" --preferred-challenges http || {
     echo "Сертификат не получен. Будем работать без TLS (только turn:// без turns://)"
     DOMAIN=""
   }

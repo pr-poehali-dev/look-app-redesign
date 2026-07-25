@@ -171,12 +171,12 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
           throw new Error("getUserMedia_unsupported");
         }
-        const trustedHosts = ["localhost", "127.0.0.1", "visov.ru", "www.visov.ru"];
+        const trustedHosts = ["localhost", "127.0.0.1", "look.com.ru", "www.look.com.ru"];
         const isSecure =
           window.isSecureContext ||
           location.protocol === "file:" ||
           trustedHosts.includes(location.hostname) ||
-          location.hostname.endsWith(".visov.ru");
+          location.hostname.endsWith(".look.com.ru");
         if (!isSecure) {
           throw new Error("insecure_context");
         }

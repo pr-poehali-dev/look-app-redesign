@@ -203,7 +203,7 @@ def handler(event: dict, context) -> dict:
     # Восстановление пароля админа — без токена. Уведомление уходит на почту поддержки.
     if action == 'forgot_password':
         req_email = (body.get('email') or '').strip()[:200]
-        support_email = os.environ.get('SUPPORT_EMAIL', 'support@visov.ru')
+        support_email = os.environ.get('SUPPORT_EMAIL', 'support@look.com.ru')
         _send_admin_reset_request(support_email, req_email)
         # Всегда отвечаем ok, чтобы не раскрывать существование почты
         return {'statusCode': 200, 'headers': _cors(),

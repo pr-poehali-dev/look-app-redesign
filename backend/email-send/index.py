@@ -95,7 +95,7 @@ def _send_reset(to_email: str, reset_link: str) -> bool:
           <p style="margin:0;font-size:12px;color:#999;line-height:1.5">Ссылка действует 1 час. Если вы не запрашивали сброс пароля, просто проигнорируйте это письмо.</p>
         </td></tr>
       </table>
-      <p style="margin:16px 0 0;font-size:11px;color:#aaa">© Look · visov.ru</p>
+      <p style="margin:16px 0 0;font-size:11px;color:#aaa">© Look · look.com.ru</p>
     </td></tr>
   </table>
 </body></html>'''
@@ -166,7 +166,7 @@ def handler(event: dict, context) -> dict:
                 (token, user_id, email, expires)
             )
             conn.commit()
-            base = origin or 'https://visov.ru'
+            base = origin or 'https://look.com.ru'
             reset_link = f"{base}/?reset_token={token}"
             _send_reset(email, reset_link)
             return ok({'sent': True})
@@ -236,7 +236,7 @@ def handler(event: dict, context) -> dict:
                 (token, user_id, email, expires)
             )
             conn.commit()
-            base = origin or 'https://visov.ru'
+            base = origin or 'https://look.com.ru'
             verify_link = f"{base}/?verify_token={token}"
             _send_verify(email, name or '', verify_link)
             return ok({'sent': True})

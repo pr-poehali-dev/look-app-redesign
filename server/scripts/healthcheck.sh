@@ -12,7 +12,7 @@ check() {
 }
 
 check signaling http://localhost/health 2>/dev/null || \
-  curl -sfk https://signal.visov.ru/health > /dev/null || \
+  curl -sfk https://signal.look.com.ru/health > /dev/null || \
   docker compose restart signaling
 
-curl -sfk https://sfu.visov.ru/health > /dev/null || docker compose restart sfu
+curl -sfk https://sfu.look.com.ru/health > /dev/null || docker compose restart sfu

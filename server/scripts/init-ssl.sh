@@ -2,8 +2,8 @@
 # Получение SSL сертификатов Let's Encrypt для всех доменов
 set -e
 
-EMAIL="${LETSENCRYPT_EMAIL:-admin@visov.ru}"
-DOMAINS=("signal.visov.ru" "sfu.visov.ru" "turn.visov.ru")
+EMAIL="${LETSENCRYPT_EMAIL:-admin@look.com.ru}"
+DOMAINS=("signal.look.com.ru" "sfu.look.com.ru" "turn.look.com.ru")
 
 mkdir -p ./certbot/conf ./certbot/www
 

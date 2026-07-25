@@ -6,10 +6,10 @@
 
 ## 0. Предусловия
 
-DNS-записи в `visov.ru` (создать заранее, дать 5–30 минут на распространение):
-- `signal.visov.ru` → 155.212.128.190
-- `sfu.visov.ru` → 155.212.128.190
-- `turn.visov.ru` → 155.212.128.190
+DNS-записи в `look.com.ru` (создать заранее, дать 5–30 минут на распространение):
+- `signal.look.com.ru` → 155.212.128.190
+- `sfu.look.com.ru` → 155.212.128.190
+- `turn.look.com.ru` → 155.212.128.190
 
 VPS: Ubuntu 22.04+ (или Debian 12), root-доступ, белый IP.
 
@@ -100,16 +100,16 @@ nano .env
 
 Перед запуском убедись, что DNS-записи уже работают:
 ```bash
-dig +short signal.visov.ru
-dig +short sfu.visov.ru
-dig +short turn.visov.ru
+dig +short signal.look.com.ru
+dig +short sfu.look.com.ru
+dig +short turn.look.com.ru
 # должен вернуться 155.212.128.190
 ```
 
 Получить сертификаты:
 ```bash
 chmod +x scripts/*.sh
-LETSENCRYPT_EMAIL=admin@visov.ru ./scripts/init-ssl.sh
+LETSENCRYPT_EMAIL=admin@look.com.ru ./scripts/init-ssl.sh
 ```
 
 ---
@@ -125,8 +125,8 @@ docker compose ps
 
 Проверка:
 ```bash
-curl https://signal.visov.ru/health
-curl https://sfu.visov.ru/health
+curl https://signal.look.com.ru/health
+curl https://sfu.look.com.ru/health
 ```
 
 Должны вернуть JSON `{"ok":true,...}`.
@@ -183,9 +183,9 @@ docker compose up -d
 ## 10. Что отдать разработчику фронта
 
 После установки в проект надо положить эти URL (уже зашиты в клиенте):
-- Signaling: `https://signal.visov.ru`
-- SFU: `https://sfu.visov.ru`
-- TURN: `turn:turn.visov.ru:3478` и `turns:turn.visov.ru:5349`
+- Signaling: `https://signal.look.com.ru`
+- SFU: `https://sfu.look.com.ru`
+- TURN: `turn:turn.look.com.ru:3478` и `turns:turn.look.com.ru:5349`
 - TURN secret — для генерации временных credentials в backend (`backend/ice-servers`)
 
 `TURN_SECRET` нужно добавить как secret проекта на poehali — для backend-функции `ice-servers`.

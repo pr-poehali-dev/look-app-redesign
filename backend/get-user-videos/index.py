@@ -127,7 +127,7 @@ def handler(event: dict, context) -> dict:
                 else:
                     return err('Неверный email или пароль', 401)
                 if banned:
-                    return err('Аккаунт заблокирован. Обратитесь в поддержку: support@visov.ru', 403)
+                    return err('Аккаунт заблокирован. Обратитесь в поддержку: support@look.com.ru', 403)
             finally:
                 cur.close(); conn.close()
             return ok({'token': token, 'user': {'id': uid, 'name': name, 'handle': handle, 'email': em, 'avatar': avatar, 'phone': phone}})
@@ -142,7 +142,7 @@ def handler(event: dict, context) -> dict:
             finally:
                 cur.close(); conn.close()
             if not row: return err('Токен недействителен', 401)
-            if row[8]: return err('Аккаунт заблокирован. Обратитесь в поддержку: support@visov.ru', 403)
+            if row[8]: return err('Аккаунт заблокирован. Обратитесь в поддержку: support@look.com.ru', 403)
             links_val = row[7] if row[7] is not None else []
             return ok({'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'email': row[3], 'avatar': row[4], 'phone': row[5], 'gender': row[6], 'links': links_val}})
 

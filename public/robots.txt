@@ -13,5 +13,5 @@ Allow: /
 User-agent: *
 Allow: /
 
-Host: https://visov.ru
-Sitemap: https://visov.ru/sitemap.xml
+Host: https://look.com.ru
+Sitemap: https://look.com.ru/sitemap.xml

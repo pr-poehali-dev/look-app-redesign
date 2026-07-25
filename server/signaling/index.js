@@ -7,7 +7,7 @@ const axios = require('axios');
 
 const PORT = process.env.PORT || 4000;
 const AUTH_VERIFY_URL = process.env.AUTH_VERIFY_URL || '';
-const SFU_URL = process.env.SFU_URL || 'https://sfu.visov.ru';
+const SFU_URL = process.env.SFU_URL || 'https://sfu.look.com.ru';
 
 const app = express();
 app.use(cors());
