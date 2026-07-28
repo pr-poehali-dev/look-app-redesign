@@ -1,5 +1,5 @@
 {
-  "name": "visov-signaling",
+  "name": "look-signaling",
   "version": "1.0.0",
   "description": "WebRTC signaling server for Visov",
   "main": "index.js",

@@ -8,16 +8,16 @@ chmod +x "$PROJECT_DIR/scripts/"*.sh
 CRON_TMP=$(mktemp)
 crontab -l 2>/dev/null > "$CRON_TMP" || true
 
-# Удалить старые записи visov
-sed -i '/# visov-/d' "$CRON_TMP"
+# Удалить старые записи look
+sed -i '/# look-/d' "$CRON_TMP"
 
 cat >> "$CRON_TMP" <<EOF
-*/2 * * * * $PROJECT_DIR/scripts/healthcheck.sh >> /var/log/visov-health.log 2>&1 # visov-health
-0 3 * * * $PROJECT_DIR/scripts/backup.sh >> /var/log/visov-backup.log 2>&1 # visov-backup
-0 4 * * * $PROJECT_DIR/scripts/cleanup.sh >> /var/log/visov-cleanup.log 2>&1 # visov-cleanup
+*/2 * * * * $PROJECT_DIR/scripts/healthcheck.sh >> /var/log/look-health.log 2>&1 # look-health
+0 3 * * * $PROJECT_DIR/scripts/backup.sh >> /var/log/look-backup.log 2>&1 # look-backup
+0 4 * * * $PROJECT_DIR/scripts/cleanup.sh >> /var/log/look-cleanup.log 2>&1 # look-cleanup
 EOF
 
 crontab "$CRON_TMP"
 rm "$CRON_TMP"
 echo "Cron installed:"
-crontab -l | grep visov
+crontab -l | grep look

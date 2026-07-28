@@ -1,5 +1,5 @@
 {
-  "name": "visov-sfu",
+  "name": "look-sfu",
   "version": "1.0.0",
   "description": "Mediasoup SFU server for Visov",
   "main": "index.js",

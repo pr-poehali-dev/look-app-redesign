@@ -59,22 +59,22 @@ ufw --force enable
 
 ## 3. Загрузка кода
 
-Залей папку `server/` из проекта на VPS в `/opt/visov`:
+Залей папку `server/` из проекта на VPS в `/opt/look`:
 
 Вариант А (через git, если проект подключён к GitHub):
 ```bash
 mkdir -p /opt && cd /opt
-git clone <ваш-репозиторий> visov-src
-cp -r visov-src/server /opt/visov
-cd /opt/visov
+git clone <ваш-репозиторий> look-src
+cp -r look-src/server /opt/look
+cd /opt/look
 ```
 
 Вариант Б (через scp с локального компьютера):
 ```bash
 # на локальной машине
-scp -r ./server root@85.198.66.166:/opt/visov
+scp -r ./server root@85.198.66.166:/opt/look
 ssh root@85.198.66.166
-cd /opt/visov
+cd /opt/look
 ```
 
 ---
@@ -82,7 +82,7 @@ cd /opt/visov
 ## 4. Конфигурация .env
 
 ```bash
-cd /opt/visov
+cd /opt/look
 cp .env.example .env
 # Сгенерировать секрет TURN
 openssl rand -hex 32
@@ -117,7 +117,7 @@ LETSENCRYPT_EMAIL=admin@look.com.ru ./scripts/init-ssl.sh
 ## 6. Запуск стека
 
 ```bash
-cd /opt/visov
+cd /opt/look
 docker compose build
 docker compose up -d
 docker compose ps
@@ -141,7 +141,7 @@ curl https://sfu.look.com.ru/health
 
 Это поставит:
 - проверку каждые 2 минуты — рестарт контейнера если упал
-- ежедневный бэкап в 03:00 в `/var/backups/visov`
+- ежедневный бэкап в 03:00 в `/var/backups/look`
 - очистку старых логов и образов в 04:00
 
 ---
@@ -170,7 +170,7 @@ docker compose logs -f coturn
 
 Обновление кода:
 ```bash
-cd /opt/visov
+cd /opt/look
 git pull   # или scp заново
 docker compose build
 docker compose up -d

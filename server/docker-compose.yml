@@ -3,14 +3,14 @@ version: '3.8'
 services:
   signaling:
     build: ./signaling
-    container_name: visov-signaling
+    container_name: look-signaling
     restart: always
     environment:
       PORT: 4000
       AUTH_VERIFY_URL: ${AUTH_VERIFY_URL}
       SFU_URL: https://sfu.look.com.ru
     networks:
-      - visov
+      - look
     expose:
       - "4000"
     logging:
@@ -21,7 +21,7 @@ services:
 
   sfu:
     build: ./sfu
-    container_name: visov-sfu
+    container_name: look-sfu
     restart: always
     network_mode: host
     environment:
@@ -38,7 +38,7 @@ services:
 
   coturn:
     image: coturn/coturn:latest
-    container_name: visov-coturn
+    container_name: look-coturn
     restart: always
     network_mode: host
     volumes:
@@ -53,7 +53,7 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: visov-nginx
+    container_name: look-nginx
     restart: always
     depends_on:
       - signaling
@@ -65,7 +65,7 @@ services:
       - ./certbot/conf:/etc/letsencrypt:ro
       - ./certbot/www:/var/www/certbot:ro
     networks:
-      - visov
+      - look
     extra_hosts:
       - "sfu:host-gateway"
     logging:
@@ -76,7 +76,7 @@ services:
 
   certbot:
     image: certbot/certbot
-    container_name: visov-certbot
+    container_name: look-certbot
     restart: unless-stopped
     volumes:
       - ./certbot/conf:/etc/letsencrypt
@@ -85,12 +85,12 @@ services:
 
   watchtower:
     image: containrrr/watchtower
-    container_name: visov-watchtower
+    container_name: look-watchtower
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     command: --cleanup --interval 86400
 
 networks:
-  visov:
+  look:
     driver: bridge
