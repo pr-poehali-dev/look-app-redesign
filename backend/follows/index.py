@@ -37,7 +37,7 @@ def handler(event: dict, context) -> dict:
         body = json.loads(event.get('body') or '{}')
         action = (body.get('action') or action).strip()
 
-    schema = os.environ.get('MAIN_DB_SCHEMA', 'public')
+    schema = os.environ['MAIN_DB_SCHEMA']
     table = f'"{schema}".follows'
 
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
@@ -139,7 +139,7 @@ def handler(event: dict, context) -> dict:
 
             if action == 'follow':
                 cur.execute(
-                    f"INSERT INTO {table} (follower_id, target_handle) VALUES ('{safe_user}', '{target_handle}') ON CONFLICT DO NOTHING"
+                    f"INSERT INTO {table} (follower_id, target_handle, following_id_old_int) VALUES ('{safe_user}', '{target_handle}', 0) ON CONFLICT DO NOTHING"
                 )
                 conn.commit()
                 return _resp(200, {'following': True})
@@ -163,7 +163,7 @@ def handler(event: dict, context) -> dict:
                     conn.commit()
                     return _resp(200, {'following': False})
                 cur.execute(
-                    f"INSERT INTO {table} (follower_id, target_handle) VALUES ('{safe_user}', '{target_handle}') ON CONFLICT DO NOTHING"
+                    f"INSERT INTO {table} (follower_id, target_handle, following_id_old_int) VALUES ('{safe_user}', '{target_handle}', 0) ON CONFLICT DO NOTHING"
                 )
                 conn.commit()
                 return _resp(200, {'following': True})
