@@ -56,9 +56,6 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const offerAppliedRef = useRef<boolean>(false);
   const answerAppliedRef = useRef<boolean>(false);
   const pendingFreshOffersRef = useRef<{ id: number; type: string; payload: unknown }[]>([]);
-  const forceRelayRef = useRef<(() => void) | null>(null);
-  const applyRelayOnlyRef = useRef<((initiate: boolean) => void) | null>(null);
-  const relayForcedRef = useRef<boolean>(false);
   const audioCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const iceOutboxRef = useRef<RTCIceCandidateInit[]>([]);
   const iceFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -188,9 +185,6 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         console.error("[CallScreen] answer handling failed", err);
         answerAppliedRef.current = false;
       }
-    } else if (sig.type === "force_relay") {
-      console.log("[CallScreen] peer requested relay-only");
-      applyRelayOnlyRef.current?.(false);
     } else if (sig.type === "ice") {
       if (pc.signalingState === "closed") return;
       const cand = sig.payload as RTCIceCandidateInit;
@@ -287,7 +281,6 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
       sessionFromUserRef.current = "";
       offerAppliedRef.current = false;
       answerAppliedRef.current = false;
-      relayForcedRef.current = false;
       iceOutboxRef.current = [];
       console.log("[CallScreen] start", { myId, peerId, roomId, isCaller: isCaller.current, mode });
       setStatus("connecting");
@@ -449,33 +442,6 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
           .then((o) => pc.setLocalDescription(o).then(() => sendSignal("offer", o)))
           .catch(() => {});
       };
-
-      // Форсируем relay-only: медиа пойдёт строго через TURN (в т.ч. TCP/TLS 5349),
-      // минуя проблемные прямые/UDP-пары. Применяется на обеих сторонах.
-      const applyRelayOnly = async (initiate: boolean) => {
-        if (relayForcedRef.current) return;
-        relayForcedRef.current = true;
-        try {
-          const relayCfg = await getRtcConfig(true);
-          (pc as RTCPeerConnection & { setConfiguration?: (c: RTCConfiguration) => void }).setConfiguration?.(relayCfg);
-          console.log("[CallScreen] switched to relay-only");
-        } catch (e) { console.warn("[CallScreen] setConfiguration relay failed", e); }
-        if (initiate && isRestartLeader) {
-          lastIceRestartAtRef.current = Date.now();
-          try { (pc as RTCPeerConnection & { restartIce?: () => void }).restartIce?.(); } catch (e) { void e; }
-          try {
-            const o = await pc.createOffer({ iceRestart: true });
-            await pc.setLocalDescription(o);
-            await sendSignal("offer", o);
-          } catch (e) { console.warn("[CallScreen] relay offer failed", e); }
-        }
-      };
-      forceRelayRef.current = () => {
-        // Сообщаем второй стороне тоже переключиться, затем инициируем сами
-        sendSignal("force_relay", {});
-        applyRelayOnly(true);
-      };
-      applyRelayOnlyRef.current = applyRelayOnly;
 
       // Инициатор ICE-restart — сторона с большим id (детерминированно, чтобы
       // обе стороны не рестартовали одновременно и не ломали SDP).
@@ -707,12 +673,19 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         });
         // Ищем выбранную пару: сначала nominated+succeeded, потом просто с трафиком
         let best: Record<string, unknown> | null = null;
+        let nSucceeded = 0, nInProgress = 0, nFailed = 0, nRelayPairs = 0;
         stats.forEach((r) => {
           if (r.type !== "candidate-pair") return;
           const rec = r as unknown as Record<string, unknown>;
           pairs.push({ r: rec as never });
+          const st = rec.state as string;
+          if (st === "succeeded") nSucceeded += 1;
+          else if (st === "in-progress" || st === "waiting" || st === "frozen") nInProgress += 1;
+          else if (st === "failed") nFailed += 1;
+          const lc0 = local[rec.localCandidateId as string];
+          if (lc0?.type === "relay") nRelayPairs += 1;
           const nominated = rec.nominated === true;
-          const succeeded = rec.state === "succeeded";
+          const succeeded = st === "succeeded";
           const hasBytes = ((rec.bytesReceived as number) || 0) + ((rec.bytesSent as number) || 0) > 0;
           if ((nominated && succeeded) || (!best && (succeeded || hasBytes))) best = rec;
         });
@@ -722,11 +695,27 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
           if (lc) { pairType = lc.type; pairProto = lc.proto; }
           pairBytes = ((b.bytesReceived as number) || 0);
         }
-        console.error("[CallScreen] AUDIO CHECK", { attempts, audioBytes, audioSent, pairType, pairProto, pairBytes, pairsCount: pairs.length });
+        console.error("[CallScreen] AUDIO CHECK", { attempts, audioBytes, audioSent, pairType, pairProto, pairBytes, pairsCount: pairs.length, nSucceeded, nInProgress, nFailed, nRelayPairs });
         if (audioBytes > 0) {
           // Звук пошёл — прячем возможную диагностику и останавливаем проверки
           setDiagText("");
           if (audioCheckRef.current) { clearInterval(audioCheckRef.current); audioCheckRef.current = null; }
+          return;
+        }
+        // Если пары ещё проверяются (никакая не succeeded), даём ICE-restart шанс
+        // добить проверку — часто пары зависают и рестарт их оживляет.
+        if (audioBytes === 0 && nSucceeded === 0 && nInProgress > 0 && isCaller.current && attempts <= 3) {
+          console.log("[CallScreen] pairs stuck in-progress — ICE restart");
+          const now = Date.now();
+          if (now - lastIceRestartAtRef.current > 4000) {
+            lastIceRestartAtRef.current = now;
+            try { (pcRef.current as RTCPeerConnection & { restartIce?: () => void }).restartIce?.(); } catch (e) { void e; }
+            try {
+              const o = await pc.createOffer({ iceRestart: true });
+              await pc.setLocalDescription(o);
+              await sendSignal("offer", o);
+            } catch (e) { void e; }
+          }
           return;
         }
         if (audioBytes === 0 && attempts >= 2) {
@@ -739,17 +728,19 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
             cause = "Собеседник не прислал свои адреса → у него не собрались кандидаты (нет микрофона/заблокирован WebRTC на его стороне).";
           } else if (peerRelay === 0) {
             cause = "У собеседника нет TURN-relay → у него TURN не сработал. Пусть проверит разрешение микрофона и обновит страницу.";
-          } else if (pairs.length === 0) {
-            cause = "Relay есть у обоих, но пары не строятся → на TURN-сервере закрыт диапазон UDP-портов медиа (min-port–max-port). Нужно открыть на сервере.";
+          } else if (nSucceeded === 0 && nFailed > 0) {
+            cause = "Все пары связи ПРОВАЛИЛИСЬ (failed) → проверочные пакеты между сторонами не проходят. На TURN-сервере закрыт диапазон UDP-портов медиа (min-port–max-port) — нужно открыть на сервере.";
+          } else if (nSucceeded === 0) {
+            cause = "Пары зависли в проверке (не failed, но и не succeeded) → сеть медленно пропускает или блокирует проверочные пакеты. Попробуй сменить сеть (мобильный↔Wi-Fi) с обеих сторон.";
           } else {
-            cause = "Relay-пары есть, но байты не идут → медиа-порты сервера режутся фаерволом.";
+            cause = "Пара выбрана, но аудио-байты не идут → возможно, звук режется после установки канала. Пришли этот текст разработчику.";
           }
           setDiagText(
             `Звук не проходит. Диагностика:\n` +
             `• мои адреса: ${myLocal} (relay: ${myRelay})\n` +
             `• адреса собеседника: ${peerCands} (relay: ${peerRelay})\n` +
             `• отправлено аудио: ${audioSent} б\n` +
-            `• пар связи: ${pairs.length}, канал: ${pairType}/${pairProto}\n\n` +
+            `• пары: всего ${pairs.length}, ок ${nSucceeded}, идёт ${nInProgress}, провал ${nFailed}\n\n` +
             cause,
           );
         }
