@@ -55,6 +55,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const sessionFromUserRef = useRef<string>("");
   const offerAppliedRef = useRef<boolean>(false);
   const answerAppliedRef = useRef<boolean>(false);
+  const pendingFreshOffersRef = useRef<{ id: number; type: string; payload: unknown }[]>([]);
   const iceOutboxRef = useRef<RTCIceCandidateInit[]>([]);
   const iceFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -290,6 +291,9 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         // Быстрая очистка stale-сигналов: тянем максимум 8 страниц по 50 = 400 шт.
         // Если в комнате накопилось больше — игнорируем, polling догребёт.
         let totalSkipped = 0;
+        // Свежий offer, который уже лежит в комнате к моменту принятия входящего,
+        // НЕЛЬЗЯ выкидывать как stale — иначе callee не создаст answer и ICE не стартует.
+        const freshOffers: { id: number; type: string; payload: unknown }[] = [];
         for (let i = 0; i < 8; i++) {
           const r = await fetch(
             `${API}?module=signal&room_id=${roomId}&since_id=${lastSigIdRef.current}&max_age_seconds=600`,
@@ -300,15 +304,21 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
           const sigs = data.signals || [];
           if (sigs.length === 0) break;
           let maxId = lastSigIdRef.current;
-          for (const s of sigs as { id: number }[]) {
-            processedSigIdsRef.current.add(s.id);
+          for (const s of sigs as { id: number; type: string; payload: unknown }[]) {
+            // offer оставляем на обработку — берём только самый свежий
+            if (s.type === "offer" && !isCaller.current) {
+              freshOffers.push(s);
+            } else {
+              processedSigIdsRef.current.add(s.id);
+            }
             if (s.id > maxId) maxId = s.id;
           }
           lastSigIdRef.current = maxId;
           totalSkipped += sigs.length;
           if (sigs.length < 50) break;
         }
-        console.log("[CallScreen] cleared", totalSkipped, "stale signals, since_id =", lastSigIdRef.current);
+        console.log("[CallScreen] cleared", totalSkipped, "stale signals, kept", freshOffers.length, "offers, since_id =", lastSigIdRef.current);
+        pendingFreshOffersRef.current = freshOffers;
       } catch (e) { void e; }
 
       const cfg = await getRtcConfig().catch(() => RTC_CONFIG);
@@ -457,6 +467,16 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
       };
 
       startPoll(pc);
+
+      // Обрабатываем offer, который уже лежал в комнате к моменту принятия входящего
+      // (иначе он был бы выкинут как stale и answer не создался бы).
+      if (!isCaller.current && pendingFreshOffersRef.current.length > 0) {
+        const offers = pendingFreshOffersRef.current;
+        pendingFreshOffersRef.current = [];
+        const latest = offers[offers.length - 1];
+        console.log("[CallScreen] applying buffered offer id=", latest.id);
+        await handleSignal(pc, latest);
+      }
 
       if (isCaller.current) {
         setStatus("ringing");
