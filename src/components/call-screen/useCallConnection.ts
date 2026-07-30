@@ -686,9 +686,18 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         let pairProto = "?";
         let pairBytes = 0;
         const local: Record<string, { type: string; proto: string }> = {};
+        let myRelay = 0, myLocal = 0, peerRelay = 0, peerCands = 0;
         const pairs: { r: RTCStatsReport extends infer T ? Record<string, unknown> : never }[] = [];
         stats.forEach((r) => {
-          if (r.type === "local-candidate") local[r.id] = { type: r.candidateType, proto: r.protocol };
+          if (r.type === "local-candidate") {
+            local[r.id] = { type: r.candidateType, proto: r.protocol };
+            myLocal += 1;
+            if (r.candidateType === "relay") myRelay += 1;
+          }
+          if (r.type === "remote-candidate") {
+            peerCands += 1;
+            if (r.candidateType === "relay") peerRelay += 1;
+          }
           if (r.type === "inbound-rtp" && (r.kind === "audio" || r.mediaType === "audio")) {
             audioBytes += r.bytesReceived || 0;
           }
@@ -720,30 +729,35 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
           if (audioCheckRef.current) { clearInterval(audioCheckRef.current); audioCheckRef.current = null; }
           return;
         }
-        if (audioBytes === 0 && !relayForcedRef.current) {
-          // Первая попытка: молча переключаемся на relay-only и ждём следующую проверку
-          console.log("[CallScreen] no audio — forcing relay-only");
+        if (audioBytes === 0 && !relayForcedRef.current && myRelay > 0 && peerRelay > 0 && pairs.length > 0) {
+          // Форсируем relay ТОЛЬКО если relay реально собрался у обеих сторон и
+          // пары уже строятся — иначе setConfiguration только сломает рабочие кандидаты.
+          console.log("[CallScreen] no audio but relay available — forcing relay-only");
           forceRelayRef.current?.();
           return;
         }
         if (audioBytes === 0 && attempts >= 3) {
-          const via =
-            pairType === "relay"
-              ? `через TURN-relay (${pairProto})`
-              : pairType === "srflx"
-              ? "напрямую (STUN)"
-              : pairType === "host"
-              ? "по локальной сети"
-              : "канал не выбран";
+          let cause = "";
+          if (myLocal === 0) {
+            cause = "Твой браузер не собрал НИ одного сетевого адреса → нет доступа к микрофону или заблокирован WebRTC. Проверь разрешение микрофона в замке адресной строки.";
+          } else if (myRelay === 0) {
+            cause = "У тебя нет TURN-relay адресов → TURN-сервер не отвечает по нужному транспорту (ключ/порты 3478-5349). Проверка на стороне сервера.";
+          } else if (peerCands === 0) {
+            cause = "Собеседник не прислал свои адреса → у него не собрались кандидаты (нет микрофона/заблокирован WebRTC на его стороне).";
+          } else if (peerRelay === 0) {
+            cause = "У собеседника нет TURN-relay → у него TURN не сработал. Пусть проверит разрешение микрофона и обновит страницу.";
+          } else if (pairs.length === 0) {
+            cause = "Relay есть у обоих, но пары не строятся → на TURN-сервере закрыт диапазон UDP-портов медиа (min-port–max-port). Нужно открыть на сервере.";
+          } else {
+            cause = "Relay-пары есть, но байты не идут → медиа-порты сервера режутся фаерволом.";
+          }
           setDiagText(
-            `Соединение есть (${via}), но звук не приходит:\n` +
-            `• принято аудио-байт: 0\n` +
-            `• отправлено аудио-байт: ${audioSent}\n` +
-            `• тип канала: ${pairType}/${pairProto}\n` +
-            `• проверено пар: ${pairs.length}\n\n` +
-            (pairType === "relay"
-              ? "Медиа идёт через TURN, но пакеты со звуком не проходят → на сервере закрыт диапазон UDP-портов медиа (min-port–max-port) ИЛИ relay-адрес нерабочий. Нужна проверка на стороне сервера."
-              : "Звук не проходит через выбранный канал — вероятно, режет фаервол/NAT. Попробуй мобильный интернет вместо Wi-Fi или наоборот."),
+            `Звук не проходит. Диагностика:\n` +
+            `• мои адреса: ${myLocal} (relay: ${myRelay})\n` +
+            `• адреса собеседника: ${peerCands} (relay: ${peerRelay})\n` +
+            `• отправлено аудио: ${audioSent} б\n` +
+            `• пар связи: ${pairs.length}, канал: ${pairType}/${pairProto}\n\n` +
+            cause,
           );
         }
       } catch (e) { console.error("[CallScreen] audio check failed", e); }
