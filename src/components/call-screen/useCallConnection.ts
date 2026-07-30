@@ -60,6 +60,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const lastVideoLevelRef = useRef<"low" | "mid" | "high" | "">("");
   const recoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wasConnectedRef = useRef<boolean>(false);
+  const iceRestartDoneRef = useRef<boolean>(false);
   const iceOutboxRef = useRef<RTCIceCandidateInit[]>([]);
   const iceFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -285,6 +286,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
       sessionFromUserRef.current = "";
       offerAppliedRef.current = false;
       answerAppliedRef.current = false;
+      iceRestartDoneRef.current = false;
       iceOutboxRef.current = [];
       console.log("[CallScreen] start", { myId, peerId, roomId, isCaller: isCaller.current, mode });
       setStatus("connecting");
@@ -747,28 +749,25 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
           if (audioCheckRef.current) { clearInterval(audioCheckRef.current); audioCheckRef.current = null; }
           return;
         }
+        // Если ни одна пара не выбрана и связь висит — делаем ОДИН ICE-restart
+        // для дожатия (лидер). Только один раз за звонок, чтобы не рвать звук.
         const isLeader = myId > peerId;
-        // Пока пары ещё проверяются (idет) — НЕ показываем пугающий диагноз,
-        // а даём связи достроиться. Лидер при этом дожимает ICE-restart'ом.
         if (audioBytes === 0 && nSucceeded === 0 && nInProgress > 0 && attempts <= 10) {
-          if (isLeader) {
-            const now = Date.now();
-            if (now - lastIceRestartAtRef.current > 1500) {
-              console.log("[CallScreen] pairs in-progress — ICE restart (leader)");
-              lastIceRestartAtRef.current = now;
-              try { (pcRef.current as RTCPeerConnection & { restartIce?: () => void }).restartIce?.(); } catch (e) { void e; }
-              try {
-                const o = await pc.createOffer({ iceRestart: true });
-                await pc.setLocalDescription(o);
-                await sendSignal("offer", o);
-              } catch (e) { void e; }
-            }
+          if (isLeader && !iceRestartDoneRef.current) {
+            iceRestartDoneRef.current = true;
+            console.log("[CallScreen] one-time ICE restart to establish media");
+            try { (pcRef.current as RTCPeerConnection & { restartIce?: () => void }).restartIce?.(); } catch (e) { void e; }
+            try {
+              const o = await pc.createOffer({ iceRestart: true });
+              await pc.setLocalDescription(o);
+              await sendSignal("offer", o);
+            } catch (e) { void e; }
           }
           return; // ждём следующей проверки, карточку не показываем
         }
         // Диагноз показываем только когда связь точно не строится:
         // либо все пары провалились, либо прошло много попыток без прогресса.
-        if (audioBytes === 0 && (nFailed >= pairs.length || attempts >= 6) && pairs.length > 0) {
+        if (audioBytes === 0 && (nFailed >= pairs.length || attempts >= 8) && pairs.length > 0) {
           let cause = "";
           if (myLocal === 0) {
             cause = "Твой браузер не собрал НИ одного сетевого адреса → нет доступа к микрофону или заблокирован WebRTC. Проверь разрешение микрофона в замке адресной строки.";
