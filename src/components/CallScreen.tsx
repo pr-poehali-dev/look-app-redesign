@@ -145,7 +145,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller }: CallS
             <p className="text-white/90 text-sm text-center">{endReason}</p>
           </div>
         )}
-        {diagText && status !== "connected" && (
+        {diagText && (
           <div className="max-w-[340px] px-4 py-3 rounded-2xl bg-black/70 backdrop-blur-sm border border-yellow-500/30">
             <p className="text-yellow-300/90 text-xs text-center whitespace-pre-line leading-relaxed">{diagText}</p>
           </div>

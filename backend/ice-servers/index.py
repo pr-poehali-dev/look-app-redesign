@@ -41,6 +41,15 @@ def handler(event: dict, context) -> dict:
     has_turn = False
     if turn_url:
         urls = [u.strip() for u in turn_url.split(',') if u.strip()]
+        # Гарантируем наличие TCP-транспорта для turn: (не turns:) — когда UDP-порты
+        # медиа закрыты фаерволом, WebRTC переключается на TURN-over-TCP и звук идёт.
+        extra = []
+        for u in urls:
+            if u.startswith('turn:') and 'transport=' not in u:
+                extra.append(u + '?transport=tcp')
+        for e in extra:
+            if e not in urls:
+                urls.append(e)
         if urls:
             if turn_secret:
                 ttl = 24 * 3600

@@ -614,6 +614,55 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
     return () => { if (statsRef.current) clearInterval(statsRef.current); };
   }, [status]);
 
+  // Детектор "соединено, но звука нет": через 8 сек после connected проверяем,
+  // реально ли приходят аудио-байты и через какой тип пары идёт связь.
+  useEffect(() => {
+    if (status !== "connected") return;
+    const t = setTimeout(async () => {
+      const pc = pcRef.current;
+      if (!pc) return;
+      try {
+        const stats = await pc.getStats();
+        let audioBytes = 0;
+        let pairType = "?";
+        let pairBytes = 0;
+        const localById: Record<string, string> = {};
+        stats.forEach((r) => {
+          if (r.type === "local-candidate") localById[r.id] = r.candidateType;
+          if (r.type === "inbound-rtp" && (r.kind === "audio" || r.mediaType === "audio")) {
+            audioBytes += r.bytesReceived || 0;
+          }
+        });
+        stats.forEach((r) => {
+          if (r.type === "candidate-pair" && (r.nominated || r.state === "succeeded")) {
+            pairType = localById[r.localCandidateId] || pairType;
+            pairBytes = r.bytesReceived || 0;
+          }
+        });
+        console.error("[CallScreen] AUDIO CHECK", { audioBytes, pairType, pairBytes });
+        if (audioBytes === 0) {
+          const via =
+            pairType === "relay"
+              ? "через TURN-relay"
+              : pairType === "srflx"
+              ? "напрямую (STUN)"
+              : pairType === "host"
+              ? "по локальной сети"
+              : "неизвестно как";
+          setDiagText(
+            `Соединение есть (${via}), но звук не приходит:\n` +
+            `• принято аудио-байт: 0\n` +
+            `• тип канала: ${pairType}\n\n` +
+            (pairType === "relay"
+              ? "Медиа идёт через TURN, но пакеты со звуком не проходят → на сервере закрыт диапазон UDP-портов медиа (min-port–max-port) ИЛИ relay-адрес нерабочий. Нужна проверка на стороне сервера."
+              : "Звук не проходит через выбранный канал — вероятно, режет фаервол/NAT. Попробуй мобильный интернет вместо Wi-Fi или наоборот."),
+          );
+        }
+      } catch (e) { console.error("[CallScreen] audio check failed", e); }
+    }, 8000);
+    return () => clearTimeout(t);
+  }, [status]);
+
   const hangup = () => {
     if (endedRef.current) { onEnd(); return; }
     endedRef.current = true;

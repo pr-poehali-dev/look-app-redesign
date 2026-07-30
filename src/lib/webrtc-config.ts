@@ -38,13 +38,14 @@ export const fetchIceServers = async (): Promise<RTCIceServer[]> => {
   return FALLBACK_STUN;
 };
 
-export const getRtcConfig = async (): Promise<RTCConfiguration> => {
+export const getRtcConfig = async (relayOnly = false): Promise<RTCConfiguration> => {
   const iceServers = await fetchIceServers();
   return {
     iceServers,
     iceCandidatePoolSize: 10,
     bundlePolicy: "max-bundle",
     rtcpMuxPolicy: "require",
+    ...(relayOnly ? { iceTransportPolicy: "relay" as RTCIceTransportPolicy } : {}),
   };
 };
 
