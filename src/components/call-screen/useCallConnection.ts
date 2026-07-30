@@ -133,17 +133,19 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
     processedSigIdsRef.current.add(sig.id);
     if (endedRef.current || pc.signalingState === "closed") return;
     if (sig.type === "offer") {
-      if (offerAppliedRef.current) {
-        console.log("[CallScreen] skip offer — already applied in this session");
-        return;
-      }
       const offerDesc = sig.payload as RTCSessionDescriptionInit;
       const sdp = offerDesc?.sdp || "";
+      // Пропускаем ТОЛЬКО точный дубликат того же SDP (повтор доставки).
+      // Новый offer с другим SDP (ICE-restart) обязательно обрабатываем!
+      if (offerAppliedRef.current && sdp === lastRemoteSdpRef.current) {
+        console.log("[CallScreen] skip duplicate offer (same sdp)");
+        return;
+      }
       if (pc.signalingState !== "stable" && pc.signalingState !== "have-remote-offer") {
         console.log("[CallScreen] skip offer in state", pc.signalingState);
         return;
       }
-      console.log("[CallScreen] got offer, sdpLen=", sdp.length);
+      console.log("[CallScreen] got offer, sdpLen=", sdp.length, "restart=", offerAppliedRef.current);
       offerAppliedRef.current = true;
       lastRemoteSdpRef.current = sdp;
       try {
@@ -163,12 +165,11 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         lastRemoteSdpRef.current = "";
       }
     } else if (sig.type === "answer") {
-      if (answerAppliedRef.current) {
-        console.log("[CallScreen] skip answer — already applied");
-        return;
-      }
+      // Применяем answer всегда, когда ждём его (have-local-offer) — это верно
+      // и для первичного соединения, и для ICE-restart. В остальных состояниях
+      // (stable и т.п.) answer не нужен — пропускаем.
       if (pc.signalingState !== "have-local-offer") {
-        console.log("[CallScreen] skip duplicate answer in state", pc.signalingState);
+        console.log("[CallScreen] skip answer in state", pc.signalingState);
         return;
       }
       console.log("[CallScreen] got answer");
@@ -749,19 +750,23 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
           if (audioCheckRef.current) { clearInterval(audioCheckRef.current); audioCheckRef.current = null; }
           return;
         }
-        // Если ни одна пара не выбрана и связь висит — делаем ОДИН ICE-restart
-        // для дожатия (лидер). Только один раз за звонок, чтобы не рвать звук.
+        // Связь висит без звука — дожимаем ICE-restart'ом (лидер), с интервалом.
+        // ВАЖНО: как только audioBytes>0, эта ветка не выполняется (выход выше),
+        // поэтому рестарт не рвёт уже пошедший звук.
         const isLeader = myId > peerId;
         if (audioBytes === 0 && nSucceeded === 0 && nInProgress > 0 && attempts <= 10) {
-          if (isLeader && !iceRestartDoneRef.current) {
-            iceRestartDoneRef.current = true;
-            console.log("[CallScreen] one-time ICE restart to establish media");
-            try { (pcRef.current as RTCPeerConnection & { restartIce?: () => void }).restartIce?.(); } catch (e) { void e; }
-            try {
-              const o = await pc.createOffer({ iceRestart: true });
-              await pc.setLocalDescription(o);
-              await sendSignal("offer", o);
-            } catch (e) { void e; }
+          if (isLeader) {
+            const now = Date.now();
+            if (now - lastIceRestartAtRef.current > 2500) {
+              lastIceRestartAtRef.current = now;
+              console.log("[CallScreen] ICE restart to establish media, attempt", attempts);
+              try { (pcRef.current as RTCPeerConnection & { restartIce?: () => void }).restartIce?.(); } catch (e) { void e; }
+              try {
+                const o = await pc.createOffer({ iceRestart: true });
+                await pc.setLocalDescription(o);
+                await sendSignal("offer", o);
+              } catch (e) { void e; }
+            }
           }
           return; // ждём следующей проверки, карточку не показываем
         }
