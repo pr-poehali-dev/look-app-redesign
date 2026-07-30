@@ -432,16 +432,20 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
           .catch(() => {});
       };
 
+      // Инициатор ICE-restart — сторона с большим id (детерминированно, чтобы
+      // обе стороны не рестартовали одновременно и не ломали SDP).
+      const isRestartLeader = myId > peerId;
+
       pc.onconnectionstatechange = () => {
         console.log("[CallScreen] connectionState =", pc.connectionState);
         if (pc.connectionState === "connected") setStatus("connected");
-        if (pc.connectionState === "failed" && isCaller.current) tryIceRestart();
+        if (pc.connectionState === "failed" && isRestartLeader) tryIceRestart();
       };
 
       pc.oniceconnectionstatechange = () => {
         console.log("[CallScreen] iceConnectionState =", pc.iceConnectionState);
         if (pc.iceConnectionState === "disconnected") setQuality("poor");
-        if (pc.iceConnectionState === "failed" && isCaller.current) tryIceRestart();
+        if ((pc.iceConnectionState === "failed" || pc.iceConnectionState === "disconnected") && isRestartLeader) tryIceRestart();
       };
 
       pc.onicegatheringstatechange = () => {
@@ -545,19 +549,23 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
             });
             const myRelay = local.filter((c) => c.startsWith("relay")).length;
             const myTotal = local.length;
+            const peerRelay = remote.filter((c) => c.startsWith("relay")).length;
             const peerCands = remote.length;
             const nominated = pairs.some((p) => p.includes("nominated=true"));
+            const anyBytes = pairs.some((p) => !p.includes("bytes=0/0"));
             let summary = "";
             if (myTotal === 0) {
               summary = "Не удалось получить сеть (ICE-кандидаты не собрались). Проверь интернет/микрофон.";
             } else if (myRelay === 0) {
-              summary = "TURN-сервер не выдал relay-адрес — звук не может пройти через строгий интернет/фаервол. Проблема в настройке TURN (turn.look.com.ru): ключ или UDP-порты.";
+              summary = "TURN не выдал relay-адрес — проблема в ключе TURN (turn.look.com.ru).";
             } else if (peerCands === 0) {
               summary = "Собеседник не прислал свои адреса — сигналинг не доставил данные второй стороне.";
-            } else if (!nominated) {
-              summary = "Адреса собраны, но соединение между сторонами не выбрано — блокируют фаерволы/NAT с обеих сторон.";
+            } else if (peerRelay === 0) {
+              summary = "У собеседника нет TURN-relay: у него TURN не сработал (старый кеш или другой ключ). Обнови приложение с обеих сторон.";
+            } else if (!nominated || !anyBytes) {
+              summary = "У обеих сторон relay есть, но звук через него не идёт → на TURN-сервере закрыт диапазон UDP-портов для медиа (min-port–max-port). Нужно открыть их в фаерволе.";
             } else {
-              summary = "Соединение выбрано, но данные не идут — вероятно, UDP-порты медиа закрыты на TURN-сервере.";
+              summary = "Соединение установлено — если звука нет, проверь громкость/микрофон.";
             }
             setDiagText(
               `Диагностика связи:\n` +
