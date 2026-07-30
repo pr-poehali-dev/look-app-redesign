@@ -702,23 +702,28 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
           if (audioCheckRef.current) { clearInterval(audioCheckRef.current); audioCheckRef.current = null; }
           return;
         }
-        // Если пары ещё проверяются (никакая не succeeded), даём ICE-restart шанс
-        // добить проверку — часто пары зависают и рестарт их оживляет.
-        if (audioBytes === 0 && nSucceeded === 0 && nInProgress > 0 && isCaller.current && attempts <= 5) {
-          console.log("[CallScreen] pairs stuck in-progress — ICE restart");
-          const now = Date.now();
-          if (now - lastIceRestartAtRef.current > 2500) {
-            lastIceRestartAtRef.current = now;
-            try { (pcRef.current as RTCPeerConnection & { restartIce?: () => void }).restartIce?.(); } catch (e) { void e; }
-            try {
-              const o = await pc.createOffer({ iceRestart: true });
-              await pc.setLocalDescription(o);
-              await sendSignal("offer", o);
-            } catch (e) { void e; }
+        const isLeader = myId > peerId;
+        // Пока пары ещё проверяются (idет) — НЕ показываем пугающий диагноз,
+        // а даём связи достроиться. Лидер при этом дожимает ICE-restart'ом.
+        if (audioBytes === 0 && nSucceeded === 0 && nInProgress > 0 && attempts <= 8) {
+          if (isLeader) {
+            const now = Date.now();
+            if (now - lastIceRestartAtRef.current > 2500) {
+              console.log("[CallScreen] pairs in-progress — ICE restart (leader)");
+              lastIceRestartAtRef.current = now;
+              try { (pcRef.current as RTCPeerConnection & { restartIce?: () => void }).restartIce?.(); } catch (e) { void e; }
+              try {
+                const o = await pc.createOffer({ iceRestart: true });
+                await pc.setLocalDescription(o);
+                await sendSignal("offer", o);
+              } catch (e) { void e; }
+            }
           }
-          return;
+          return; // ждём следующей проверки, карточку не показываем
         }
-        if (audioBytes === 0 && attempts >= 2) {
+        // Диагноз показываем только когда связь точно не строится:
+        // либо все пары провалились, либо прошло много попыток без прогресса.
+        if (audioBytes === 0 && (nFailed >= pairs.length || attempts >= 6) && pairs.length > 0) {
           let cause = "";
           if (myLocal === 0) {
             cause = "Твой браузер не собрал НИ одного сетевого адреса → нет доступа к микрофону или заблокирован WebRTC. Проверь разрешение микрофона в замке адресной строки.";
@@ -728,10 +733,10 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
             cause = "Собеседник не прислал свои адреса → у него не собрались кандидаты (нет микрофона/заблокирован WebRTC на его стороне).";
           } else if (peerRelay === 0) {
             cause = "У собеседника нет TURN-relay → у него TURN не сработал. Пусть проверит разрешение микрофона и обновит страницу.";
-          } else if (nSucceeded === 0 && nFailed > 0) {
+          } else if (nSucceeded === 0 && nFailed >= pairs.length) {
             cause = "Все пары связи ПРОВАЛИЛИСЬ (failed) → проверочные пакеты между сторонами не проходят. На TURN-сервере закрыт диапазон UDP-портов медиа (min-port–max-port) — нужно открыть на сервере.";
           } else if (nSucceeded === 0) {
-            cause = "Пары зависли в проверке (не failed, но и не succeeded) → сеть медленно пропускает или блокирует проверочные пакеты. Попробуй сменить сеть (мобильный↔Wi-Fi) с обеих сторон.";
+            cause = "Связь долго не устанавливается — сеть медленно пропускает проверочные пакеты. Попробуй сменить сеть (мобильный↔Wi-Fi) с обеих сторон.";
           } else {
             cause = "Пара выбрана, но аудио-байты не идут → возможно, звук режется после установки канала. Пришли этот текст разработчику.";
           }
