@@ -7,7 +7,7 @@ import base64
 
 
 def handler(event: dict, context) -> dict:
-    """Возвращает ICE-серверы (STUN + TURN с временными кредами) для WebRTC"""
+    """Возвращает ICE-серверы (STUN + TURN с временными кредами use-auth-secret) для WebRTC"""
     headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
