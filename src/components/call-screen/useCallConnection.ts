@@ -59,6 +59,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const audioCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastVideoLevelRef = useRef<"low" | "mid" | "high" | "">("");
   const recoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wasConnectedRef = useRef<boolean>(false);
   const iceOutboxRef = useRef<RTCIceCandidateInit[]>([]);
   const iceFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -454,6 +455,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
       // само (короткий провал сети), иначе — перезапускаем подбор соединения.
       const scheduleRecovery = (delayMs: number) => {
         if (endedRef.current) return;
+        if (!wasConnectedRef.current) return; // до первого соединения не вмешиваемся
         if (recoverTimerRef.current) return; // уже запланировано
         recoverTimerRef.current = setTimeout(() => {
           recoverTimerRef.current = null;
@@ -475,18 +477,19 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
 
       pc.onconnectionstatechange = () => {
         console.log("[CallScreen] connectionState =", pc.connectionState);
-        if (pc.connectionState === "connected") { setStatus("connected"); cancelRecovery(); }
-        if (pc.connectionState === "failed") { setQuality("poor"); scheduleRecovery(500); }
+        if (pc.connectionState === "connected") { setStatus("connected"); wasConnectedRef.current = true; cancelRecovery(); }
+        if (pc.connectionState === "failed") { setQuality("poor"); scheduleRecovery(1000); }
       };
 
       pc.oniceconnectionstatechange = () => {
         console.log("[CallScreen] iceConnectionState =", pc.iceConnectionState);
         const st = pc.iceConnectionState;
-        if (st === "connected" || st === "completed") { setQuality("good"); cancelRecovery(); }
-        // Короткий провал (disconnected) — ждём 2 сек: часто восстанавливается сам.
-        if (st === "disconnected") { setQuality("poor"); scheduleRecovery(2000); }
-        // Полный обрыв (failed) — восстанавливаем почти сразу.
-        if (st === "failed") { setQuality("poor"); scheduleRecovery(500); }
+        if (st === "connected" || st === "completed") { setQuality("good"); wasConnectedRef.current = true; cancelRecovery(); }
+        // Короткий провал (disconnected) — ждём 3 сек: часто восстанавливается сам.
+        // Восстановление сработает только если звонок УЖЕ был соединён (см. флаг внутри).
+        if (st === "disconnected") { setQuality("poor"); scheduleRecovery(3000); }
+        // Полный обрыв (failed) — восстанавливаем чуть быстрее.
+        if (st === "failed") { setQuality("poor"); scheduleRecovery(1000); }
       };
 
       pc.onicegatheringstatechange = () => {
