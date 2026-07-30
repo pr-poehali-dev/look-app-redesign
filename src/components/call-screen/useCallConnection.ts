@@ -56,6 +56,10 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const offerAppliedRef = useRef<boolean>(false);
   const answerAppliedRef = useRef<boolean>(false);
   const pendingFreshOffersRef = useRef<{ id: number; type: string; payload: unknown }[]>([]);
+  const forceRelayRef = useRef<(() => void) | null>(null);
+  const applyRelayOnlyRef = useRef<((initiate: boolean) => void) | null>(null);
+  const relayForcedRef = useRef<boolean>(false);
+  const audioCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const iceOutboxRef = useRef<RTCIceCandidateInit[]>([]);
   const iceFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -184,6 +188,9 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         console.error("[CallScreen] answer handling failed", err);
         answerAppliedRef.current = false;
       }
+    } else if (sig.type === "force_relay") {
+      console.log("[CallScreen] peer requested relay-only");
+      applyRelayOnlyRef.current?.(false);
     } else if (sig.type === "ice") {
       if (pc.signalingState === "closed") return;
       const cand = sig.payload as RTCIceCandidateInit;
@@ -280,6 +287,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
       sessionFromUserRef.current = "";
       offerAppliedRef.current = false;
       answerAppliedRef.current = false;
+      relayForcedRef.current = false;
       iceOutboxRef.current = [];
       console.log("[CallScreen] start", { myId, peerId, roomId, isCaller: isCaller.current, mode });
       setStatus("connecting");
@@ -441,6 +449,33 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
           .then((o) => pc.setLocalDescription(o).then(() => sendSignal("offer", o)))
           .catch(() => {});
       };
+
+      // Форсируем relay-only: медиа пойдёт строго через TURN (в т.ч. TCP/TLS 5349),
+      // минуя проблемные прямые/UDP-пары. Применяется на обеих сторонах.
+      const applyRelayOnly = async (initiate: boolean) => {
+        if (relayForcedRef.current) return;
+        relayForcedRef.current = true;
+        try {
+          const relayCfg = await getRtcConfig(true);
+          (pc as RTCPeerConnection & { setConfiguration?: (c: RTCConfiguration) => void }).setConfiguration?.(relayCfg);
+          console.log("[CallScreen] switched to relay-only");
+        } catch (e) { console.warn("[CallScreen] setConfiguration relay failed", e); }
+        if (initiate && isRestartLeader) {
+          lastIceRestartAtRef.current = Date.now();
+          try { (pc as RTCPeerConnection & { restartIce?: () => void }).restartIce?.(); } catch (e) { void e; }
+          try {
+            const o = await pc.createOffer({ iceRestart: true });
+            await pc.setLocalDescription(o);
+            await sendSignal("offer", o);
+          } catch (e) { console.warn("[CallScreen] relay offer failed", e); }
+        }
+      };
+      forceRelayRef.current = () => {
+        // Сообщаем второй стороне тоже переключиться, затем инициируем сами
+        sendSignal("force_relay", {});
+        applyRelayOnly(true);
+      };
+      applyRelayOnlyRef.current = applyRelayOnly;
 
       // Инициатор ICE-restart — сторона с большим id (детерминированно, чтобы
       // обе стороны не рестартовали одновременно и не ломали SDP).
@@ -638,49 +673,89 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   // реально ли приходят аудио-байты и через какой тип пары идёт связь.
   useEffect(() => {
     if (status !== "connected") return;
-    const t = setTimeout(async () => {
+    let attempts = 0;
+    const runCheck = async () => {
+      attempts += 1;
       const pc = pcRef.current;
       if (!pc) return;
       try {
         const stats = await pc.getStats();
         let audioBytes = 0;
+        let audioSent = 0;
         let pairType = "?";
+        let pairProto = "?";
         let pairBytes = 0;
-        const localById: Record<string, string> = {};
+        const local: Record<string, { type: string; proto: string }> = {};
+        const pairs: { r: RTCStatsReport extends infer T ? Record<string, unknown> : never }[] = [];
         stats.forEach((r) => {
-          if (r.type === "local-candidate") localById[r.id] = r.candidateType;
+          if (r.type === "local-candidate") local[r.id] = { type: r.candidateType, proto: r.protocol };
           if (r.type === "inbound-rtp" && (r.kind === "audio" || r.mediaType === "audio")) {
             audioBytes += r.bytesReceived || 0;
           }
-        });
-        stats.forEach((r) => {
-          if (r.type === "candidate-pair" && (r.nominated || r.state === "succeeded")) {
-            pairType = localById[r.localCandidateId] || pairType;
-            pairBytes = r.bytesReceived || 0;
+          if (r.type === "outbound-rtp" && (r.kind === "audio" || r.mediaType === "audio")) {
+            audioSent += r.bytesSent || 0;
           }
         });
-        console.error("[CallScreen] AUDIO CHECK", { audioBytes, pairType, pairBytes });
-        if (audioBytes === 0) {
+        // Ищем выбранную пару: сначала nominated+succeeded, потом просто с трафиком
+        let best: Record<string, unknown> | null = null;
+        stats.forEach((r) => {
+          if (r.type !== "candidate-pair") return;
+          const rec = r as unknown as Record<string, unknown>;
+          pairs.push({ r: rec as never });
+          const nominated = rec.nominated === true;
+          const succeeded = rec.state === "succeeded";
+          const hasBytes = ((rec.bytesReceived as number) || 0) + ((rec.bytesSent as number) || 0) > 0;
+          if ((nominated && succeeded) || (!best && (succeeded || hasBytes))) best = rec;
+        });
+        if (best) {
+          const b = best as Record<string, unknown>;
+          const lc = local[b.localCandidateId as string];
+          if (lc) { pairType = lc.type; pairProto = lc.proto; }
+          pairBytes = ((b.bytesReceived as number) || 0);
+        }
+        console.error("[CallScreen] AUDIO CHECK", { attempts, audioBytes, audioSent, pairType, pairProto, pairBytes, pairsCount: pairs.length });
+        if (audioBytes > 0) {
+          // Звук пошёл — прячем возможную диагностику и останавливаем проверки
+          setDiagText("");
+          if (audioCheckRef.current) { clearInterval(audioCheckRef.current); audioCheckRef.current = null; }
+          return;
+        }
+        if (audioBytes === 0 && !relayForcedRef.current) {
+          // Первая попытка: молча переключаемся на relay-only и ждём следующую проверку
+          console.log("[CallScreen] no audio — forcing relay-only");
+          forceRelayRef.current?.();
+          return;
+        }
+        if (audioBytes === 0 && attempts >= 3) {
           const via =
             pairType === "relay"
-              ? "через TURN-relay"
+              ? `через TURN-relay (${pairProto})`
               : pairType === "srflx"
               ? "напрямую (STUN)"
               : pairType === "host"
               ? "по локальной сети"
-              : "неизвестно как";
+              : "канал не выбран";
           setDiagText(
             `Соединение есть (${via}), но звук не приходит:\n` +
             `• принято аудио-байт: 0\n` +
-            `• тип канала: ${pairType}\n\n` +
+            `• отправлено аудио-байт: ${audioSent}\n` +
+            `• тип канала: ${pairType}/${pairProto}\n` +
+            `• проверено пар: ${pairs.length}\n\n` +
             (pairType === "relay"
               ? "Медиа идёт через TURN, но пакеты со звуком не проходят → на сервере закрыт диапазон UDP-портов медиа (min-port–max-port) ИЛИ relay-адрес нерабочий. Нужна проверка на стороне сервера."
               : "Звук не проходит через выбранный канал — вероятно, режет фаервол/NAT. Попробуй мобильный интернет вместо Wi-Fi или наоборот."),
           );
         }
       } catch (e) { console.error("[CallScreen] audio check failed", e); }
-    }, 8000);
-    return () => clearTimeout(t);
+    };
+    const first = setTimeout(() => {
+      runCheck();
+      audioCheckRef.current = setInterval(runCheck, 6000);
+    }, 6000);
+    return () => {
+      clearTimeout(first);
+      if (audioCheckRef.current) { clearInterval(audioCheckRef.current); audioCheckRef.current = null; }
+    };
   }, [status]);
 
   const hangup = () => {
