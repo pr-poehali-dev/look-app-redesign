@@ -705,10 +705,10 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         const isLeader = myId > peerId;
         // Пока пары ещё проверяются (idет) — НЕ показываем пугающий диагноз,
         // а даём связи достроиться. Лидер при этом дожимает ICE-restart'ом.
-        if (audioBytes === 0 && nSucceeded === 0 && nInProgress > 0 && attempts <= 8) {
+        if (audioBytes === 0 && nSucceeded === 0 && nInProgress > 0 && attempts <= 10) {
           if (isLeader) {
             const now = Date.now();
-            if (now - lastIceRestartAtRef.current > 2500) {
+            if (now - lastIceRestartAtRef.current > 1500) {
               console.log("[CallScreen] pairs in-progress — ICE restart (leader)");
               lastIceRestartAtRef.current = now;
               try { (pcRef.current as RTCPeerConnection & { restartIce?: () => void }).restartIce?.(); } catch (e) { void e; }
@@ -753,8 +753,8 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
     };
     const first = setTimeout(() => {
       runCheck();
-      audioCheckRef.current = setInterval(runCheck, 3000);
-    }, 2500);
+      audioCheckRef.current = setInterval(runCheck, 2000);
+    }, 1200);
     return () => {
       clearTimeout(first);
       if (audioCheckRef.current) { clearInterval(audioCheckRef.current); audioCheckRef.current = null; }
