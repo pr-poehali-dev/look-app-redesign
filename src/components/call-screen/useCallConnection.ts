@@ -729,14 +729,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
           if (audioCheckRef.current) { clearInterval(audioCheckRef.current); audioCheckRef.current = null; }
           return;
         }
-        if (audioBytes === 0 && !relayForcedRef.current && myRelay > 0 && peerRelay > 0 && pairs.length > 0) {
-          // Форсируем relay ТОЛЬКО если relay реально собрался у обеих сторон и
-          // пары уже строятся — иначе setConfiguration только сломает рабочие кандидаты.
-          console.log("[CallScreen] no audio but relay available — forcing relay-only");
-          forceRelayRef.current?.();
-          return;
-        }
-        if (audioBytes === 0 && attempts >= 3) {
+        if (audioBytes === 0 && attempts >= 2) {
           let cause = "";
           if (myLocal === 0) {
             cause = "Твой браузер не собрал НИ одного сетевого адреса → нет доступа к микрофону или заблокирован WebRTC. Проверь разрешение микрофона в замке адресной строки.";
