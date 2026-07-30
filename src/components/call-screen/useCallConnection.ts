@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { RTC_CONFIG, getRtcConfig } from "@/lib/webrtc-config";
-import { HQ_AUDIO_CONSTRAINTS, applyAudioTrackTuning, boostOpusInSdp, tuneAudioSenders, unlockMobileAudio, tuneRemoteAudioElement } from "@/lib/audioConstraints";
+import { HQ_AUDIO_CONSTRAINTS, applyAudioTrackTuning, boostOpusInSdp, tuneAudioSenders, tuneVideoSenders, unlockMobileAudio, tuneRemoteAudioElement } from "@/lib/audioConstraints";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
@@ -57,6 +57,8 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const answerAppliedRef = useRef<boolean>(false);
   const pendingFreshOffersRef = useRef<{ id: number; type: string; payload: unknown }[]>([]);
   const audioCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastVideoLevelRef = useRef<"low" | "mid" | "high" | "">("");
+  const recoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const iceOutboxRef = useRef<RTCIceCandidateInit[]>([]);
   const iceFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -150,6 +152,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         if (answer.sdp) answer.sdp = boostOpusInSdp(answer.sdp);
         await pc.setLocalDescription(answer);
         await tuneAudioSenders(pc);
+        if (mode === "video") { lastVideoLevelRef.current = "mid"; await tuneVideoSenders(pc, "mid"); }
         console.log("[CallScreen] sending answer");
         await sendSignal("answer", answer);
       } catch (err) {
@@ -447,16 +450,43 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
       // обе стороны не рестартовали одновременно и не ломали SDP).
       const isRestartLeader = myId > peerId;
 
+      // Планирует восстановление связи при обрыве: сначала ждём, вдруг вернётся
+      // само (короткий провал сети), иначе — перезапускаем подбор соединения.
+      const scheduleRecovery = (delayMs: number) => {
+        if (endedRef.current) return;
+        if (recoverTimerRef.current) return; // уже запланировано
+        recoverTimerRef.current = setTimeout(() => {
+          recoverTimerRef.current = null;
+          const st = pc.iceConnectionState;
+          if (endedRef.current) return;
+          if (st === "connected" || st === "completed") return; // само восстановилось
+          console.log("[CallScreen] connection lost — recovering, state =", st);
+          setQuality("poor");
+          if (isRestartLeader) tryIceRestart();
+          // Продолжаем пытаться, пока не восстановится
+          if (pc.iceConnectionState !== "connected" && pc.iceConnectionState !== "completed") {
+            scheduleRecovery(4000);
+          }
+        }, delayMs);
+      };
+      const cancelRecovery = () => {
+        if (recoverTimerRef.current) { clearTimeout(recoverTimerRef.current); recoverTimerRef.current = null; }
+      };
+
       pc.onconnectionstatechange = () => {
         console.log("[CallScreen] connectionState =", pc.connectionState);
-        if (pc.connectionState === "connected") setStatus("connected");
-        if (pc.connectionState === "failed" && isRestartLeader) tryIceRestart();
+        if (pc.connectionState === "connected") { setStatus("connected"); cancelRecovery(); }
+        if (pc.connectionState === "failed") { setQuality("poor"); scheduleRecovery(500); }
       };
 
       pc.oniceconnectionstatechange = () => {
         console.log("[CallScreen] iceConnectionState =", pc.iceConnectionState);
-        if (pc.iceConnectionState === "disconnected") setQuality("poor");
-        if ((pc.iceConnectionState === "failed" || pc.iceConnectionState === "disconnected") && isRestartLeader) tryIceRestart();
+        const st = pc.iceConnectionState;
+        if (st === "connected" || st === "completed") { setQuality("good"); cancelRecovery(); }
+        // Короткий провал (disconnected) — ждём 2 сек: часто восстанавливается сам.
+        if (st === "disconnected") { setQuality("poor"); scheduleRecovery(2000); }
+        // Полный обрыв (failed) — восстанавливаем почти сразу.
+        if (st === "failed") { setQuality("poor"); scheduleRecovery(500); }
       };
 
       pc.onicegatheringstatechange = () => {
@@ -495,6 +525,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         if (offer.sdp) offer.sdp = boostOpusInSdp(offer.sdp);
         await pc.setLocalDescription(offer);
         await tuneAudioSenders(pc);
+        if (mode === "video") { lastVideoLevelRef.current = "mid"; await tuneVideoSenders(pc, "mid"); }
         await sendSignal("offer", offer);
         // Resend offer aggressively if no answer — callee might still be clearing stale signals
         const resendOffer = async () => {
@@ -528,6 +559,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
       if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
       if (noAnswerTimerRef.current) clearTimeout(noAnswerTimerRef.current);
       if (iceFlushTimerRef.current) { clearTimeout(iceFlushTimerRef.current); iceFlushTimerRef.current = null; }
+      if (recoverTimerRef.current) { clearTimeout(recoverTimerRef.current); recoverTimerRef.current = null; }
       pcRef.current?.close();
       localStreamRef.current?.getTracks().forEach((t) => t.stop());
     };
@@ -627,9 +659,19 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         prevPacketsLostRef.current = lost;
         prevPacketsRef.current = total;
         const lossRate = deltaTotal > 0 ? deltaLost / deltaTotal : 0;
-        if (lossRate > 0.1 || rtt > 400) setQuality("poor");
-        else if (lossRate > 0.03 || rtt > 200) setQuality("fair");
-        else setQuality("good");
+        let q: "poor" | "fair" | "good";
+        if (lossRate > 0.1 || rtt > 400) q = "poor";
+        else if (lossRate > 0.03 || rtt > 200) q = "fair";
+        else q = "good";
+        setQuality(q);
+        // Адаптация видео под качество сети — чтобы связь не рвалась на плохом инете.
+        if (mode === "video") {
+          const level = q === "poor" ? "low" : q === "fair" ? "mid" : "high";
+          if (level !== lastVideoLevelRef.current) {
+            lastVideoLevelRef.current = level;
+            tuneVideoSenders(pc, level);
+          }
+        }
       } catch (e) { void e; }
     }, 2000);
     return () => { if (statsRef.current) clearInterval(statsRef.current); };

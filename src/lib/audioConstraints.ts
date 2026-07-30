@@ -98,6 +98,38 @@ export const tuneAudioSenders = async (pc: RTCPeerConnection | null | undefined)
   }
 };
 
+// Адаптация видео под качество сети: low → сильно режем битрейт и разрешение,
+// чтобы связь не рвалась на плохом интернете; high → возвращаем нормальное.
+export const tuneVideoSenders = async (
+  pc: RTCPeerConnection | null | undefined,
+  level: 'low' | 'mid' | 'high',
+) => {
+  if (!pc) return;
+  try {
+    const senders = pc.getSenders().filter(s => s.track && s.track.kind === 'video');
+    const cfg = {
+      low: { maxBitrate: 120000, scaleDownBy: 3, maxFramerate: 12 },
+      mid: { maxBitrate: 400000, scaleDownBy: 1.5, maxFramerate: 20 },
+      high: { maxBitrate: 900000, scaleDownBy: 1, maxFramerate: 30 },
+    }[level];
+    for (const sender of senders) {
+      const params = sender.getParameters();
+      if (!params.encodings || params.encodings.length === 0) {
+        params.encodings = [{}];
+      }
+      params.encodings.forEach(enc => {
+        enc.maxBitrate = cfg.maxBitrate;
+        enc.scaleResolutionDownBy = cfg.scaleDownBy;
+        enc.maxFramerate = cfg.maxFramerate;
+        enc.networkPriority = 'high';
+      });
+      await sender.setParameters(params).catch(() => {});
+    }
+  } catch {
+    /* noop */
+  }
+};
+
 export const boostOpusInSdp = (sdp: string): string => {
   if (!sdp) return sdp;
   try {
