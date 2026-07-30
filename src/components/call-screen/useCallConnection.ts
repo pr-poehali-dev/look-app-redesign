@@ -704,10 +704,10 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         }
         // Если пары ещё проверяются (никакая не succeeded), даём ICE-restart шанс
         // добить проверку — часто пары зависают и рестарт их оживляет.
-        if (audioBytes === 0 && nSucceeded === 0 && nInProgress > 0 && isCaller.current && attempts <= 3) {
+        if (audioBytes === 0 && nSucceeded === 0 && nInProgress > 0 && isCaller.current && attempts <= 5) {
           console.log("[CallScreen] pairs stuck in-progress — ICE restart");
           const now = Date.now();
-          if (now - lastIceRestartAtRef.current > 4000) {
+          if (now - lastIceRestartAtRef.current > 2500) {
             lastIceRestartAtRef.current = now;
             try { (pcRef.current as RTCPeerConnection & { restartIce?: () => void }).restartIce?.(); } catch (e) { void e; }
             try {
@@ -748,8 +748,8 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
     };
     const first = setTimeout(() => {
       runCheck();
-      audioCheckRef.current = setInterval(runCheck, 6000);
-    }, 6000);
+      audioCheckRef.current = setInterval(runCheck, 3000);
+    }, 2500);
     return () => {
       clearTimeout(first);
       if (audioCheckRef.current) { clearInterval(audioCheckRef.current); audioCheckRef.current = null; }
