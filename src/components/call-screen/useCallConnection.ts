@@ -28,6 +28,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const [quality, setQuality] = useState<CallQuality>("unknown");
   const [connectionWarning, setConnectionWarning] = useState(false);
   const [endReason, setEndReason] = useState<string>("");
+  const [diagText, setDiagText] = useState<string>("");
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -542,6 +543,30 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
               remote,
               pairs,
             });
+            const myRelay = local.filter((c) => c.startsWith("relay")).length;
+            const myTotal = local.length;
+            const peerCands = remote.length;
+            const nominated = pairs.some((p) => p.includes("nominated=true"));
+            let summary = "";
+            if (myTotal === 0) {
+              summary = "Не удалось получить сеть (ICE-кандидаты не собрались). Проверь интернет/микрофон.";
+            } else if (myRelay === 0) {
+              summary = "TURN-сервер не выдал relay-адрес — звук не может пройти через строгий интернет/фаервол. Проблема в настройке TURN (turn.look.com.ru): ключ или UDP-порты.";
+            } else if (peerCands === 0) {
+              summary = "Собеседник не прислал свои адреса — сигналинг не доставил данные второй стороне.";
+            } else if (!nominated) {
+              summary = "Адреса собраны, но соединение между сторонами не выбрано — блокируют фаерволы/NAT с обеих сторон.";
+            } else {
+              summary = "Соединение выбрано, но данные не идут — вероятно, UDP-порты медиа закрыты на TURN-сервере.";
+            }
+            setDiagText(
+              `Диагностика связи:\n` +
+              `• мои адреса: ${myTotal} (из них TURN-relay: ${myRelay})\n` +
+              `• адреса собеседника: ${peerCands}\n` +
+              `• соединение выбрано: ${nominated ? "да" : "нет"}\n` +
+              `• состояние: ${pc.iceConnectionState}\n\n` +
+              summary,
+            );
           } catch (e) { console.error("[CallScreen] diag failed", e); }
         }
       }
@@ -761,6 +786,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
     quality,
     connectionWarning,
     endReason,
+    diagText,
     localVideoRef,
     remoteVideoRef,
     remoteAudioRef,
