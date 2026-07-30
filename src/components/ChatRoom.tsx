@@ -787,7 +787,10 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     }
   };
 
-  const displayName = !isGroup && peerInfo?.name ? peerInfo.name : chat.name;
+  const cleanName = (n?: string) => (n && n !== "Гость" ? n : "");
+  const displayName = !isGroup
+    ? (cleanName(peerInfo?.name) || cleanName(chat.name) || "Собеседник")
+    : chat.name;
   const displayAvatar = !isGroup && peerInfo?.avatar ? peerInfo.avatar : chat.avatar;
   const displayOnline = !isGroup && peerInfo ? !!peerInfo.online : chat.online;
 

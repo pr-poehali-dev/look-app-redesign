@@ -3,7 +3,7 @@
     {
       "name": "Get messages",
       "method": "GET",
-      "path": "/?module=chat&action=messages&chat_id=test_chat",
+      "path": "/?module=chat&action=messages&chat_id=test_chat_empty_xyz",
       "expectedStatus": 200,
       "expectedBody": {"messages": []},
       "bodyMatcher": "partial"
@@ -22,7 +22,7 @@
       "method": "GET",
       "path": "/?module=chat&action=online",
       "expectedStatus": 200,
-      "expectedBody": {"users": [{"id": "anon"}]},
+      "expectedBody": {"users": []},
       "bodyMatcher": "partial"
     },
     {

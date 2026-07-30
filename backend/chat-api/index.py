@@ -34,14 +34,34 @@ def handler(event: dict, context) -> dict:
     req_headers = event.get('headers') or {}
     from urllib.parse import unquote
     user_id = req_headers.get('X-User-Id', 'anon')
-    user_name = unquote(req_headers.get('X-User-Name', 'Гость'))
+    user_name = unquote(req_headers.get('X-User-Name', '')).strip()
     module = params.get('module', 'chat')
 
+    # Если имя не передано (или пришло как «Гость») — берём настоящее из app_users,
+    # чтобы никогда не записывать и не показывать «Гость».
+    if not user_name or user_name == 'Гость':
+        try:
+            main_schema = os.environ.get('MAIN_DB_SCHEMA', 'public')
+            cur.execute(
+                f'SELECT name, handle FROM "{main_schema}".app_users WHERE id = %s LIMIT 1',
+                (user_id,)
+            )
+            row = cur.fetchone()
+            if row:
+                user_name = (row[0] or row[1] or '').strip()
+        except Exception:
+            pass
+    if not user_name:
+        user_name = 'Пользователь'
+
     try:
-        # Upsert user online status
+        # Upsert user online status. Имя не затираем, если новое пустое —
+        # оставляем прежнее (COALESCE), чтобы «Гость» не перезаписал реальное имя.
         cur.execute(
             "INSERT INTO sa_users (id, name, online_at) VALUES (%s, %s, NOW()) "
-            "ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, online_at = NOW()",
+            "ON CONFLICT (id) DO UPDATE SET "
+            "name = CASE WHEN EXCLUDED.name IN ('', 'Гость') THEN sa_users.name ELSE EXCLUDED.name END, "
+            "online_at = NOW()",
             (user_id, user_name)
         )
 
