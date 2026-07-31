@@ -243,7 +243,7 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
   );
 
   return (
-    <div className="h-full bg-black flex md:flex-row flex-col overflow-hidden">
+    <div className="h-full flex md:flex-row flex-col overflow-hidden" style={{ backgroundColor: 'var(--look-bg)' }}>
       {/* На мобиле: если открыт чат — показываем только его */}
       {openChat && (
         <div className="md:hidden absolute inset-0 z-40 bg-black">
