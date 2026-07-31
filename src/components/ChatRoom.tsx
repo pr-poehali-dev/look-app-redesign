@@ -15,19 +15,80 @@ interface Message {
   id: number;
   user_id: string;
   user_name: string;
-  type: "text" | "voice" | "image" | "file" | "location" | "contact" | "poll";
+  type: "text" | "voice" | "image" | "file" | "location" | "contact" | "poll" | "sticker";
   content: string;
   time: string;
 }
 
-const EMOJIS = [
-  "😀","😃","😄","😁","😆","😅","🤣","😂","🙂","🙃","😉","😊","😇","🥰","😍","🤩",
-  "😘","😗","😚","😙","😋","😛","😜","🤪","😝","🤑","🤗","🤔","🤐","😐","😑","😶",
-  "😏","😒","🙄","😬","😮","😯","😴","🤤","😪","😵","🥳","😎","🤓","🧐","😕","😟",
-  "🙁","😮","😯","😲","😳","🥺","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣",
-  "😞","😓","😩","😫","🥱","🤬","😡","😠","🤯","😈","💀","💩","👻","👽","🤖","❤️",
-  "🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","💕","💞","💓","💗","💖","💘","👍",
-  "👎","👏","🙏","🤝","👌","✌️","🤞","🤟","🤘","🫶","💪","🔥","✨","🎉","🎊","🚀"
+const EMOJI_CATEGORIES: { id: string; icon: string; emojis: string[] }[] = [
+  {
+    id: "smileys",
+    icon: "Smile",
+    emojis: [
+      "😀","😃","😄","😁","😆","😅","🤣","😂","🙂","🙃","🫠","😉","😊","😇","🥰","😍",
+      "🤩","😘","😗","😚","😙","🥲","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🫢","🫣",
+      "🤫","🤔","🫡","🤐","🤨","😐","😑","😶","🫥","😏","😒","🙄","😬","🤥","😌","😔",
+      "😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵","🥶","🥴","😵","😵‍💫","🤯","🤠",
+      "🥳","🥸","😎","🤓","🧐","😕","🫤","😟","🙁","😮","😯","😲","😳","🥺","🥹","😦",
+      "😧","😨","😰","😥","😢","😭","😱","😖","😣","😞","😓","😩","😫","🥱","😤","😡",
+      "😠","🤬","😈","👿","💀","💩","🤡","👻","👽","🤖"
+    ],
+  },
+  {
+    id: "gestures",
+    icon: "Hand",
+    emojis: [
+      "👍","👎","👌","🤌","🤏","✌️","🤞","🫰","🤟","🤘","🤙","🫵","🫱","🫲","🫳","🫴",
+      "👈","👉","👆","👇","☝️","✋","🤚","🖐️","🖖","👋","🤝","🙏","🫶","🤲","👐","🙌",
+      "👏","💪","🦾","✍️","💅","🤳","👀","👁️","🫦","👄","💋","🧠","🦷","🦴","👶","🧑",
+      "👨","👩","🧔","👴","👵","🙆","🙅","🙋","🤦","🤷","💁","🕺","💃","🧎","🚶","🏃"
+    ],
+  },
+  {
+    id: "hearts",
+    icon: "Heart",
+    emojis: [
+      "❤️","🧡","💛","💚","💙","🩵","💜","🖤","🤍","🤎","💔","❤️‍🔥","❤️‍🩹","💕","💞","💓",
+      "💗","💖","💘","💝","💟","♥️","💋","💯","💢","💥","💫","💦","💨","🕳️","💬","💭",
+      "🌸","🌹","🥀","🌺","🌻","🌼","🌷","🌱","🍀","🌿","⭐","🌟","✨","⚡","🔥","🌈"
+    ],
+  },
+  {
+    id: "animals",
+    icon: "Cat",
+    emojis: [
+      "🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐻‍❄️","🐨","🐯","🦁","🐮","🐷","🐸","🐵",
+      "🙈","🙉","🙊","🐒","🦄","🐴","🦓","🦌","🐗","🐺","🦇","🐢","🐍","🦎","🐙","🦑",
+      "🦐","🦀","🐠","🐟","🐬","🐳","🐋","🦈","🐊","🦖","🦕","🐔","🐓","🐣","🐥","🦆",
+      "🦅","🦉","🦩","🦚","🦜","🕊️","🐝","🦋","🐌","🐞","🐜","🦗","🕷️","🦂","🌵","🎄"
+    ],
+  },
+  {
+    id: "food",
+    icon: "Pizza",
+    emojis: [
+      "🍏","🍎","🍐","🍊","🍋","🍌","🍉","🍇","🍓","🫐","🍈","🍒","🍑","🥭","🍍","🥥",
+      "🥝","🍅","🥑","🥦","🥬","🥒","🌶️","🫑","🌽","🥕","🧄","🧅","🥔","🍠","🥐","🥯",
+      "🍞","🥖","🧀","🥚","🍳","🧈","🥞","🧇","🥓","🍔","🍟","🍕","🌭","🥪","🌮","🌯",
+      "🫔","🥙","🧆","🍝","🍜","🍲","🍣","🍱","🍤","🍙","🍚","🍘","🍥","🥮","🍢","🍡",
+      "🍦","🍰","🎂","🧁","🍫","🍬","🍭","🍩","🍪","☕","🍵","🧃","🥤","🧋","🍺","🍷"
+    ],
+  },
+  {
+    id: "activity",
+    icon: "Rocket",
+    emojis: [
+      "⚽","🏀","🏈","⚾","🥎","🎾","🏐","🏉","🥏","🎱","🏓","🏸","🥅","🏒","🥍","🏏",
+      "🎳","🎯","🪀","🎮","🕹️","🎲","♟️","🎰","🧩","🎨","🎭","🎬","🎤","🎧","🎼","🎹",
+      "🥁","🎸","🎺","🎻","🚗","✈️","🚀","🛸","🚁","⛵","🏝️","🗺️","🎆","🎇","🎉","🎊",
+      "🎈","🎁","🏆","🥇","🥈","🥉","🏅","🎗️","💰","💎","👑","🔮","💡","📱","💻","⌚"
+    ],
+  },
+];
+
+const STICKERS: string[] = [
+  "🔥","💯","👑","🎉","😂","😍","🥺","😎","🤩","👍","❤️","💔","🙏","💪","✨","🚀",
+  "🎁","🌈","⭐","💥","🥳","🤯","👻","💀","🤖","👽","🦄","🐱","🐶","🍕","☕","🍺",
 ];
 
 interface ChatRoomProps {
@@ -56,6 +117,11 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const docRef = useRef<HTMLInputElement>(null);
   const [showEmoji, setShowEmoji] = useState(false);
+  const [emojiTab, setEmojiTab] = useState<"emoji" | "stickers" | "gif">("emoji");
+  const [emojiCat, setEmojiCat] = useState(EMOJI_CATEGORIES[0].id);
+  const [gifQuery, setGifQuery] = useState("");
+  const [gifResults, setGifResults] = useState<{ id: string; url: string; preview: string }[]>([]);
+  const [gifLoading, setGifLoading] = useState(false);
   const [showContactPicker, setShowContactPicker] = useState(false);
   const [contactList, setContactList] = useState<{ id: string; name: string; avatar?: string }[]>([]);
   const lastIdRef = useRef(0);
@@ -524,6 +590,41 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     setInput((v) => v + e);
   };
 
+  const sendSticker = (sticker: string) => {
+    setShowEmoji(false);
+    sendMsg(sticker, "sticker");
+  };
+
+  const sendGif = (url: string) => {
+    setShowEmoji(false);
+    sendMsg(url, "image");
+  };
+
+  const loadGifs = useCallback(async (q: string) => {
+    setGifLoading(true);
+    try {
+      const key = "LIVDSRZULELA";
+      const base = q.trim()
+        ? `https://g.tenor.com/v1/search?q=${encodeURIComponent(q.trim())}&key=${key}&limit=24&media_filter=minimal`
+        : `https://g.tenor.com/v1/trending?key=${key}&limit=24&media_filter=minimal`;
+      const res = await fetch(base);
+      const data = await res.json();
+      const items = (data.results || []).map((r: { id: string; media?: { tinygif?: { url: string }; gif?: { url: string } }[] }) => {
+        const m = r.media?.[0] || {};
+        return { id: r.id, url: m.gif?.url || m.tinygif?.url || "", preview: m.tinygif?.url || m.gif?.url || "" };
+      }).filter((x: { url: string }) => x.url);
+      setGifResults(items);
+    } catch (e) { void e; }
+    setGifLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (showEmoji && emojiTab === "gif") {
+      const t = setTimeout(() => loadGifs(gifQuery), gifQuery ? 400 : 0);
+      return () => clearTimeout(t);
+    }
+  }, [showEmoji, emojiTab, gifQuery, loadGifs]);
+
   // Максимальный id, который прочитал любой собеседник (не я)
   const peerReadMaxId = Object.entries(reads)
     .filter(([uid]) => uid !== MY_ID)
@@ -558,6 +659,22 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
         <div className={`px-4 py-2.5 rounded-2xl max-w-[78%] ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
           <p className="text-white text-sm">📊 Опрос</p>
           <div className="text-white/40 text-[10px] mt-1 text-right">{msg.time}</div>
+        </div>
+      );
+    }
+    if (msg.type === "sticker") {
+      const isImg = /^https?:\/\//.test(msg.content) || msg.content.startsWith("data:");
+      return (
+        <div className="max-w-[45%] flex flex-col">
+          {isImg ? (
+            <img src={msg.content} className="w-32 h-32 object-contain drop-shadow-lg" alt="sticker" />
+          ) : (
+            <span className="text-[76px] leading-none select-none">{msg.content}</span>
+          )}
+          <div className={`flex items-center gap-1.5 mt-0.5 ${isMe ? "justify-end" : "justify-start"}`}>
+            <span className="text-white/40 text-[10px]">{msg.time}</span>
+            {isMe && <Ticks msg={msg} />}
+          </div>
         </div>
       );
     }
@@ -1021,6 +1138,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
               {pinnedMessage.type === "image" ? "📷 Фото" :
                 pinnedMessage.type === "voice" ? "🎤 Голосовое" :
                 pinnedMessage.type === "file" ? "📎 Файл" :
+                pinnedMessage.type === "sticker" ? "🎨 Стикер" :
                 pinnedMessage.content || ""}
             </div>
           </div>
@@ -1090,20 +1208,106 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
         <div ref={bottomRef} />
       </div>
 
-      {/* Emoji panel */}
+      {/* Emoji / Stickers / GIF panel */}
       {showEmoji && (
-        <div className="bg-[#111] border-t border-white/8 px-3 py-3 max-h-52 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
-          <div className="grid grid-cols-8 gap-1.5">
-            {EMOJIS.map((e, i) => (
+        <div className="bg-[#111] border-t border-white/8 flex flex-col">
+          {/* Tabs */}
+          <div className="flex items-center gap-1 px-3 pt-2.5">
+            {([
+              { id: "emoji", label: "Эмодзи", icon: "Smile" },
+              { id: "stickers", label: "Стикеры", icon: "Sticker" },
+              { id: "gif", label: "GIF", icon: "Film" },
+            ] as const).map((t) => (
               <button
-                key={i}
-                onClick={() => insertEmoji(e)}
-                className="w-9 h-9 flex items-center justify-center text-xl rounded-lg hover:bg-white/10 active:bg-white/20"
+                key={t.id}
+                onClick={() => setEmojiTab(t.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${emojiTab === t.id ? "bg-[#fe2c55] text-white" : "bg-white/8 text-white/60 hover:bg-white/15"}`}
               >
-                {e}
+                <Icon name={t.icon} size={15} />
+                {t.label}
               </button>
             ))}
           </div>
+
+          {emojiTab === "emoji" && (
+            <>
+              <div className="flex items-center gap-1 px-3 pt-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+                {EMOJI_CATEGORIES.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => setEmojiCat(c.id)}
+                    className={`w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg transition-colors ${emojiCat === c.id ? "bg-white/15 text-[#fe2c55]" : "text-white/50 hover:bg-white/10"}`}
+                  >
+                    <Icon name={c.icon} size={18} />
+                  </button>
+                ))}
+              </div>
+              <div className="px-3 py-2 max-h-48 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+                <div className="grid grid-cols-8 gap-1">
+                  {(EMOJI_CATEGORIES.find((c) => c.id === emojiCat)?.emojis || []).map((e, i) => (
+                    <button
+                      key={i}
+                      onClick={() => insertEmoji(e)}
+                      className="w-9 h-9 flex items-center justify-center text-2xl rounded-lg hover:bg-white/10 active:bg-white/20"
+                    >
+                      {e}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {emojiTab === "stickers" && (
+            <div className="px-3 py-3 max-h-56 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+              <div className="grid grid-cols-4 gap-2">
+                {STICKERS.map((s, i) => (
+                  <button
+                    key={i}
+                    onClick={() => sendSticker(s)}
+                    className="aspect-square flex items-center justify-center text-5xl rounded-2xl bg-white/5 hover:bg-white/10 active:scale-95 transition-all"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {emojiTab === "gif" && (
+            <div className="flex flex-col">
+              <div className="px-3 pt-2">
+                <div className="flex items-center gap-2 bg-white/8 rounded-full px-3.5 py-2">
+                  <Icon name="Search" size={15} className="text-white/40" />
+                  <input
+                    value={gifQuery}
+                    onChange={(e) => setGifQuery(e.target.value)}
+                    placeholder="Поиск GIF..."
+                    className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/30"
+                  />
+                </div>
+              </div>
+              <div className="px-3 py-2 max-h-52 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+                {gifLoading && gifResults.length === 0 ? (
+                  <div className="flex items-center justify-center py-8 text-white/40 text-sm">Загрузка...</div>
+                ) : gifResults.length === 0 ? (
+                  <div className="flex items-center justify-center py-8 text-white/40 text-sm">Ничего не найдено</div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {gifResults.map((g) => (
+                      <button
+                        key={g.id}
+                        onClick={() => sendGif(g.url)}
+                        className="aspect-square rounded-xl overflow-hidden bg-white/5 active:scale-95 transition-transform"
+                      >
+                        <img src={g.preview} className="w-full h-full object-cover" alt="gif" loading="lazy" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
