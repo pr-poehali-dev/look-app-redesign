@@ -603,16 +603,20 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const loadGifs = useCallback(async (q: string) => {
     setGifLoading(true);
     try {
-      const key = "LIVDSRZULELA";
+      const key = "Gc7131jiJuvI7IdN0HZ1D7nh0ow5BU6g";
       const base = q.trim()
-        ? `https://g.tenor.com/v1/search?q=${encodeURIComponent(q.trim())}&key=${key}&limit=24&media_filter=minimal`
-        : `https://g.tenor.com/v1/trending?key=${key}&limit=24&media_filter=minimal`;
+        ? `https://api.giphy.com/v1/gifs/search?api_key=${key}&q=${encodeURIComponent(q.trim())}&limit=24&rating=pg-13`
+        : `https://api.giphy.com/v1/gifs/trending?api_key=${key}&limit=24&rating=pg-13`;
       const res = await fetch(base);
       const data = await res.json();
-      const items = (data.results || []).map((r: { id: string; media?: { tinygif?: { url: string }; gif?: { url: string } }[] }) => {
-        const m = r.media?.[0] || {};
-        return { id: r.id, url: m.gif?.url || m.tinygif?.url || "", preview: m.tinygif?.url || m.gif?.url || "" };
-      }).filter((x: { url: string }) => x.url);
+      type GiphyImg = { url: string };
+      type GiphyItem = { id: string; images?: { downsized_medium?: GiphyImg; fixed_width?: GiphyImg; fixed_width_small?: GiphyImg } };
+      const items = ((data.data || []) as GiphyItem[]).map((r) => {
+        const img = r.images || {};
+        const full = img.downsized_medium?.url || img.fixed_width?.url || "";
+        const prev = img.fixed_width_small?.url || img.fixed_width?.url || full;
+        return { id: r.id, url: full, preview: prev };
+      }).filter((x) => x.url);
       setGifResults(items);
     } catch (e) { void e; }
     setGifLoading(false);
