@@ -140,7 +140,7 @@ const CameraPreview = ({
           transition: "transform 0.2s ease, filter 0.3s ease",
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 -z-10" />
+      <div className="absolute inset-0 -z-10" style={{ backgroundColor: 'var(--look-bg)' }} />
 
       {/* Uploaded media preview */}
       {uploadedMedia && (
