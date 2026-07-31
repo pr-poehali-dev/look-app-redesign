@@ -309,7 +309,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
   }
 
   return (
-    <div className="relative w-full h-full bg-black overflow-hidden flex flex-col">
+    <div className="relative w-full h-full overflow-hidden flex flex-col" style={{ backgroundColor: 'var(--look-bg)' }}>
 
       {editingPhoto && uploadedMedia?.type === "image" && (
         <PhotoEditor
