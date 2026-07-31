@@ -1291,6 +1291,21 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                   />
                 </div>
               </div>
+              <div className="flex items-center gap-1.5 px-3 pt-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+                {["👋 Привет","😂 Смех","❤️ Любовь","👍 Ок","🎉 Праздник","😢 Грусть","🔥 Огонь","😴 Спать","💃 Танцы","👏 Браво"].map((s) => {
+                  const q = s.split(" ").slice(1).join(" ");
+                  const active = gifQuery === q;
+                  return (
+                    <button
+                      key={s}
+                      onClick={() => setGifQuery(q)}
+                      className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${active ? "bg-[#fe2c55] text-white" : "bg-white/8 text-white/70 hover:bg-white/15"}`}
+                    >
+                      {s}
+                    </button>
+                  );
+                })}
+              </div>
               <div className="px-3 py-2 max-h-52 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
                 {gifLoading && gifResults.length === 0 ? (
                   <div className="flex items-center justify-center py-8 text-white/40 text-sm">Загрузка...</div>
