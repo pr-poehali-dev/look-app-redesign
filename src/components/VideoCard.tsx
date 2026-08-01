@@ -535,11 +535,6 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           </div>
           <span className="text-white text-xs font-semibold">Ещё</span>
         </button>
-
-        {/* Spinning disc — аудиодорожка автора */}
-        <div className="w-10 h-10 rounded-full border-4 border-white/30 overflow-hidden animate-spin" style={{ animationDuration: "3s" }} title="Звук автора">
-          <UserAvatar src={video.avatar} name={video.author || video.handle} alt="disc" />
-        </div>
       </div>
 
       {/* Desktop right actions — вне видео, все 7 кнопок */}
@@ -602,11 +597,6 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           </div>
           <span className="text-white text-xs font-semibold">Ещё</span>
         </button>
-
-        {/* Spinning disc — аудиодорожка автора */}
-        <div className="w-10 h-10 rounded-full border-4 border-white/30 overflow-hidden animate-spin" style={{ animationDuration: "3s" }} title="Звук автора">
-          <UserAvatar src={video.avatar} name={video.author || video.handle} alt="disc" />
-        </div>
       </div>
 
       {showMore && createPortal(
