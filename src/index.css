@@ -106,11 +106,16 @@ html.theme-dark body {
 .bg-black {
   background-color: var(--look-bg) !important;
 }
-/* Исключение: видео и медиа-контейнеры внутри карточек оставляем чёрными */
-video.bg-black,
-.overflow-hidden.bg-black:has(video),
-.overflow-hidden.bg-black:has(img.object-cover) {
+/* Исключение: видео и медиа-контейнеры внутри карточек оставляем чёрными (только мобильная раскладка —
+   на ПК фон корневой карточки должен быть цвета темы, см. правила ниже в @media (min-width: 768px)) */
+video.bg-black {
   background-color: #000 !important;
+}
+@media (max-width: 767px) {
+  .overflow-hidden.bg-black:has(video),
+  .overflow-hidden.bg-black:has(img.object-cover) {
+    background-color: #000 !important;
+  }
 }
 /* Корневой контейнер карточки видео: на мобиле чёрный, на ПК — прозрачный */
 .md\:bg-transparent.bg-black {
