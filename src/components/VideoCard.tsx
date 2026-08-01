@@ -761,11 +761,11 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
       {showComments && createPortal(
         <div
-          className="fixed inset-0 z-[9999] flex flex-col justify-end"
+          className="fixed inset-0 z-[9999] flex flex-col justify-end md:flex-row md:justify-end md:bg-black/40"
           onPointerDown={() => setShowComments(false)}
         >
           <div
-            className="sheet-theme rounded-t-3xl flex flex-col max-h-[70%]"
+            className="sheet-theme rounded-t-3xl flex flex-col max-h-[70%] md:rounded-t-none md:rounded-l-3xl md:max-h-none md:h-full md:w-[400px] md:ml-auto md:shadow-2xl animate-in slide-in-from-bottom md:slide-in-from-right duration-300"
             onPointerDown={e => e.stopPropagation()}
           >
             {/* Header */}
@@ -809,7 +809,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             </div>
 
             {/* Input */}
-            <div className="flex items-center gap-3 px-4 py-3 border-t border-white/10 pb-8">
+            <div className="flex items-center gap-3 px-4 py-3 border-t border-white/10 pb-8 md:pb-3">
               <div className="flex-1 flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
                 <input
                   value={commentText}

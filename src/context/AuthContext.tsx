@@ -34,10 +34,20 @@ const parseBody = (raw: unknown) => {
   return raw;
 };
 
+const readCachedUser = (): AppUser | null => {
+  try {
+    const raw = localStorage.getItem("auth_user");
+    return raw ? (JSON.parse(raw) as AppUser) : null;
+  } catch { return null; }
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<AppUser | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const savedToken = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+  const cachedUser = savedToken ? readCachedUser() : null;
+  const [user, setUser] = useState<AppUser | null>(cachedUser);
+  const [token, setToken] = useState<string | null>(cachedUser ? savedToken : null);
+  // Показываем интерфейс сразу, если есть кэш профиля — проверка идёт в фоне
+  const [loading, setLoading] = useState(!!savedToken && !cachedUser);
 
   useEffect(() => {
     const saved = localStorage.getItem("auth_token");
@@ -53,12 +63,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (data.user) {
           setUser(data.user);
           setToken(saved);
+          localStorage.setItem("auth_user", JSON.stringify(data.user));
           localStorage.setItem("user_id", data.user.id);
           if (data.user.handle) localStorage.setItem("user_handle", data.user.handle);
         }
-        else localStorage.removeItem("auth_token");
+        else { setUser(null); setToken(null); localStorage.removeItem("auth_token"); localStorage.removeItem("auth_user"); }
       })
-      .catch(() => localStorage.removeItem("auth_token"))
+      .catch(() => { /* оффлайн/медленный сервер — оставляем кэшированный вход */ })
       .finally(() => setLoading(false));
   }, []);
 
@@ -74,6 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(data.user);
     setToken(data.token);
     localStorage.setItem("auth_token", data.token);
+    localStorage.setItem("auth_user", JSON.stringify(data.user));
     localStorage.setItem("user_id", data.user.id);
     if (data.user.handle) localStorage.setItem("user_handle", data.user.handle);
     return null;
@@ -91,6 +103,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(data.user);
     setToken(data.token);
     localStorage.setItem("auth_token", data.token);
+    localStorage.setItem("auth_user", JSON.stringify(data.user));
     localStorage.setItem("user_id", data.user.id);
     if (data.user.handle) localStorage.setItem("user_handle", data.user.handle);
     return null;
@@ -100,6 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(newUser);
     setToken(newToken);
     localStorage.setItem("auth_token", newToken);
+    localStorage.setItem("auth_user", JSON.stringify(newUser));
     localStorage.setItem("user_id", newUser.id);
     if (newUser.handle) localStorage.setItem("user_handle", newUser.handle);
   };
@@ -108,12 +122,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     setToken(null);
     localStorage.removeItem("auth_token");
+    localStorage.removeItem("auth_user");
     localStorage.removeItem("user_id");
     localStorage.removeItem("user_handle");
   };
 
   const updateUser = (u: Partial<AppUser>) => {
-    setUser(prev => prev ? { ...prev, ...u } : prev);
+    setUser(prev => {
+      if (!prev) return prev;
+      const next = { ...prev, ...u };
+      localStorage.setItem("auth_user", JSON.stringify(next));
+      return next;
+    });
   };
 
   return (
