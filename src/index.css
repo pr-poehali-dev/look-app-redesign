@@ -124,6 +124,19 @@ video.bg-black,
   .look-card-root {
     background-color: var(--look-bg) !important;
   }
+  /* Скруглённая рамка видео на ПК: фон под маской = цвет темы, чтобы срезанные уголки были зелёными */
+  .video-round-frame {
+    background-color: var(--look-bg) !important;
+    border-radius: 16px !important;
+  }
+  .video-round-frame > video,
+  .video-round-frame > img,
+  .video-round-frame > div {
+    border-radius: 16px !important;
+    -webkit-mask-image: -webkit-radial-gradient(white, white) !important;
+    mask-image: radial-gradient(white, white) !important;
+    transform: translateZ(0) !important;
+  }
 }
 .bg-zinc-900 {
   background-color: var(--look-sidebar-bg) !important;
