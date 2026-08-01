@@ -130,6 +130,9 @@ video.bg-black,
     border-radius: 16px !important;
     overflow: hidden !important;
     background-color: var(--look-bg) !important;
+    -webkit-mask-image: -webkit-radial-gradient(white, white) !important;
+    isolation: isolate !important;
+    will-change: transform !important;
   }
   .video-media-frame > video,
   .video-media-frame > img,
