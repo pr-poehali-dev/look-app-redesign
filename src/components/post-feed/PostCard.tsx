@@ -76,7 +76,7 @@ const PostCard = ({ post }: { post: Post }) => {
 
       {/* Photo */}
       <div className="w-full flex-1 min-h-0 overflow-hidden bg-black flex items-center justify-center">
-        <img src={post.image} alt={post.caption} className="w-full h-full object-contain" />
+        <img src={post.image} alt={post.caption} className="max-w-full max-h-full w-auto h-auto object-contain" />
       </div>
 
       {/* Action buttons */}
@@ -106,7 +106,7 @@ const PostCard = ({ post }: { post: Post }) => {
       </div>
 
       {/* Текстовый блок — ограничен по высоте, при длинной подписи прокручивается */}
-      <div className="flex-shrink-0 max-h-[28%] overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+      <div className="flex-shrink-0 max-h-[22%] overflow-y-auto pb-2" style={{ scrollbarWidth: "none" }}>
         {/* Likes count */}
         <div className="px-3 pb-1">
           <span className="text-white font-semibold text-[13px]">{formatLikes(likes)} отметок «Нравится»</span>
