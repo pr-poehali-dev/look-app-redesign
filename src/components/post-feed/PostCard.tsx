@@ -150,8 +150,8 @@ const PostCard = ({ post }: { post: Post }) => {
 
       {/* Menu popup */}
       {showMenu && createPortal(
-        <div className="fixed inset-0 z-[9999] flex flex-col justify-end" onClick={() => setShowMenu(false)}>
-          <div className="sheet-theme rounded-t-3xl overflow-hidden pb-8" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[9999] flex flex-col justify-end md:flex-row md:justify-end md:items-center md:bg-black/40" onClick={() => setShowMenu(false)}>
+          <div className="sheet-theme rounded-t-3xl overflow-hidden pb-8 md:rounded-2xl md:pb-0 md:mr-6 md:w-[300px] md:shadow-2xl" onClick={e => e.stopPropagation()}>
             {[
               { icon: "Bookmark", label: saved ? "Убрать из сохранённых" : "Сохранить", action: () => { toggleSaved(); setShowMenu(false); } },
               { icon: "User", label: "Перейти в профиль", action: () => { setShowMenu(false); window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: post.handle } })); } },

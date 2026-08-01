@@ -601,11 +601,11 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
       {showMore && createPortal(
         <div
-          className="fixed inset-0 z-[9999] flex flex-col justify-end"
+          className="fixed inset-0 z-[9999] flex flex-col justify-end md:flex-row md:justify-end md:items-center md:bg-black/40"
           onClick={() => setShowMore(false)}
         >
           <div
-            className="sheet-theme rounded-t-3xl px-4 pt-5 pb-10"
+            className="sheet-theme rounded-t-3xl px-4 pt-5 pb-10 md:rounded-2xl md:pb-5 md:mr-6 md:w-[320px] md:shadow-2xl"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-5">
