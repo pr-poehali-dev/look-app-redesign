@@ -95,7 +95,7 @@ const PostFeed = () => {
       )}
 
       {/* Stories row — фиксирована сверху, вне прокрутки постов */}
-      <div className="absolute top-0 left-0 right-0 z-20 md:max-w-[470px] md:mx-auto bg-black/85 backdrop-blur-md flex gap-4 px-3 py-3 overflow-x-scroll border-b border-white/8" style={{ scrollbarWidth: "none" }}>
+      <div className="absolute top-0 left-0 right-0 z-20 md:max-w-[620px] md:mx-auto bg-black/85 backdrop-blur-md flex gap-4 px-3 py-3 overflow-x-scroll border-b border-white/8" style={{ scrollbarWidth: "none" }}>
         {/* "Your story" first */}
         <input
           ref={myStoryInputRef}
@@ -141,7 +141,7 @@ const PostFeed = () => {
         className="h-full overflow-y-scroll snap-y snap-mandatory"
         style={{ scrollbarWidth: "none" }}
       >
-        <div className="md:max-w-[470px] md:mx-auto">
+        <div className="md:max-w-[620px] md:mx-auto">
           {/* Резерв под фиксированную панель сторис */}
           <div className="h-[86px] flex-shrink-0" aria-hidden />
           {loading ? (
