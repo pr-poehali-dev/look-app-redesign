@@ -141,6 +141,7 @@ video.bg-black,
   }
   .video-media-frame > video {
     background-color: var(--look-bg) !important;
+    clip-path: inset(0 round 16px) !important;
   }
 }
 .bg-zinc-900 {
