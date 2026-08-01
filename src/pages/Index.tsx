@@ -292,8 +292,10 @@ const Index = () => {
           <div className="px-4 pt-10 md:pt-4 pb-2 pointer-events-none" />
           {activeTab === "home" && (
             <>
-              {/* Единый стиль для ПК и телефона: кнопка с раскрывающимся списком */}
-              <div className="pointer-events-auto px-4 pb-2 relative flex items-center gap-2">
+              {/* Единый стиль для ПК и телефона: кнопка с раскрывающимся списком.
+                  pointer-events-none на самой строке (она на всю ширину экрана и иначе
+                  перекрывает клики по кнопке звука в углу видео на ПК) — auto только на кнопках. */}
+              <div className="pointer-events-none px-4 pb-2 relative flex items-center gap-2">
                 <button
                   onClick={() => {
                     // Если уже в категории "Все" и открыто видео — возвращаемся в плитку
@@ -303,21 +305,21 @@ const Index = () => {
                     }
                     setMobileCatOpen((v) => !v);
                   }}
-                  className="px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap bg-white text-black flex items-center gap-1"
+                  className="pointer-events-auto px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap bg-white text-black flex items-center gap-1"
                 >
                   {CATEGORIES.find((c) => c.id === activeCategory)?.label || "Все"}
                   <Icon name={(activeCategory === "all" && gridOpenVideoId !== null) ? "ArrowLeft" : (mobileCatOpen ? "ChevronUp" : "ChevronDown")} size={14} />
                 </button>
                 <button
                   onClick={toggleTheme}
-                  className="ml-auto w-8 h-8 rounded-full bg-white/10 backdrop-blur flex items-center justify-center hover:bg-white/20 transition-colors"
+                  className="pointer-events-auto ml-auto w-8 h-8 rounded-full bg-white/10 backdrop-blur flex items-center justify-center hover:bg-white/20 transition-colors"
                   title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
                 >
                   <Icon name={theme === "dark" ? "Sun" : "Moon"} size={16} className="text-white" />
                 </button>
                 {mobileCatOpen && (
                   <div
-                    className="absolute left-4 right-4 md:right-auto md:w-[420px] top-full mt-1 backdrop-blur rounded-2xl p-2 max-h-[60vh] overflow-y-auto z-40"
+                    className="pointer-events-auto absolute left-4 right-4 md:right-auto md:w-[420px] top-full mt-1 backdrop-blur rounded-2xl p-2 max-h-[60vh] overflow-y-auto z-40"
                     style={{
                       background: theme === "dark" ? "rgba(10,46,26,0.95)" : "rgba(255,255,255,0.98)",
                       border: theme === "dark" ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(13,42,24,0.15)",
