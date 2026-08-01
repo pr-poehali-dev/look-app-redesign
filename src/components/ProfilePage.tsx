@@ -659,11 +659,11 @@ const ProfilePage = () => {
               {videos.map((item, i) => (
                 <div key={item.id} className="relative aspect-square overflow-hidden cursor-pointer" style={{ background: "linear-gradient(135deg, #0a2e1a 0%, #1a1a1a 100%)" }} onClick={() => setMediaViewer({ tab: "video", index: i })}>
                   {(item.thumb || item.thumbnail) ? (
-                    <img src={item.thumb || item.thumbnail} alt="" className="w-full h-full object-cover" />
+                    <img src={item.thumb || item.thumbnail} alt="" className="w-full h-full object-cover rounded-md" />
                   ) : (item.url ? (
                     <video
                       src={`${item.url}#t=0.1`}
-                      className="w-full h-full object-cover pointer-events-none"
+                      className="w-full h-full object-cover rounded-md pointer-events-none"
                       muted
                       playsInline
                       preload="metadata"
@@ -706,7 +706,7 @@ const ProfilePage = () => {
             <div className="grid grid-cols-3 md:grid-cols-4 gap-1 bg-gray-200 p-1">
               {photos.map((item, i) => (
                 <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200 cursor-pointer" onClick={() => setMediaViewer({ tab: "image", index: i })}>
-                  <img src={item.url} alt="" className="w-full h-full object-cover" />
+                  <img src={item.url} alt="" className="w-full h-full object-cover rounded-md" />
                 </div>
               ))}
             </div>
@@ -732,11 +732,11 @@ const ProfilePage = () => {
                   style={{ background: "linear-gradient(135deg, #0a2e1a 0%, #1a1a1a 100%)" }}
                 >
                   {(item.thumb || item.thumbnail) ? (
-                    <img src={item.thumb || item.thumbnail} alt="" className="w-full h-full object-cover" />
+                    <img src={item.thumb || item.thumbnail} alt="" className="w-full h-full object-cover rounded-md" />
                   ) : item.type === "image" ? (
-                    <img src={item.url} alt="" className="w-full h-full object-cover" />
+                    <img src={item.url} alt="" className="w-full h-full object-cover rounded-md" />
                   ) : item.url ? (
-                    <video src={`${item.url}#t=0.1`} className="w-full h-full object-cover pointer-events-none" muted playsInline preload="metadata" />
+                    <video src={`${item.url}#t=0.1`} className="w-full h-full object-cover rounded-md pointer-events-none" muted playsInline preload="metadata" />
                   ) : null}
                   {item.type === "video" && (
                     <div className="absolute inset-0 flex items-center justify-center">

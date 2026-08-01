@@ -130,7 +130,7 @@ const VideoGrid = ({ onOpenVideo, category = "all" }: Props) => {
                     src={v.thumb}
                     alt={v.author}
                     loading="lazy"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-[#0a2e1a] to-[#1a1a1a] flex items-center justify-center">
@@ -142,7 +142,7 @@ const VideoGrid = ({ onOpenVideo, category = "all" }: Props) => {
                   src={v.thumb || v.url}
                   alt={v.author}
                   loading="lazy"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  className="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
                 />
               )}
               {v.type === "video" && (

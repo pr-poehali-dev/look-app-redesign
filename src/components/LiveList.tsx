@@ -404,7 +404,7 @@ const LiveList = () => {
           className="relative w-full rounded-2xl overflow-hidden aspect-video"
           style={{ touchAction: "manipulation" }}
         >
-          <img src={filtered[0].thumb} className="w-full h-full object-cover" alt="" />
+          <img src={filtered[0].thumb} className="w-full h-full object-cover rounded-2xl" alt="" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
           <div className="absolute top-3 left-3 flex items-center gap-2">
             <div className="flex items-center gap-1.5 bg-[#fe2c55] px-2 py-0.5 rounded-md">
@@ -446,7 +446,7 @@ const LiveList = () => {
               className="flex items-center gap-3 bg-white/5 rounded-2xl p-3 hover:bg-white/10 active:scale-[0.98] transition-all text-left"
             >
               <div className="relative w-20 h-14 rounded-xl overflow-hidden flex-shrink-0">
-                <img src={ch.thumb} className="w-full h-full object-cover" alt={ch.name} />
+                <img src={ch.thumb} className="w-full h-full object-cover rounded-xl" alt={ch.name} />
                 <div className="absolute inset-0 bg-black/20" />
                 <div className="absolute bottom-1 left-1 flex items-center gap-1 bg-[#fe2c55] px-1.5 py-0.5 rounded">
                   <div className="w-1 h-1 rounded-full bg-white animate-pulse" />

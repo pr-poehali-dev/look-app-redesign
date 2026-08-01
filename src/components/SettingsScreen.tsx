@@ -47,9 +47,9 @@ const SavedScreen = ({ onBack }: { onBack: () => void }) => {
                 className="relative aspect-square overflow-hidden bg-gray-200 active:opacity-80"
               >
                 {isVideo ? (
-                  <video src={item.image} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                  <video src={item.image} className="w-full h-full object-cover rounded-md" muted playsInline preload="metadata" />
                 ) : (
-                  <img src={item.image} alt="" className="w-full h-full object-cover" />
+                  <img src={item.image} alt="" className="w-full h-full object-cover rounded-md" />
                 )}
                 <div className="absolute bottom-1.5 right-1.5 flex items-center gap-0.5">
                   <Icon name={item.type === "video" ? "Play" : "Image"} size={10} className="text-white drop-shadow" />
