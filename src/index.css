@@ -124,6 +124,10 @@ video.bg-black,
   .look-card-root {
     background-color: var(--look-bg) !important;
   }
+  /* Рамка видео на ПК — зазор сверху/снизу, чтобы были видны скруглённые углы */
+  .video-media-frame {
+    height: calc(100% - 24px) !important;
+  }
 }
 .bg-zinc-900 {
   background-color: var(--look-sidebar-bg) !important;
