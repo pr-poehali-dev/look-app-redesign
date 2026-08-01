@@ -124,18 +124,24 @@ video.bg-black,
   .look-card-root {
     background-color: var(--look-bg) !important;
   }
-  /* Скруглённая рамка видео на ПК: фон под маской = цвет темы, чтобы срезанные уголки были зелёными */
+  /* Скруглённая рамка видео на ПК: фон под маской = цвет темы, чтобы срезанные уголки были зелёными.
+     Маска ставится именно на обёртку (не на <video>), т.к. Chrome/Edge игнорируют
+     border-radius/overflow родителя для аппаратно-ускоренного видео-слоя — маска
+     заставляет браузер композитить видео программно и реально обрезает форму. */
   .video-round-frame {
     background-color: var(--look-bg) !important;
     border-radius: 16px !important;
+    overflow: hidden !important;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='0' y='0' width='100%25' height='100%25' rx='16' ry='16' fill='white'/%3E%3C/svg%3E") !important;
+    -webkit-mask-size: 100% 100% !important;
+    -webkit-mask-repeat: no-repeat !important;
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='0' y='0' width='100%25' height='100%25' rx='16' ry='16' fill='white'/%3E%3C/svg%3E") !important;
+    mask-size: 100% 100% !important;
+    mask-repeat: no-repeat !important;
   }
   .video-round-frame > video,
-  .video-round-frame > img,
-  .video-round-frame > div {
+  .video-round-frame > img {
     border-radius: 16px !important;
-    -webkit-mask-image: -webkit-radial-gradient(white, white) !important;
-    mask-image: radial-gradient(white, white) !important;
-    transform: translateZ(0) !important;
   }
 }
 .bg-zinc-900 {
