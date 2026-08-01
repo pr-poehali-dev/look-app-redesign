@@ -164,8 +164,7 @@ const PostFeed = () => {
 
       {/* Desktop nav arrows */}
       <div
-        className="hidden md:flex flex-col gap-3 absolute top-1/2 -translate-y-1/2 z-40"
-        style={{ left: "calc(50% + 255px)" }}
+        className="hidden md:flex flex-col gap-3 absolute top-1/2 -translate-y-1/2 right-8 z-40"
       >
         <button
           onClick={() => scrollByDir(-1)}

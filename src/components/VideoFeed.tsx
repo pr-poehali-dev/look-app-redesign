@@ -480,9 +480,9 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
         )}
       </div>
 
-      {/* Desktop nav arrows — справа от центрированной ленты (560px ширина → отступ от центра 280px + 20px) */}
+      {/* Desktop nav arrows — у правого края экрана */}
       <div
-        className="hidden lg:flex flex-col gap-3 absolute top-1/2 -translate-y-1/2 z-40 left-1/2 ml-[290px]"
+        className="hidden lg:flex flex-col gap-3 absolute top-1/2 -translate-y-1/2 z-40 right-8"
       >
         <button
           onClick={() => scrollByDir(-1)}
