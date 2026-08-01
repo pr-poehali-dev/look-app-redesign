@@ -124,21 +124,6 @@ video.bg-black,
   .look-card-root {
     background-color: var(--look-bg) !important;
   }
-  /* Видео на ПК — скруглённые углы */
-  .video-media-frame {
-    height: 100% !important;
-    background-color: var(--look-bg) !important;
-    border-radius: 16px !important;
-    overflow: hidden !important;
-  }
-  .video-media-frame > video,
-  .video-media-frame > img,
-  .video-media-frame > div:first-child {
-    border-radius: 16px !important;
-    -webkit-mask-image: -webkit-radial-gradient(white, white) !important;
-    mask-image: radial-gradient(white, white) !important;
-    transform: translateZ(0) !important;
-  }
 }
 .bg-zinc-900 {
   background-color: var(--look-sidebar-bg) !important;
