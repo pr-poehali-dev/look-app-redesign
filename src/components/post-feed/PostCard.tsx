@@ -184,8 +184,8 @@ const PostCard = ({ post }: { post: Post }) => {
 
       {/* Comments popup */}
       {showComments && createPortal(
-        <div className="fixed inset-0 z-[9999] flex flex-col justify-end md:flex-row md:justify-end md:items-center md:bg-black/40" onPointerDown={() => setShowComments(false)}>
-          <div className="sheet-theme rounded-t-3xl flex flex-col max-h-[70%] md:rounded-2xl md:max-h-[80%] md:mr-6 md:w-[400px] md:shadow-2xl" onPointerDown={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[9999] flex flex-col justify-end md:flex-row md:justify-end md:bg-black/40" onPointerDown={() => setShowComments(false)}>
+          <div className="sheet-theme rounded-t-3xl flex flex-col max-h-[70%] md:rounded-t-none md:rounded-l-3xl md:max-h-none md:h-full md:w-[400px] md:ml-auto md:shadow-2xl animate-in slide-in-from-bottom md:slide-in-from-right duration-300" onPointerDown={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/10">
               <span className="text-white font-bold text-base">{commentCount} комментариев</span>
               <button onPointerDown={() => setShowComments(false)}>
