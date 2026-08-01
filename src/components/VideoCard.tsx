@@ -278,9 +278,9 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const isVideo = video.isVideo ?? (video.image.includes('.mp4') || video.image.includes('.mov') || video.image.includes('.webm'));
 
   return (
-    <div className="media-overlay-text look-card-root relative w-full h-full flex-shrink-0 snap-start overflow-hidden bg-black md:bg-transparent md:overflow-visible md:flex md:items-stretch md:justify-center md:py-3">
+    <div className="media-overlay-text look-card-root relative w-full h-full flex-shrink-0 snap-start overflow-hidden bg-black md:bg-transparent md:overflow-visible md:flex md:items-stretch md:justify-center">
       {/* Video + info column */}
-      <div className="relative w-full h-full md:flex-none md:h-auto md:w-auto md:aspect-[9/16] md:overflow-hidden md:rounded-2xl">
+      <div className="relative w-full h-full md:flex-none md:h-[calc(100%-1.5rem)] md:self-center md:w-auto md:aspect-[9/16] md:overflow-hidden md:rounded-2xl">
       {isVideo ? (
         <>
           {preloadLevel === "none" ? (
