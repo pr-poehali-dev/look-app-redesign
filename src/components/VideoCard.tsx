@@ -383,7 +383,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           className="absolute inset-0 w-full h-full object-cover pointer-events-none md:rounded-2xl"
         />
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none md:rounded-2xl" />
 
       {/* Bottom left info — внутри видео */}
       <div className="absolute bottom-28 md:bottom-20 left-4 z-10" style={{ right: '80px' }}>

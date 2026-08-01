@@ -136,6 +136,9 @@ video.bg-black,
   .video-media-frame > div:first-child {
     border-radius: 16px !important;
   }
+  .video-media-frame > video {
+    background-color: var(--look-bg) !important;
+  }
 }
 .bg-zinc-900 {
   background-color: var(--look-sidebar-bg) !important;
