@@ -143,7 +143,7 @@ const PostFeed = () => {
       >
         <div className="md:max-w-[620px] md:mx-auto">
           {/* Резерв под фиксированную панель сторис */}
-          <div className="h-[86px] flex-shrink-0" aria-hidden />
+          <div className="h-[110px] flex-shrink-0" aria-hidden />
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
@@ -152,8 +152,8 @@ const PostFeed = () => {
             postsWithCounts.filter(p => !removedIds.has(p.id)).map((post) => (
               <div
                 key={post.id}
-                className="snap-start snap-always flex flex-col scroll-mt-[86px]"
-                style={{ height: "calc(100% - 86px)", minHeight: "calc(100% - 86px)" }}
+                className="snap-start snap-always flex flex-col scroll-mt-[110px]"
+                style={{ height: "calc(100% - 110px)", minHeight: "calc(100% - 110px)" }}
               >
                 <PostCard post={post} />
               </div>
