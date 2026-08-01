@@ -152,7 +152,7 @@ const PostFeed = () => {
             postsWithCounts.filter(p => !removedIds.has(p.id)).map((post) => (
               <div
                 key={post.id}
-                className="snap-start snap-always flex flex-col justify-center scroll-mt-[86px]"
+                className="snap-start snap-always flex flex-col scroll-mt-[86px]"
                 style={{ height: "calc(100% - 86px)", minHeight: "calc(100% - 86px)" }}
               >
                 <PostCard post={post} />

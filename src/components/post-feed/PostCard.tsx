@@ -34,7 +34,7 @@ const PostCard = ({ post }: { post: Post }) => {
   };
 
   return (
-    <div className="bg-black border-b border-white/8 flex flex-col max-h-full">
+    <div className="bg-black border-b border-white/8 flex flex-col h-full max-h-full">
 
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 flex-shrink-0">
