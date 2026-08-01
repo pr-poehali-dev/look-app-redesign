@@ -280,12 +280,12 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   return (
     <div className="media-overlay-text look-card-root relative w-full h-full flex-shrink-0 snap-start overflow-hidden bg-black md:bg-transparent md:overflow-visible md:flex md:items-stretch md:justify-center">
       {/* Video + info column */}
-      <div className="relative w-full h-full md:flex-none md:h-full md:w-auto md:aspect-[9/16] md:overflow-hidden">
+      <div className="relative w-full h-full md:flex-none md:h-full md:w-auto md:aspect-[9/16] md:overflow-hidden md:rounded-2xl">
       {isVideo ? (
         <>
           {preloadLevel === "none" ? (
             <div
-              className="absolute inset-0 w-full h-full bg-black flex items-center justify-center"
+              className="absolute inset-0 w-full h-full bg-black flex items-center justify-center md:rounded-2xl"
               style={video.thumbnail ? { backgroundImage: `url(${video.thumbnail})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
               onClick={handleVideoClick}
             >
@@ -298,7 +298,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
               ref={videoRef}
               src={video.image}
               poster={video.thumbnail || undefined}
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover md:rounded-2xl"
               loop
               muted={muted}
               autoPlay={isActive}
@@ -380,7 +380,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         <img
           src={video.image}
           alt={video.description}
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none md:rounded-2xl"
         />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
