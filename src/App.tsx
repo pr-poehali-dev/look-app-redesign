@@ -22,6 +22,12 @@ const QrApproveScreen = lazy(() => import("./components/QrApproveScreen"));
 const CallScreen = lazy(() => import("./components/CallScreen"));
 const ThumbnailWorker = lazy(() => import("./components/ThumbnailWorker"));
 
+const ScreenFallback = () => (
+  <div className="fixed inset-0 bg-black flex items-center justify-center">
+    <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-[#22e0a1] animate-spin" />
+  </div>
+);
+
 const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
 interface IncomingCall {
@@ -454,7 +460,7 @@ const App = () => (
       <AutoTranslator />
       <ThemeProvider>
         <AuthProvider>
-          <Suspense fallback={null}>
+          <Suspense fallback={<ScreenFallback />}>
             <AppContent />
           </Suspense>
         </AuthProvider>
