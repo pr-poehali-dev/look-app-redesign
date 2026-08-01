@@ -124,11 +124,12 @@ video.bg-black,
   .look-card-root {
     background-color: var(--look-bg) !important;
   }
-  /* Видео на ПК — скруглённые углы */
+  /* Видео на ПК — скруглённые углы, фон зазора — цвет темы (не чёрный) */
   .video-media-frame {
     height: calc(100% - 24px) !important;
     border-radius: 16px !important;
     overflow: hidden !important;
+    background-color: transparent !important;
   }
   .video-media-frame > video,
   .video-media-frame > img,
