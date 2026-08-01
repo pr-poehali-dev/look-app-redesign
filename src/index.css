@@ -129,7 +129,7 @@ video.bg-black,
     height: 100% !important;
     border-radius: 16px !important;
     overflow: hidden !important;
-    background-color: transparent !important;
+    background-color: var(--look-bg) !important;
   }
   .video-media-frame > video,
   .video-media-frame > img,
