@@ -280,7 +280,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   return (
     <div className="media-overlay-text look-card-root relative w-full h-full flex-shrink-0 snap-start overflow-hidden bg-black md:bg-transparent md:overflow-visible md:flex md:items-stretch md:justify-center">
       {/* Video + info column */}
-      <div className="video-media-frame relative w-full h-full md:flex-none md:self-center md:w-auto md:aspect-[9/16] md:overflow-hidden md:rounded-2xl">
+      <div className="video-media-frame relative w-full h-full md:flex-none md:self-center md:w-auto md:aspect-[9/16]">
       {isVideo ? (
         <>
           {preloadLevel === "none" ? (

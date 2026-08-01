@@ -127,7 +127,11 @@ video.bg-black,
   /* Видео на ПК — скруглённые углы */
   .video-media-frame {
     height: 100% !important;
-    background-color: transparent !important;
+    clip-path: inset(0 round 16px) !important;
+  }
+  .video-media-frame > video,
+  .video-media-frame > img,
+  .video-media-frame > div:first-child {
     clip-path: inset(0 round 16px) !important;
   }
 }
