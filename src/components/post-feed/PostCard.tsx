@@ -82,25 +82,25 @@ const PostCard = ({ post }: { post: Post }) => {
       {/* Action buttons */}
       <div className="flex items-center justify-between px-3 pt-2.5 pb-1 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <button onClick={handleLike} className="w-9 h-9 rounded-full bg-white flex items-center justify-center active:scale-90 transition-transform">
+          <button onClick={handleLike} className="action-icon-circle w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform">
             <Icon
               name="Heart"
               size={20}
-              className={`transition-all duration-150 ${liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-black"}`}
+              className={`transition-all duration-150 ${liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"}`}
             />
           </button>
-          <button onClick={() => setShowComments(true)} className="w-9 h-9 rounded-full bg-white flex items-center justify-center active:scale-90 transition-transform">
-            <Icon name="MessageCircle" size={19} className="text-black" />
+          <button onClick={() => setShowComments(true)} className="action-icon-circle w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform">
+            <Icon name="MessageCircle" size={19} className="action-icon-glyph" />
           </button>
-          <button onClick={() => setShowShare(true)} className="w-9 h-9 rounded-full bg-white flex items-center justify-center active:scale-90 transition-transform">
-            <Icon name="ShareForward" size={19} className="text-black" />
+          <button onClick={() => setShowShare(true)} className="action-icon-circle w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform">
+            <Icon name="ShareForward" size={19} className="action-icon-glyph" />
           </button>
         </div>
-        <button onClick={toggleSaved} className="w-9 h-9 rounded-full bg-white flex items-center justify-center active:scale-90 transition-transform">
+        <button onClick={toggleSaved} className="action-icon-circle w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform">
           <Icon
             name="Bookmark"
             size={19}
-            className={`transition-all duration-150 ${saved ? "text-[#ffd700] fill-[#ffd700]" : "text-black"}`}
+            className={`transition-all duration-150 ${saved ? "text-[#ffd700] fill-[#ffd700]" : "action-icon-glyph"}`}
           />
         </button>
       </div>

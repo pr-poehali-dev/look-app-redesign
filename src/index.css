@@ -408,19 +408,35 @@ html.theme-light .media-overlay-text svg {
   color: #ffffff !important;
 }
 
-/* Иконки действий (лайк/комментарий/поделиться/закладка/ещё) на белых кружках
-   поверх видео всегда остаются чёрными — исключение из общего правила выше. */
-html .media-overlay-text .bg-white svg,
-html.theme-light .media-overlay-text .bg-white svg {
-  color: #000000 !important;
-  text-shadow: none;
+/* Кружки кнопок действий (лайк/комментарий/поделиться/закладка/ещё) на видео и в Ленте:
+   всегда белый фон + чёрная иконка, независимо от темы сайта (тёмно- или светло-зелёной). */
+html .action-icon-circle,
+html.theme-light .action-icon-circle,
+html.theme-dark .action-icon-circle {
+  background-color: #ffffff !important;
 }
-html .media-overlay-text .bg-white .text-\[\#fe2c55\],
-html.theme-light .media-overlay-text .bg-white .text-\[\#fe2c55\] {
+html .action-icon-circle:hover,
+html.theme-light .action-icon-circle:hover,
+html.theme-dark .action-icon-circle:hover {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+}
+html .action-icon-glyph,
+html.theme-light .action-icon-glyph,
+html.theme-dark .action-icon-glyph,
+html .action-icon-circle svg,
+html.theme-light .action-icon-circle svg,
+html.theme-dark .action-icon-circle svg {
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+html .action-icon-circle .text-\[\#fe2c55\],
+html.theme-light .action-icon-circle .text-\[\#fe2c55\],
+html.theme-dark .action-icon-circle .text-\[\#fe2c55\] {
   color: #fe2c55 !important;
 }
-html .media-overlay-text .bg-white .text-\[\#ffd700\],
-html.theme-light .media-overlay-text .bg-white .text-\[\#ffd700\] {
+html .action-icon-circle .text-\[\#ffd700\],
+html.theme-light .action-icon-circle .text-\[\#ffd700\],
+html.theme-dark .action-icon-circle .text-\[\#ffd700\] {
   color: #ffd700 !important;
 }
 
