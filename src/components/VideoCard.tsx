@@ -503,7 +503,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           title="Поделиться"
         >
           <div className="w-11 h-11 rounded-full flex items-center justify-center">
-            <Icon name="Send" size={26} className="text-[#22d3ee]" />
+            <Icon name="Forward" size={26} className="text-[#22d3ee]" />
           </div>
           <span className="text-white text-xs font-semibold">{video.shares}</span>
         </button>
@@ -577,7 +577,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         {/* Share */}
         <button onClick={() => setShowShare(true)} className="flex flex-col items-center gap-1">
           <div className="w-12 h-12 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors">
-            <Icon name="Send" size={24} className="text-white" />
+            <Icon name="Forward" size={24} className="text-white" />
           </div>
           <span className="text-white text-xs font-semibold">{video.shares}</span>
         </button>
