@@ -425,19 +425,33 @@ html.theme-light .action-icon-glyph,
 html.theme-dark .action-icon-glyph,
 html .action-icon-circle svg,
 html.theme-light .action-icon-circle svg,
-html.theme-dark .action-icon-circle svg {
+html.theme-dark .action-icon-circle svg,
+html .action-icon-circle svg *,
+html.theme-light .action-icon-circle svg *,
+html.theme-dark .action-icon-circle svg *,
+html .media-overlay-text .action-icon-circle svg *,
+html.theme-light .media-overlay-text .action-icon-circle svg * {
   color: #000000 !important;
+  stroke: #000000 !important;
   text-shadow: none !important;
 }
 html .action-icon-circle .text-\[\#fe2c55\],
 html.theme-light .action-icon-circle .text-\[\#fe2c55\],
-html.theme-dark .action-icon-circle .text-\[\#fe2c55\] {
+html.theme-dark .action-icon-circle .text-\[\#fe2c55\],
+html .action-icon-circle .text-\[\#fe2c55\] *,
+html.theme-light .action-icon-circle .text-\[\#fe2c55\] *,
+html.theme-dark .action-icon-circle .text-\[\#fe2c55\] * {
   color: #fe2c55 !important;
+  stroke: #fe2c55 !important;
 }
 html .action-icon-circle .text-\[\#ffd700\],
 html.theme-light .action-icon-circle .text-\[\#ffd700\],
-html.theme-dark .action-icon-circle .text-\[\#ffd700\] {
+html.theme-dark .action-icon-circle .text-\[\#ffd700\],
+html .action-icon-circle .text-\[\#ffd700\] *,
+html.theme-light .action-icon-circle .text-\[\#ffd700\] *,
+html.theme-dark .action-icon-circle .text-\[\#ffd700\] * {
   color: #ffd700 !important;
+  stroke: #ffd700 !important;
 }
 
 /* Иконки на красных/розовых/зелёных акцентных кнопках */
