@@ -474,8 +474,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           style={{ touchAction: "manipulation" }}
           title="Нравится"
         >
-          <div className="w-11 h-11 rounded-full flex items-center justify-center">
-            <Icon name="Heart" size={28} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-[#22d3ee]"} />
+          <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
+            <Icon name="Heart" size={24} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-black"} />
           </div>
           <span className="text-white text-xs font-semibold">{formatCount(likeCount)}</span>
         </button>
@@ -488,8 +488,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           style={{ touchAction: "manipulation" }}
           title="Комментарии"
         >
-          <div className="w-11 h-11 rounded-full flex items-center justify-center">
-            <Icon name="MessageCircle" size={26} className="text-[#22d3ee]" />
+          <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
+            <Icon name="MessageCircle" size={22} className="text-black" />
           </div>
           <span className="text-white text-xs font-semibold">{formatCount(commentCount)}</span>
         </button>
@@ -502,8 +502,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           style={{ touchAction: "manipulation" }}
           title="Поделиться"
         >
-          <div className="w-11 h-11 rounded-full flex items-center justify-center">
-            <Icon name="ShareForward" size={26} className="text-[#22d3ee]" />
+          <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
+            <Icon name="ShareForward" size={22} className="text-black" />
           </div>
           <span className="text-white text-xs font-semibold">{video.shares}</span>
         </button>
@@ -516,8 +516,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           style={{ touchAction: "manipulation" }}
           title="Сохранить в закладки"
         >
-          <div className="w-11 h-11 rounded-full flex items-center justify-center">
-            <Icon name="Bookmark" size={26} className={saved ? "text-[#ffd700] fill-[#ffd700]" : "text-[#22d3ee]"} />
+          <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
+            <Icon name="Bookmark" size={22} className={saved ? "text-[#ffd700] fill-[#ffd700]" : "text-black"} />
           </div>
           <span className="text-white text-xs font-semibold">Сохранить</span>
         </button>
@@ -530,8 +530,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           style={{ touchAction: "manipulation" }}
           title="Ещё действия"
         >
-          <div className="w-11 h-11 rounded-full flex items-center justify-center">
-            <Icon name="Ellipsis" size={26} className="text-[#22d3ee]" />
+          <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
+            <Icon name="Ellipsis" size={22} className="text-black" />
           </div>
           <span className="text-white text-xs font-semibold">Ещё</span>
         </button>
@@ -560,40 +560,40 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
         {/* Like */}
         <button onClick={() => toggleLike()} className="flex flex-col items-center gap-1">
-          <div className="w-12 h-12 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors">
-            <Icon name="Heart" size={26} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"} />
+          <div className="w-12 h-12 rounded-full bg-white hover:bg-white/90 flex items-center justify-center transition-colors">
+            <Icon name="Heart" size={24} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-black"} />
           </div>
           <span className="text-white text-xs font-semibold">{formatCount(likeCount)}</span>
         </button>
 
         {/* Comment */}
         <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1">
-          <div className="w-12 h-12 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors">
-            <Icon name="MessageCircle" size={24} className="text-white" />
+          <div className="w-12 h-12 rounded-full bg-white hover:bg-white/90 flex items-center justify-center transition-colors">
+            <Icon name="MessageCircle" size={22} className="text-black" />
           </div>
           <span className="text-white text-xs font-semibold">{formatCount(commentCount)}</span>
         </button>
 
         {/* Share */}
         <button onClick={() => setShowShare(true)} className="flex flex-col items-center gap-1">
-          <div className="w-12 h-12 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors">
-            <Icon name="ShareForward" size={24} className="text-white" />
+          <div className="w-12 h-12 rounded-full bg-white hover:bg-white/90 flex items-center justify-center transition-colors">
+            <Icon name="ShareForward" size={22} className="text-black" />
           </div>
           <span className="text-white text-xs font-semibold">{video.shares}</span>
         </button>
 
         {/* Bookmark */}
         <button onClick={toggleSaved} className="flex flex-col items-center gap-1">
-          <div className="w-12 h-12 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors">
-            <Icon name="Bookmark" size={24} className={saved ? "text-[#ffd700] fill-[#ffd700]" : "text-white"} />
+          <div className="w-12 h-12 rounded-full bg-white hover:bg-white/90 flex items-center justify-center transition-colors">
+            <Icon name="Bookmark" size={22} className={saved ? "text-[#ffd700] fill-[#ffd700]" : "text-black"} />
           </div>
           <span className="text-white text-xs font-semibold">Сохранить</span>
         </button>
 
         {/* Ещё */}
         <button onClick={() => setShowMore(true)} className="flex flex-col items-center gap-1" title="Ещё действия">
-          <div className="w-12 h-12 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors">
-            <Icon name="Ellipsis" size={24} className="text-white" />
+          <div className="w-12 h-12 rounded-full bg-white hover:bg-white/90 flex items-center justify-center transition-colors">
+            <Icon name="Ellipsis" size={22} className="text-black" />
           </div>
           <span className="text-white text-xs font-semibold">Ещё</span>
         </button>

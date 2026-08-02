@@ -408,6 +408,22 @@ html.theme-light .media-overlay-text svg {
   color: #ffffff !important;
 }
 
+/* Иконки действий (лайк/комментарий/поделиться/закладка/ещё) на белых кружках
+   поверх видео всегда остаются чёрными — исключение из общего правила выше. */
+html .media-overlay-text .bg-white svg,
+html.theme-light .media-overlay-text .bg-white svg {
+  color: #000000 !important;
+  text-shadow: none;
+}
+html .media-overlay-text .bg-white .text-\[\#fe2c55\],
+html.theme-light .media-overlay-text .bg-white .text-\[\#fe2c55\] {
+  color: #fe2c55 !important;
+}
+html .media-overlay-text .bg-white .text-\[\#ffd700\],
+html.theme-light .media-overlay-text .bg-white .text-\[\#ffd700\] {
+  color: #ffd700 !important;
+}
+
 /* Иконки на красных/розовых/зелёных акцентных кнопках */
 html.theme-light .bg-\[\#fe2c55\] svg,
 html.theme-light .bg-\[\#fe2c55\] .text-white,

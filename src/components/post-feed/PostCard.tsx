@@ -81,26 +81,26 @@ const PostCard = ({ post }: { post: Post }) => {
 
       {/* Action buttons */}
       <div className="flex items-center justify-between px-3 pt-2.5 pb-1 flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <button onClick={handleLike} className="active:scale-90 transition-transform">
+        <div className="flex items-center gap-3">
+          <button onClick={handleLike} className="w-9 h-9 rounded-full bg-white flex items-center justify-center active:scale-90 transition-transform">
             <Icon
               name="Heart"
-              size={26}
-              className={`transition-all duration-150 ${liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"}`}
+              size={20}
+              className={`transition-all duration-150 ${liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-black"}`}
             />
           </button>
-          <button onClick={() => setShowComments(true)} className="active:scale-90 transition-transform">
-            <Icon name="MessageCircle" size={26} className="text-white" />
+          <button onClick={() => setShowComments(true)} className="w-9 h-9 rounded-full bg-white flex items-center justify-center active:scale-90 transition-transform">
+            <Icon name="MessageCircle" size={19} className="text-black" />
           </button>
-          <button onClick={() => setShowShare(true)} className="active:scale-90 transition-transform">
-            <Icon name="Send" size={24} className="text-white" style={{ transform: "rotate(-20deg)" }} />
+          <button onClick={() => setShowShare(true)} className="w-9 h-9 rounded-full bg-white flex items-center justify-center active:scale-90 transition-transform">
+            <Icon name="ShareForward" size={19} className="text-black" />
           </button>
         </div>
-        <button onClick={toggleSaved} className="active:scale-90 transition-transform">
+        <button onClick={toggleSaved} className="w-9 h-9 rounded-full bg-white flex items-center justify-center active:scale-90 transition-transform">
           <Icon
             name="Bookmark"
-            size={26}
-            className={`transition-all duration-150 ${saved ? "text-white fill-white" : "text-white"}`}
+            size={19}
+            className={`transition-all duration-150 ${saved ? "text-[#ffd700] fill-[#ffd700]" : "text-black"}`}
           />
         </button>
       </div>
