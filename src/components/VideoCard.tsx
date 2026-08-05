@@ -489,7 +489,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           title="Комментарии"
         >
           <div className="action-icon-circle w-11 h-11 rounded-full flex items-center justify-center">
-            <Icon name="MessageCircle" size={22} className="action-icon-glyph" />
+            <Icon name="MessageDots" size={24} className="action-icon-glyph" />
           </div>
           <span className="text-white text-xs font-semibold">{formatCount(commentCount)}</span>
         </button>
@@ -569,7 +569,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         {/* Comment */}
         <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1">
           <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
-            <Icon name="MessageCircle" size={22} className="action-icon-glyph" />
+            <Icon name="MessageDots" size={24} className="action-icon-glyph" />
           </div>
           <span className="text-white text-xs font-semibold">{formatCount(commentCount)}</span>
         </button>

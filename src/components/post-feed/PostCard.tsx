@@ -90,7 +90,7 @@ const PostCard = ({ post }: { post: Post }) => {
             />
           </button>
           <button onClick={() => setShowComments(true)} className="action-icon-circle w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform">
-            <Icon name="MessageCircle" size={19} className="action-icon-glyph" />
+            <Icon name="MessageDots" size={20} className="action-icon-glyph" />
           </button>
           <button onClick={() => setShowShare(true)} className="action-icon-circle w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform">
             <Icon name="ShareForward" size={19} className="action-icon-glyph" />
