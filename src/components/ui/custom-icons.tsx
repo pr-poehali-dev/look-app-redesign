@@ -33,11 +33,13 @@ export const MessageDots: React.FC<LucideProps> = ({ size = 24, color = 'current
   >
     <path
       d="M12 3C7.03 3 3 6.58 3 11c0 2.36 1.13 4.47 2.94 5.9-0.08 0.97-0.44 2.25-1.34 3.4-0.2 0.25 0 0.6 0.3 0.55 1.8-0.3 3.2-1.1 4.05-1.7 0.95 0.25 1.98 0.35 3.05 0.35 4.97 0 9-3.58 9-8s-4.03-8-9-8z"
-      fill={color}
+      fill="none"
+      stroke={color}
+      strokeWidth={1.6}
     />
-    <circle cx="8.2" cy="11" r="1.3" fill="#ffffff" />
-    <circle cx="12" cy="11" r="1.3" fill="#ffffff" />
-    <circle cx="15.8" cy="11" r="1.3" fill="#ffffff" />
+    <circle cx="8.2" cy="11" r="1.3" fill={color} />
+    <circle cx="12" cy="11" r="1.3" fill={color} />
+    <circle cx="15.8" cy="11" r="1.3" fill={color} />
   </svg>
 );
 

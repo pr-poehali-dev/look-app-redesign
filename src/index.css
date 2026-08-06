@@ -409,16 +409,22 @@ html.theme-light .media-overlay-text svg {
 }
 
 /* Кружки кнопок действий (лайк/комментарий/поделиться/закладка/ещё) на видео и в Ленте:
-   всегда белый фон + чёрная иконка, независимо от темы сайта (тёмно- или светло-зелёной). */
+   голографический неоновый градиент (голубой → фиолетовый → розовый) + белая иконка,
+   независимо от темы сайта (тёмно- или светло-зелёной). */
 html .action-icon-circle,
 html.theme-light .action-icon-circle,
 html.theme-dark .action-icon-circle {
-  background-color: #ffffff !important;
+  background: linear-gradient(
+    135deg,
+    var(--neon-blue) 0%,
+    var(--neon-purple) 55%,
+    var(--neon-pink) 100%
+  ) !important;
 }
 html .action-icon-circle:hover,
 html.theme-light .action-icon-circle:hover,
 html.theme-dark .action-icon-circle:hover {
-  background-color: rgba(255, 255, 255, 0.9) !important;
+  filter: brightness(1.12);
 }
 html .action-icon-glyph,
 html.theme-light .action-icon-glyph,
@@ -431,8 +437,8 @@ html.theme-light .action-icon-circle svg *,
 html.theme-dark .action-icon-circle svg *,
 html .media-overlay-text .action-icon-circle svg *,
 html.theme-light .media-overlay-text .action-icon-circle svg * {
-  color: #000000 !important;
-  stroke: #000000 !important;
+  color: #ffffff !important;
+  stroke: #ffffff !important;
   text-shadow: none !important;
 }
 html .action-icon-circle .text-\[\#fe2c55\],
