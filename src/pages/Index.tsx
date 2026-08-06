@@ -17,11 +17,12 @@ import { useAuth } from "@/context/AuthContext";
 const TABS = [
   { id: "home", icon: "Home", label: "Главная" },
   { id: "feed", icon: "LayoutList", label: "Лента" },
-  { id: "live", icon: "Radio", label: "Эфиры" },
   { id: "add", icon: "Plus", label: "" },
   { id: "messages", icon: "MessageCircle", label: "Чаты" },
   { id: "profile", icon: "User", label: "Профиль" },
 ];
+
+const LIVE_CATEGORY = { id: "live", label: "Эфиры" };
 
 const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
@@ -307,7 +308,8 @@ const Index = () => {
                   }}
                   className="pointer-events-auto px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap bg-white text-black flex items-center gap-1"
                 >
-                  {CATEGORIES.find((c) => c.id === activeCategory)?.label || "Все"}
+                  {activeCategory === LIVE_CATEGORY.id && <Icon name="Radio" size={13} className="text-[#fe2c55]" />}
+                  {activeCategory === LIVE_CATEGORY.id ? LIVE_CATEGORY.label : (CATEGORIES.find((c) => c.id === activeCategory)?.label || "Все")}
                   <Icon name={(activeCategory === "all" && gridOpenVideoId !== null) ? "ArrowLeft" : (mobileCatOpen ? "ChevronUp" : "ChevronDown")} size={14} />
                 </button>
                 <button
@@ -326,6 +328,21 @@ const Index = () => {
                     }}
                   >
                     <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => {
+                          setActiveCategory(LIVE_CATEGORY.id);
+                          setGridOpenVideoId(null);
+                          setMobileCatOpen(false);
+                        }}
+                        className="px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1"
+                        style={{
+                          background: activeCategory === LIVE_CATEGORY.id ? "#fe2c55" : theme === "dark" ? "rgba(255,255,255,0.12)" : "rgba(13,42,24,0.08)",
+                          color: activeCategory === LIVE_CATEGORY.id ? "#fff" : theme === "dark" ? "rgba(255,255,255,0.9)" : "#0d2a18",
+                        }}
+                      >
+                        <Icon name="Radio" size={13} />
+                        {LIVE_CATEGORY.label}
+                      </button>
                       {CATEGORIES.map((cat) => {
                         const active = activeCategory === cat.id;
                         return (
@@ -360,7 +377,11 @@ const Index = () => {
 
         {/* Content */}
         <div className="flex-1 relative overflow-hidden" style={{ background: "var(--look-bg)" }}>
-          {activeTab === "home" && (
+          {activeTab === "home" && activeCategory === LIVE_CATEGORY.id && (
+            <LiveList />
+          )}
+
+          {activeTab === "home" && activeCategory !== LIVE_CATEGORY.id && (
             <>
               {/* На ПК показываем плиточную сетку (TikTok-стиль) для всех категорий, кроме «Подписки» и «Новые». Клик — открывает видео в ленте */}
               <div className="hidden md:block w-full h-full">
@@ -384,7 +405,6 @@ const Index = () => {
 
           {activeTab === "feed" && <PostFeed />}
 
-          {activeTab === "live" && <LiveList />}
           {activeTab === "messages" && (
             <MessagesScreen
               initialCommunityId={pendingCommunityId}
