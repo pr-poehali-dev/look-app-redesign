@@ -318,7 +318,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             </div>
           )}
           <div
-            className="absolute top-4 left-4 z-30 flex items-center gap-2"
+            className="absolute top-4 left-4 z-30 flex items-center gap-2 -translate-y-3 md:translate-y-0"
             onMouseEnter={() => setShowVolume(true)}
             onMouseLeave={() => setShowVolume(false)}
             onClick={e => e.stopPropagation()}

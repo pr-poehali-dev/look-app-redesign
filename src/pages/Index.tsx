@@ -312,7 +312,7 @@ const Index = () => {
                 </button>
                 <button
                   onClick={toggleTheme}
-                  className="pointer-events-auto ml-auto w-8 h-8 rounded-full bg-white/10 backdrop-blur flex items-center justify-center hover:bg-white/20 transition-colors"
+                  className="pointer-events-auto ml-auto w-8 h-8 rounded-full bg-white/10 backdrop-blur flex items-center justify-center hover:bg-white/20 transition-colors -translate-y-3 md:translate-y-0"
                   title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
                 >
                   <Icon name={theme === "dark" ? "Sun" : "Moon"} size={16} className="text-white" />
