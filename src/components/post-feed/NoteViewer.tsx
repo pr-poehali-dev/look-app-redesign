@@ -9,9 +9,9 @@ const NoteViewer = ({ post, onClose }: { post: Post; onClose: () => void }) => {
       <div className="relative w-full h-full md:w-auto md:h-[92vh] md:aspect-[9/16] md:max-w-[460px]">
         <button
           onClick={onClose}
-          className="absolute top-4 left-4 z-10 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center md:-left-14 md:top-0"
+          className="absolute top-16 left-4 z-10 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center md:-left-14 md:top-0"
         >
-          <Icon name="X" size={20} className="text-white" />
+          <Icon name="ArrowLeft" size={20} className="text-white" />
         </button>
         <PostCard post={post} />
       </div>
