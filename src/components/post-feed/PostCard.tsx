@@ -84,13 +84,13 @@ const PostCard = ({ post }: { post: Post }) => {
       </div>
 
       {/* Action buttons */}
-      <div className="flex items-center justify-between px-3 pt-2.5 pb-1 flex-shrink-0">
+      <div className="flex items-center px-3 pt-2.5 pb-1 flex-shrink-0">
         <div className="flex items-center gap-3">
           <button onClick={handleLike} className="action-icon-circle w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform">
             <Icon
               name="Heart"
               size={20}
-              className="action-icon-glyph transition-all duration-150"
+              className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph transition-all duration-150"}
             />
           </button>
           <button onClick={() => setShowComments(true)} className="action-icon-circle w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform">
@@ -100,13 +100,6 @@ const PostCard = ({ post }: { post: Post }) => {
             <Icon name="ShareForward" size={19} className="action-icon-glyph" />
           </button>
         </div>
-        <button onClick={toggleSaved} className="action-icon-circle w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform">
-          <Icon
-            name="Bookmark"
-            size={19}
-            className="action-icon-glyph transition-all duration-150"
-          />
-        </button>
       </div>
 
       {/* Текстовый блок — ограничен по высоте, при длинной подписи прокручивается */}
@@ -157,7 +150,7 @@ const PostCard = ({ post }: { post: Post }) => {
         <div className="fixed inset-0 z-[9999] flex flex-col justify-end md:flex-row md:justify-end md:items-center md:bg-black/40" onClick={() => setShowMenu(false)}>
           <div className="sheet-theme rounded-t-3xl overflow-hidden pb-8 md:rounded-2xl md:pb-0 md:mr-6 md:w-[300px] md:shadow-2xl" onClick={e => e.stopPropagation()}>
             {[
-              { icon: "Bookmark", label: saved ? "Убрать из сохранённых" : "Сохранить", action: () => { toggleSaved(); setShowMenu(false); } },
+              { icon: "Bookmark", label: saved ? "Убрать из сохранённых" : "Сохранить", action: () => { toggleSaved(); setShowMenu(false); }, active: saved },
               { icon: "User", label: "Перейти в профиль", action: () => { setShowMenu(false); window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: post.handle } })); } },
               { icon: "BellOff", label: "Выключить уведомления", action: () => setShowMenu(false) },
               { icon: "Link", label: "Скопировать ссылку", action: () => { navigator.clipboard.writeText(window.location.href).catch(() => {}); setShowMenu(false); } },
@@ -169,7 +162,11 @@ const PostCard = ({ post }: { post: Post }) => {
                 onClick={item.action}
                 className="w-full flex items-center gap-4 px-6 py-4 border-b border-white/5 last:border-0 active:bg-white/5"
               >
-                <Icon name={item.icon} size={20} className={item.icon === "Flag" ? "text-[#fe2c55]" : "text-white"} />
+                <Icon
+                  name={item.icon}
+                  size={20}
+                  className={item.icon === "Flag" ? "text-[#fe2c55]" : item.active ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"}
+                />
                 <span className={`text-sm font-medium ${item.icon === "Flag" ? "text-[#fe2c55]" : "text-white"}`}>{item.label}</span>
               </button>
             ))}
