@@ -100,7 +100,7 @@ const PostFeed = () => {
       .finally(() => setLoading(false));
   }, [user, mediaVersion]);
 
-  const [storyIndex, setStoryIndex] = useState<number | null>(null);
+  const [storyHandle, setStoryHandle] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scrollByDir = (dir: 1 | -1) => {
@@ -118,7 +118,7 @@ const PostFeed = () => {
 
   const storySource = (postsWithCounts.length > 0 ? postsWithCounts : MOCK_POSTS)
     .filter(p => !removedIds.has(p.id));
-  // Группируем по уникальному автору (handle) — в сторис должен быть каждый автор один раз
+  // Группируем по уникальному автору (handle) — в ряду сторис каждый автор показан один раз
   const seenHandles = new Set<string>();
   const storyUsers = storySource.filter(p => {
     const key = (p.handle || p.author || "").toLowerCase().trim();
@@ -126,7 +126,11 @@ const PostFeed = () => {
     seenHandles.add(key);
     return true;
   }).slice(0, 12);
-  const stories: Story[] = storyUsers.map(p => ({ id: p.id, handle: p.handle, avatar: p.avatar, image: p.image }));
+  // При открытии показываем ВСЕ истории выбранного пользователя
+  const storiesByHandle = (handle: string): Story[] =>
+    storySource
+      .filter(p => (p.handle || p.author || "").toLowerCase().trim() === handle.toLowerCase().trim())
+      .map(p => ({ id: p.id, handle: p.handle, avatar: p.avatar, image: p.image }));
 
   // Фильтрация по вкладке: Подписки / Рекомендации / Рядом
   const visiblePosts = storySource.filter(p => !removedIds.has(p.id));
@@ -147,9 +151,9 @@ const PostFeed = () => {
 
   return (
     <div className="relative h-full bg-black">
-      {/* Story viewer — только история выбранного пользователя */}
-      {storyIndex !== null && (
-        <StoryViewer stories={[stories[storyIndex]]} startIndex={0} onClose={() => setStoryIndex(null)} />
+      {/* Story viewer — все истории выбранного пользователя */}
+      {storyHandle !== null && (
+        <StoryViewer stories={storiesByHandle(storyHandle)} startIndex={0} onClose={() => setStoryHandle(null)} />
       )}
 
       {showSearch && (
@@ -216,8 +220,8 @@ const PostFeed = () => {
           </div>
           <span className="text-white/80 text-[10px] w-16 text-center truncate">Ваша история</span>
         </button>
-        {storyUsers.map((post, i) => (
-          <button key={post.id} onClick={() => setStoryIndex(i)} className="flex flex-col items-center gap-1 flex-shrink-0">
+        {storyUsers.map((post) => (
+          <button key={post.id} onClick={() => setStoryHandle(post.handle || post.author)} className="flex flex-col items-center gap-1 flex-shrink-0">
             <div className="w-[62px] h-[62px] rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]">
               <div className="w-full h-full rounded-full overflow-hidden border-2 border-black">
                 <UserAvatar src={post.avatar} name={post.handle} alt={post.handle} />
