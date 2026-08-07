@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
@@ -10,6 +10,7 @@ import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
 import ReportButton from "@/components/ReportButton";
 import { toast } from "sonner";
+import { trackVideoView, markNotInterested, hideAuthor } from "@/hooks/useFeedSignals";
 
 export interface VideoData {
   id: number;
@@ -77,6 +78,41 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const [buffered, setBuffered] = useState(0);
   const [seeking, setSeeking] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const maxWatchedRef = useRef(0);
+  const repeatCountRef = useRef(0);
+  const reportedRef = useRef(false);
+
+  // Отслеживаем глубину просмотра (сколько секунд реально посмотрели) и повторы,
+  // чтобы отправить сигнал вовлечённости, когда карточка перестаёт быть активной
+  const flushWatch = useCallback(() => {
+    if (reportedRef.current) return;
+    const watched = maxWatchedRef.current;
+    if (watched < 0.5) return;
+    reportedRef.current = true;
+    trackVideoView({
+      videoId: video.dbId ?? video.id,
+      watchSeconds: watched,
+      duration,
+      completed: duration > 0 && watched >= duration * 0.85,
+      repeatCount: repeatCountRef.current,
+    });
+  }, [video.dbId, video.id, duration]);
+
+  useEffect(() => {
+    if (isActive) {
+      maxWatchedRef.current = 0;
+      repeatCountRef.current = 0;
+      reportedRef.current = false;
+    } else {
+      flushWatch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive]);
+
+  useEffect(() => {
+    return () => { flushWatch(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fmtTime = (s: number) => {
     if (!isFinite(s) || s < 0) s = 0;
@@ -223,7 +259,12 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       } catch { /* ignore */ }
     };
     let fixedInfinity = false;
-    const onTime = () => { if (!seeking) setCurrentTime(v.currentTime); updateBuffered(); };
+    const onTime = () => {
+      if (!seeking) setCurrentTime(v.currentTime);
+      if (v.currentTime > maxWatchedRef.current) maxWatchedRef.current = v.currentTime;
+      updateBuffered();
+    };
+    const onLoop = () => { repeatCountRef.current += 1; };
     const onMeta = () => {
       const d = v.duration;
       if (d === Infinity && !fixedInfinity) {
@@ -244,11 +285,13 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
     v.addEventListener("progress", updateBuffered);
     v.addEventListener("loadedmetadata", onMeta);
     v.addEventListener("durationchange", onMeta);
+    v.addEventListener("ended", onLoop);
     if (isFinite(v.duration) && v.duration > 0) setDuration(v.duration);
     return () => {
       v.removeEventListener("timeupdate", onTime);
       v.removeEventListener("progress", updateBuffered);
       v.removeEventListener("loadedmetadata", onMeta);
+      v.removeEventListener("ended", onLoop);
       v.removeEventListener("durationchange", onMeta);
     };
   }, [seeking, video.image, preloadLevel]);
@@ -603,6 +646,38 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
                 {downloading ? "Скачивание…" : downloadDone ? "Готово!" : "Скачать"}
               </span>
             </button>
+
+            {/* Не интересно */}
+            <button
+              onClick={() => {
+                setShowMore(false);
+                markNotInterested(video.dbId ?? video.id);
+                toast.success("Учли — покажем меньше такого контента");
+              }}
+              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3"
+            >
+              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                <Icon name="ThumbsDown" size={20} className="text-white" />
+              </div>
+              <span className="text-white text-sm font-medium">Не интересно</span>
+            </button>
+
+            {/* Скрыть автора */}
+            {!isSelf && (
+              <button
+                onClick={() => {
+                  setShowMore(false);
+                  hideAuthor(video.handle);
+                  toast.success(`Больше не будем показывать @${video.handle}`);
+                }}
+                className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3"
+              >
+                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                  <Icon name="EyeOff" size={20} className="text-white" />
+                </div>
+                <span className="text-white text-sm font-medium">Скрыть автора</span>
+              </button>
+            )}
 
             {/* Жалоба */}
             <button

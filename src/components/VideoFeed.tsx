@@ -5,6 +5,7 @@ import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
 import { useFollowingList } from "@/hooks/useFollowing";
+import { useHiddenAuthors } from "@/hooks/useFeedSignals";
 
 export const CATEGORIES = [
   { id: "new", label: "Новые" },
@@ -283,6 +284,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
   const { userVideos, mediaVersion } = useUserMedia();
   const { user } = useAuth();
   const followingHandles = useFollowingList();
+  const hiddenAuthors = useHiddenAuthors();
 
   const userVideoData: (VideoData & { category: string })[] = userVideos
     .filter(v => v.type === "video")
@@ -365,6 +367,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
   // дважды (например, из локального состояния и из БД одновременно).
   const seenUrls = new Set<string>();
   const allVideos = [...userVideoData, ...dbVideos].filter((v) => {
+    if (hiddenAuthors.includes((v.handle || "").toLowerCase())) return false;
     const key = v.image;
     if (!key) return true;
     if (seenUrls.has(key)) return false;

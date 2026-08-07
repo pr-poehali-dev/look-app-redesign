@@ -4,7 +4,7 @@ import psycopg2
 
 
 def handler(event: dict, context) -> dict:
-    """Лента видео с гибридными рекомендациями: контентная + коллаборативная фильтрация, подписки, популярность, свежесть и элемент случайности против пузыря фильтров."""
+    """Лента видео с гибридными рекомендациями: контентная + коллаборативная фильтрация, подписки, watch-time сигналы (скорость/глубина просмотра, повторы), популярность, свежесть, элемент случайности против пузыря фильтров, а также фильтрация скрытых авторов и видео "не интересно"."""
     if event.get('httpMethod') == 'OPTIONS':
         return {
             'statusCode': 200,
@@ -55,6 +55,9 @@ def handler(event: dict, context) -> dict:
         liked_hashtags = {}
         followed_user_ids = set()
         similar_user_ids = set()
+        hidden_handles = set()
+        not_interested_ids = set()
+        watch_stats = {}
         if user_id:
             # Что пользователь лайкал -> любимые категории и хэштеги (контентная фильтрация)
             cur.execute(
@@ -103,6 +106,49 @@ def handler(event: dict, context) -> dict:
                 collab_video_ids = {str(r[0]) for r in cur.fetchall()}
             else:
                 collab_video_ids = set()
+
+            # Скрытые авторы и "не интересно" — убираем из выдачи
+            try:
+                cur.execute(
+                    f"SELECT author_handle FROM {schema}.user_hidden_authors WHERE user_id = %s",
+                    (user_id,)
+                )
+                hidden_handles = {r[0] for r in cur.fetchall()}
+            except Exception:
+                hidden_handles = set()
+
+            try:
+                cur.execute(
+                    f"SELECT video_id FROM {schema}.user_video_feedback WHERE user_id = %s AND feedback_type = 'not_interested'",
+                    (user_id,)
+                )
+                not_interested_ids = {r[0] for r in cur.fetchall()}
+            except Exception:
+                not_interested_ids = set()
+
+            # Watch-time сигналы: быстрые пролистывания -> штраф теме, досмотры/повторы -> бонус
+            try:
+                cur.execute(
+                    f"SELECT v.category, vv.watch_seconds, vv.duration, vv.completed, vv.repeat_count "
+                    f"FROM {schema}.video_views vv "
+                    f"JOIN {schema}.videos v ON v.id = vv.video_id "
+                    f"WHERE vv.user_id = %s ORDER BY vv.created_at DESC LIMIT 300",
+                    (user_id,)
+                )
+                for cat, watch_seconds, duration, completed, repeat_count in cur.fetchall():
+                    if not cat:
+                        continue
+                    ratio = (float(watch_seconds) / float(duration)) if duration else 0.0
+                    signal = 0.0
+                    if ratio < 0.15:
+                        signal -= 1.0
+                    elif ratio > 0.7 or completed:
+                        signal += 1.5
+                    if repeat_count:
+                        signal += 1.0 * min(repeat_count, 3)
+                    watch_stats[cat] = watch_stats.get(cat, 0.0) + signal
+            except Exception:
+                watch_stats = {}
     finally:
         cur.close()
         conn.close()
@@ -112,6 +158,10 @@ def handler(event: dict, context) -> dict:
     import datetime
 
     now = datetime.datetime.utcnow()
+
+    # Убираем скрытых авторов и видео с отметкой "не интересно"
+    if hidden_handles or not_interested_ids:
+        rows = [r for r in rows if (r[3] not in hidden_handles) and (r[0] not in not_interested_ids)]
 
     def score(r):
         vid = str(r[0])
@@ -135,6 +185,9 @@ def handler(event: dict, context) -> dict:
         # Коллаборативная фильтрация
         if user_id and vid in collab_video_ids:
             s += 4.0
+        # Глубина взаимодействия: скорость/длительность просмотра и повторы по теме
+        if cat and cat in watch_stats:
+            s += watch_stats[cat]
         # Популярность (сглаженно)
         s += math.log1p(max(0, likes)) * 1.2
         # Свежесть: бонус за новизну, плавно убывает за неделю

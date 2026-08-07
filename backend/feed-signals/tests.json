@@ -1,0 +1,41 @@
+{
+  "tests": [
+    {
+      "name": "No user id returns 401",
+      "method": "GET",
+      "path": "/?action=list_hidden",
+      "expectedStatus": 401
+    },
+    {
+      "name": "List hidden with user id",
+      "method": "GET",
+      "path": "/?action=list_hidden",
+      "headers": { "X-User-Id": "test_user_1" },
+      "expectedStatus": 200
+    },
+    {
+      "name": "Track view",
+      "method": "POST",
+      "path": "/",
+      "headers": { "X-User-Id": "test_user_1", "Content-Type": "application/json" },
+      "body": { "action": "view", "video_id": 1, "watch_seconds": 5, "duration": 10, "completed": false, "repeat_count": 0 },
+      "expectedStatus": 200
+    },
+    {
+      "name": "Hide author",
+      "method": "POST",
+      "path": "/",
+      "headers": { "X-User-Id": "test_user_1", "Content-Type": "application/json" },
+      "body": { "action": "hide_author", "handle": "spam_author" },
+      "expectedStatus": 200
+    },
+    {
+      "name": "Not interested",
+      "method": "POST",
+      "path": "/",
+      "headers": { "X-User-Id": "test_user_1", "Content-Type": "application/json" },
+      "body": { "action": "not_interested", "video_id": 1 },
+      "expectedStatus": 200
+    }
+  ]
+}
