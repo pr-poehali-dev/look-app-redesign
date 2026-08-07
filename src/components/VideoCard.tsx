@@ -497,7 +497,6 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           <div className="action-icon-circle w-11 h-11 rounded-full flex items-center justify-center">
             <Icon name="Bookmark" size={22} className={saved ? "text-[#ffd700] fill-[#ffd700]" : "action-icon-glyph"} />
           </div>
-          <span className="text-white text-xs font-semibold">Сохранить</span>
         </button>
 
         {/* Ещё */}
@@ -511,7 +510,6 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           <div className="action-icon-circle w-11 h-11 rounded-full flex items-center justify-center">
             <Icon name="Ellipsis" size={22} className="action-icon-glyph" />
           </div>
-          <span className="text-white text-xs font-semibold">Ещё</span>
         </button>
       </div>
 
@@ -542,11 +540,10 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         </button>
 
         {/* Bookmark */}
-        <button onClick={toggleSaved} className="flex flex-col items-center gap-1">
+        <button onClick={toggleSaved} className="flex flex-col items-center gap-1" title="Сохранить в закладки">
           <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
             <Icon name="Bookmark" size={22} className={saved ? "text-[#ffd700] fill-[#ffd700]" : "action-icon-glyph"} />
           </div>
-          <span className="text-white text-xs font-semibold">Сохранить</span>
         </button>
 
         {/* Ещё */}
@@ -554,7 +551,6 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
             <Icon name="Ellipsis" size={22} className="action-icon-glyph" />
           </div>
-          <span className="text-white text-xs font-semibold">Ещё</span>
         </button>
       </div>
 

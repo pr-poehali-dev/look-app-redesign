@@ -1,6 +1,7 @@
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { Post, formatLikes } from "./PostFeedTypes";
+import { useLikes } from "@/hooks/useLikes";
 
 const ASPECTS = [3 / 4, 1, 4 / 5, 5 / 6, 4 / 3, 2 / 3];
 
@@ -16,7 +17,8 @@ function hashId(id: number | string): number {
 
 const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
   const aspect = ASPECTS[hashId(post.id) % ASPECTS.length];
-  const hasLikes = post.likes > 0;
+  const { count: likeCount } = useLikes("post", post.id, post.likes);
+  const hasLikes = likeCount > 0;
 
   return (
     <button
@@ -37,8 +39,8 @@ const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
             <span className="text-white/60 text-[11px] truncate">{post.handle}</span>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
-            <Icon name="Heart" size={13} className={hasLikes ? "text-[#fe2c55]" : "text-white/50"} />
-            <span className={`text-[11px] ${hasLikes ? "text-[#fe2c55] font-medium" : "text-white/50"}`}>{formatLikes(post.likes)}</span>
+            <Icon name="Heart" size={13} className={hasLikes ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white/50"} />
+            <span className={`text-[11px] ${hasLikes ? "text-[#fe2c55] font-medium" : "text-white/50"}`}>{formatLikes(likeCount)}</span>
           </div>
         </div>
       </div>
