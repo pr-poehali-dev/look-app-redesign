@@ -496,7 +496,11 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           title="Нравится"
         >
           <div className="action-icon-circle w-11 h-11 rounded-full flex items-center justify-center">
-            <Icon name="Heart" size={24} className="action-icon-glyph" />
+            <Icon
+              name="Heart"
+              size={24}
+              className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"}
+            />
           </div>
           <span className="text-white text-xs font-semibold">{formatCount(likeCount)}</span>
         </button>
@@ -529,20 +533,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           <span className="text-white text-xs font-semibold">{video.shares}</span>
         </button>
 
-        {/* Bookmark */}
-        <button
-          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); toggleSaved(); }}
-          onClick={toggleSaved}
-          className="flex flex-col items-center gap-1"
-          style={{ touchAction: "manipulation" }}
-          title="Сохранить в закладки"
-        >
-          <div className="action-icon-circle w-11 h-11 rounded-full flex items-center justify-center">
-            <Icon name="Bookmark" size={22} className="action-icon-glyph" />
-          </div>
-        </button>
-
-        {/* Ещё */}
+        {/* Ещё (в т.ч. сохранение в коллекцию) */}
         <button
           onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowMore(true); }}
           onClick={() => setShowMore(true)}
@@ -561,7 +552,11 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         {/* Like */}
         <button onClick={() => toggleLike()} className="flex flex-col items-center gap-1">
           <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
-            <Icon name="Heart" size={24} className="action-icon-glyph" />
+            <Icon
+              name="Heart"
+              size={24}
+              className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"}
+            />
           </div>
           <span className="text-white text-xs font-semibold">{formatCount(likeCount)}</span>
         </button>
@@ -585,7 +580,11 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         {/* Bookmark */}
         <button onClick={toggleSaved} className="flex flex-col items-center gap-1" title="Сохранить в закладки">
           <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
-            <Icon name="Bookmark" size={22} className="action-icon-glyph" />
+            <Icon
+              name="Bookmark"
+              size={22}
+              className={saved ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"}
+            />
           </div>
         </button>
 
@@ -612,6 +611,26 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
                 <Icon name="X" size={20} className="text-white/60" />
               </button>
             </div>
+
+            {/* Сохранить в коллекцию */}
+            <button
+              onClick={() => {
+                toggleSaved();
+                setShowMore(false);
+              }}
+              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3 md:hidden"
+            >
+              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                <Icon
+                  name="Bookmark"
+                  size={20}
+                  className={saved ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"}
+                />
+              </div>
+              <span className="text-white text-sm font-medium">
+                {saved ? "Убрать из коллекции" : "Сохранить в коллекцию"}
+              </span>
+            </button>
 
             {/* Перейти в профиль */}
             <button
