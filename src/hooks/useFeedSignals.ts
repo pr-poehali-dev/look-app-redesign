@@ -56,6 +56,16 @@ export const markNotInterested = (videoId: number) => {
   }).catch(() => { /* ignore */ });
 };
 
+export const markMoreLikeThis = (videoId: number) => {
+  const userId = getUserId();
+  if (!videoId) return Promise.resolve();
+  return fetch(SIGNALS_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-User-Id": userId },
+    body: JSON.stringify({ action: "more_like_this", video_id: videoId }),
+  }).catch(() => { /* ignore */ });
+};
+
 export const hideAuthor = (handle: string) => {
   const userId = getUserId();
   const norm = (handle || "").trim().replace(/^@/, "").toLowerCase();

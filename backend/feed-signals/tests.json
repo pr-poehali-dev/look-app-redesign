@@ -36,6 +36,14 @@
       "headers": { "X-User-Id": "test_user_1", "Content-Type": "application/json" },
       "body": { "action": "not_interested", "video_id": 1 },
       "expectedStatus": 200
+    },
+    {
+      "name": "More like this",
+      "method": "POST",
+      "path": "/",
+      "headers": { "X-User-Id": "test_user_1", "Content-Type": "application/json" },
+      "body": { "action": "more_like_this", "video_id": 1 },
+      "expectedStatus": 200
     }
   ]
 }

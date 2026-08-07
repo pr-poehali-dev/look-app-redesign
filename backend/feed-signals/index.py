@@ -23,7 +23,7 @@ def _esc(value, limit=100):
 
 
 def handler(event: dict, context) -> dict:
-    """Сигналы вовлечённости ленты: action=view (время просмотра/повтор), hide_author, not_interested, list_hidden"""
+    """Сигналы вовлечённости ленты: action=view (время просмотра/повтор), hide_author, unhide_author, not_interested, more_like_this, list_hidden"""
     method = event.get('httpMethod', 'GET')
     if method == 'OPTIONS':
         return {'statusCode': 200, 'headers': CORS, 'body': ''}
@@ -71,6 +71,17 @@ def handler(event: dict, context) -> dict:
             cur.execute(
                 f"INSERT INTO {schema}.user_video_feedback (user_id, video_id, feedback_type) "
                 f"VALUES ('{safe_user}', {video_id}, 'not_interested') ON CONFLICT DO NOTHING"
+            )
+            conn.commit()
+            return _resp(200, {'ok': True})
+
+        if action == 'more_like_this' and method == 'POST':
+            video_id = int(body.get('video_id') or 0)
+            if not video_id:
+                return _resp(400, {'error': 'video_id required'})
+            cur.execute(
+                f"INSERT INTO {schema}.user_video_feedback (user_id, video_id, feedback_type) "
+                f"VALUES ('{safe_user}', {video_id}, 'more_like_this') ON CONFLICT DO NOTHING"
             )
             conn.commit()
             return _resp(200, {'ok': True})

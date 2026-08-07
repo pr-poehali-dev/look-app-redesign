@@ -58,8 +58,10 @@ const Index = () => {
   const canGoBack =
     showLive || showCamera || !!desktopOverlay || !!profileHandle;
 
-  // Видимая кнопка «Назад» — только для полноэкранных оверлеев
-  const showBackButton = canGoBack;
+  // Видимая кнопка «Назад» — только для полноэкранных оверлеев.
+  // Камеру исключаем: у неё уже есть свои кнопки закрытия/назад в шапке,
+  // и глобальная кнопка наезжала на них.
+  const showBackButton = canGoBack && !showCamera;
 
   // Закрыть верхний открытый экран (приоритет — от самого верхнего слоя)
   const goBack = () => {

@@ -10,7 +10,7 @@ import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
 import ReportButton from "@/components/ReportButton";
 import { toast } from "sonner";
-import { trackVideoView, markNotInterested, hideAuthor } from "@/hooks/useFeedSignals";
+import { trackVideoView, markNotInterested, markMoreLikeThis, hideAuthor } from "@/hooks/useFeedSignals";
 
 export interface VideoData {
   id: number;
@@ -645,6 +645,21 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
               <span className="text-white text-sm font-medium">
                 {downloading ? "Скачивание…" : downloadDone ? "Готово!" : "Скачать"}
               </span>
+            </button>
+
+            {/* Показать больше такого */}
+            <button
+              onClick={() => {
+                setShowMore(false);
+                markMoreLikeThis(video.dbId ?? video.id);
+                toast.success("Будем чаще показывать похожий контент");
+              }}
+              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3"
+            >
+              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                <Icon name="ThumbsUp" size={20} className="text-white" />
+              </div>
+              <span className="text-white text-sm font-medium">Показать больше такого</span>
             </button>
 
             {/* Не интересно */}

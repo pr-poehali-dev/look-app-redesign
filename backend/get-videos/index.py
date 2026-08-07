@@ -74,6 +74,24 @@ def handler(event: dict, context) -> dict:
                     if t:
                         liked_hashtags[t] = liked_hashtags.get(t, 0) + 1
 
+            # "Показать больше такого" — явный сигнал, весит сильнее лайка
+            try:
+                cur.execute(
+                    f"SELECT v.category, v.hashtags FROM {schema}.user_video_feedback f "
+                    f"JOIN {schema}.videos v ON v.id = f.video_id "
+                    f"WHERE f.user_id = %s AND f.feedback_type = 'more_like_this'",
+                    (user_id,)
+                )
+                for cat, tags in cur.fetchall():
+                    if cat:
+                        liked_categories[cat] = liked_categories.get(cat, 0) + 3
+                    for t in (tags or '').replace('#', ' ').split():
+                        t = t.strip().lower()
+                        if t:
+                            liked_hashtags[t] = liked_hashtags.get(t, 0) + 3
+            except Exception:
+                pass
+
             # На кого подписан (по following_id из таблицы follows)
             try:
                 cur.execute(
