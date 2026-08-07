@@ -131,7 +131,7 @@ const PostFeed = () => {
     }
     return visiblePosts;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scope, visiblePosts.length, followingHandles.join(",")]);
+  }, [scope, visiblePosts, followingHandles.join(",")]);
 
   return (
     <div className="relative h-full bg-black">
