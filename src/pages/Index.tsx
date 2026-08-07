@@ -308,12 +308,11 @@ const Index = () => {
                     }
                     setMobileCatOpen((v) => !v);
                   }}
-                  className="pointer-events-auto px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap bg-transparent text-white md:bg-white md:text-black flex items-center gap-1"
-                  style={{ textShadow: "0 1px 2px rgba(0,0,0,0.85), 0 0 6px rgba(0,0,0,0.4)" }}
+                  className="cat-toggle-text pointer-events-auto px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap bg-transparent text-white md:bg-white md:text-black flex items-center gap-1"
                 >
                   {activeCategory === LIVE_CATEGORY.id && <Icon name="Radio" size={13} className="text-[#fe2c55]" />}
                   {activeCategory === LIVE_CATEGORY.id ? LIVE_CATEGORY.label : (CATEGORIES.find((c) => c.id === activeCategory)?.label || "Все")}
-                  <Icon name={(activeCategory === "all" && gridOpenVideoId !== null) ? "ArrowLeft" : (mobileCatOpen ? "ChevronUp" : "ChevronDown")} size={14} className="md:text-black text-white" style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.7))" }} />
+                  <Icon name={(activeCategory === "all" && gridOpenVideoId !== null) ? "ArrowLeft" : (mobileCatOpen ? "ChevronUp" : "ChevronDown")} size={14} className="cat-toggle-icon md:text-black text-white" />
                 </button>
                 <button
                   onClick={toggleTheme}
