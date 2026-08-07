@@ -1,12 +1,32 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { useAuth } from "@/context/AuthContext";
 import { useUserMedia } from "@/context/UserMediaContext";
 import StoryViewer from "./post-feed/StoryViewer";
 import PostCard from "./post-feed/PostCard";
+import NoteViewer from "./post-feed/NoteViewer";
+import MasonryFeed from "./post-feed/MasonryFeed";
+import SearchOverlay from "./post-feed/SearchOverlay";
 import { Post, Story, MOCK_POSTS, GET_PHOTOS_URL, formatTime } from "./post-feed/PostFeedTypes";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
+import { useFollowingList } from "@/hooks/useFollowing";
+
+type FeedScope = "recommend" | "following" | "nearby";
+type ViewMode = "masonry" | "feed";
+
+const SCOPES: { id: FeedScope; label: string }[] = [
+  { id: "following", label: "Подписки" },
+  { id: "recommend", label: "Рекомендации" },
+  { id: "nearby", label: "Рядом" },
+];
+
+// Простая детерминированная псевдослучайность для сортировки «Рядом» (без реальной геолокации)
+function hashStr(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) { h = (h << 5) - h + s.charCodeAt(i); h |= 0; }
+  return Math.abs(h);
+}
 
 const PostFeed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -14,6 +34,18 @@ const PostFeed = () => {
   const { user } = useAuth();
   const { addMedia, removedIds, mediaVersion } = useUserMedia();
   const myStoryInputRef = useRef<HTMLInputElement>(null);
+  const followingHandles = useFollowingList();
+  const [scope, setScope] = useState<FeedScope>("recommend");
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window === "undefined") return "masonry";
+    return (localStorage.getItem("feed_view_mode") as ViewMode) || "masonry";
+  });
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchOpenedPost, setSearchOpenedPost] = useState<Post | null>(null);
+
+  useEffect(() => {
+    try { localStorage.setItem("feed_view_mode", viewMode); } catch { /* ignore */ }
+  }, [viewMode]);
 
   useEffect(() => {
     fetch(`${GET_PHOTOS_URL}?type=image`)
@@ -87,6 +119,20 @@ const PostFeed = () => {
   }).slice(0, 12);
   const stories: Story[] = storyUsers.map(p => ({ id: p.id, handle: p.handle, avatar: p.avatar, image: p.image }));
 
+  // Фильтрация по вкладке: Подписки / Рекомендации / Рядом
+  const visiblePosts = storySource.filter(p => !removedIds.has(p.id));
+  const scopedPosts = useMemo(() => {
+    if (scope === "following") {
+      const set = new Set(followingHandles.map(h => h.toLowerCase()));
+      return visiblePosts.filter(p => set.has((p.handle || "").toLowerCase()));
+    }
+    if (scope === "nearby") {
+      return [...visiblePosts].sort((a, b) => hashStr(String(a.id)) - hashStr(String(b.id)));
+    }
+    return visiblePosts;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scope, visiblePosts.length, followingHandles.join(",")]);
+
   return (
     <div className="relative h-full bg-black">
       {/* Story viewer */}
@@ -94,8 +140,44 @@ const PostFeed = () => {
         <StoryViewer stories={stories} startIndex={storyIndex} onClose={() => setStoryIndex(null)} />
       )}
 
-      {/* Stories row — фиксирована сверху, вне прокрутки постов */}
-      <div className="absolute top-0 left-0 right-0 z-20 md:max-w-[620px] md:mx-auto bg-black/85 backdrop-blur-md flex gap-4 px-3 py-3 overflow-x-scroll border-b border-white/8" style={{ scrollbarWidth: "none" }}>
+      {showSearch && (
+        <SearchOverlay
+          posts={scopedPosts}
+          onClose={() => setShowSearch(false)}
+          onOpenPost={(p) => { setShowSearch(false); setSearchOpenedPost(p); }}
+        />
+      )}
+      {searchOpenedPost && <NoteViewer post={searchOpenedPost} onClose={() => setSearchOpenedPost(null)} />}
+
+      {/* Top bar: вкладки Подписки/Рекомендации/Рядом + поиск + переключатель вида */}
+      <div className="absolute top-0 left-0 right-0 z-30 md:max-w-[620px] md:mx-auto bg-black/85 backdrop-blur-md flex items-center gap-1 px-2 pt-3 pb-1.5 border-b border-white/8">
+        <div className="flex-1 flex items-center gap-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+          {SCOPES.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setScope(s.id)}
+              className={`px-3 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-colors ${
+                scope === s.id ? "bg-white text-black" : "text-white/60"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+        <button onClick={() => setShowSearch(true)} className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+          <Icon name="Search" size={18} className="text-white" />
+        </button>
+        <button
+          onClick={() => setViewMode((m) => (m === "masonry" ? "feed" : "masonry"))}
+          className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+          title={viewMode === "masonry" ? "Показать лентой" : "Показать сеткой"}
+        >
+          <Icon name={viewMode === "masonry" ? "Rows3" : "LayoutGrid"} size={18} className="text-white" />
+        </button>
+      </div>
+
+      {/* Stories row — фиксирована под вкладками, вне прокрутки постов */}
+      <div className="absolute top-[46px] left-0 right-0 z-20 md:max-w-[620px] md:mx-auto bg-black/85 backdrop-blur-md flex gap-4 px-3 py-3 overflow-x-scroll border-b border-white/8" style={{ scrollbarWidth: "none" }}>
         {/* "Your story" first */}
         <input
           ref={myStoryInputRef}
@@ -135,34 +217,41 @@ const PostFeed = () => {
         <div className="flex-shrink-0 w-1" aria-hidden="true" />
       </div>
 
-      {/* Posts — прокрутка с привязкой, под фиксированной панелью сторис */}
-      <div
-        ref={scrollRef}
-        className="h-full overflow-y-scroll snap-y snap-mandatory"
-        style={{ scrollbarWidth: "none" }}
-      >
-        <div className="md:max-w-[620px] md:mx-auto">
-          {/* Резерв под фиксированную панель сторис */}
-          <div className="h-[110px] flex-shrink-0" aria-hidden />
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            postsWithCounts.filter(p => !removedIds.has(p.id)).map((post) => (
-              <div
-                key={post.id}
-                className="snap-start snap-always flex flex-col scroll-mt-[110px]"
-                style={{ height: "calc(100% - 110px)", minHeight: "calc(100% - 110px)" }}
-              >
-                <PostCard post={post} />
-              </div>
-            ))
-          )}
+      {viewMode === "masonry" ? (
+        <div className="absolute inset-0">
+          <MasonryFeed posts={scopedPosts} loading={loading} topPad={156} />
         </div>
-      </div>
+      ) : (
+        /* Posts — прокрутка с привязкой, под фиксированной панелью сторис */
+        <div
+          ref={scrollRef}
+          className="h-full overflow-y-scroll snap-y snap-mandatory"
+          style={{ scrollbarWidth: "none" }}
+        >
+          <div className="md:max-w-[620px] md:mx-auto">
+            {/* Резерв под фиксированную панель сторис */}
+            <div className="h-[156px] flex-shrink-0" aria-hidden />
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : (
+              scopedPosts.map((post) => (
+                <div
+                  key={post.id}
+                  className="snap-start snap-always flex flex-col scroll-mt-[156px]"
+                  style={{ height: "calc(100% - 156px)", minHeight: "calc(100% - 156px)" }}
+                >
+                  <PostCard post={post} />
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
-      {/* Desktop nav arrows */}
+      {/* Desktop nav arrows — только в режиме полноэкранной ленты */}
+      {viewMode === "feed" && (
       <div
         className="hidden md:flex flex-col gap-3 absolute top-1/2 -translate-y-1/2 right-8 z-40"
       >
@@ -181,6 +270,7 @@ const PostFeed = () => {
           <Icon name="ChevronDown" size={22} className="text-white" />
         </button>
       </div>
+      )}
     </div>
   );
 };

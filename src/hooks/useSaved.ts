@@ -10,10 +10,32 @@ export interface SavedItem {
   handle?: string;
   views?: number;
   savedAt: number;
+  folder?: string;
 }
 
+export const DEFAULT_FOLDER = "Общее";
 const STORAGE_KEY = "saved_items_v1";
+const FOLDERS_KEY = "saved_folders_v1";
 const EVENT_NAME = "saved-items-change";
+
+const readFolders = (): string[] => {
+  try {
+    const raw = localStorage.getItem(FOLDERS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeFolders = (folders: string[]) => {
+  try {
+    localStorage.setItem(FOLDERS_KEY, JSON.stringify(folders));
+    window.dispatchEvent(new CustomEvent(EVENT_NAME));
+  } catch {
+    // ignore
+  }
+};
 
 const readAll = (): SavedItem[] => {
   try {
@@ -82,4 +104,45 @@ export const useSavedList = (): SavedItem[] => {
   }, []);
 
   return items;
+};
+
+export const useSavedFolders = () => {
+  const [folders, setFolders] = useState<string[]>(readFolders);
+  const [items, setItems] = useState<SavedItem[]>(readAll);
+
+  useEffect(() => {
+    const sync = () => { setFolders(readFolders()); setItems(readAll()); };
+    window.addEventListener(EVENT_NAME, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(EVENT_NAME, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
+  const createFolder = useCallback((name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const all = readFolders();
+    if (all.includes(trimmed)) return;
+    writeFolders([...all, trimmed]);
+  }, []);
+
+  const deleteFolder = useCallback((name: string) => {
+    if (name === DEFAULT_FOLDER) return;
+    writeFolders(readFolders().filter(f => f !== name));
+    const allItems = readAll().map(it => it.folder === name ? { ...it, folder: DEFAULT_FOLDER } : it);
+    writeAll(allItems);
+  }, []);
+
+  const moveToFolder = useCallback((type: SavedItemType, id: number | string, folder: string) => {
+    const k = keyOf(type, id);
+    const all = readAll().map(it => keyOf(it.type, it.id) === k ? { ...it, folder } : it);
+    writeAll(all);
+  }, []);
+
+  const allFolders = [DEFAULT_FOLDER, ...folders.filter(f => f !== DEFAULT_FOLDER)];
+  const itemsByFolder = (folder: string) => items.filter(it => (it.folder || DEFAULT_FOLDER) === folder);
+
+  return { folders: allFolders, items, createFolder, deleteFolder, moveToFolder, itemsByFolder };
 };

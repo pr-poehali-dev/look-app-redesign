@@ -3,7 +3,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { useAuth } from "@/context/AuthContext";
-import { useSavedList, SavedItem } from "@/hooks/useSaved";
+import { SavedItem, useSavedFolders, DEFAULT_FOLDER } from "@/hooks/useSaved";
 import SavedItemViewer from "@/components/SavedItemViewer";
 import QrScannerScreen from "@/components/QrScannerScreen";
 
@@ -26,50 +26,155 @@ const NOTIFICATIONS = [
 ];
 
 // Sub-screens
+const FOLDER_COVER_ICONS = ["Bookmark", "Heart", "Star", "Sparkles", "Palette", "Coffee", "Camera", "Plane"];
+
 const SavedScreen = ({ onBack }: { onBack: () => void }) => {
-  const items = useSavedList();
+  const { folders, createFolder, deleteFolder, moveToFolder, itemsByFolder } = useSavedFolders();
+  const [activeFolder, setActiveFolder] = useState<string | null>(null);
   const [opened, setOpened] = useState<SavedItem | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [movingItem, setMovingItem] = useState<SavedItem | null>(null);
+
+  // Список досок
+  if (!activeFolder) {
+    return (
+      <div className="h-full bg-gray-100 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
+        <div className="md:max-w-2xl md:mx-auto">
+          <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
+            <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
+            <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Коллекции</span>
+            <button onClick={() => setCreating(true)} className="p-1"><Icon name="FolderPlus" size={22} className="text-black" /></button>
+          </div>
+
+          {creating && (
+            <div className="px-4 py-3 bg-white border-b border-gray-100 flex items-center gap-2">
+              <input
+                autoFocus
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && newFolderName.trim()) { createFolder(newFolderName); setNewFolderName(""); setCreating(false); }
+                  if (e.key === "Escape") { setCreating(false); setNewFolderName(""); }
+                }}
+                placeholder="Название коллекции"
+                className="flex-1 px-3 py-2 rounded-xl bg-gray-100 text-black text-sm outline-none"
+              />
+              <button
+                onClick={() => { if (newFolderName.trim()) { createFolder(newFolderName); setNewFolderName(""); } setCreating(false); }}
+                className="px-3 py-2 rounded-xl bg-black text-white text-sm font-semibold"
+              >
+                Готово
+              </button>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3 p-4">
+            {folders.map((folder, i) => {
+              const items = itemsByFolder(folder);
+              const preview = items[0];
+              return (
+                <button
+                  key={folder}
+                  onClick={() => setActiveFolder(folder)}
+                  className="relative rounded-2xl overflow-hidden bg-white aspect-square active:opacity-80 shadow-sm"
+                >
+                  {preview ? (
+                    preview.type === "video" || /\.(mp4|mov|webm)(\?|$)/i.test(preview.image) ? (
+                      <video src={preview.image} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                    ) : (
+                      <img src={preview.image} alt="" className="w-full h-full object-cover" />
+                    )
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                      <Icon name={FOLDER_COVER_ICONS[i % FOLDER_COVER_ICONS.length]} size={32} className="text-gray-300" />
+                    </div>
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 py-2 flex items-center justify-between">
+                    <span className="text-white text-xs font-semibold truncate">{folder}</span>
+                    <span className="text-white/70 text-[10px]">{items.length}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="pb-28" />
+        </div>
+      </div>
+    );
+  }
+
+  // Содержимое одной доски
+  const items = itemsByFolder(activeFolder);
   return (
     <div className="h-full bg-gray-100 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
       <div className="md:max-w-2xl md:mx-auto">
-      <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
-        <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
-        <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Сохранённые</span>
-      </div>
-      {items.length > 0 ? (
-        <div className="grid grid-cols-3 md:grid-cols-4 gap-px bg-gray-200 mt-2">
-          {items.map(item => {
-            const isVideo = item.type === "video" || /\.(mp4|mov|webm)(\?|$)/i.test(item.image);
-            return (
-              <button
-                key={`${item.type}:${item.id}`}
-                onClick={() => setOpened(item)}
-                className="relative aspect-square overflow-hidden bg-gray-200 active:opacity-80"
-              >
-                {isVideo ? (
-                  <video src={item.image} className="w-full h-full object-cover rounded-md" muted playsInline preload="metadata" />
-                ) : (
-                  <img src={item.image} alt="" className="w-full h-full object-cover rounded-md" />
-                )}
-                <div className="absolute bottom-1.5 right-1.5 flex items-center gap-0.5">
-                  <Icon name={item.type === "video" ? "Play" : "Image"} size={10} className="text-white drop-shadow" />
-                  {item.handle && (
-                    <span className="text-white text-[10px] font-semibold drop-shadow">@{item.handle}</span>
-                  )}
+        <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
+          <button onClick={() => setActiveFolder(null)} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
+          <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7 truncate">{activeFolder}</span>
+          {activeFolder !== DEFAULT_FOLDER && (
+            <button
+              onClick={() => { if (confirm(`Удалить коллекцию «${activeFolder}»?`)) { deleteFolder(activeFolder); setActiveFolder(null); } }}
+              className="p-1"
+            >
+              <Icon name="Trash2" size={20} className="text-red-500" />
+            </button>
+          )}
+        </div>
+        {items.length > 0 ? (
+          <div className="grid grid-cols-3 md:grid-cols-4 gap-px bg-gray-200 mt-2">
+            {items.map(item => {
+              const isVideo = item.type === "video" || /\.(mp4|mov|webm)(\?|$)/i.test(item.image);
+              return (
+                <div key={`${item.type}:${item.id}`} className="relative aspect-square overflow-hidden bg-gray-200 group">
+                  <button onClick={() => setOpened(item)} className="w-full h-full active:opacity-80">
+                    {isVideo ? (
+                      <video src={item.image} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                    ) : (
+                      <img src={item.image} alt="" className="w-full h-full object-cover" />
+                    )}
+                  </button>
+                  <div className="absolute bottom-1.5 left-1.5 right-1.5 flex items-center justify-between">
+                    <div className="flex items-center gap-0.5">
+                      <Icon name={item.type === "video" ? "Play" : "Image"} size={10} className="text-white drop-shadow" />
+                      {item.handle && (
+                        <span className="text-white text-[10px] font-semibold drop-shadow">@{item.handle}</span>
+                      )}
+                    </div>
+                    <button onClick={() => setMovingItem(item)} className="p-1 rounded-full bg-black/40 backdrop-blur-sm">
+                      <Icon name="FolderInput" size={11} className="text-white" />
+                    </button>
+                  </div>
                 </div>
-              </button>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center mt-20 gap-3">
-          <Icon name="Bookmark" size={48} className="text-gray-300" />
-          <p className="text-gray-400 text-sm">Нет сохранённых видео</p>
-        </div>
-      )}
-      <div className="pb-28" />
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center mt-20 gap-3">
+            <Icon name="Bookmark" size={48} className="text-gray-300" />
+            <p className="text-gray-400 text-sm">В этой коллекции пока пусто</p>
+          </div>
+        )}
+        <div className="pb-28" />
       </div>
       {opened && <SavedItemViewer item={opened} onClose={() => setOpened(null)} />}
+      {movingItem && (
+        <div className="fixed inset-0 z-[10000] flex items-end md:items-center md:justify-center bg-black/40" onClick={() => setMovingItem(null)}>
+          <div className="w-full md:w-[360px] bg-white rounded-t-3xl md:rounded-2xl overflow-hidden pb-6 md:pb-2" onClick={(e) => e.stopPropagation()}>
+            <p className="px-6 pt-5 pb-2 text-black font-bold text-sm">Переместить в</p>
+            {folders.map(f => (
+              <button
+                key={f}
+                onClick={() => { moveToFolder(movingItem.type, movingItem.id, f); setMovingItem(null); }}
+                className="w-full flex items-center justify-between px-6 py-3 active:bg-gray-50"
+              >
+                <span className="text-black text-sm">{f}</span>
+                {(movingItem.folder || DEFAULT_FOLDER) === f && <Icon name="Check" size={16} className="text-black" />}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1034,7 +1139,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
       <div className="mt-2">
         <Row icon="UserPen" label="Редактировать профиль" onPress={() => setScreen("edit_profile")} />
         <Row icon="Star" label="Подписка и тарифы" onPress={() => setScreen("subscription")} />
-        <Row icon="Bookmark" label="Сохранённые" onPress={() => setScreen("saved")} />
+        <Row icon="Bookmark" label="Коллекции" onPress={() => setScreen("saved")} />
         <Row icon="Ban" label="Заблокированные" onPress={() => setScreen("blocked")} />
         <Row icon="QrCode" label="Мой QR-код" onPress={() => setScreen("qr")} />
         <Row icon="ScanLine" label="Сканировать QR" onPress={() => setScreen("scan_qr")} />
