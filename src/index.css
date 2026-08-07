@@ -440,41 +440,28 @@ html.theme-dark .action-icon-circle:active {
   box-shadow: none !important;
 }
 html .action-icon-glyph,
-html.theme-light .action-icon-glyph,
 html.theme-dark .action-icon-glyph,
 html .action-icon-circle svg,
-html.theme-light .action-icon-circle svg,
 html.theme-dark .action-icon-circle svg,
 html .action-icon-circle svg *,
-html.theme-light .action-icon-circle svg *,
 html.theme-dark .action-icon-circle svg *,
-html .media-overlay-text .action-icon-circle svg *,
-html.theme-light .media-overlay-text .action-icon-circle svg * {
-  color: #ffffff !important;
-  stroke: #ffffff !important;
+html .media-overlay-text .action-icon-circle svg * {
+  color: rgba(255, 255, 255, 0.5) !important;
+  stroke: rgba(255, 255, 255, 0.5) !important;
   text-shadow: none !important;
   position: relative;
   z-index: 1;
   filter: none !important;
 }
-html .action-icon-circle .text-\[\#fe2c55\],
-html.theme-light .action-icon-circle .text-\[\#fe2c55\],
-html.theme-dark .action-icon-circle .text-\[\#fe2c55\],
-html .action-icon-circle .text-\[\#fe2c55\] *,
-html.theme-light .action-icon-circle .text-\[\#fe2c55\] *,
-html.theme-dark .action-icon-circle .text-\[\#fe2c55\] * {
-  color: #fe2c55 !important;
-  stroke: #fe2c55 !important;
-  filter: none !important;
-}
-html .action-icon-circle .text-\[\#ffd700\],
-html.theme-light .action-icon-circle .text-\[\#ffd700\],
-html.theme-dark .action-icon-circle .text-\[\#ffd700\],
-html .action-icon-circle .text-\[\#ffd700\] *,
-html.theme-light .action-icon-circle .text-\[\#ffd700\] *,
-html.theme-dark .action-icon-circle .text-\[\#ffd700\] * {
-  color: #ffd700 !important;
-  stroke: #ffd700 !important;
+html.theme-light .action-icon-glyph,
+html.theme-light .action-icon-circle svg,
+html.theme-light .action-icon-circle svg *,
+html.theme-light .media-overlay-text .action-icon-circle svg * {
+  color: rgba(13, 42, 24, 0.5) !important;
+  stroke: rgba(13, 42, 24, 0.5) !important;
+  text-shadow: none !important;
+  position: relative;
+  z-index: 1;
   filter: none !important;
 }
 

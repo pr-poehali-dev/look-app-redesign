@@ -90,7 +90,7 @@ const PostCard = ({ post }: { post: Post }) => {
             <Icon
               name="Heart"
               size={20}
-              className={`transition-all duration-150 ${liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"}`}
+              className="action-icon-glyph transition-all duration-150"
             />
           </button>
           <button onClick={() => setShowComments(true)} className="action-icon-circle w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform">
@@ -104,7 +104,7 @@ const PostCard = ({ post }: { post: Post }) => {
           <Icon
             name="Bookmark"
             size={19}
-            className={`transition-all duration-150 ${saved ? "text-[#ffd700] fill-[#ffd700]" : "action-icon-glyph"}`}
+            className="action-icon-glyph transition-all duration-150"
           />
         </button>
       </div>

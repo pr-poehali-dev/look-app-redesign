@@ -453,7 +453,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           title="Нравится"
         >
           <div className="action-icon-circle w-11 h-11 rounded-full flex items-center justify-center">
-            <Icon name="Heart" size={24} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"} />
+            <Icon name="Heart" size={24} className="action-icon-glyph" />
           </div>
           <span className="text-white text-xs font-semibold">{formatCount(likeCount)}</span>
         </button>
@@ -495,7 +495,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           title="Сохранить в закладки"
         >
           <div className="action-icon-circle w-11 h-11 rounded-full flex items-center justify-center">
-            <Icon name="Bookmark" size={22} className={saved ? "text-[#ffd700] fill-[#ffd700]" : "action-icon-glyph"} />
+            <Icon name="Bookmark" size={22} className="action-icon-glyph" />
           </div>
         </button>
 
@@ -518,7 +518,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         {/* Like */}
         <button onClick={() => toggleLike()} className="flex flex-col items-center gap-1">
           <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
-            <Icon name="Heart" size={24} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"} />
+            <Icon name="Heart" size={24} className="action-icon-glyph" />
           </div>
           <span className="text-white text-xs font-semibold">{formatCount(likeCount)}</span>
         </button>
@@ -542,7 +542,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         {/* Bookmark */}
         <button onClick={toggleSaved} className="flex flex-col items-center gap-1" title="Сохранить в закладки">
           <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
-            <Icon name="Bookmark" size={22} className={saved ? "text-[#ffd700] fill-[#ffd700]" : "action-icon-glyph"} />
+            <Icon name="Bookmark" size={22} className="action-icon-glyph" />
           </div>
         </button>
 
