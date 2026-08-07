@@ -147,9 +147,9 @@ const PostFeed = () => {
 
   return (
     <div className="relative h-full bg-black">
-      {/* Story viewer */}
+      {/* Story viewer — только история выбранного пользователя */}
       {storyIndex !== null && (
-        <StoryViewer stories={stories} startIndex={storyIndex} onClose={() => setStoryIndex(null)} />
+        <StoryViewer stories={[stories[storyIndex]]} startIndex={0} onClose={() => setStoryIndex(null)} />
       )}
 
       {showSearch && (
