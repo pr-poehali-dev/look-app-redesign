@@ -531,11 +531,11 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         <button
           onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowMore(true); }}
           onClick={() => setShowMore(true)}
-          className="flex flex-col items-center gap-1"
-          style={{ touchAction: "manipulation" }}
+          className="flex flex-col items-center justify-center w-8 h-8 rounded-full border-2 border-white"
+          style={{ touchAction: "manipulation", boxShadow: "0 1px 3px rgba(0,0,0,0.7)" }}
           title="Ещё действия"
         >
-          <Icon name="MoreHorizontal" size={32} className="action-icon-glyph" />
+          <span className="text-white text-[10px] font-bold leading-none" style={{ textShadow: "0 1px 2px rgba(0,0,0,0.85), 0 0 6px rgba(0,0,0,0.4)" }}>Ещё</span>
         </button>
       </div>
 
