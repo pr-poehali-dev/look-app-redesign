@@ -486,37 +486,33 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       </div>
 
       {/* Right side actions — мобайл (внутри видео) */}
-      <div className="absolute right-2.5 bottom-32 flex flex-col items-center gap-4 z-30 md:hidden">
+      <div className="absolute right-2.5 bottom-32 flex flex-col items-center gap-5 z-30 md:hidden">
         {/* Like */}
         <button
           onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); toggleLike(); }}
           onClick={() => toggleLike()}
-          className="flex flex-col items-center gap-0.5"
+          className="flex flex-col items-center gap-1"
           style={{ touchAction: "manipulation" }}
           title="Нравится"
         >
-          <div className="action-icon-circle w-8 h-8 rounded-full flex items-center justify-center">
-            <Icon
-              name="Heart"
-              size={20}
-              className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"}
-            />
-          </div>
-          <span className="text-white text-[11px] font-semibold">{formatCount(likeCount)}</span>
+          <Icon
+            name="Heart"
+            size={32}
+            className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"}
+          />
+          <span className="text-white text-xs font-semibold">{formatCount(likeCount)}</span>
         </button>
 
         {/* Comment */}
         <button
           onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowComments(true); }}
           onClick={() => setShowComments(true)}
-          className="flex flex-col items-center gap-0.5"
+          className="flex flex-col items-center gap-1"
           style={{ touchAction: "manipulation" }}
           title="Комментарии"
         >
-          <div className="action-icon-circle w-8 h-8 rounded-full flex items-center justify-center">
-            <Icon name="MessageDots" size={20} className="action-icon-glyph" />
-          </div>
-          <span className="text-white text-[11px] font-semibold">{formatCount(commentCount)}</span>
+          <Icon name="MessageDots" size={32} className="action-icon-glyph" />
+          <span className="text-white text-xs font-semibold">{formatCount(commentCount)}</span>
         </button>
 
         {/* Send / Share */}
@@ -537,13 +533,11 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         <button
           onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowMore(true); }}
           onClick={() => setShowMore(true)}
-          className="flex flex-col items-center gap-0.5"
+          className="flex flex-col items-center gap-1"
           style={{ touchAction: "manipulation" }}
           title="Ещё действия"
         >
-          <div className="action-icon-circle w-8 h-8 rounded-full flex items-center justify-center">
-            <Icon name="MoreHorizontal" size={20} className="action-icon-glyph" />
-          </div>
+          <Icon name="MoreHorizontal" size={32} className="action-icon-glyph" />
         </button>
       </div>
 
