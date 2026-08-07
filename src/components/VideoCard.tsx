@@ -508,7 +508,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           title="Ещё действия"
         >
           <div className="action-icon-circle w-11 h-11 rounded-full flex items-center justify-center">
-            <Icon name="Ellipsis" size={22} className="action-icon-glyph" />
+            <span className="text-white text-xs font-semibold">Ещё</span>
           </div>
         </button>
       </div>
@@ -549,7 +549,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         {/* Ещё */}
         <button onClick={() => setShowMore(true)} className="flex flex-col items-center gap-1" title="Ещё действия">
           <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
-            <Icon name="Ellipsis" size={22} className="action-icon-glyph" />
+            <span className="text-white text-xs font-semibold">Ещё</span>
           </div>
         </button>
       </div>
