@@ -150,7 +150,7 @@ const PostFeed = () => {
       {searchOpenedPost && <NoteViewer post={searchOpenedPost} onClose={() => setSearchOpenedPost(null)} />}
 
       {/* Top bar: вкладки Подписки/Рекомендации/Рядом + поиск + переключатель вида */}
-      <div className="absolute top-0 left-0 right-0 z-30 md:max-w-[620px] md:mx-auto bg-black/85 backdrop-blur-md flex items-center gap-1 px-2 pt-3 pb-1.5 border-b border-white/8">
+      <div className={`absolute top-0 left-0 right-0 z-30 ${viewMode === "masonry" ? "" : "md:max-w-[620px] md:mx-auto"} bg-black/85 backdrop-blur-md flex items-center gap-1 px-2 pt-3 pb-1.5 border-b border-white/8`}>
         <div className="flex-1 flex items-center gap-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
           {SCOPES.map((s) => (
             <button
@@ -177,7 +177,7 @@ const PostFeed = () => {
       </div>
 
       {/* Stories row — фиксирована под вкладками, вне прокрутки постов */}
-      <div className="absolute top-[46px] left-0 right-0 z-20 md:max-w-[620px] md:mx-auto bg-black/85 backdrop-blur-md flex gap-4 px-3 py-3 overflow-x-scroll border-b border-white/8" style={{ scrollbarWidth: "none" }}>
+      <div className={`absolute top-[46px] left-0 right-0 z-20 ${viewMode === "masonry" ? "" : "md:max-w-[620px] md:mx-auto"} bg-black/85 backdrop-blur-md flex gap-4 px-3 py-3 overflow-x-scroll border-b border-white/8`} style={{ scrollbarWidth: "none" }}>
         {/* "Your story" first */}
         <input
           ref={myStoryInputRef}

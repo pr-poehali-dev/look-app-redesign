@@ -13,7 +13,7 @@ const MasonryFeed = ({ posts, loading, topPad = 0 }: { posts: Post[]; loading: b
   return (
     <div className="h-full overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
       {topPad > 0 && <div style={{ height: topPad }} aria-hidden />}
-      <div className="md:max-w-[620px] md:mx-auto px-2 pt-2 pb-24">
+      <div className="px-2 md:px-4 pt-2 pb-24">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
@@ -24,14 +24,26 @@ const MasonryFeed = ({ posts, loading, topPad = 0 }: { posts: Post[]; loading: b
             <p className="text-white/40 text-sm">Здесь пока ничего нет</p>
           </div>
         ) : (
-          <div className="flex gap-2 items-start">
-            <div className="flex-1 min-w-0">
-              {left.map((p) => <NoteCard key={p.id} post={p} onOpen={() => setOpened(p)} />)}
+          <>
+            {/* Мобильная — как было, 2 колонки на всю ширину экрана */}
+            <div className="flex gap-2 items-start md:hidden">
+              <div className="flex-1 min-w-0">
+                {left.map((p) => <NoteCard key={p.id} post={p} onOpen={() => setOpened(p)} />)}
+              </div>
+              <div className="flex-1 min-w-0">
+                {right.map((p) => <NoteCard key={p.id} post={p} onOpen={() => setOpened(p)} />)}
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              {right.map((p) => <NoteCard key={p.id} post={p} onOpen={() => setOpened(p)} />)}
+
+            {/* ПК — мозаика на всю ширину монитора, колонок больше на широких экранах */}
+            <div className="hidden md:block md:columns-3 lg:columns-4 xl:columns-5 2xl:columns-6 gap-3">
+              {posts.map((p) => (
+                <div key={p.id} style={{ breakInside: "avoid" }}>
+                  <NoteCard post={p} onOpen={() => setOpened(p)} />
+                </div>
+              ))}
             </div>
-          </div>
+          </>
         )}
       </div>
       {opened && <NoteViewer post={opened} onClose={() => setOpened(null)} />}
