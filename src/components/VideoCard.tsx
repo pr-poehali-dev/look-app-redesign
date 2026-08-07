@@ -519,14 +519,12 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         <button
           onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowShare(true); }}
           onClick={() => setShowShare(true)}
-          className="flex flex-col items-center gap-0.5"
+          className="flex flex-col items-center gap-1"
           style={{ touchAction: "manipulation" }}
           title="Поделиться"
         >
-          <div className="action-icon-circle w-8 h-8 rounded-full flex items-center justify-center">
-            <Icon name="ShareForward" size={19} className="action-icon-glyph" />
-          </div>
-          <span className="text-white text-[11px] font-semibold">{video.shares}</span>
+          <Icon name="ShareForward" size={32} className="action-icon-glyph" />
+          <span className="text-white text-xs font-semibold">{video.shares}</span>
         </button>
 
         {/* Ещё (в т.ч. сохранение в коллекцию) */}
