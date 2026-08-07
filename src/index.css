@@ -455,8 +455,7 @@ html.theme-light .media-overlay-text .action-icon-circle svg * {
   text-shadow: none !important;
   position: relative;
   z-index: 1;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.55))
-    drop-shadow(0 0 2px rgba(0, 0, 0, 0.4));
+  filter: none !important;
 }
 html .action-icon-circle .text-\[\#fe2c55\],
 html.theme-light .action-icon-circle .text-\[\#fe2c55\],
@@ -466,7 +465,7 @@ html.theme-light .action-icon-circle .text-\[\#fe2c55\] *,
 html.theme-dark .action-icon-circle .text-\[\#fe2c55\] * {
   color: #fe2c55 !important;
   stroke: #fe2c55 !important;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5)) !important;
+  filter: none !important;
 }
 html .action-icon-circle .text-\[\#ffd700\],
 html.theme-light .action-icon-circle .text-\[\#ffd700\],
@@ -476,7 +475,7 @@ html.theme-light .action-icon-circle .text-\[\#ffd700\] *,
 html.theme-dark .action-icon-circle .text-\[\#ffd700\] * {
   color: #ffd700 !important;
   stroke: #ffd700 !important;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5)) !important;
+  filter: none !important;
 }
 
 /* Иконки на красных/розовых/зелёных акцентных кнопках */
