@@ -489,21 +489,6 @@ html.theme-light .media-overlay-text .action-icon-circle svg * {
     text-shadow: none !important;
     filter: none !important;
   }
-
-  /* Главная (видео, VideoCard) в тёмной теме — оставляем как было:
-     белые иконки с тенью поверх видео. Только для светлой темы применяется
-     плоский стиль без теней, как в открытом посте Ленты. */
-  html.theme-dark .look-card-root .action-icon-glyph,
-  html.theme-dark .look-card-root .action-icon-circle svg,
-  html.theme-dark .look-card-root .action-icon-circle svg * {
-    color: #ffffff !important;
-    stroke: #ffffff !important;
-    text-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.85),
-      0 0 6px rgba(0, 0, 0, 0.4) !important;
-    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.7))
-      drop-shadow(0 0 5px rgba(0, 0, 0, 0.5)) !important;
-  }
 }
 
 /* Кнопка выбора категории на видео (главная): на мобиле лежит поверх видео —
