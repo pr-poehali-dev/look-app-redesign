@@ -444,28 +444,6 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
       {/* Right side actions — мобайл (внутри видео) */}
       <div className="absolute right-3 bottom-32 flex flex-col items-center gap-5 z-30 md:hidden">
-        {/* Avatar */}
-        <button
-          className="relative mb-2"
-          onTouchEnd={(e) => { if (isSelf) return; e.stopPropagation(); e.preventDefault(); toggleFollow(); }}
-          onClick={() => { if (!isSelf) toggleFollow(); }}
-          style={{ touchAction: "manipulation" }}
-        >
-          <div className={`w-12 h-12 rounded-full overflow-hidden border-2 ${following ? "border-[#fe2c55]" : "border-white"}`}>
-            <UserAvatar src={video.avatar} name={video.author || video.handle} alt={video.author} />
-          </div>
-          {!isSelf && !following && (
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#fe2c55] flex items-center justify-center">
-              <Icon name="Plus" size={12} className="text-white" />
-            </div>
-          )}
-          {!isSelf && following && (
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-              <Icon name="Check" size={12} className="text-white" />
-            </div>
-          )}
-        </button>
-
         {/* Like */}
         <button
           onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); toggleLike(); }}
@@ -539,25 +517,6 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
       {/* Desktop right actions — вне видео, все 7 кнопок */}
       <div className="hidden md:flex flex-col items-center gap-3 z-30 flex-shrink-0 justify-end pb-6 pl-2 pt-6" style={{ background: "var(--look-bg)" }}>
-        {/* Avatar */}
-        <button
-          onClick={() => { if (!isSelf) toggleFollow(); }}
-          className="relative mb-2"
-        >
-          <div className={`w-12 h-12 rounded-full overflow-hidden border-2 ${following ? "border-[#fe2c55]" : "border-white"}`}>
-            <UserAvatar src={video.avatar} name={video.author || video.handle} alt={video.author} />
-          </div>
-          {isSelf ? null : !following ? (
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#fe2c55] flex items-center justify-center">
-              <Icon name="Plus" size={12} className="text-white" />
-            </div>
-          ) : (
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-              <Icon name="Check" size={12} className="text-white" />
-            </div>
-          )}
-        </button>
-
         {/* Like */}
         <button onClick={() => toggleLike()} className="flex flex-col items-center gap-1">
           <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
@@ -614,6 +573,20 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
                 <Icon name="X" size={20} className="text-white/60" />
               </button>
             </div>
+
+            {/* Перейти в профиль */}
+            <button
+              onClick={() => {
+                setShowMore(false);
+                window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: video.handle } }));
+              }}
+              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3"
+            >
+              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                <Icon name="User" size={20} className="text-white" />
+              </div>
+              <span className="text-white text-sm font-medium">Перейти в профиль</span>
+            </button>
 
             {/* Скачать */}
             <button
