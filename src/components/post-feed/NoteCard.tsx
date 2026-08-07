@@ -36,8 +36,8 @@ const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
             <span className="text-white/60 text-[11px] truncate">{post.handle}</span>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
-            <Icon name="Heart" size={13} className="text-white/50" />
-            <span className="text-white/50 text-[11px]">{formatLikes(post.likes)}</span>
+            <Icon name="Heart" size={13} className="text-[#fe2c55]" />
+            <span className="text-[#fe2c55] text-[11px] font-medium">{formatLikes(post.likes)}</span>
           </div>
         </div>
       </div>
