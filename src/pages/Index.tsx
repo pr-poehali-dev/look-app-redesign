@@ -296,7 +296,7 @@ const Index = () => {
               {/* Единый стиль для ПК и телефона: кнопка с раскрывающимся списком.
                   pointer-events-none на самой строке (она на всю ширину экрана и иначе
                   перекрывает клики по кнопке звука в углу видео на ПК) — auto только на кнопках. */}
-              <div className="pointer-events-none px-4 pb-2 relative flex items-center gap-2">
+              <div className="pointer-events-none px-4 pb-2 relative flex items-center gap-2 justify-center md:justify-start">
                 <button
                   onClick={() => {
                     // Если уже в категории "Все" и открыто видео — возвращаемся в плитку
@@ -306,11 +306,11 @@ const Index = () => {
                     }
                     setMobileCatOpen((v) => !v);
                   }}
-                  className="pointer-events-auto px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap bg-white text-black flex items-center gap-1"
+                  className="pointer-events-auto px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap bg-transparent text-white/50 md:bg-white md:text-black flex items-center gap-1"
                 >
                   {activeCategory === LIVE_CATEGORY.id && <Icon name="Radio" size={13} className="text-[#fe2c55]" />}
                   {activeCategory === LIVE_CATEGORY.id ? LIVE_CATEGORY.label : (CATEGORIES.find((c) => c.id === activeCategory)?.label || "Все")}
-                  <Icon name={(activeCategory === "all" && gridOpenVideoId !== null) ? "ArrowLeft" : (mobileCatOpen ? "ChevronUp" : "ChevronDown")} size={14} />
+                  <Icon name={(activeCategory === "all" && gridOpenVideoId !== null) ? "ArrowLeft" : (mobileCatOpen ? "ChevronUp" : "ChevronDown")} size={14} className="md:text-black text-white/50" />
                 </button>
                 <button
                   onClick={toggleTheme}
