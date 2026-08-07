@@ -5,7 +5,7 @@ import SettingsScreen from "./SettingsScreen";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
-import { useFollowingList, useFollowerCount } from "@/hooks/useFollowing";
+import { useFollowingList, useFollowerCount, useFollowing } from "@/hooks/useFollowing";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
 import { getAuthor } from "@/data/authors";
 
@@ -13,7 +13,31 @@ const AVATAR = "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c
 
 interface UserItem { name: string; handle: string; avatar: string }
 
-const UserListScreen = ({ title, users, onBack, emptyText }: { title: string; users: UserItem[]; onBack: () => void; emptyText: string }) => {
+const UserListRow = ({ u, showUnfollow }: { u: UserItem; showUnfollow: boolean }) => {
+  const { following, unfollow } = useFollowing(u.handle);
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-50">
+      <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
+        <UserAvatar src={u.avatar} name={u.name} alt={u.name} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-black font-semibold text-sm">{u.name}</p>
+        <p className="text-gray-400 text-xs">@{u.handle}</p>
+      </div>
+      {showUnfollow && following && (
+        <button
+          onClick={unfollow}
+          className="flex-shrink-0 px-3 py-1.5 rounded-full border border-gray-300 text-black text-xs font-semibold active:scale-95 transition-transform"
+        >
+          Отписаться
+        </button>
+      )}
+    </div>
+  );
+};
+
+const UserListScreen = ({ title, users, onBack, emptyText, showUnfollow }: { title: string; users: UserItem[]; onBack: () => void; emptyText: string; showUnfollow?: boolean }) => {
   return (
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
       <div className="flex items-center gap-3 px-4 pt-14 pb-4 bg-white border-b border-gray-100">
@@ -30,15 +54,7 @@ const UserListScreen = ({ title, users, onBack, emptyText }: { title: string; us
       ) : (
         <div>
           {users.map((u) => (
-            <div key={u.handle} className="flex items-center gap-3 px-4 py-3 border-b border-gray-50">
-              <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
-                <UserAvatar src={u.avatar} name={u.name} alt={u.name} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-black font-semibold text-sm">{u.name}</p>
-                <p className="text-gray-400 text-xs">@{u.handle}</p>
-              </div>
-            </div>
+            <UserListRow key={u.handle} u={u} showUnfollow={!!showUnfollow} />
           ))}
         </div>
       )}
@@ -389,7 +405,7 @@ const ProfilePage = () => {
 
   if (showSettings) return <SettingsScreen onBack={() => setShowSettings(false)} />;
   if (showScreen === "followers") return <UserListScreen title="Подписчики" users={followersList} onBack={() => setShowScreen(null)} emptyText="Пока нет подписчиков" />;
-  if (showScreen === "following") return <UserListScreen title="Подписки" users={followingUsers} onBack={() => setShowScreen(null)} emptyText="Ты пока ни на кого не подписан" />;
+  if (showScreen === "following") return <UserListScreen title="Подписки" users={followingUsers} onBack={() => setShowScreen(null)} emptyText="Ты пока ни на кого не подписан" showUnfollow />;
 
   return (
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
