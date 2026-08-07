@@ -85,18 +85,18 @@ const PostCard = ({ post }: { post: Post }) => {
 
       {/* Action buttons */}
       <div className="flex items-center px-3 pt-2.5 pb-1 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <button onClick={handleLike} className="action-icon-circle w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform">
+        <div className="flex items-center gap-4">
+          <button onClick={handleLike} className="flex items-center justify-center active:scale-90 transition-transform">
             <Icon
               name="Heart"
-              size={20}
+              size={26}
               className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph transition-all duration-150"}
             />
           </button>
-          <button onClick={() => setShowComments(true)} className="action-icon-circle w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform">
-            <Icon name="MessageDots" size={20} className="action-icon-glyph" />
+          <button onClick={() => setShowComments(true)} className="flex items-center justify-center active:scale-90 transition-transform">
+            <Icon name="MessageDots" size={26} className="action-icon-glyph" />
           </button>
-          <button onClick={() => setShowShare(true)} className="action-icon-circle w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform">
+          <button onClick={() => setShowShare(true)} className="action-icon-circle w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform">
             <Icon name="ShareForward" size={19} className="action-icon-glyph" />
           </button>
         </div>
