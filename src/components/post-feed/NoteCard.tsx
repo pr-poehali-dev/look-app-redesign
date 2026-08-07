@@ -16,6 +16,7 @@ function hashId(id: number | string): number {
 
 const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
   const aspect = ASPECTS[hashId(post.id) % ASPECTS.length];
+  const hasLikes = post.likes > 0;
 
   return (
     <button
@@ -36,8 +37,8 @@ const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
             <span className="text-white/60 text-[11px] truncate">{post.handle}</span>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
-            <Icon name="Heart" size={13} className="text-[#fe2c55]" />
-            <span className="text-[#fe2c55] text-[11px] font-medium">{formatLikes(post.likes)}</span>
+            <Icon name="Heart" size={13} className={hasLikes ? "text-[#fe2c55]" : "text-white/50"} />
+            <span className={`text-[11px] ${hasLikes ? "text-[#fe2c55] font-medium" : "text-white/50"}`}>{formatLikes(post.likes)}</span>
           </div>
         </div>
       </div>
