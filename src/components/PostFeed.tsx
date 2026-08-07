@@ -8,7 +8,7 @@ import PostCard from "./post-feed/PostCard";
 import NoteViewer from "./post-feed/NoteViewer";
 import MasonryFeed from "./post-feed/MasonryFeed";
 import SearchOverlay from "./post-feed/SearchOverlay";
-import { Post, Story, MOCK_POSTS, GET_PHOTOS_URL, formatTime } from "./post-feed/PostFeedTypes";
+import { Post, Story, MOCK_POSTS, GET_PHOTOS_URL, formatTime, parseServerDate } from "./post-feed/PostFeedTypes";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
 import { useFollowingList } from "@/hooks/useFollowing";
 
@@ -48,38 +48,47 @@ const PostFeed = () => {
   }, [viewMode]);
 
   useEffect(() => {
-    fetch(`${GET_PHOTOS_URL}?type=image`)
-      .then(r => r.json())
-      .then(raw => {
-        const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const dbPosts: Post[] = (data.videos || []).map((v: any) => {
-          const desc: string = v.description || "";
-          const hashtagsField: string = v.hashtags || "";
-          const tags = hashtagsField
-            ? (hashtagsField.match(/#\S+/g) || hashtagsField.split(/[\s,]+/).filter(Boolean).map((t: string) => t.replace(/^#/, ""))).map((t: string) => t.replace(/^#/, ""))
-            : (desc.match(/#\S+/g) || []).map((t: string) => t.slice(1));
-          const caption = desc || "Фото";
-          // Аватарка: берём из БД если есть. Подставляем свою — только если это пост текущего пользователя
-          const isMyPost = (v.handle && user?.handle && v.handle === user.handle)
-            || (v.author && user?.name && v.author === user.name)
-            || v.author === "Я";
-          const dbAvatar = v.avatar || v.user_avatar || null;
-          return {
-            id: v.id,
-            author: (v.author === "Я" || !v.author) ? (user?.name || "Пользователь") : v.author,
-            handle: (v.handle === "user" || !v.handle) ? (user?.handle || user?.name || "user") : v.handle,
-            avatar: dbAvatar || (isMyPost ? (user?.avatar || "") : ""),
-            image: v.url,
-            caption,
-            hashtags: tags,
-            likes: parseInt(v.likes) || 0,
-            comments: parseInt(v.comments) || 0,
-            time: formatTime(v.created_at),
-          };
-        });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mapPost = (v: any, isVideo: boolean): Post => {
+      const desc: string = v.description || "";
+      const hashtagsField: string = v.hashtags || "";
+      const tags = hashtagsField
+        ? (hashtagsField.match(/#\S+/g) || hashtagsField.split(/[\s,]+/).filter(Boolean).map((t: string) => t.replace(/^#/, ""))).map((t: string) => t.replace(/^#/, ""))
+        : (desc.match(/#\S+/g) || []).map((t: string) => t.slice(1));
+      const caption = desc || (isVideo ? "Видео" : "Фото");
+      // Аватарка: берём из БД если есть. Подставляем свою — только если это пост текущего пользователя
+      const isMyPost = (v.handle && user?.handle && v.handle === user.handle)
+        || (v.author && user?.name && v.author === user.name)
+        || v.author === "Я";
+      const dbAvatar = v.avatar || v.user_avatar || null;
+      const createdAt = v.created_at ? parseServerDate(v.created_at).getTime() : undefined;
+      return {
+        id: v.id,
+        author: (v.author === "Я" || !v.author) ? (user?.name || "Пользователь") : v.author,
+        handle: (v.handle === "user" || !v.handle) ? (user?.handle || user?.name || "user") : v.handle,
+        avatar: dbAvatar || (isMyPost ? (user?.avatar || "") : ""),
+        image: v.url,
+        caption,
+        hashtags: tags,
+        likes: parseInt(v.likes) || 0,
+        comments: parseInt(v.comments) || 0,
+        time: formatTime(v.created_at),
+        createdAt,
+        isVideo,
+      };
+    };
+
+    Promise.all([
+      fetch(`${GET_PHOTOS_URL}?type=image`).then(r => r.json()),
+      fetch(`${GET_PHOTOS_URL}?type=video`).then(r => r.json()),
+    ])
+      .then(([rawImages, rawVideos]) => {
+        const imgData = typeof rawImages.body === 'string' ? JSON.parse(rawImages.body) : rawImages;
+        const vidData = typeof rawVideos.body === 'string' ? JSON.parse(rawVideos.body) : rawVideos;
+        const dbPosts: Post[] = (imgData.videos || []).map((v) => mapPost(v, false));
+        const dbVideoPosts: Post[] = (vidData.videos || []).map((v) => mapPost(v, true));
         const seen = new Set<string>();
-        const deduped = [...dbPosts, ...MOCK_POSTS].filter(p => {
+        const deduped = [...dbPosts, ...dbVideoPosts, ...MOCK_POSTS].filter(p => {
           if (!p.image) return true;
           if (seen.has(p.image)) return false;
           seen.add(p.image);
@@ -124,7 +133,10 @@ const PostFeed = () => {
   const scopedPosts = useMemo(() => {
     if (scope === "following") {
       const set = new Set(followingHandles.map(h => h.toLowerCase()));
-      return visiblePosts.filter(p => set.has((p.handle || "").toLowerCase()));
+      // Фото и видео подписанных авторов вместе, от новых к старым
+      return visiblePosts
+        .filter(p => set.has((p.handle || "").toLowerCase()))
+        .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
     }
     if (scope === "nearby") {
       return [...visiblePosts].sort((a, b) => hashStr(String(a.id)) - hashStr(String(b.id)));

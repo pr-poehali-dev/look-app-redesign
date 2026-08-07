@@ -74,9 +74,13 @@ const PostCard = ({ post }: { post: Post }) => {
         </button>
       </div>
 
-      {/* Photo */}
+      {/* Photo / Video */}
       <div className="w-full flex-1 min-h-0 overflow-hidden bg-black flex items-center justify-center">
-        <img src={post.image} alt={post.caption} className="max-w-full max-h-full w-auto h-auto object-contain" />
+        {post.isVideo ? (
+          <video src={post.image} className="max-w-full max-h-full w-auto h-auto object-contain" controls playsInline loop />
+        ) : (
+          <img src={post.image} alt={post.caption} className="max-w-full max-h-full w-auto h-auto object-contain" />
+        )}
       </div>
 
       {/* Action buttons */}

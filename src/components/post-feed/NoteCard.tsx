@@ -27,7 +27,16 @@ const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
       style={{ breakInside: "avoid" }}
     >
       <div className="relative w-full bg-white/10" style={{ aspectRatio: aspect }}>
-        <img src={post.image} alt={post.caption} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+        {post.isVideo ? (
+          <video src={post.image} className="absolute inset-0 w-full h-full object-cover" muted playsInline preload="metadata" />
+        ) : (
+          <img src={post.image} alt={post.caption} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+        )}
+        {post.isVideo && (
+          <div className="absolute top-2 right-2 bg-black/40 rounded-full p-1.5">
+            <Icon name="Play" size={12} className="text-white" />
+          </div>
+        )}
       </div>
       <div className="p-2.5">
         <p className="text-white text-[13px] leading-snug line-clamp-2 mb-2">{post.caption}</p>
