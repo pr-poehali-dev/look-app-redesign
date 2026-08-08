@@ -29,7 +29,7 @@ interface UserMediaContextType {
   addMedia: (file: File, opts?: UploadOptions) => Promise<void>;
   repostMedia: (videoId: number) => Promise<boolean>;
   removeMedia: (id: number) => void;
-  refreshMedia: () => Promise<void>;
+  refreshMedia: (bumpVersion?: boolean) => Promise<void>;
   loading: boolean;
   removedIds: Set<number>;
   mediaVersion: number;
@@ -46,7 +46,7 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
   const [removedIds, setRemovedIds] = useState<Set<number>>(new Set());
   const [mediaVersion, setMediaVersion] = useState(0);
 
-  const refreshMedia = async () => {
+  const refreshMedia = async (bumpVersion = true) => {
     setLoading(true);
     try {
       const res = await fetch(`${USER_VIDEOS_URL}?user_id=${userId}`);
@@ -54,14 +54,18 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
       const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
       if (data.videos) {
         setUserVideos(data.videos);
-        setMediaVersion(v => v + 1);
+        // Счётчик двигаем только на реальных изменениях (загрузка/удаление/репост),
+        // а не на первом автозапросе при монтировании — иначе главная лента (VideoFeed),
+        // которая использует mediaVersion как параметр кэш-бастинга, перезапускает
+        // загрузку второй раз подряд сразу после входа, и экран "Загрузка..." мигает дважды.
+        if (bumpVersion) setMediaVersion(v => v + 1);
       }
     } catch { /* ignore */ }
     finally { setLoading(false); }
   };
 
   useEffect(() => {
-    refreshMedia();
+    refreshMedia(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
