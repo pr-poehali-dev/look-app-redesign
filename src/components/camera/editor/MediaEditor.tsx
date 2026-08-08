@@ -4,13 +4,13 @@ import { useAuth } from "@/context/AuthContext";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { compressVideo, uploadFileDirect } from "@/lib/videoCompress";
 import { renderVideoWithOverlays } from "@/lib/videoRender";
-import { FILTERS, FONTS, TEMPLATES, EXPORT_FORMATS, type Filter, type Layer, type TextLayer, type StickerLayer, type Clip, type ExportFormat } from "./editorTypes";
+import { FILTERS, FONTS, TEMPLATES, EXPORT_FORMATS, EXPORT_QUALITIES, type Filter, type Layer, type TextLayer, type StickerLayer, type PipLayer, type Clip, type ExportFormat, type ExportQuality } from "./editorTypes";
 import EditorEmptyState from "./EditorEmptyState";
 import EditorPublishStep from "./EditorPublishStep";
 import EditorCanvas from "./EditorCanvas";
 import EditorToolbar from "./EditorToolbar";
 
-type Tab = "templates" | "clips" | "trim" | "crop" | "filter" | "adjust" | "text" | "stickers" | "music";
+type Tab = "templates" | "clips" | "trim" | "crop" | "filter" | "adjust" | "text" | "stickers" | "music" | "pip";
 
 interface Props {
   onClose: () => void;
@@ -36,6 +36,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
   const [clipVolume, setClipVolume] = useState(100);
   const [speed, setSpeed] = useState(1);
   const [exportFormat, setExportFormat] = useState<ExportFormat>("9:16");
+  const [exportQuality, setExportQuality] = useState<ExportQuality>("1080");
   const [tab, setTab] = useState<Tab>("templates");
   const [destination, setDestination] = useState<"home" | "feed" | "both">("both");
   const [category, setCategory] = useState("humor");
@@ -51,6 +52,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const musicInputRef = useRef<HTMLInputElement>(null);
+  const pipInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Map<number, HTMLVideoElement>>(new Map());
@@ -136,6 +138,24 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
     setActiveLayerId(id);
   };
 
+  const addPip = (file: File) => {
+    const id = Date.now();
+    const newLayer: PipLayer = {
+      id,
+      type: "pip",
+      url: URL.createObjectURL(file),
+      mediaType: file.type.startsWith("video") ? "video" : "image",
+      x: 78,
+      y: 22,
+      size: 32,
+      rotation: 0,
+      shape: "rect",
+    };
+    setLayers((s) => [...s, newLayer]);
+    setActiveLayerId(id);
+    setTab("pip");
+  };
+
   const updateLayer = (id: number, patch: Partial<Layer>) => {
     setLayers((s) => s.map((l) => (l.id === id ? { ...l, ...patch } as Layer : l)));
   };
@@ -215,9 +235,10 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
   const captureFrame = async (): Promise<Blob | null> => {
     if (!active) return null;
     const canvas = document.createElement("canvas");
-    const size = 1080;
+    const quality = EXPORT_QUALITIES.find((q) => q.id === exportQuality) || EXPORT_QUALITIES[1];
+    const size = Math.round((1080 * quality.scale) / 2) * 2;
     canvas.width = size;
-    canvas.height = Math.round(size * 1.5);
+    canvas.height = Math.round((size * 1.5) / 2) * 2;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
 
@@ -284,12 +305,47 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
         }
         ctx.fillStyle = l.color;
         ctx.fillText(l.text, 0, 0);
-      } else {
+      } else if (l.type === "sticker") {
         const fontSize = (l.size / 100) * canvas.height * 0.1;
         ctx.font = `${fontSize}px sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(l.emoji, 0, 0);
+      } else if (l.type === "pip") {
+        const pipMedia = l.mediaType === "image" ? new Image() : videoRefs.current.get(l.id);
+        const box = (l.size / 100) * canvas.width;
+        const draw = (media: HTMLImageElement | HTMLVideoElement) => {
+          const mw = (media as HTMLImageElement).naturalWidth || (media as HTMLVideoElement).videoWidth || box;
+          const mh = (media as HTMLImageElement).naturalHeight || (media as HTMLVideoElement).videoHeight || box;
+          const scale = Math.max(box / mw, box / mh);
+          const dw = mw * scale;
+          const dh = mh * scale;
+          ctx.save();
+          if (l.shape === "circle") {
+            ctx.beginPath();
+            ctx.arc(0, 0, box / 2, 0, Math.PI * 2);
+            ctx.clip();
+          } else {
+            const r = box * 0.08;
+            const half = box / 2;
+            ctx.beginPath();
+            ctx.moveTo(-half + r, -half);
+            ctx.arcTo(half, -half, half, half, r);
+            ctx.arcTo(half, half, -half, half, r);
+            ctx.arcTo(-half, half, -half, -half, r);
+            ctx.arcTo(-half, -half, half, -half, r);
+            ctx.closePath();
+            ctx.clip();
+          }
+          ctx.drawImage(media, -dw / 2, -dh / 2, dw, dh);
+          ctx.restore();
+        };
+        if (l.mediaType === "image" && pipMedia instanceof HTMLImageElement) {
+          // изображение может ещё не быть загружено — рисуем синхронно, если готово, иначе пропускаем кадр
+          if (pipMedia.complete && pipMedia.naturalWidth > 0) draw(pipMedia);
+        } else if (pipMedia) {
+          draw(pipMedia);
+        }
       }
       ctx.restore();
     }
@@ -305,6 +361,9 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
     try {
       const isVideo = active.type === "video";
       const fmt = EXPORT_FORMATS.find((f) => f.id === exportFormat) || EXPORT_FORMATS[0];
+      const quality = EXPORT_QUALITIES.find((q) => q.id === exportQuality) || EXPORT_QUALITIES[1];
+      const outW = Math.round((fmt.w * quality.scale) / 2) * 2;
+      const outH = Math.round((fmt.h * quality.scale) / 2) * 2;
 
       let file: File;
 
@@ -315,8 +374,8 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
           file = await renderVideoWithOverlays({
             clipUrl: active.url,
             clipType: "video",
-            outWidth: fmt.w,
-            outHeight: fmt.h,
+            outWidth: outW,
+            outHeight: outH,
             filter,
             brightness,
             contrast,
@@ -439,6 +498,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
       <input ref={galleryInputRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => { addClips(e.target.files); e.target.value = ""; }} />
       <input ref={cameraInputRef} type="file" accept="image/*,video/*" capture="environment" className="hidden" onChange={(e) => { addClips(e.target.files); e.target.value = ""; }} />
       <input ref={musicInputRef} type="file" accept="audio/*" className="hidden" onChange={handleMusicUpload} />
+      <input ref={pipInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) addPip(f); e.target.value = ""; }} />
 
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-12 pb-3 border-b border-white/10">
@@ -516,6 +576,9 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
         setSpeed={setSpeed}
         exportFormat={exportFormat}
         setExportFormat={setExportFormat}
+        exportQuality={exportQuality}
+        setExportQuality={setExportQuality}
+        pipInputRef={pipInputRef}
       />
     </div>
   );

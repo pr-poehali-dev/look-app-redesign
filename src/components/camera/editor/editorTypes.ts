@@ -11,6 +11,17 @@ export const FILTERS: { id: Filter; label: string; css: string }[] = [
   { id: "dream", label: "Мечта", css: "blur(0.4px) saturate(1.2) brightness(1.05)" },
 ];
 
+export type LayerAnimation = "none" | "fadein" | "slideup" | "pop" | "bounce" | "pulse";
+
+export const LAYER_ANIMATIONS: { id: LayerAnimation; label: string }[] = [
+  { id: "none", label: "Без" },
+  { id: "fadein", label: "Плавно" },
+  { id: "slideup", label: "Снизу" },
+  { id: "pop", label: "Появление" },
+  { id: "bounce", label: "Прыжок" },
+  { id: "pulse", label: "Пульс" },
+];
+
 export interface TextLayer {
   id: number;
   type: "text";
@@ -22,6 +33,7 @@ export interface TextLayer {
   font: string;
   bg: string;
   rotation: number;
+  animation?: LayerAnimation;
 }
 
 export interface StickerLayer {
@@ -32,9 +44,24 @@ export interface StickerLayer {
   y: number;
   size: number;
   rotation: number;
+  animation?: LayerAnimation;
 }
 
-export type Layer = TextLayer | StickerLayer;
+export type PipShape = "rect" | "circle";
+
+export interface PipLayer {
+  id: number;
+  type: "pip";
+  url: string;
+  mediaType: "video" | "image";
+  x: number;
+  y: number;
+  size: number; // % от ширины холста, квадратный бокс
+  rotation: number;
+  shape: PipShape;
+}
+
+export type Layer = TextLayer | StickerLayer | PipLayer;
 
 export interface Clip {
   id: number;
@@ -50,10 +77,20 @@ export interface Clip {
 
 export type ExportFormat = "9:16" | "1:1" | "16:9";
 
+// Базовые (короткая сторона = 1080, соответствует Full HD-качеству по умолчанию)
 export const EXPORT_FORMATS: { id: ExportFormat; label: string; hint: string; w: number; h: number }[] = [
   { id: "9:16", label: "TikTok / Shorts", hint: "Вертикальное", w: 1080, h: 1920 },
   { id: "1:1", label: "Квадрат", hint: "Лента / Stories", w: 1080, h: 1080 },
   { id: "16:9", label: "YouTube", hint: "Горизонтальное", w: 1920, h: 1080 },
+];
+
+export type ExportQuality = "720" | "1080" | "4k";
+
+// Множитель к базовому размеру формата (короткая сторона: 720 / 1080 / 2160)
+export const EXPORT_QUALITIES: { id: ExportQuality; label: string; hint: string; scale: number }[] = [
+  { id: "720", label: "720p", hint: "Меньше вес", scale: 720 / 1080 },
+  { id: "1080", label: "1080p", hint: "Full HD", scale: 1 },
+  { id: "4k", label: "4K", hint: "Макс. качество", scale: 2160 / 1080 },
 ];
 
 export interface EditorState {

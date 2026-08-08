@@ -1,8 +1,8 @@
 import { RefObject, useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
-import { FILTERS, FONTS, TEXT_COLORS, BG_COLORS, STICKERS, TEMPLATES, EXPORT_FORMATS, Filter, Layer, Clip, ExportFormat } from "./editorTypes";
+import { FILTERS, FONTS, TEXT_COLORS, BG_COLORS, STICKERS, TEMPLATES, EXPORT_FORMATS, EXPORT_QUALITIES, Filter, Layer, Clip, ExportFormat, ExportQuality } from "./editorTypes";
 
-type Tab = "templates" | "clips" | "trim" | "crop" | "filter" | "adjust" | "text" | "stickers" | "music";
+type Tab = "templates" | "clips" | "trim" | "crop" | "filter" | "adjust" | "text" | "stickers" | "music" | "pip";
 
 interface Props {
   tab: Tab;
@@ -50,6 +50,9 @@ interface Props {
   setSpeed: (v: number) => void;
   exportFormat: ExportFormat;
   setExportFormat: (f: ExportFormat) => void;
+  exportQuality: ExportQuality;
+  setExportQuality: (q: ExportQuality) => void;
+  pipInputRef: RefObject<HTMLInputElement>;
 }
 
 const EditorToolbar = ({
@@ -98,6 +101,9 @@ const EditorToolbar = ({
   setSpeed,
   exportFormat,
   setExportFormat,
+  exportQuality,
+  setExportQuality,
+  pipInputRef,
 }: Props) => {
   return (
     <div className="bg-zinc-900 border-t border-white/10">
@@ -158,6 +164,17 @@ const EditorToolbar = ({
                   <button key={f.id} onClick={() => setExportFormat(f.id)} className={`flex-1 py-1.5 rounded-lg text-[11px] flex flex-col items-center ${exportFormat === f.id ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white/70"}`}>
                     <span className="font-semibold">{f.id}</span>
                     <span className="opacity-80 text-[9px]">{f.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-white/60 text-xs block mb-1">Качество экспорта</label>
+              <div className="flex gap-1.5">
+                {EXPORT_QUALITIES.map((q) => (
+                  <button key={q.id} onClick={() => setExportQuality(q.id)} className={`flex-1 py-1.5 rounded-lg text-[11px] flex flex-col items-center ${exportQuality === q.id ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white/70"}`}>
+                    <span className="font-semibold">{q.label}</span>
+                    <span className="opacity-80 text-[9px]">{q.hint}</span>
                   </button>
                 ))}
               </div>
@@ -273,6 +290,14 @@ const EditorToolbar = ({
             </div>
           </div>
         )}
+        {tab === "pip" && (
+          <div className="space-y-2">
+            <button onClick={() => pipInputRef.current?.click()} className="px-3 py-1.5 rounded-lg bg-[#fe2c55] text-white text-sm flex items-center gap-1">
+              <Icon name="PictureInPicture2" size={14} /> Добавить видео/фото
+            </button>
+            <p className="text-white/40 text-xs">Наложи второй ролик или фото поверх основного — как окошко «картинка-в-картинке». Перемести и измени размер прямо на холсте.</p>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
@@ -286,6 +311,7 @@ const EditorToolbar = ({
           { id: "adjust", icon: "SlidersHorizontal", label: "Цвет" },
           { id: "text", icon: "Type", label: "Текст" },
           { id: "stickers", icon: "Smile", label: "Стикеры" },
+          { id: "pip", icon: "PictureInPicture2", label: "PiP" },
           { id: "music", icon: "Music", label: "Музыка" },
         ] as const).map((t) => (
           <button

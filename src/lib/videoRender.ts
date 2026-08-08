@@ -23,6 +23,35 @@ export interface RenderOptions {
   onProgress?: (percent: number) => void;
 }
 
+// Длительность анимации появления текста/стикеров/PiP (сек)
+const ANIM_DUR = 0.5;
+
+/** Вычисляет opacity/scale/offsetY для анимации входа + непрерывных эффектов (bounce/pulse). */
+function computeAnim(animation: string | undefined, elapsed: number): { opacity: number; scale: number; offsetY: number } {
+  const t = Math.max(0, Math.min(1, elapsed / ANIM_DUR));
+  // ease-out
+  const eo = 1 - Math.pow(1 - t, 3);
+  switch (animation) {
+    case "fadein":
+      return { opacity: eo, scale: 1, offsetY: 0 };
+    case "slideup":
+      return { opacity: eo, scale: 1, offsetY: (1 - eo) * 40 };
+    case "pop":
+      return { opacity: eo, scale: 0.4 + eo * 0.6, offsetY: 0 };
+    case "bounce": {
+      const settle = eo;
+      const loop = elapsed > ANIM_DUR ? Math.abs(Math.sin((elapsed - ANIM_DUR) * 2)) * 6 : 0;
+      return { opacity: settle, scale: 1, offsetY: -loop };
+    }
+    case "pulse": {
+      const pulse = elapsed > ANIM_DUR ? 1 + Math.sin((elapsed - ANIM_DUR) * 3) * 0.05 : 0.4 + eo * 0.6;
+      return { opacity: eo, scale: pulse, offsetY: 0 };
+    }
+    default:
+      return { opacity: 1, scale: 1, offsetY: 0 };
+  }
+}
+
 function buildFilterString(o: RenderOptions): string {
   const base = FILTERS.find((f) => f.id === o.filter)?.css || "none";
   const adj = `brightness(${o.brightness}%) contrast(${o.contrast}%) saturate(${o.saturation}%)`;
@@ -43,13 +72,24 @@ function pickMimeType(): string {
   return "video/webm";
 }
 
-function drawLayers(ctx: CanvasRenderingContext2D, layers: Layer[], W: number, H: number) {
+function drawLayers(
+  ctx: CanvasRenderingContext2D,
+  layers: Layer[],
+  W: number,
+  H: number,
+  elapsed: number,
+  pipElements?: Map<number, HTMLVideoElement | HTMLImageElement>,
+) {
   for (const l of layers) {
+    const anim = computeAnim((l as { animation?: string }).animation, elapsed);
+    if (anim.opacity <= 0.01) continue;
     ctx.save();
+    ctx.globalAlpha = anim.opacity;
     const cx = (l.x / 100) * W;
-    const cy = (l.y / 100) * H;
+    const cy = (l.y / 100) * H + anim.offsetY;
     ctx.translate(cx, cy);
     ctx.rotate((l.rotation * Math.PI) / 180);
+    ctx.scale(anim.scale, anim.scale);
     if (l.type === "text") {
       const fontSize = (l.size / 100) * H * 0.08;
       ctx.font = `bold ${fontSize}px ${l.font}`;
@@ -63,12 +103,53 @@ function drawLayers(ctx: CanvasRenderingContext2D, layers: Layer[], W: number, H
       }
       ctx.fillStyle = l.color;
       ctx.fillText(l.text, 0, 0);
-    } else {
+    } else if (l.type === "sticker") {
       const fontSize = (l.size / 100) * H * 0.1;
       ctx.font = `${fontSize}px sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(l.emoji, 0, 0);
+    } else if (l.type === "pip") {
+      const media = pipElements?.get(l.id);
+      const box = (l.size / 100) * W;
+      if (media) {
+        const mw = (media as HTMLVideoElement).videoWidth || (media as HTMLImageElement).naturalWidth || box;
+        const mh = (media as HTMLVideoElement).videoHeight || (media as HTMLImageElement).naturalHeight || box;
+        const scale = Math.max(box / mw, box / mh);
+        const dw = mw * scale;
+        const dh = mh * scale;
+        ctx.save();
+        if (l.shape === "circle") {
+          ctx.beginPath();
+          ctx.arc(0, 0, box / 2, 0, Math.PI * 2);
+          ctx.clip();
+        } else {
+          ctx.beginPath();
+          const r = box * 0.08;
+          const half = box / 2;
+          ctx.moveTo(-half + r, -half);
+          ctx.arcTo(half, -half, half, half, r);
+          ctx.arcTo(half, half, -half, half, r);
+          ctx.arcTo(-half, half, -half, -half, r);
+          ctx.arcTo(-half, -half, half, -half, r);
+          ctx.closePath();
+          ctx.clip();
+        }
+        ctx.drawImage(media, -dw / 2, -dh / 2, dw, dh);
+        ctx.restore();
+        // рамка поверх
+        ctx.save();
+        ctx.strokeStyle = "rgba(255,255,255,0.85)";
+        ctx.lineWidth = Math.max(2, box * 0.015);
+        if (l.shape === "circle") {
+          ctx.beginPath();
+          ctx.arc(0, 0, box / 2, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          ctx.strokeRect(-box / 2, -box / 2, box, box);
+        }
+        ctx.restore();
+      }
     }
     ctx.restore();
   }
@@ -115,6 +196,43 @@ export async function renderVideoWithOverlays(o: RenderOptions): Promise<File> {
   const fps = 30;
   const speed = o.speed && o.speed > 0 ? o.speed : 1;
 
+  // --- PiP layers: подготавливаем видео/изображения для наложения ---
+  const pipLayers = o.layers.filter((l) => l.type === "pip") as Extract<Layer, { type: "pip" }>[];
+  const pipElements = new Map<number, HTMLVideoElement | HTMLImageElement>();
+  await Promise.all(
+    pipLayers.map(async (l) => {
+      if (l.mediaType === "image") {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        await new Promise<void>((res) => { img.onload = () => res(); img.onerror = () => res(); img.src = l.url; });
+        pipElements.set(l.id, img);
+      } else {
+        const v = document.createElement("video");
+        v.src = l.url;
+        v.crossOrigin = "anonymous";
+        v.muted = true;
+        v.loop = true;
+        v.playsInline = true;
+        await new Promise<void>((res) => {
+          const onMeta = () => { v.removeEventListener("loadedmetadata", onMeta); res(); };
+          v.addEventListener("loadedmetadata", onMeta);
+          setTimeout(res, 3000);
+        });
+        pipElements.set(l.id, v);
+      }
+    }),
+  );
+  const startPipPlayback = () => {
+    pipElements.forEach((el) => {
+      if (el instanceof HTMLVideoElement) el.play().catch(() => {});
+    });
+  };
+  const stopPipPlayback = () => {
+    pipElements.forEach((el) => {
+      if (el instanceof HTMLVideoElement) { try { el.pause(); } catch { /* noop */ } }
+    });
+  };
+
   // --- AUDIO graph ---
   const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
   const audioCtx = new AudioCtx();
@@ -158,12 +276,13 @@ export async function renderVideoWithOverlays(o: RenderOptions): Promise<File> {
       recorder.onstop = () => resolve();
       recorder.start();
       if (musicEl) { audioCtx.resume(); musicEl.play().catch(() => {}); }
+      startPipPlayback();
       const loop = () => {
         const elapsed = performance.now() - startedAt;
         ctx.fillStyle = "#000";
         ctx.fillRect(0, 0, W, H);
         drawMediaCover(ctx, img, W, H, o.rotation, o.flipH, filterStr);
-        drawLayers(ctx, o.layers, W, H);
+        drawLayers(ctx, o.layers, W, H, elapsed / 1000, pipElements);
         o.onProgress?.(Math.min(99, (elapsed / durationMs) * 100));
         if (elapsed >= durationMs) { recorder.stop(); return; }
         requestAnimationFrame(loop);
@@ -171,6 +290,7 @@ export async function renderVideoWithOverlays(o: RenderOptions): Promise<File> {
       requestAnimationFrame(loop);
     });
 
+    stopPipPlayback();
     cleanup();
     const blob = new Blob(chunks, { type: mime.includes("mp4") ? "video/mp4" : "video/webm" });
     const ext = mime.includes("mp4") ? "mp4" : "webm";
@@ -214,12 +334,14 @@ export async function renderVideoWithOverlays(o: RenderOptions): Promise<File> {
   video.currentTime = trimStart;
   await new Promise<void>((r) => { const f = () => { video.removeEventListener("seeked", f); r(); }; video.addEventListener("seeked", f); setTimeout(r, 1500); });
 
+  const videoStartedAt = performance.now();
   await new Promise<void>((resolve) => {
     recorder.onstop = () => resolve();
     recorder.start();
     if (musicEl) { musicEl.play().catch(() => {}); }
     audioCtx.resume().catch(() => {});
     video.play().catch(() => {});
+    startPipPlayback();
 
     const loop = () => {
       if (video.currentTime >= trimEnd || video.ended) {
@@ -230,7 +352,7 @@ export async function renderVideoWithOverlays(o: RenderOptions): Promise<File> {
       ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, W, H);
       drawMediaCover(ctx, video, W, H, o.rotation, o.flipH, filterStr);
-      drawLayers(ctx, o.layers, W, H);
+      drawLayers(ctx, o.layers, W, H, (performance.now() - videoStartedAt) / 1000, pipElements);
       const prog = ((video.currentTime - trimStart) / segDur) * 100;
       o.onProgress?.(Math.max(0, Math.min(99, prog)));
       requestAnimationFrame(loop);
@@ -238,6 +360,7 @@ export async function renderVideoWithOverlays(o: RenderOptions): Promise<File> {
     requestAnimationFrame(loop);
   });
 
+  stopPipPlayback();
   cleanup();
   const blob = new Blob(chunks, { type: mime.includes("mp4") ? "video/mp4" : "video/webm" });
   const ext = mime.includes("mp4") ? "mp4" : "webm";

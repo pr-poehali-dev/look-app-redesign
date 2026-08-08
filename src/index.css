@@ -65,6 +65,71 @@
   animation-play-state: paused;
 }
 
+/* === Анимации текстовых/стикер-слоёв в видеоредакторе (превью на холсте) === */
+@keyframes layer-anim-fadein-kf {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.layer-anim-fadein {
+  animation: layer-anim-fadein-kf 0.5s ease-out both;
+}
+@keyframes layer-anim-slideup-kf {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 24px)) rotate(var(--layer-rot, 0deg));
+  }
+  to {
+    opacity: 1;
+  }
+}
+.layer-anim-slideup {
+  animation: layer-anim-slideup-kf 0.5s ease-out both;
+}
+@keyframes layer-anim-pop-kf {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4) rotate(var(--layer-rot, 0deg));
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(1.08) rotate(var(--layer-rot, 0deg));
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotate(var(--layer-rot, 0deg));
+  }
+}
+.layer-anim-pop {
+  animation: layer-anim-pop-kf 0.5s ease-out both;
+}
+@keyframes layer-anim-bounce-kf {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translateY(0);
+  }
+  50% {
+    transform: translate(-50%, -50%) translateY(-8px);
+  }
+}
+.layer-anim-bounce {
+  animation: layer-anim-bounce-kf 1s ease-in-out infinite;
+}
+@keyframes layer-anim-pulse-kf {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+.layer-anim-pulse {
+  animation: layer-anim-pulse-kf 1.2s ease-in-out infinite;
+}
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
