@@ -440,7 +440,7 @@ html.theme-dark .action-icon-circle:active {
   box-shadow: none !important;
 }
 /* На мобиле кнопки действий лежат ПРЯМО НА ВИДЕО/ФОТО (произвольная яркость
-   фона) — иконки и цифры остаются белыми с тенью для читаемости в любой теме. */
+   фона) — иконки и цифры остаются белыми, без тени. */
 html .action-icon-glyph,
 html.theme-dark .action-icon-glyph,
 html.theme-light .action-icon-glyph,
@@ -455,11 +455,8 @@ html.theme-dark .media-overlay-text .action-icon-circle svg *,
 html.theme-light .media-overlay-text .action-icon-circle svg * {
   color: #ffffff !important;
   stroke: #ffffff !important;
-  text-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.85),
-    0 0 6px rgba(0, 0, 0, 0.4) !important;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.7))
-    drop-shadow(0 0 5px rgba(0, 0, 0, 0.5)) !important;
+  text-shadow: none !important;
+  filter: none !important;
   position: relative;
   z-index: 1;
 }
@@ -470,9 +467,7 @@ html .media-overlay-text .action-count-text,
 html.theme-dark .media-overlay-text .action-count-text,
 html.theme-light .media-overlay-text .action-count-text {
   color: #ffffff !important;
-  text-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.85),
-    0 0 6px rgba(0, 0, 0, 0.4) !important;
+  text-shadow: none !important;
 }
 
 /* На ПК (главная лента видео и Лента постов) кнопки действий лежат на сплошном
