@@ -519,6 +519,17 @@ html.theme-light .action-count-text {
     -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
   }
+  /* На мобиле кнопка лежит поверх видео произвольной яркости — текст и иконка
+     остаются белыми независимо от темы сайта (иначе на светлой теме текст
+     становится тёмным и сливается с тёмной подложкой). */
+  html.theme-light .cat-toggle-text.cat-toggle-mobile-bg,
+  html.theme-dark .cat-toggle-text.cat-toggle-mobile-bg {
+    color: #ffffff !important;
+  }
+  html.theme-light .cat-toggle-mobile-bg .cat-toggle-icon,
+  html.theme-dark .cat-toggle-mobile-bg .cat-toggle-icon {
+    color: #ffffff !important;
+  }
 }
 
 /* Иконки на красных/розовых/зелёных акцентных кнопках */
