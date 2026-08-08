@@ -395,11 +395,18 @@ html.theme-dark .media-overlay-text .text-black {
   text-shadow: none !important;
 }
 /* Исключение: плюсик кнопки "Создать" в нижнем меню — лежит на белом кружке,
-   поэтому остаётся тёмно-зелёным, а не белым (иначе сливается с белым фоном). */
+   поэтому остаётся тёмно-зелёным, а не белым (иначе сливается с белым фоном).
+   Важно: красим И сам svg, И все его внутренние path/line — иначе правило
+   ".media-overlay-text *" выше красит именно внутренние элементы иконки в белый
+   напрямую (в обход цвета родителя), и плюс становится невидимым (белый на белом). */
 html .media-overlay-text .add-tab-plus-icon,
+html .media-overlay-text .add-tab-plus-icon *,
 html.theme-light .media-overlay-text .add-tab-plus-icon,
-html.theme-dark .media-overlay-text .add-tab-plus-icon {
+html.theme-light .media-overlay-text .add-tab-plus-icon *,
+html.theme-dark .media-overlay-text .add-tab-plus-icon,
+html.theme-dark .media-overlay-text .add-tab-plus-icon * {
   color: #1f6b3a !important;
+  stroke: #1f6b3a !important;
 }
 
 /* === Иконки на тёмных подложках всегда остаются белыми ===
