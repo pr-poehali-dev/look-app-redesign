@@ -483,7 +483,10 @@ html.theme-light .media-overlay-text .action-icon-circle svg * {
   html.theme-light .action-icon-circle svg,
   html .action-icon-circle svg *,
   html.theme-dark .action-icon-circle svg *,
-  html.theme-light .action-icon-circle svg * {
+  html.theme-light .action-icon-circle svg *,
+  html .media-overlay-text .action-icon-circle svg *,
+  html.theme-dark .media-overlay-text .action-icon-circle svg *,
+  html.theme-light .media-overlay-text .action-icon-circle svg * {
     color: var(--look-fg) !important;
     stroke: var(--look-fg) !important;
     text-shadow: none !important;
