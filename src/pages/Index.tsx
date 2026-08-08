@@ -432,7 +432,7 @@ const Index = () => {
                     <div className="w-10 h-7 rounded-lg absolute left-0" style={{ background: "var(--look-accent)", opacity: 0.6 }} />
                     <div className="w-10 h-7 rounded-lg absolute right-0" style={{ background: "var(--look-accent)" }} />
                     <div className="w-10 h-7 rounded-lg flex items-center justify-center relative z-10 mx-auto" style={{ background: "#ffffff", border: "1.5px solid rgba(0,0,0,0.15)" }}>
-                      <Icon name="Plus" size={18} strokeWidth={3} style={{ color: "#1f6b3a" }} />
+                      <Icon name="Plus" size={18} strokeWidth={3} className="add-tab-plus-icon" style={{ color: "#1f6b3a" }} />
                     </div>
                   </div>
                 ) : (

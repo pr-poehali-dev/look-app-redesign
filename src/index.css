@@ -394,6 +394,13 @@ html.theme-dark .media-overlay-text .text-black {
   color: var(--look-fg) !important;
   text-shadow: none !important;
 }
+/* Исключение: плюсик кнопки "Создать" в нижнем меню — лежит на белом кружке,
+   поэтому остаётся тёмно-зелёным, а не белым (иначе сливается с белым фоном). */
+html .media-overlay-text .add-tab-plus-icon,
+html.theme-light .media-overlay-text .add-tab-plus-icon,
+html.theme-dark .media-overlay-text .add-tab-plus-icon {
+  color: #1f6b3a !important;
+}
 
 /* === Иконки на тёмных подложках всегда остаются белыми ===
    Любые иконки lucide лежащие внутри полупрозрачных тёмных фонов
