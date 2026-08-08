@@ -470,6 +470,27 @@ html.theme-light .media-overlay-text .action-count-text {
   text-shadow: none !important;
 }
 
+/* Мобайл: тёмная полупрозрачная подложка под иконкой/цифрой действий —
+   держит белый цвет читаемым и на светлом, и на тёмном видео, без тени. */
+.action-icon-mobile-bg {
+  background: rgba(0, 0, 0, 0.32) !important;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.action-count-mobile-bg {
+  background: rgba(0, 0, 0, 0.28) !important;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+@media (min-width: 768px) {
+  .action-icon-mobile-bg,
+  .action-count-mobile-bg {
+    background: transparent !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
 /* На ПК (главная лента видео и Лента постов) кнопки действий лежат на сплошном
    фоне темы, а не поверх медиа — тени убираем, цвет берём из темы (тёмный на
    светлом фоне, белый на тёмном), чтобы иконки были видны в обеих темах. */

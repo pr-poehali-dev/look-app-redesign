@@ -495,12 +495,14 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           style={{ touchAction: "manipulation" }}
           title="Нравится"
         >
-          <Icon
-            name="Heart"
-            size={32}
-            className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"}
-          />
-          <span className="action-count-text text-white text-xs font-semibold">{formatCount(likeCount)}</span>
+          <div className="action-icon-mobile-bg w-10 h-10 rounded-full flex items-center justify-center">
+            <Icon
+              name="Heart"
+              size={26}
+              className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"}
+            />
+          </div>
+          <span className="action-count-text action-count-mobile-bg px-1.5 py-0.5 rounded-full text-white text-xs font-semibold">{formatCount(likeCount)}</span>
         </button>
 
         {/* Comment */}
@@ -511,8 +513,10 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           style={{ touchAction: "manipulation" }}
           title="Комментарии"
         >
-          <Icon name="MessageDots" size={32} className="action-icon-glyph" />
-          <span className="action-count-text text-white text-xs font-semibold">{formatCount(commentCount)}</span>
+          <div className="action-icon-mobile-bg w-10 h-10 rounded-full flex items-center justify-center">
+            <Icon name="MessageDots" size={26} className="action-icon-glyph" />
+          </div>
+          <span className="action-count-text action-count-mobile-bg px-1.5 py-0.5 rounded-full text-white text-xs font-semibold">{formatCount(commentCount)}</span>
         </button>
 
         {/* Send / Share */}
@@ -523,8 +527,10 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           style={{ touchAction: "manipulation" }}
           title="Поделиться"
         >
-          <Icon name="ShareForward" size={32} className="action-icon-glyph" />
-          <span className="action-count-text text-white text-xs font-semibold">{video.shares}</span>
+          <div className="action-icon-mobile-bg w-10 h-10 rounded-full flex items-center justify-center">
+            <Icon name="ShareForward" size={26} className="action-icon-glyph" />
+          </div>
+          <span className="action-count-text action-count-mobile-bg px-1.5 py-0.5 rounded-full text-white text-xs font-semibold">{video.shares}</span>
         </button>
 
         {/* Ещё (в т.ч. сохранение в коллекцию) */}
@@ -535,7 +541,9 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           style={{ touchAction: "manipulation" }}
           title="Ещё действия"
         >
-          <span className="action-count-text text-white text-sm font-bold leading-none">Ещё</span>
+          <div className="action-icon-mobile-bg w-10 h-10 rounded-full flex items-center justify-center">
+            <span className="action-count-text text-white text-xs font-bold leading-none">Ещё</span>
+          </div>
         </button>
       </div>
 
