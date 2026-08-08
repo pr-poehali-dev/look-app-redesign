@@ -500,7 +500,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             size={32}
             className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"}
           />
-          <span className="text-white text-xs font-semibold">{formatCount(likeCount)}</span>
+          <span className="action-count-text text-white text-xs font-semibold">{formatCount(likeCount)}</span>
         </button>
 
         {/* Comment */}
@@ -512,7 +512,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           title="Комментарии"
         >
           <Icon name="MessageDots" size={32} className="action-icon-glyph" />
-          <span className="text-white text-xs font-semibold">{formatCount(commentCount)}</span>
+          <span className="action-count-text text-white text-xs font-semibold">{formatCount(commentCount)}</span>
         </button>
 
         {/* Send / Share */}
@@ -524,7 +524,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           title="Поделиться"
         >
           <Icon name="ShareForward" size={32} className="action-icon-glyph" />
-          <span className="text-white text-xs font-semibold">{video.shares}</span>
+          <span className="action-count-text text-white text-xs font-semibold">{video.shares}</span>
         </button>
 
         {/* Ещё (в т.ч. сохранение в коллекцию) */}
@@ -535,7 +535,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           style={{ touchAction: "manipulation" }}
           title="Ещё действия"
         >
-          <span className="text-white text-sm font-bold leading-none" style={{ textShadow: "0 1px 2px rgba(0,0,0,0.85), 0 0 6px rgba(0,0,0,0.4)" }}>Ещё</span>
+          <span className="action-count-text text-white text-sm font-bold leading-none">Ещё</span>
         </button>
       </div>
 
@@ -550,7 +550,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
               className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"}
             />
           </div>
-          <span className="text-white text-xs font-semibold">{formatCount(likeCount)}</span>
+          <span className="action-count-text text-white text-xs font-semibold">{formatCount(likeCount)}</span>
         </button>
 
         {/* Comment */}
@@ -558,7 +558,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
             <Icon name="MessageDots" size={24} className="action-icon-glyph" />
           </div>
-          <span className="text-white text-xs font-semibold">{formatCount(commentCount)}</span>
+          <span className="action-count-text text-white text-xs font-semibold">{formatCount(commentCount)}</span>
         </button>
 
         {/* Share */}
@@ -566,7 +566,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
             <Icon name="ShareForward" size={22} className="action-icon-glyph" />
           </div>
-          <span className="text-white text-xs font-semibold">{video.shares}</span>
+          <span className="action-count-text text-white text-xs font-semibold">{video.shares}</span>
         </button>
 
         {/* Bookmark */}
@@ -583,7 +583,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         {/* Ещё */}
         <button onClick={() => setShowMore(true)} className="flex flex-col items-center gap-1" title="Ещё действия">
           <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
-            <span className="text-white text-xs font-semibold">Ещё</span>
+            <span className="action-count-text text-white text-xs font-semibold">Ещё</span>
           </div>
         </button>
       </div>
