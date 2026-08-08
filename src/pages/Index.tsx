@@ -308,7 +308,7 @@ const Index = () => {
                     }
                     setMobileCatOpen((v) => !v);
                   }}
-                  className="cat-toggle-text pointer-events-auto px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap bg-transparent text-white md:bg-white md:text-black flex items-center gap-1"
+                  className="cat-toggle-text cat-toggle-mobile-bg pointer-events-auto px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap text-white md:bg-white md:text-black flex items-center gap-1"
                 >
                   {activeCategory === LIVE_CATEGORY.id && <Icon name="Radio" size={13} className="text-[#fe2c55]" />}
                   {activeCategory === LIVE_CATEGORY.id ? LIVE_CATEGORY.label : (CATEGORIES.find((c) => c.id === activeCategory)?.label || "Все")}

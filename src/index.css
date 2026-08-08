@@ -439,8 +439,8 @@ html.theme-dark .action-icon-circle:active {
   transform: scale(0.88) !important;
   box-shadow: none !important;
 }
-/* На мобиле кнопки действий лежат ПРЯМО НА ВИДЕО/ФОТО (произвольная яркость
-   фона) — иконки и цифры остаются белыми, без тени. */
+/* По умолчанию (карточка на сплошном фоне темы, например открытый пост в Ленте) —
+   иконки и цифры действий красятся по теме сайта, без тени, в любой ширине экрана. */
 html .action-icon-glyph,
 html.theme-dark .action-icon-glyph,
 html.theme-light .action-icon-glyph,
@@ -450,24 +450,37 @@ html.theme-light .action-icon-circle svg,
 html .action-icon-circle svg *,
 html.theme-dark .action-icon-circle svg *,
 html.theme-light .action-icon-circle svg *,
-html .media-overlay-text .action-icon-circle svg *,
-html.theme-dark .media-overlay-text .action-icon-circle svg *,
-html.theme-light .media-overlay-text .action-icon-circle svg * {
-  color: #ffffff !important;
-  stroke: #ffffff !important;
+html .action-count-text,
+html.theme-dark .action-count-text,
+html.theme-light .action-count-text {
+  color: var(--look-fg) !important;
+  stroke: var(--look-fg) !important;
   text-shadow: none !important;
   filter: none !important;
   position: relative;
   z-index: 1;
 }
-html .action-count-text,
-html.theme-dark .action-count-text,
-html.theme-light .action-count-text,
-html .media-overlay-text .action-count-text,
-html.theme-dark .media-overlay-text .action-count-text,
-html.theme-light .media-overlay-text .action-count-text {
-  color: #ffffff !important;
-  text-shadow: none !important;
+
+/* На мобиле кнопки действий, лежащие ПРЯМО НА ВИДЕО/ФОТО (класс media-overlay-text,
+   произвольная яркость фона) — иконки и цифры остаются белыми, без тени. */
+@media (max-width: 767px) {
+  html .media-overlay-text .action-icon-glyph,
+  html.theme-dark .media-overlay-text .action-icon-glyph,
+  html.theme-light .media-overlay-text .action-icon-glyph,
+  html .media-overlay-text .action-icon-circle svg,
+  html.theme-dark .media-overlay-text .action-icon-circle svg,
+  html.theme-light .media-overlay-text .action-icon-circle svg,
+  html .media-overlay-text .action-icon-circle svg *,
+  html.theme-dark .media-overlay-text .action-icon-circle svg *,
+  html.theme-light .media-overlay-text .action-icon-circle svg *,
+  html .media-overlay-text .action-count-text,
+  html.theme-dark .media-overlay-text .action-count-text,
+  html.theme-light .media-overlay-text .action-count-text {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
 }
 
 /* Мобайл: тёмная полупрозрачная подложка под иконкой/цифрой действий —
@@ -491,55 +504,20 @@ html.theme-light .media-overlay-text .action-count-text {
   }
 }
 
-/* На ПК (главная лента видео и Лента постов) кнопки действий лежат на сплошном
-   фоне темы, а не поверх медиа — тени убираем, цвет берём из темы (тёмный на
-   светлом фоне, белый на тёмном), чтобы иконки были видны в обеих темах. */
-@media (min-width: 768px) {
-  html .action-icon-glyph,
-  html.theme-dark .action-icon-glyph,
-  html.theme-light .action-icon-glyph,
-  html .action-icon-circle svg,
-  html.theme-dark .action-icon-circle svg,
-  html.theme-light .action-icon-circle svg,
-  html .action-icon-circle svg *,
-  html.theme-dark .action-icon-circle svg *,
-  html.theme-light .action-icon-circle svg *,
-  html .media-overlay-text .action-icon-circle svg *,
-  html.theme-dark .media-overlay-text .action-icon-circle svg *,
-  html.theme-light .media-overlay-text .action-icon-circle svg * {
-    color: var(--look-fg) !important;
-    stroke: var(--look-fg) !important;
-    text-shadow: none !important;
-    filter: none !important;
-  }
-  html .action-count-text,
-  html.theme-dark .action-count-text,
-  html.theme-light .action-count-text,
-  html .media-overlay-text .action-count-text,
-  html.theme-dark .media-overlay-text .action-count-text,
-  html.theme-light .media-overlay-text .action-count-text {
-    color: var(--look-fg) !important;
-    text-shadow: none !important;
-  }
-}
-
 /* Кнопка выбора категории на видео (главная): на мобиле лежит поверх видео —
-   белый текст с тенью для читаемости; на ПК уже на сплошном белом фоне —
-   тень не нужна, просто чёрный текст. */
+   белый текст без тени на тёмной полупрозрачной подложке для читаемости
+   на любом фоне видео; на ПК уже на сплошном белом фоне — просто чёрный текст. */
 .cat-toggle-text {
-  text-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.85),
-    0 0 6px rgba(0, 0, 0, 0.4);
+  text-shadow: none;
 }
 .cat-toggle-icon {
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
+  filter: none;
 }
-@media (min-width: 768px) {
-  .cat-toggle-text {
-    text-shadow: none !important;
-  }
-  .cat-toggle-icon {
-    filter: none !important;
+@media (max-width: 767px) {
+  .cat-toggle-mobile-bg {
+    background: rgba(0, 0, 0, 0.32) !important;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
   }
 }
 
