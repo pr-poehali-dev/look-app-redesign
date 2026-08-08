@@ -385,6 +385,15 @@ html.theme-light .media-overlay-text .text-white\/40 {
 html.theme-light .media-overlay-text .text-white\/30 {
   color: rgba(255, 255, 255, 0.55) !important;
 }
+/* Исключение: активная «таблетка» вкладки (bg-white + text-black) внутри оверлея —
+   текст остаётся цвета темы (не белый), иначе .media-overlay-text * красит его в
+   белый и он сливается со светлым фоном кнопки (фон таблетки тоже цвета темы). */
+html .media-overlay-text .text-black,
+html.theme-light .media-overlay-text .text-black,
+html.theme-dark .media-overlay-text .text-black {
+  color: var(--look-fg) !important;
+  text-shadow: none !important;
+}
 
 /* === Иконки на тёмных подложках всегда остаются белыми ===
    Любые иконки lucide лежащие внутри полупрозрачных тёмных фонов

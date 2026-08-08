@@ -419,7 +419,7 @@ const Index = () => {
         </div>
 
         {/* Bottom Tab Bar (mobile only) */}
-        <div className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black to-transparent md:hidden">
+        <div className="media-overlay-text absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black to-transparent md:hidden">
           <div className="flex items-center justify-around px-2 pb-6 pt-2">
             {TABS.map((tab) => (
               <button
