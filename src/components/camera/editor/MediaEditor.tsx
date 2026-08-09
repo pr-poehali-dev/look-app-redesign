@@ -1,16 +1,29 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { compressVideo, uploadFileDirect } from "@/lib/videoCompress";
-import { renderVideoWithOverlays } from "@/lib/videoRender";
-import { FILTERS, FONTS, TEMPLATES, EXPORT_FORMATS, EXPORT_QUALITIES, type Filter, type Layer, type TextLayer, type StickerLayer, type PipLayer, type Clip, type ExportFormat, type ExportQuality } from "./editorTypes";
+import { renderVideoWithOverlays, type RenderClip, type RenderSfxCue } from "@/lib/videoRender";
+import { FILTERS, FONTS, TEMPLATES, EXPORT_FORMATS, EXPORT_QUALITIES, type Filter, type Layer, type TextLayer, type StickerLayer, type PipLayer, type Clip, type ExportFormat, type ExportQuality, type SubtitleCue, type WatermarkPosition, type SfxItem, type SfxCue } from "./editorTypes";
 import EditorEmptyState from "./EditorEmptyState";
 import EditorPublishStep from "./EditorPublishStep";
 import EditorCanvas from "./EditorCanvas";
 import EditorToolbar from "./EditorToolbar";
 
-type Tab = "templates" | "clips" | "trim" | "crop" | "filter" | "adjust" | "text" | "stickers" | "music" | "pip";
+type Tab = "templates" | "clips" | "trim" | "crop" | "filter" | "adjust" | "text" | "stickers" | "music" | "pip" | "watermark" | "subtitles" | "sfx";
+
+// --- Undo/Redo: снимок состояния, которое можно откатить ---
+interface HistorySnapshot {
+  clips: Clip[];
+  filter: Filter;
+  brightness: number;
+  contrast: number;
+  saturation: number;
+  rotation: number;
+  flipH: boolean;
+  layers: Layer[];
+  subtitles: SubtitleCue[];
+}
 
 interface Props {
   onClose: () => void;
@@ -37,6 +50,14 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
   const [speed, setSpeed] = useState(1);
   const [exportFormat, setExportFormat] = useState<ExportFormat>("9:16");
   const [exportQuality, setExportQuality] = useState<ExportQuality>("1080");
+  const [, setWatermarkFile] = useState<File | null>(null);
+  const [watermarkUrl, setWatermarkUrl] = useState("");
+  const [watermarkPosition, setWatermarkPosition] = useState<WatermarkPosition>("bottom-right");
+  const [watermarkOpacity, setWatermarkOpacity] = useState(80);
+  const [watermarkSize, setWatermarkSize] = useState(20);
+  const [subtitles, setSubtitles] = useState<SubtitleCue[]>([]);
+  const [activeSubtitleId, setActiveSubtitleId] = useState<number | null>(null);
+  const [sfxCues, setSfxCues] = useState<SfxCue[]>([]);
   const [tab, setTab] = useState<Tab>("templates");
   const [destination, setDestination] = useState<"home" | "feed" | "both">("both");
   const [category, setCategory] = useState("humor");
@@ -53,11 +74,67 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const musicInputRef = useRef<HTMLInputElement>(null);
   const pipInputRef = useRef<HTMLInputElement>(null);
+  const watermarkInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Map<number, HTMLVideoElement>>(new Map());
 
   const active = clips[activeIdx];
+
+  // --- Undo/Redo ---
+  const historyRef = useRef<{ past: HistorySnapshot[]; future: HistorySnapshot[] }>({ past: [], future: [] });
+  const [historyTick, setHistoryTick] = useState(0);
+  const isRestoringRef = useRef(false);
+  const snapshot = useCallback((): HistorySnapshot => ({
+    clips, filter, brightness, contrast, saturation, rotation, flipH, layers, subtitles,
+  }), [clips, filter, brightness, contrast, saturation, rotation, flipH, layers, subtitles]);
+  const restoreSnapshot = (s: HistorySnapshot) => {
+    isRestoringRef.current = true;
+    setClips(s.clips);
+    setFilter(s.filter);
+    setBrightness(s.brightness);
+    setContrast(s.contrast);
+    setSaturation(s.saturation);
+    setRotation(s.rotation);
+    setFlipH(s.flipH);
+    setLayers(s.layers);
+    setSubtitles(s.subtitles);
+    if (activeIdx >= s.clips.length) setActiveIdx(Math.max(0, s.clips.length - 1));
+  };
+  const undo = () => {
+    const h = historyRef.current;
+    if (h.past.length === 0) return;
+    const prev = h.past.pop()!;
+    h.future.push(snapshot());
+    restoreSnapshot(prev);
+    setHistoryTick((t) => t + 1);
+  };
+  const redo = () => {
+    const h = historyRef.current;
+    if (h.future.length === 0) return;
+    const next = h.future.pop()!;
+    h.past.push(snapshot());
+    restoreSnapshot(next);
+    setHistoryTick((t) => t + 1);
+  };
+  const canUndo = historyRef.current.past.length > 0;
+  const canRedo = historyRef.current.future.length > 0;
+  // Сохраняем снимок в историю при каждом значимом изменении (debounce через requestIdleCallback-подобный setTimeout)
+  const firstSnapshotDoneRef = useRef(false);
+  useEffect(() => {
+    if (clips.length === 0) return;
+    if (!firstSnapshotDoneRef.current) { firstSnapshotDoneRef.current = true; return; }
+    if (isRestoringRef.current) { isRestoringRef.current = false; return; }
+    const t = setTimeout(() => {
+      historyRef.current.past.push(snapshot());
+      if (historyRef.current.past.length > 30) historyRef.current.past.shift();
+      historyRef.current.future = [];
+      setHistoryTick((v) => v + 1);
+    }, 500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, brightness, contrast, saturation, rotation, flipH, layers, subtitles, clips.length]);
+  void historyTick;
 
   useEffect(() => { capturedThumbRef.current = null; }, [activeIdx]);
 
@@ -103,6 +180,47 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
       [arr[idx], arr[ni]] = [arr[ni], arr[idx]];
       return arr;
     });
+  };
+
+  // --- Водяной знак ---
+  const handleWatermarkUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setWatermarkFile(f);
+    setWatermarkUrl(URL.createObjectURL(f));
+  };
+  const removeWatermark = () => {
+    setWatermarkFile(null);
+    setWatermarkUrl("");
+  };
+
+  // --- Субтитры ---
+  const addSubtitle = () => {
+    const id = Date.now();
+    const lastEnd = subtitles.length > 0 ? Math.max(...subtitles.map((s) => s.end)) : 0;
+    const newCue: SubtitleCue = { id, text: "Субтитр", start: lastEnd, end: lastEnd + 3, color: "#ffffff", bg: "rgba(0,0,0,0.6)" };
+    setSubtitles((s) => [...s, newCue]);
+    setActiveSubtitleId(id);
+  };
+  const updateSubtitle = (id: number, patch: Partial<SubtitleCue>) => {
+    setSubtitles((s) => s.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+  };
+  const removeSubtitle = (id: number) => {
+    setSubtitles((s) => s.filter((c) => c.id !== id));
+    if (activeSubtitleId === id) setActiveSubtitleId(null);
+  };
+
+  // --- Звуковые эффекты ---
+  const addSfx = (item: SfxItem) => {
+    const id = Date.now();
+    const newCue: SfxCue = { id, sfxId: item.id, url: item.url, label: item.label, time: 0, volume: 100 };
+    setSfxCues((s) => [...s, newCue]);
+  };
+  const updateSfx = (id: number, patch: Partial<SfxCue>) => {
+    setSfxCues((s) => s.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+  };
+  const removeSfx = (id: number) => {
+    setSfxCues((s) => s.filter((c) => c.id !== id));
   };
 
   const addText = () => {
@@ -350,6 +468,48 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
       ctx.restore();
     }
 
+    // Водяной знак
+    if (watermarkUrl) {
+      const wm = new Image();
+      wm.crossOrigin = "anonymous";
+      await new Promise<void>((res) => { wm.onload = () => res(); wm.onerror = () => res(); wm.src = watermarkUrl; });
+      if (wm.naturalWidth > 0) {
+        const iw = wm.naturalWidth, ih = wm.naturalHeight;
+        const w = (watermarkSize / 100) * canvas.width;
+        const h = w * (ih / iw);
+        const margin = canvas.width * 0.03;
+        let x = margin, y = margin;
+        if (watermarkPosition === "top-right") { x = canvas.width - w - margin; y = margin; }
+        else if (watermarkPosition === "bottom-left") { x = margin; y = canvas.height - h - margin; }
+        else if (watermarkPosition === "bottom-right") { x = canvas.width - w - margin; y = canvas.height - h - margin; }
+        else if (watermarkPosition === "center") { x = (canvas.width - w) / 2; y = (canvas.height - h) / 2; }
+        ctx.save();
+        ctx.globalAlpha = watermarkOpacity / 100;
+        ctx.drawImage(wm, x, y, w, h);
+        ctx.restore();
+      }
+    }
+
+    // Субтитры (первый активный в момент публикации кадра)
+    const activeCue = subtitles.find((c) => c.start <= 0 && c.end > 0) || subtitles[0];
+    if (activeCue) {
+      const fontSize = canvas.height * 0.045;
+      ctx.save();
+      ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const y = canvas.height * 0.88;
+      const metrics = ctx.measureText(activeCue.text);
+      const pad = fontSize * 0.35;
+      if (activeCue.bg && activeCue.bg !== "transparent") {
+        ctx.fillStyle = activeCue.bg;
+        ctx.fillRect(canvas.width / 2 - metrics.width / 2 - pad, y - fontSize / 2 - pad / 2, metrics.width + pad * 2, fontSize + pad);
+      }
+      ctx.fillStyle = activeCue.color;
+      ctx.fillText(activeCue.text, canvas.width / 2, y);
+      ctx.restore();
+    }
+
     return new Promise((resolve) => {
       canvas.toBlob((b) => resolve(b), "image/jpeg", 0.92);
     });
@@ -359,7 +519,9 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
     if (clips.length === 0 || !active) return;
     setPublishing(true);
     try {
-      const isVideo = active.type === "video";
+      // Одиночное фото без второго клипа — публикуем статичным кадром, иначе рендерим видео
+      // (склеивая ВСЕ клипы по порядку — не только активный)
+      const isVideo = !(clips.length === 1 && active.type === "image");
       const fmt = EXPORT_FORMATS.find((f) => f.id === exportFormat) || EXPORT_FORMATS[0];
       const quality = EXPORT_QUALITIES.find((q) => q.id === exportQuality) || EXPORT_QUALITIES[1];
       const outW = Math.round((fmt.w * quality.scale) / 2) * 2;
@@ -368,12 +530,22 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
       let file: File;
 
       if (isVideo) {
-        // Рендерим финальное видео со всеми эффектами: фильтр, текст/стикеры, обрезка, скорость, музыка
+        // Рендерим финальное видео со всеми эффектами: фильтры, текст/стикеры/PiP, переходы,
+        // водяной знак, субтитры, звуковые эффекты, обрезка, скорость, музыка
         setPublishProgress({ stage: "compress", percent: 0 });
+        const renderClips: RenderClip[] = clips.map((c) => ({
+          url: c.url,
+          type: c.type,
+          trimStart: c.trimStart,
+          trimEnd: c.trimEnd,
+          speed: c.speed ?? speed,
+          imageDuration: c.type === "image" ? 4 : undefined,
+          transitionBefore: c.transition,
+        }));
+        const renderSfx: RenderSfxCue[] = sfxCues.map((s) => ({ url: s.url, time: s.time, volume: s.volume }));
         try {
           file = await renderVideoWithOverlays({
-            clipUrl: active.url,
-            clipType: "video",
+            clips: renderClips,
             outWidth: outW,
             outHeight: outH,
             filter,
@@ -383,12 +555,12 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
             rotation,
             flipH,
             layers,
-            trimStart: active.trimStart,
-            trimEnd: active.trimEnd,
-            speed,
             clipVolume: clipVolume / 100,
             musicFile,
             musicVolume: musicVolume / 100,
+            watermark: watermarkUrl ? { url: watermarkUrl, position: watermarkPosition, opacity: watermarkOpacity, size: watermarkSize } : null,
+            subtitles,
+            sfxCues: renderSfx,
             onProgress: (p) => setPublishProgress({ stage: "compress", percent: p }),
           });
         } catch (err) {
@@ -499,14 +671,22 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
       <input ref={cameraInputRef} type="file" accept="image/*,video/*" capture="environment" className="hidden" onChange={(e) => { addClips(e.target.files); e.target.value = ""; }} />
       <input ref={musicInputRef} type="file" accept="audio/*" className="hidden" onChange={handleMusicUpload} />
       <input ref={pipInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) addPip(f); e.target.value = ""; }} />
+      <input ref={watermarkInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { handleWatermarkUpload(e); e.target.value = ""; }} />
 
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-12 pb-3 border-b border-white/10">
+      <div className="flex items-center justify-between px-4 pt-12 pb-3 border-b border-white/10 gap-2">
+        <div className="flex items-center gap-1">
+          <button onClick={undo} disabled={!canUndo} className={`p-2 rounded-full transition-colors ${canUndo ? "text-white hover:bg-white/10 cursor-pointer" : "text-white/25 cursor-not-allowed"}`} title="Отменить">
+            <Icon name="Undo2" size={20} />
+          </button>
+          <button onClick={redo} disabled={!canRedo} className={`p-2 rounded-full transition-colors ${canRedo ? "text-white hover:bg-white/10 cursor-pointer" : "text-white/25 cursor-not-allowed"}`} title="Повторить">
+            <Icon name="Redo2" size={20} />
+          </button>
+        </div>
         <button
           onClick={() => setStep("publish")}
-          className="px-4 py-1.5 rounded-full bg-[#fe2c55] hover:bg-[#e0264c] active:scale-95 transition-all cursor-pointer text-white text-sm font-bold"
+          className="px-4 py-1.5 rounded-full bg-[#fe2c55] hover:bg-[#e0264c] active:scale-95 transition-all cursor-pointer text-white text-sm font-bold flex-shrink-0"
         >Далее</button>
-        <p className="text-white font-bold">Конструктор</p>
         <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer" title="Закрыть"><Icon name="X" size={22} className="text-white" /></button>
       </div>
 
@@ -579,6 +759,25 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
         exportQuality={exportQuality}
         setExportQuality={setExportQuality}
         pipInputRef={pipInputRef}
+        watermarkInputRef={watermarkInputRef}
+        watermarkUrl={watermarkUrl}
+        watermarkPosition={watermarkPosition}
+        setWatermarkPosition={setWatermarkPosition}
+        watermarkOpacity={watermarkOpacity}
+        setWatermarkOpacity={setWatermarkOpacity}
+        watermarkSize={watermarkSize}
+        setWatermarkSize={setWatermarkSize}
+        removeWatermark={removeWatermark}
+        subtitles={subtitles}
+        activeSubtitleId={activeSubtitleId}
+        setActiveSubtitleId={setActiveSubtitleId}
+        addSubtitle={addSubtitle}
+        updateSubtitle={updateSubtitle}
+        removeSubtitle={removeSubtitle}
+        sfxCues={sfxCues}
+        addSfx={addSfx}
+        updateSfx={updateSfx}
+        removeSfx={removeSfx}
       />
     </div>
   );

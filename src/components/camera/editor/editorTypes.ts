@@ -63,6 +63,16 @@ export interface PipLayer {
 
 export type Layer = TextLayer | StickerLayer | PipLayer;
 
+export type TransitionType = "none" | "fade" | "slide" | "zoom" | "wipe";
+
+export const TRANSITIONS: { id: TransitionType; label: string; icon: string }[] = [
+  { id: "none", label: "Без перехода", icon: "Ban" },
+  { id: "fade", label: "Растворение", icon: "Blend" },
+  { id: "slide", label: "Слайд", icon: "ArrowLeftRight" },
+  { id: "zoom", label: "Наплыв", icon: "ZoomIn" },
+  { id: "wipe", label: "Шторка", icon: "PanelLeftClose" },
+];
+
 export interface Clip {
   id: number;
   file: File;
@@ -73,6 +83,8 @@ export interface Clip {
   trimEnd?: number;
   volume?: number;
   speed?: number;
+  /** Переход, воспроизводимый ПЕРЕД этим клипом (игнорируется для самого первого клипа) */
+  transition?: TransitionType;
 }
 
 export type ExportFormat = "9:16" | "1:1" | "16:9";
@@ -109,6 +121,64 @@ export interface EditorState {
   layers: Layer[];
   musicFile: File | null;
   musicName: string;
+}
+
+/** Субтитр с таймингом — показывается на видео в заданный промежуток времени */
+export interface SubtitleCue {
+  id: number;
+  text: string;
+  start: number; // сек от начала клипа
+  end: number; // сек от начала клипа
+  color: string;
+  bg: string;
+}
+
+export const SUBTITLE_PRESET_DURATION = 3; // сек по умолчанию для нового субтитра
+
+/** Позиция водяного знака на кадре */
+export type WatermarkPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right" | "center";
+
+export const WATERMARK_POSITIONS: { id: WatermarkPosition; label: string }[] = [
+  { id: "top-left", label: "Слева сверху" },
+  { id: "top-right", label: "Справа сверху" },
+  { id: "bottom-left", label: "Слева снизу" },
+  { id: "bottom-right", label: "Справа снизу" },
+  { id: "center", label: "По центру" },
+];
+
+export interface WatermarkState {
+  file: File | null;
+  url: string;
+  position: WatermarkPosition;
+  opacity: number; // 0-100
+  size: number; // % от ширины кадра
+}
+
+/** Готовая библиотека коротких звуковых эффектов (лежат в /public/sfx) */
+export interface SfxItem {
+  id: string;
+  label: string;
+  emoji: string;
+  url: string;
+}
+
+export const SFX_LIBRARY: SfxItem[] = [
+  { id: "pop", label: "Поп", emoji: "🎈", url: "/sfx/pop.mp3" },
+  { id: "ding", label: "Дзынь", emoji: "🔔", url: "/sfx/ding.mp3" },
+  { id: "whoosh", label: "Вжух", emoji: "💨", url: "/sfx/whoosh.mp3" },
+  { id: "click", label: "Клик", emoji: "👆", url: "/sfx/click.mp3" },
+  { id: "drum", label: "Бум", emoji: "🥁", url: "/sfx/drum.mp3" },
+  { id: "tada", label: "Та-да", emoji: "🎉", url: "/sfx/tada.mp3" },
+];
+
+/** Звуковой эффект, размещённый на временной шкале клипа */
+export interface SfxCue {
+  id: number;
+  sfxId: string;
+  url: string;
+  label: string;
+  time: number; // сек от начала клипа, когда проигрывать
+  volume: number; // 0-200 (%)
 }
 
 export const FONTS = [
