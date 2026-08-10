@@ -203,6 +203,7 @@ const ShopScreen = ({ onBack }: { onBack: () => void }) => {
           >
             {saving ? "Сохраняем..." : "Сохранить"}
           </button>
+          <div className="pb-28 md:pb-0" />
         </div>
       </div>
     );
