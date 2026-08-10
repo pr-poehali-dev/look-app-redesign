@@ -29,7 +29,8 @@ def handler(event: dict, context) -> dict:
         base_select = (
             f"SELECT v.id, v.url, v.author, v.handle, v.description, v.hashtags, "
             f"v.category, v.type, v.likes, v.comments, v.shares, v.created_at, "
-            f"lu.profile_photo, v.thumbnail, v.user_id "
+            f"lu.profile_photo, v.thumbnail, v.user_id, v.template_id, "
+            f"EXISTS(SELECT 1 FROM {schema}.products p WHERE p.video_id = v.id AND p.status = 'active') AS has_products "
             f"FROM {schema}.videos v "
             f"LEFT JOIN {schema}.legacy_posts lp ON lp.migrated_to_video_id = v.id "
             f"LEFT JOIN {schema}.legacy_users lu ON lu.id = lp.user_id "
@@ -251,6 +252,8 @@ def handler(event: dict, context) -> dict:
             'avatar': avatar,
             'created_at': r[11].isoformat() if r[11] else None,
             'thumbnail': thumbnail,
+            'template_id': r[15],
+            'has_products': bool(r[16]),
         })
 
     return {

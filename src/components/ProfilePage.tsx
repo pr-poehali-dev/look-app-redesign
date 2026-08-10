@@ -553,6 +553,31 @@ const ProfilePage = () => {
         </button>
       </div>
 
+      {/* Поддержка / Условия / Политика — открываются сразу, минуя настройки */}
+      <div className="flex gap-2 px-4 pb-4 md:px-3 md:pb-3">
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("open-legal-screen", { detail: { screen: "support" } }))}
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-sm md:text-xs"
+        >
+          <Icon name="LifeBuoy" size={16} />
+          Поддержка
+        </button>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("open-legal-screen", { detail: { screen: "terms" } }))}
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-sm md:text-xs"
+        >
+          <Icon name="FileText" size={16} />
+          Условия
+        </button>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("open-legal-screen", { detail: { screen: "privacy" } }))}
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-sm md:text-xs"
+        >
+          <Icon name="ShieldCheck" size={16} />
+          Приватность
+        </button>
+      </div>
+
       {/* Stories */}
       <div className="flex gap-4 md:gap-3 px-4 md:px-3 pb-4 md:pb-3 overflow-x-scroll" style={{ scrollbarWidth: "none" }}>
         {/* Add story */}

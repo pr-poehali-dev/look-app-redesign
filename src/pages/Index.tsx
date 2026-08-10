@@ -93,13 +93,19 @@ const Index = () => {
       setActiveTab("messages");
     };
     const onUseTemplate = () => setShowCamera(true);
+    const onLegal = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { screen?: "support" | "terms" | "privacy" };
+      if (detail?.screen) setDesktopOverlay(detail.screen);
+    };
     window.addEventListener("open-user-profile", onOpen);
     window.addEventListener("open-direct-message", onMessage);
     window.addEventListener("use-template", onUseTemplate);
+    window.addEventListener("open-legal-screen", onLegal);
     return () => {
       window.removeEventListener("open-user-profile", onOpen);
       window.removeEventListener("open-direct-message", onMessage);
       window.removeEventListener("use-template", onUseTemplate);
+      window.removeEventListener("open-legal-screen", onLegal);
     };
   }, []);
 
