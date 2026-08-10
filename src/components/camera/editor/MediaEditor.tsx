@@ -59,7 +59,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
   const [activeSubtitleId, setActiveSubtitleId] = useState<number | null>(null);
   const [sfxCues, setSfxCues] = useState<SfxCue[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-  const [pendingProducts, setPendingProducts] = useState<{ title: string; price: number; oldPrice?: number; promoCode?: string; productUrl?: string }[]>([]);
+  const [pendingProducts, setPendingProducts] = useState<{ title: string; price: number; oldPrice?: number; promoCode?: string; productUrl?: string; image?: string }[]>([]);
   const [tab, setTab] = useState<Tab>("templates");
   const [destination, setDestination] = useState<"home" | "feed" | "both">("both");
   const [category, setCategory] = useState("humor");
@@ -614,7 +614,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
           templateId: selectedTemplateId,
           products: pendingProducts.map((p) => ({
             title: p.title, price: p.price, old_price: p.oldPrice,
-            promo_code: p.promoCode, product_url: p.productUrl,
+            promo_code: p.promoCode, product_url: p.productUrl, image: p.image,
           })),
         },
         (p) => setPublishProgress({ stage: "upload", percent: p }),
@@ -688,6 +688,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
         onPublish={handlePublish}
         products={pendingProducts}
         setProducts={setPendingProducts}
+        userId={user?.id}
       />
     );
   }

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Clip } from "./editorTypes";
+import { uploadProductImage } from "@/hooks/useProducts";
 
 export interface PendingProduct {
   title: string;
@@ -8,6 +9,7 @@ export interface PendingProduct {
   oldPrice?: number;
   promoCode?: string;
   productUrl?: string;
+  image?: string;
 }
 
 const VIDEO_CATEGORIES = [
@@ -39,6 +41,7 @@ interface Props {
   onPublish: () => void;
   products: PendingProduct[];
   setProducts: (p: PendingProduct[]) => void;
+  userId?: string;
 }
 
 const EditorPublishStep = ({
@@ -59,6 +62,7 @@ const EditorPublishStep = ({
   onPublish,
   products,
   setProducts,
+  userId,
 }: Props) => {
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -66,10 +70,23 @@ const EditorPublishStep = ({
   const [newOldPrice, setNewOldPrice] = useState("");
   const [newPromo, setNewPromo] = useState("");
   const [newUrl, setNewUrl] = useState("");
+  const [newImage, setNewImage] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const resetForm = () => {
-    setNewTitle(""); setNewPrice(""); setNewOldPrice(""); setNewPromo(""); setNewUrl("");
+    setNewTitle(""); setNewPrice(""); setNewOldPrice(""); setNewPromo(""); setNewUrl(""); setNewImage("");
     setShowAddProduct(false);
+  };
+
+  const handleImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !userId) return;
+    setUploadingImage(true);
+    const url = await uploadProductImage(file, userId);
+    setUploadingImage(false);
+    if (url) setNewImage(url);
   };
 
   const addProduct = () => {
@@ -80,6 +97,7 @@ const EditorPublishStep = ({
       oldPrice: newOldPrice ? Number(newOldPrice) : undefined,
       promoCode: newPromo.trim() || undefined,
       productUrl: newUrl.trim() || undefined,
+      image: newImage || undefined,
     }]);
     resetForm();
   };
@@ -180,6 +198,9 @@ const EditorPublishStep = ({
             <div className="flex flex-col gap-2 mb-2">
               {products.map((p, i) => (
                 <div key={i} className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2">
+                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-white/10 flex-shrink-0">
+                    {p.image && <img src={p.image} className="w-full h-full object-cover" alt="" />}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-white text-sm font-medium truncate">{p.title}</p>
                     <p className="text-white/50 text-xs">{p.price.toLocaleString("ru-RU")} ₽{p.promoCode ? ` · промо ${p.promoCode}` : ""}</p>
@@ -192,6 +213,26 @@ const EditorPublishStep = ({
 
           {showAddProduct ? (
             <div className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-2">
+              <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageFile} />
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                className="w-full aspect-video rounded-lg bg-white/5 border-2 border-dashed border-white/15 overflow-hidden relative flex items-center justify-center"
+              >
+                {newImage ? (
+                  <img src={newImage} className="w-full h-full object-cover" alt="" />
+                ) : (
+                  <div className="flex flex-col items-center gap-1 text-white/40">
+                    <Icon name="ImagePlus" size={22} />
+                    <span className="text-[11px] font-medium">Загрузить фото товара</span>
+                  </div>
+                )}
+                {uploadingImage && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+              </button>
               <input
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}

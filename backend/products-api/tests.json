@@ -19,6 +19,20 @@
       "expectedStatus": 200,
       "expectedBody": {"products": {}},
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "GET partner_catalog",
+      "method": "GET",
+      "path": "/?action=partner_catalog",
+      "expectedStatus": 200,
+      "expectedBody": {"products": []},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "GET mine без X-User-Id -> 401",
+      "method": "GET",
+      "path": "/?action=mine",
+      "expectedStatus": 401
     }
   ]
 }

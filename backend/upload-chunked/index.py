@@ -118,15 +118,30 @@ def handler(event: dict, context) -> dict:
             cur = conn.cursor()
             try:
                 cur.execute(
-                    "INSERT INTO videos (url, thumbnail, author, handle, description, hashtags, category, type, user_id) "
-                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+                    "INSERT INTO videos (url, thumbnail, author, handle, description, hashtags, category, type, user_id, template_id) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
                     (cdn_url, thumb_url,
                      meta.get('author', 'Я'), meta.get('handle', 'user'),
                      meta.get('description', ''), meta.get('hashtags', ''),
                      meta.get('category', 'humor'), media_type,
-                     meta.get('user_id', 'anonymous')),
+                     meta.get('user_id', 'anonymous'), meta.get('template_id')),
                 )
                 video_id = cur.fetchone()[0]
+
+                # Товары, привязанные к этому видео/посту (E-commerce), уходят на модерацию
+                products = meta.get('products') or []
+                for p in products[:20]:
+                    title = (p.get('title') or '').strip()[:200]
+                    if not title:
+                        continue
+                    cur.execute(
+                        "INSERT INTO products (video_id, owner_user_id, title, price, old_price, image, promo_code, product_url, status) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'pending')",
+                        (video_id, meta.get('user_id', 'anonymous'), title,
+                         p.get('price') or 0, p.get('old_price'),
+                         p.get('image') or cdn_url, p.get('promo_code') or '', p.get('product_url') or ''),
+                    )
+
                 conn.commit()
             finally:
                 cur.close()
