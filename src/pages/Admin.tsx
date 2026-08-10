@@ -4,7 +4,7 @@ import Icon from "@/components/ui/icon";
 const API = "https://functions.poehali.dev/c578b52c-b9b6-47b3-9bcf-b6ab8405c4d7";
 const TOKEN_KEY = "admin_token_v1";
 
-type Section = "dashboard" | "users" | "videos" | "photos" | "comments" | "chats" | "reports" | "streams" | "broadcast" | "email_stats" | "support" | "privacy" | "terms";
+type Section = "dashboard" | "users" | "videos" | "photos" | "comments" | "chats" | "products" | "reports" | "streams" | "broadcast" | "email_stats" | "support" | "privacy" | "terms";
 
 interface Stats {
   users_total: number; users_today: number; users_week: number;
@@ -37,6 +37,7 @@ const SECTIONS: { id: Section; label: string; icon: string }[] = [
   { id: "videos", label: "Видео", icon: "Film" },
   { id: "photos", label: "Фото", icon: "Image" },
   { id: "comments", label: "Комментарии", icon: "MessageSquare" },
+  { id: "products", label: "Товары", icon: "ShoppingBag" },
   { id: "streams", label: "Стримы", icon: "Radio" },
   { id: "reports", label: "Жалобы", icon: "Flag" },
   { id: "broadcast", label: "Рассылки", icon: "Send" },
@@ -108,6 +109,7 @@ export default function Admin() {
           {section === "videos" && <Videos token={token!} mediaType="video" />}
               {section === "photos" && <Videos token={token!} mediaType="image" />}
           {section === "comments" && <Comments token={token!} />}
+          {section === "products" && <Products token={token!} />}
           {section === "chats" && <Chats token={token!} />}
           {section === "streams" && <Streams token={token!} />}
           {section === "reports" && <Reports token={token!} />}
@@ -881,6 +883,269 @@ function Comments({ token }: { token: string }) {
             </button>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+interface ProductRow {
+  id: number; video_id: number; owner_user_id: string; title: string; description: string;
+  price: number; old_price?: number | null; image?: string | null; promo_code?: string | null;
+  product_url?: string | null; category: string; in_stock: boolean; status: string;
+  is_partner: boolean; moderation_note?: string; created_at?: string;
+}
+
+const PRODUCT_STATUS_TABS: { id: string; label: string }[] = [
+  { id: "pending", label: "На модерации" },
+  { id: "active", label: "Активные" },
+  { id: "blocked", label: "Заблокированные" },
+  { id: "draft", label: "Черновики" },
+  { id: "all", label: "Все" },
+];
+
+const PRODUCT_STATUS_COLORS: Record<string, string> = {
+  pending: "bg-yellow-500/20 text-yellow-400",
+  active: "bg-green-500/20 text-green-400",
+  blocked: "bg-red-500/20 text-red-400",
+  draft: "bg-white/10 text-white/50",
+};
+
+function fileToBase64(file: File): Promise<{ base64: string; contentType: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const r = reader.result as string;
+      resolve({ base64: r.slice(r.indexOf(",") + 1), contentType: file.type || "image/jpeg" });
+    };
+    reader.onerror = () => reject(reader.error || new Error("FileReader error"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function Products({ token }: { token: string }) {
+  const [statusTab, setStatusTab] = useState("pending");
+  const [rows, setRows] = useState<ProductRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [noteDraft, setNoteDraft] = useState<Record<number, string>>({});
+  const [showCreate, setShowCreate] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const d = await api("products_list", { status: statusTab, limit: 200 }, token);
+      setRows(d.products || []);
+    } finally { setLoading(false); }
+  }, [token, statusTab]);
+  useEffect(() => { load(); }, [load]);
+
+  const moderate = async (id: number, status: string) => {
+    await api("product_moderate", { product_id: id, status, note: noteDraft[id] || "" }, token);
+    load();
+  };
+
+  const del = async (id: number) => {
+    if (!confirm("Удалить товар навсегда?")) return;
+    await api("product_delete", { product_id: id }, token);
+    load();
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h2 className="text-2xl font-bold hidden md:block">Товары</h2>
+        <button
+          onClick={() => setShowCreate(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white text-sm font-semibold"
+        >
+          <Icon name="Plus" size={16} />
+          Партнёрский товар
+        </button>
+      </div>
+
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        {PRODUCT_STATUS_TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setStatusTab(t.id)}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${
+              statusTab === t.id ? "bg-[#fe2c55] text-white" : "bg-white/5 text-white/60 hover:bg-white/10"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="bg-zinc-900 border border-white/10 rounded-2xl divide-y divide-white/5">
+        {loading && <p className="p-4 text-white/50 text-sm">Загрузка...</p>}
+        {!loading && rows.length === 0 && <p className="p-4 text-white/40 text-sm">Пусто</p>}
+        {rows.map((p) => (
+          <div key={p.id} className="p-3 flex items-start gap-3">
+            <div className="w-14 h-14 rounded-xl overflow-hidden bg-white/5 flex-shrink-0">
+              {p.image && <img src={p.image} className="w-full h-full object-cover" alt="" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm font-semibold">{p.title}</p>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${PRODUCT_STATUS_COLORS[p.status] || "bg-white/10 text-white/50"}`}>
+                  {p.status}
+                </span>
+                {p.is_partner && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#8b5cf6]/20 text-[#8b5cf6]">Партнёр</span>}
+              </div>
+              <p className="text-xs text-white/50 mt-0.5">
+                {p.price.toLocaleString("ru-RU")} ₽{p.old_price ? ` (было ${p.old_price.toLocaleString("ru-RU")} ₽)` : ""} · владелец {p.owner_user_id}
+              </p>
+              {p.description && <p className="text-xs text-white/40 mt-1 line-clamp-2">{p.description}</p>}
+              {p.moderation_note && <p className="text-[11px] text-yellow-400 mt-1">Заметка: {p.moderation_note}</p>}
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <input
+                  value={noteDraft[p.id] || ""}
+                  onChange={(e) => setNoteDraft((s) => ({ ...s, [p.id]: e.target.value }))}
+                  placeholder="Причина (для блока)"
+                  className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs text-white placeholder:text-white/30 outline-none w-40"
+                />
+                <button onClick={() => moderate(p.id, "active")} className="px-2.5 py-1 rounded-lg bg-green-500/20 text-green-400 text-xs font-semibold">Одобрить</button>
+                <button onClick={() => moderate(p.id, "blocked")} className="px-2.5 py-1 rounded-lg bg-red-500/20 text-red-400 text-xs font-semibold">Заблокировать</button>
+                <button onClick={() => del(p.id)} className="p-1.5 text-[#fe2c55] hover:bg-[#fe2c55]/10 rounded-lg">
+                  <Icon name="Trash2" size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {showCreate && <CreatePartnerProductModal token={token} onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); setStatusTab("active"); load(); }} />}
+    </div>
+  );
+}
+
+function CreatePartnerProductModal({ token, onClose, onCreated }: { token: string; onClose: () => void; onCreated: () => void }) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
+  const [oldPrice, setOldPrice] = useState("");
+  const [category, setCategory] = useState("other");
+  const [promoCode, setPromoCode] = useState("");
+  const [productUrl, setProductUrl] = useState("");
+  const [image, setImage] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    try {
+      const { base64, contentType } = await fileToBase64(file);
+      const d = await api("product_upload_image", { file: base64, content_type: contentType }, token);
+      if (d.url) setImage(d.url);
+    } finally { setUploading(false); }
+  };
+
+  const submit = async () => {
+    if (!title.trim() || !price) return;
+    setSaving(true);
+    try {
+      await api("product_create_partner", {
+        title: title.trim(),
+        description: description.trim(),
+        price: Number(price),
+        old_price: oldPrice ? Number(oldPrice) : undefined,
+        image: image || undefined,
+        category,
+        promo_code: promoCode.trim() || undefined,
+        product_url: productUrl.trim() || undefined,
+      }, token);
+      onCreated();
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-md max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+          <p className="font-bold text-white">Партнёрский товар</p>
+          <button onClick={onClose}><Icon name="X" size={20} className="text-white/60" /></button>
+        </div>
+        <div className="p-5 space-y-3">
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="w-full aspect-video rounded-xl bg-white/5 border-2 border-dashed border-white/15 overflow-hidden relative flex items-center justify-center"
+          >
+            {image ? (
+              <img src={image} className="w-full h-full object-cover" alt="" />
+            ) : (
+              <div className="flex flex-col items-center gap-1.5 text-white/40">
+                <Icon name="ImagePlus" size={26} />
+                <span className="text-xs font-medium">Загрузить фото товара</span>
+              </div>
+            )}
+            {uploading && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+          </button>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Название товара"
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+          />
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Описание"
+            rows={3}
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+          />
+          <div className="flex gap-2">
+            <input
+              value={price}
+              onChange={(e) => setPrice(e.target.value.replace(/[^\d.]/g, ""))}
+              placeholder="Цена ₽"
+              inputMode="decimal"
+              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+            />
+            <input
+              value={oldPrice}
+              onChange={(e) => setOldPrice(e.target.value.replace(/[^\d.]/g, ""))}
+              placeholder="Старая цена"
+              inputMode="decimal"
+              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+            />
+          </div>
+          <input
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            placeholder="Категория (clothing, shoes, other...)"
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+          />
+          <input
+            value={promoCode}
+            onChange={(e) => setPromoCode(e.target.value)}
+            placeholder="Промокод (необязательно)"
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+          />
+          <input
+            value={productUrl}
+            onChange={(e) => setProductUrl(e.target.value)}
+            placeholder="Ссылка на товар (необязательно)"
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+          />
+          <button
+            onClick={submit}
+            disabled={!title.trim() || !price || saving}
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold disabled:opacity-40"
+          >
+            {saving ? "Создаём..." : "Создать товар"}
+          </button>
+        </div>
       </div>
     </div>
   );

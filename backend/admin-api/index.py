@@ -889,6 +889,77 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         conn.commit()
         return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
 
+    # ============ PRODUCTS (модерация товаров + партнёрский каталог) ============
+    if action == 'products_list':
+        status_filter = (body.get('status') or 'pending').strip()
+        limit = _safe_int(body.get('limit'), 100, 300)
+        fields = ("id, video_id, owner_user_id, title, description, price, old_price, image, "
+                  "promo_code, product_url, category, in_stock, status, is_partner, moderation_note, created_at")
+        if status_filter == 'all':
+            _q(cur, f"SELECT {fields} FROM {{S}}.products ORDER BY id DESC LIMIT %s", (limit,))
+        else:
+            _q(cur, f"SELECT {fields} FROM {{S}}.products WHERE status = %s ORDER BY id DESC LIMIT %s", (status_filter, limit))
+        rows = cur.fetchall()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'products': rows}, default=str)}
+
+    if action == 'product_moderate':
+        pid = body.get('product_id')
+        new_status = (body.get('status') or '').strip()
+        note = (body.get('note') or '').strip()[:500]
+        if not pid or new_status not in ('active', 'blocked', 'pending', 'draft'):
+            return {'statusCode': 400, 'headers': _cors(), 'body': json.dumps({'error': 'product_id и валидный status обязательны'})}
+        _q(cur, "UPDATE {S}.products SET status = %s, moderation_note = %s WHERE id = %s", (new_status, note, pid))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
+
+    if action == 'product_delete':
+        pid = body.get('product_id')
+        _q(cur, "DELETE FROM {S}.product_hotspots WHERE product_id = %s", (pid,))
+        _q(cur, "DELETE FROM {S}.products WHERE id = %s", (pid,))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
+
+    # Загрузка фото для партнёрского товара (base64 файл -> CDN URL)
+    if action == 'product_upload_image':
+        file_data_b64 = body.get('file')
+        content_type = body.get('content_type') or 'image/jpeg'
+        if not file_data_b64:
+            return {'statusCode': 400, 'headers': _cors(), 'body': json.dumps({'error': 'file обязателен'})}
+        import boto3, uuid as _uuid, base64 as _b64
+        file_bytes = _b64.b64decode(file_data_b64)
+        ext = (content_type.split('/')[-1] or 'jpg').lower()
+        if ext not in ('jpg', 'jpeg', 'png', 'webp', 'gif'):
+            ext = 'jpg'
+        key = f"products/{_uuid.uuid4().hex}.{ext}"
+        s3c = boto3.client('s3', endpoint_url='https://bucket.poehali.dev',
+            aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+            aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
+        s3c.put_object(Bucket='files', Key=key, Body=file_bytes, ContentType=content_type)
+        image_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'url': image_url})}
+
+    # Создать партнёрский товар (бренд) — сразу активный, доступен всем авторам для привязки к видео
+    if action == 'product_create_partner':
+        title = (body.get('title') or '').strip()[:200]
+        if not title:
+            return {'statusCode': 400, 'headers': _cors(), 'body': json.dumps({'error': 'title обязателен'})}
+        price = body.get('price') or 0
+        old_price = body.get('old_price')
+        description = (body.get('description') or '').strip()[:2000]
+        image = (body.get('image') or '').strip()
+        promo_code = (body.get('promo_code') or '').strip()[:50]
+        product_url = (body.get('product_url') or '').strip()
+        category = (body.get('category') or 'other').strip()[:50]
+        _q(cur, """
+            INSERT INTO {S}.products
+                (video_id, owner_user_id, title, description, price, old_price, image, promo_code, product_url, category, in_stock, status, is_partner)
+            VALUES (0, 'partner', %s, %s, %s, %s, %s, %s, %s, %s, TRUE, 'active', TRUE)
+            RETURNING id
+        """, (title, description, price, old_price, image, promo_code, product_url, category))
+        new_id = cur.fetchone()['id']
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'id': new_id})}
+
     # ============ STREAMS ============
     if action == 'streams_list':
         limit = _safe_int(body.get('limit'), 50, 200)
