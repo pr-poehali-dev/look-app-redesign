@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
-import { useCatalog } from "@/hooks/useProducts";
+import { useCatalog, Product } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 
 const CATEGORIES = [
@@ -13,6 +13,72 @@ const CATEGORIES = [
   { id: "home", label: "Дом" },
   { id: "other", label: "Другое" },
 ];
+
+const ProductCard = ({ p, onAdd, adding }: { p: Product; onAdd: (id: number) => void; adding: boolean }) => {
+  const [liked, setLiked] = useState(false);
+
+  const openSeller = () => {
+    if (p.owner_handle && !p.is_partner) {
+      window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: p.owner_handle } }));
+    }
+  };
+
+  const handleLike = () => {
+    setLiked(true);
+    onAdd(p.id);
+  };
+
+  return (
+    <div className="mb-3 break-inside-avoid rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-sm">
+      <div className="relative bg-gray-100">
+        {p.image && <img src={p.image} alt={p.title} className="w-full h-auto object-cover block" loading="lazy" />}
+
+        {p.promo_code && (
+          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur text-white text-[10px] font-bold">
+            Промокод
+          </span>
+        )}
+
+        <button
+          onClick={handleLike}
+          disabled={adding}
+          className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-black/40 backdrop-blur flex items-center justify-center active:scale-90 transition-transform disabled:opacity-60"
+        >
+          {adding ? (
+            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <Icon name="Heart" size={16} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"} />
+          )}
+        </button>
+      </div>
+
+      <div className="p-2.5 flex flex-col gap-1.5">
+        <p className="text-black text-[13px] leading-snug font-medium line-clamp-2">{p.title}</p>
+
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-[#fe2c55] text-base font-bold">{p.price.toLocaleString("ru-RU")} ₽</span>
+          {p.old_price && p.old_price > p.price && (
+            <span className="text-gray-400 text-[11px] line-through">{p.old_price.toLocaleString("ru-RU")} ₽</span>
+          )}
+        </div>
+
+        {p.owner_handle && !p.is_partner ? (
+          <button onClick={openSeller} className="flex items-center gap-1.5 pt-0.5">
+            <div className="w-4 h-4 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+              {p.owner_avatar && <img src={p.owner_avatar} alt="" className="w-full h-full object-cover" />}
+            </div>
+            <span className="text-gray-400 text-[11px] truncate">{p.owner_name || `@${p.owner_handle}`}</span>
+          </button>
+        ) : p.is_partner ? (
+          <span className="inline-flex items-center gap-1 w-fit px-1.5 py-0.5 rounded-full bg-[#8b5cf6]/10 text-[#8b5cf6] text-[10px] font-bold">
+            <Icon name="BadgeCheck" size={11} />
+            Партнёр
+          </span>
+        ) : null}
+      </div>
+    </div>
+  );
+};
 
 const CatalogScreen = ({ onBack }: { onBack: () => void }) => {
   const [category, setCategory] = useState("all");
@@ -59,43 +125,9 @@ const CatalogScreen = ({ onBack }: { onBack: () => void }) => {
           <p className="text-sm text-gray-400">В этой категории пока нет товаров</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 px-4 pb-8">
+        <div className="columns-2 gap-3 px-4 pb-8">
           {products.map((p) => (
-            <div key={p.id} className="rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 flex flex-col">
-              <div className="aspect-square bg-gray-100">
-                {p.image && <img src={p.image} alt={p.title} className="w-full h-full object-cover" />}
-              </div>
-              <div className="p-2.5 flex flex-col gap-1.5 flex-1">
-                <p className="text-black text-xs font-semibold truncate">{p.title}</p>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-black text-sm font-bold">{p.price.toLocaleString("ru-RU")} ₽</span>
-                  {p.old_price && p.old_price > p.price && (
-                    <span className="text-gray-400 text-[11px] line-through">{p.old_price.toLocaleString("ru-RU")} ₽</span>
-                  )}
-                </div>
-                {p.promo_code && (
-                  <span className="inline-block w-fit px-2 py-0.5 rounded-full bg-[#fe2c55]/10 text-[#fe2c55] text-[10px] font-bold">
-                    Промокод: {p.promo_code}
-                  </span>
-                )}
-                {p.owner_handle && !p.is_partner && (
-                  <button
-                    onClick={() => window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: p.owner_handle } }))}
-                    className="flex items-center gap-1 text-gray-400 active:text-gray-600 transition-colors"
-                  >
-                    <Icon name="Store" size={11} />
-                    <span className="text-[10px] font-medium truncate">@{p.owner_handle}</span>
-                  </button>
-                )}
-                <button
-                  onClick={() => handleAdd(p.id)}
-                  disabled={addingId === p.id}
-                  className="mt-auto w-full py-1.5 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white text-xs font-semibold disabled:opacity-50"
-                >
-                  {addingId === p.id ? "Добавляем..." : "В корзину"}
-                </button>
-              </div>
-            </div>
+            <ProductCard key={p.id} p={p} onAdd={handleAdd} adding={addingId === p.id} />
           ))}
         </div>
       )}
