@@ -908,7 +908,23 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         note = (body.get('note') or '').strip()[:500]
         if not pid or new_status not in ('active', 'blocked', 'pending', 'draft'):
             return {'statusCode': 400, 'headers': _cors(), 'body': json.dumps({'error': 'product_id и валидный status обязательны'})}
+        _q(cur, "SELECT owner_user_id, title, is_partner FROM {S}.products WHERE id = %s", (pid,))
+        prow = cur.fetchone()
         _q(cur, "UPDATE {S}.products SET status = %s, moderation_note = %s WHERE id = %s", (new_status, note, pid))
+        if prow and not prow[2] and new_status in ('active', 'blocked') and prow[0]:
+            owner_id, title = prow[0], prow[1]
+            if new_status == 'active':
+                notif_title = 'Товар одобрен'
+                notif_msg = f'Ваш товар «{title}» прошёл модерацию и опубликован в магазине.'
+            else:
+                notif_title = 'Товар отклонён'
+                notif_msg = f'Ваш товар «{title}» не прошёл модерацию.' + (f' Причина: {note}' if note else '')
+            _q(
+                cur,
+                "INSERT INTO {S}.notifications (user_id, type, title, message, entity_type, entity_id) "
+                "VALUES (%s, 'product_moderation', %s, %s, 'product', %s)",
+                (owner_id, notif_title, notif_msg, str(pid)),
+            )
         conn.commit()
         return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
 
