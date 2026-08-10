@@ -75,6 +75,8 @@ const PostFeed = () => {
         time: formatTime(v.created_at),
         createdAt,
         isVideo,
+        templateId: v.template_id || null,
+        hasProducts: !!v.has_products,
       };
     };
 

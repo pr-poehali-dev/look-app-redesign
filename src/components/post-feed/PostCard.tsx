@@ -7,9 +7,14 @@ import { useComments } from "@/hooks/useComments";
 import { useLikes } from "@/hooks/useLikes";
 import { useSavedItem } from "@/hooks/useSaved";
 import { useFollowing } from "@/hooks/useFollowing";
+import { useAuth } from "@/context/AuthContext";
+import { useProductsByVideos, trackProductClick } from "@/hooks/useProducts";
+import { useCart } from "@/hooks/useCart";
+import { toast } from "sonner";
 import ReportButton from "@/components/ReportButton";
 
 const PostCard = ({ post }: { post: Post }) => {
+  const { user } = useAuth();
   const { saved, toggle: toggleSaved } = useSavedItem("post", post.id, {
     image: post.image,
     title: post.caption,
@@ -21,6 +26,8 @@ const PostCard = ({ post }: { post: Post }) => {
   const [showShare, setShowShare] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [showProducts, setShowProducts] = useState(false);
+  const [addingProductId, setAddingProductId] = useState<number | null>(null);
   const [commentText, setCommentText] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -28,6 +35,26 @@ const PostCard = ({ post }: { post: Post }) => {
   // enabled=true — превью последних комментариев грузится сразу, чтобы показать 2 штуки под постом
   const { comments: allComments, count: commentCount, send } = useComments("post", post.id, true, post.comments || 0);
   const previewComments = allComments.slice(0, 2);
+
+  // Товары грузим ТОЛЬКО если у поста реально есть привязанные товары (экономим трафик)
+  const productVideoIds = post.hasProducts ? [post.id] : [];
+  const productsByVideo = useProductsByVideos(productVideoIds);
+  const products = productsByVideo[String(post.id)] || [];
+  const { addToCart } = useCart();
+
+  const useTemplate = () => {
+    try { sessionStorage.setItem("pending_template_id", post.templateId || ""); } catch { /* ignore */ }
+    window.dispatchEvent(new CustomEvent("use-template", { detail: { templateId: post.templateId } }));
+  };
+
+  const handleAddToCart = async (productId: number) => {
+    setAddingProductId(productId);
+    trackProductClick(productId, post.id, user?.id);
+    const ok = await addToCart(productId);
+    setAddingProductId(null);
+    if (ok) toast.success("Добавлено в корзину");
+    else toast.error("Войди в аккаунт, чтобы добавить в корзину");
+  };
 
   const handleSendComment = () => {
     if (!commentText.trim()) return;
@@ -106,6 +133,28 @@ const PostCard = ({ post }: { post: Post }) => {
             <Icon name="ShareForward" size={26} className="action-icon-glyph" />
           </button>
         </div>
+        {(post.hasProducts || post.templateId) && (
+          <div className="ml-auto flex items-center gap-2">
+            {post.hasProducts && (
+              <button
+                onClick={() => setShowProducts(true)}
+                className="flex items-center gap-1 bg-white/10 rounded-full px-2.5 py-1.5 active:scale-95 transition-transform"
+              >
+                <Icon name="ShoppingBag" size={13} className="text-white" />
+                <span className="text-white text-[11px] font-semibold">Товары в кадре</span>
+              </button>
+            )}
+            {post.templateId && (
+              <button
+                onClick={useTemplate}
+                className="flex items-center gap-1 bg-white/10 rounded-full px-2.5 py-1.5 active:scale-95 transition-transform"
+              >
+                <Icon name="Wand2" size={13} className="text-white" />
+                <span className="text-white text-[11px] font-semibold">Использовать шаблон</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Текстовый блок — ограничен по высоте, при длинной подписи прокручивается */}
@@ -284,6 +333,67 @@ const PostCard = ({ post }: { post: Post }) => {
               </div>
               <span className="text-white text-sm font-medium">{copied ? "Скопировано!" : "Скопировать ссылку"}</span>
             </button>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Products popup */}
+      {showProducts && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex flex-col justify-end md:flex-row md:justify-end md:items-center md:bg-black/40"
+          onClick={() => setShowProducts(false)}
+        >
+          <div
+            className="sheet-theme rounded-t-3xl px-4 pt-5 pb-10 md:rounded-2xl md:pb-5 md:mr-6 md:w-[380px] md:shadow-2xl max-h-[70vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-white font-bold text-base flex items-center gap-2">
+                <Icon name="ShoppingBag" size={18} />
+                Товары из этого поста
+              </span>
+              <button onClick={() => setShowProducts(false)}>
+                <Icon name="X" size={20} className="text-white/60" />
+              </button>
+            </div>
+            {products.length === 0 ? (
+              <p className="text-white/40 text-sm py-6 text-center">Загружаем товары...</p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {products.map((p) => (
+                  <div key={p.id} className="flex items-center gap-3 bg-white/5 rounded-2xl p-3">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 flex-shrink-0">
+                      {p.image && <img src={p.image} alt={p.title} className="w-full h-full object-cover" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-semibold truncate">{p.title}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-white font-bold text-sm">{p.price.toLocaleString("ru-RU")} ₽</span>
+                        {p.old_price && p.old_price > p.price && (
+                          <span className="text-white/40 text-xs line-through">{p.old_price.toLocaleString("ru-RU")} ₽</span>
+                        )}
+                      </div>
+                      {p.promo_code && (
+                        <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#fe2c55]/20 text-[#fe2c55] text-[10px] font-bold">
+                          Промокод: {p.promo_code}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleAddToCart(p.id)}
+                      disabled={addingProductId === p.id}
+                      className="flex-shrink-0 w-9 h-9 rounded-full bg-[#fe2c55] flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
+                      title="В корзину"
+                    >
+                      {addingProductId === p.id
+                        ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        : <Icon name="Plus" size={18} className="text-white" />}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>,
         document.body
