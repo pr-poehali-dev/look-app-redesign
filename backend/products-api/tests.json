@@ -1,0 +1,24 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "GET by_video без video_ids -> 400",
+      "method": "GET",
+      "path": "/?action=by_video",
+      "expectedStatus": 400
+    },
+    {
+      "name": "GET by_video с несуществующим video_id",
+      "method": "GET",
+      "path": "/?action=by_video&video_ids=999999",
+      "expectedStatus": 200,
+      "expectedBody": {"products": {}},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

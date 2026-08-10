@@ -188,6 +188,13 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
     };
   }, []);
 
+  // Клик «Использовать шаблон» из ленты — сразу открываем конструктор с этим шаблоном
+  useEffect(() => {
+    const onUseTemplate = () => setMode("Конструктор");
+    window.addEventListener("use-template", onUseTemplate);
+    return () => window.removeEventListener("use-template", onUseTemplate);
+  }, []);
+
   const flipCamera = () => {
     setFlipping(true);
     setTimeout(() => {

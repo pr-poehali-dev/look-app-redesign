@@ -25,12 +25,22 @@ const PostCard = ({ post }: { post: Post }) => {
   const [copied, setCopied] = useState(false);
 
   const { liked, count: likes, toggle: handleLike } = useLikes("post", post.id, post.likes);
-  const { comments: allComments, count: commentCount, send } = useComments("post", post.id, showComments, post.comments || 0);
+  // enabled=true — превью последних комментариев грузится сразу, чтобы показать 2 штуки под постом
+  const { comments: allComments, count: commentCount, send } = useComments("post", post.id, true, post.comments || 0);
+  const previewComments = allComments.slice(0, 2);
 
   const handleSendComment = () => {
     if (!commentText.trim()) return;
     send(commentText);
     setCommentText("");
+  };
+
+  const goToChat = () => {
+    window.dispatchEvent(new CustomEvent("open-direct-message", { detail: { handle: post.handle } }));
+  };
+
+  const useTemplate = () => {
+    window.dispatchEvent(new CustomEvent("use-template", { detail: { templateId: "blank" } }));
   };
 
   return (
@@ -100,6 +110,13 @@ const PostCard = ({ post }: { post: Post }) => {
             <Icon name="ShareForward" size={26} className="action-icon-glyph" />
           </button>
         </div>
+        <button
+          onClick={useTemplate}
+          className="ml-auto flex items-center gap-1 bg-white/10 rounded-full px-2.5 py-1.5 active:scale-95 transition-transform"
+        >
+          <Icon name="Wand2" size={13} className="text-white" />
+          <span className="text-white text-[11px] font-semibold">Использовать шаблон</span>
+        </button>
       </div>
 
       {/* Текстовый блок — ограничен по высоте, при длинной подписи прокручивается */}
@@ -132,11 +149,29 @@ const PostCard = ({ post }: { post: Post }) => {
           </div>
         )}
 
-        {/* View comments */}
+        {/* Превью последних комментариев — чтобы не гадать, обсуждают ли пост */}
+        {previewComments.length > 0 && (
+          <div className="px-3 pb-1">
+            {previewComments.map((c) => (
+              <p key={c.id} className="text-[13px] leading-snug">
+                <span className="text-white font-semibold mr-1.5">{c.name}</span>
+                <span className="text-white/70">{c.text}</span>
+              </p>
+            ))}
+          </div>
+        )}
+
+        {/* View comments + переход в чат обсуждения */}
         {commentCount > 0 && (
-          <button onClick={() => setShowComments(true)} className="px-3 pb-1 block">
-            <span className="text-white/40 text-[13px]">Посмотреть все комментарии ({commentCount})</span>
-          </button>
+          <div className="px-3 pb-1 flex items-center gap-3">
+            <button onClick={() => setShowComments(true)}>
+              <span className="text-white/40 text-[13px]">Посмотреть все комментарии ({commentCount})</span>
+            </button>
+            <button onClick={goToChat} className="flex items-center gap-1 text-[#61d4f0]">
+              <Icon name="MessageCircle" size={12} />
+              <span className="text-[13px] font-medium">Перейти в чат</span>
+            </button>
+          </div>
         )}
 
         {/* Time */}

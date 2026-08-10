@@ -92,11 +92,14 @@ const Index = () => {
       if (detail?.handle) setPendingDirectHandle(detail.handle);
       setActiveTab("messages");
     };
+    const onUseTemplate = () => setShowCamera(true);
     window.addEventListener("open-user-profile", onOpen);
     window.addEventListener("open-direct-message", onMessage);
+    window.addEventListener("use-template", onUseTemplate);
     return () => {
       window.removeEventListener("open-user-profile", onOpen);
       window.removeEventListener("open-direct-message", onMessage);
+      window.removeEventListener("use-template", onUseTemplate);
     };
   }, []);
 

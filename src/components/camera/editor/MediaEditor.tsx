@@ -58,6 +58,8 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
   const [subtitles, setSubtitles] = useState<SubtitleCue[]>([]);
   const [activeSubtitleId, setActiveSubtitleId] = useState<number | null>(null);
   const [sfxCues, setSfxCues] = useState<SfxCue[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [pendingProducts, setPendingProducts] = useState<{ title: string; price: number; oldPrice?: number; promoCode?: string; productUrl?: string }[]>([]);
   const [tab, setTab] = useState<Tab>("templates");
   const [destination, setDestination] = useState<"home" | "feed" | "both">("both");
   const [category, setCategory] = useState("humor");
@@ -288,6 +290,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
     if (!t) return;
     if (t.preset.filter !== undefined) setFilter(t.preset.filter);
     if (t.preset.layers) setLayers(t.preset.layers.map((l) => ({ ...l, id: Date.now() + Math.random() } as Layer)));
+    setSelectedTemplateId(templateId);
   };
 
   // Выбор шаблона на стартовом экране: запоминаем и открываем выбор файла
@@ -305,6 +308,17 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
     }
      
   }, [clips.length]);
+
+  // Клик «Использовать шаблон» под чужим видео в ленте — запоминаем и открываем выбор файла
+  useEffect(() => {
+    const onUseTemplate = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { templateId?: string } | undefined;
+      if (detail?.templateId) selectTemplateThenPick(detail.templateId);
+    };
+    window.addEventListener("use-template", onUseTemplate);
+    return () => window.removeEventListener("use-template", onUseTemplate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleMusicUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -597,6 +611,11 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
           author: user?.name || "Пользователь",
           handle: user?.handle || user?.name || "user",
           user_id: user?.id || "anonymous",
+          templateId: selectedTemplateId,
+          products: pendingProducts.map((p) => ({
+            title: p.title, price: p.price, old_price: p.oldPrice,
+            promo_code: p.promoCode, product_url: p.productUrl,
+          })),
         },
         (p) => setPublishProgress({ stage: "upload", percent: p }),
       );
@@ -608,6 +627,15 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ video_url: reg.url, video_id: reg.id }),
+        }).catch(() => {});
+      }
+
+      // Фиксируем использование шаблона для аналитики автора шаблона
+      if (selectedTemplateId && reg.id) {
+        fetch("https://functions.poehali.dev/7b5c6c18-7098-4f9b-bf3c-e6ac50574c06?action=track_template_use", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-User-Id": user?.id || "anonymous" },
+          body: JSON.stringify({ template_id: selectedTemplateId, video_id: reg.id }),
         }).catch(() => {});
       }
 
@@ -658,6 +686,8 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
         publishProgress={publishProgress}
         onBack={() => setStep("edit")}
         onPublish={handlePublish}
+        products={pendingProducts}
+        setProducts={setPendingProducts}
       />
     );
   }

@@ -354,6 +354,8 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
           shares: v.shares || "0",
           category: v.category || "all",
           avatar: v.avatar || "",
+          templateId: v.template_id || null,
+          hasProducts: !!v.has_products,
         });
         }));
         setActiveIndex(0);

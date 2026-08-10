@@ -1,5 +1,14 @@
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Clip } from "./editorTypes";
+
+export interface PendingProduct {
+  title: string;
+  price: number;
+  oldPrice?: number;
+  promoCode?: string;
+  productUrl?: string;
+}
 
 const VIDEO_CATEGORIES = [
   { id: "music", label: "Музыка" },
@@ -28,6 +37,8 @@ interface Props {
   publishProgress: { stage: "compress" | "upload" | "save"; percent: number } | null;
   onBack: () => void;
   onPublish: () => void;
+  products: PendingProduct[];
+  setProducts: (p: PendingProduct[]) => void;
 }
 
 const EditorPublishStep = ({
@@ -46,7 +57,36 @@ const EditorPublishStep = ({
   publishProgress,
   onBack,
   onPublish,
+  products,
+  setProducts,
 }: Props) => {
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newPrice, setNewPrice] = useState("");
+  const [newOldPrice, setNewOldPrice] = useState("");
+  const [newPromo, setNewPromo] = useState("");
+  const [newUrl, setNewUrl] = useState("");
+
+  const resetForm = () => {
+    setNewTitle(""); setNewPrice(""); setNewOldPrice(""); setNewPromo(""); setNewUrl("");
+    setShowAddProduct(false);
+  };
+
+  const addProduct = () => {
+    if (!newTitle.trim() || !newPrice) return;
+    setProducts([...products, {
+      title: newTitle.trim(),
+      price: Number(newPrice) || 0,
+      oldPrice: newOldPrice ? Number(newOldPrice) : undefined,
+      promoCode: newPromo.trim() || undefined,
+      productUrl: newUrl.trim() || undefined,
+    }]);
+    resetForm();
+  };
+
+  const removeProduct = (idx: number) => {
+    setProducts(products.filter((_, i) => i !== idx));
+  };
   return (
     <div className="absolute inset-0 z-50 bg-zinc-950 flex flex-col overflow-y-auto">
       <div className="flex items-center justify-between px-4 pt-12 pb-3 border-b border-white/10 sticky top-0 bg-zinc-950 z-10">
@@ -121,6 +161,79 @@ const EditorPublishStep = ({
             placeholder="#вайб #москва"
             className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
           />
+        </div>
+
+        {/* Товары в кадре */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-white/60 text-xs font-semibold uppercase flex items-center gap-1.5">
+              <Icon name="ShoppingBag" size={13} /> Товары в кадре
+            </p>
+            {!showAddProduct && (
+              <button onClick={() => setShowAddProduct(true)} className="text-[#fe2c55] text-xs font-semibold flex items-center gap-1">
+                <Icon name="Plus" size={13} /> Добавить
+              </button>
+            )}
+          </div>
+
+          {products.length > 0 && (
+            <div className="flex flex-col gap-2 mb-2">
+              {products.map((p, i) => (
+                <div key={i} className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-sm font-medium truncate">{p.title}</p>
+                    <p className="text-white/50 text-xs">{p.price.toLocaleString("ru-RU")} ₽{p.promoCode ? ` · промо ${p.promoCode}` : ""}</p>
+                  </div>
+                  <button onClick={() => removeProduct(i)} className="text-red-400 flex-shrink-0"><Icon name="Trash2" size={16} /></button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {showAddProduct ? (
+            <div className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-2">
+              <input
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="Название товара"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+              />
+              <div className="flex gap-2">
+                <input
+                  value={newPrice}
+                  onChange={(e) => setNewPrice(e.target.value.replace(/[^\d.]/g, ""))}
+                  placeholder="Цена ₽"
+                  inputMode="decimal"
+                  className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+                />
+                <input
+                  value={newOldPrice}
+                  onChange={(e) => setNewOldPrice(e.target.value.replace(/[^\d.]/g, ""))}
+                  placeholder="Старая цена (если скидка)"
+                  inputMode="decimal"
+                  className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+                />
+              </div>
+              <input
+                value={newPromo}
+                onChange={(e) => setNewPromo(e.target.value)}
+                placeholder="Промокод (необязательно)"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+              />
+              <input
+                value={newUrl}
+                onChange={(e) => setNewUrl(e.target.value)}
+                placeholder="Ссылка на товар (необязательно)"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+              />
+              <div className="flex gap-2 pt-1">
+                <button onClick={resetForm} className="flex-1 py-2 rounded-lg bg-white/10 text-white/70 text-sm font-semibold">Отмена</button>
+                <button onClick={addProduct} disabled={!newTitle.trim() || !newPrice} className="flex-1 py-2 rounded-lg bg-[#fe2c55] text-white text-sm font-semibold disabled:opacity-40">Добавить</button>
+              </div>
+            </div>
+          ) : products.length === 0 && (
+            <p className="text-white/30 text-xs">Добавь товары — под видео появится значок «Товары в кадре», зрители смогут купить прямо из ленты.</p>
+          )}
         </div>
 
         {publishing && publishProgress ? (

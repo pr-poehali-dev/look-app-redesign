@@ -11,6 +11,8 @@ import { useAuth } from "@/context/AuthContext";
 import ReportButton from "@/components/ReportButton";
 import { toast } from "sonner";
 import { trackVideoView, markNotInterested, markMoreLikeThis, hideAuthor } from "@/hooks/useFeedSignals";
+import { useProductsByVideos, trackProductClick } from "@/hooks/useProducts";
+import { useCart } from "@/hooks/useCart";
 
 export interface VideoData {
   id: number;
@@ -26,6 +28,8 @@ export interface VideoData {
   shares: string;
   avatar: string;
   isVideo?: boolean;
+  templateId?: string | null;
+  hasProducts?: boolean;
 }
 
 interface VideoCardProps {
@@ -67,6 +71,29 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const [showShare, setShowShare] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [showProducts, setShowProducts] = useState(false);
+  const [addingProductId, setAddingProductId] = useState<number | null>(null);
+
+  // Товары грузим ТОЛЬКО если у видео реально есть привязанные товары (экономим трафик)
+  const dbVideoId = video.dbId ?? video.id;
+  const productVideoIds = video.hasProducts ? [dbVideoId] : [];
+  const productsByVideo = useProductsByVideos(productVideoIds);
+  const products = productsByVideo[String(dbVideoId)] || [];
+  const { addToCart } = useCart();
+
+  const handleUseTemplate = () => {
+    window.dispatchEvent(new CustomEvent("use-template", { detail: { templateId: video.templateId } }));
+    toast.success("Шаблон открыт в конструкторе");
+  };
+
+  const handleAddToCart = async (productId: number) => {
+    setAddingProductId(productId);
+    trackProductClick(productId, dbVideoId, user?.id);
+    const ok = await addToCart(productId);
+    setAddingProductId(null);
+    if (ok) toast.success("Добавлено в корзину");
+    else toast.error("Войди в аккаунт, чтобы добавить в корзину");
+  };
   const [playerUrl, setPlayerUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [commentText, setCommentText] = useState("");
@@ -360,6 +387,18 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
               </div>
             </div>
           )}
+          {video.hasProducts && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowProducts(true); }}
+              onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowProducts(true); }}
+              className="absolute top-4 right-4 z-30 -translate-y-3 md:translate-y-0 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-full pl-2 pr-3 py-1.5 active:scale-95 transition-transform"
+              style={{ touchAction: "manipulation" }}
+              title="Товары в кадре"
+            >
+              <Icon name="ShoppingBag" size={14} className="text-white" />
+              <span className="text-white text-[11px] font-semibold">Товары в кадре</span>
+            </button>
+          )}
           <div
             className="absolute top-4 left-4 z-30 flex items-center gap-2 -translate-y-3 md:translate-y-0"
             onMouseEnter={() => setShowVolume(true)}
@@ -476,11 +515,22 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             </div>
           );
         })()}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center animate-spin" style={{ animationDuration: "3s" }}>
             <Icon name="Music" size={10} className="text-white" />
           </div>
           <span className="text-white/80 text-xs truncate max-w-[180px]">{video.song}</span>
+          {video.templateId && (
+            <button
+              onClick={(e) => { e.stopPropagation(); handleUseTemplate(); }}
+              onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); handleUseTemplate(); }}
+              className="flex items-center gap-1 bg-white/15 backdrop-blur-sm rounded-full px-2.5 py-1 active:scale-95 transition-transform"
+              style={{ touchAction: "manipulation" }}
+            >
+              <Icon name="Wand2" size={11} className="text-white" />
+              <span className="text-white text-[11px] font-semibold">Использовать шаблон</span>
+            </button>
+          )}
         </div>
       </div>
       </div>
@@ -832,6 +882,66 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
               </div>
               <span className="text-white text-sm font-medium">{copied ? "Скопировано!" : "Скопировать ссылку"}</span>
             </button>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {showProducts && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex flex-col justify-end md:flex-row md:justify-end md:items-center md:bg-black/40"
+          onClick={() => setShowProducts(false)}
+        >
+          <div
+            className="sheet-theme rounded-t-3xl px-4 pt-5 pb-10 md:rounded-2xl md:pb-5 md:mr-6 md:w-[380px] md:shadow-2xl max-h-[70vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-white font-bold text-base flex items-center gap-2">
+                <Icon name="ShoppingBag" size={18} />
+                Товары из этого видео
+              </span>
+              <button onClick={() => setShowProducts(false)}>
+                <Icon name="X" size={20} className="text-white/60" />
+              </button>
+            </div>
+            {products.length === 0 ? (
+              <p className="text-white/40 text-sm py-6 text-center">Загружаем товары...</p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {products.map((p) => (
+                  <div key={p.id} className="flex items-center gap-3 bg-white/5 rounded-2xl p-3">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 flex-shrink-0">
+                      {p.image && <img src={p.image} alt={p.title} className="w-full h-full object-cover" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-semibold truncate">{p.title}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-white font-bold text-sm">{p.price.toLocaleString("ru-RU")} ₽</span>
+                        {p.old_price && p.old_price > p.price && (
+                          <span className="text-white/40 text-xs line-through">{p.old_price.toLocaleString("ru-RU")} ₽</span>
+                        )}
+                      </div>
+                      {p.promo_code && (
+                        <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#fe2c55]/20 text-[#fe2c55] text-[10px] font-bold">
+                          Промокод: {p.promo_code}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleAddToCart(p.id)}
+                      disabled={addingProductId === p.id}
+                      className="flex-shrink-0 w-9 h-9 rounded-full bg-[#fe2c55] flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
+                      title="В корзину"
+                    >
+                      {addingProductId === p.id
+                        ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        : <Icon name="Plus" size={18} className="text-white" />}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>,
         document.body

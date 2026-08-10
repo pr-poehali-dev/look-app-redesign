@@ -2,6 +2,8 @@ import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import SettingsScreen from "./SettingsScreen";
+import AnalyticsScreen from "./profile/AnalyticsScreen";
+import CartScreen from "./profile/CartScreen";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -315,6 +317,8 @@ const ProfilePage = () => {
   const [tab, setTab] = useState<"videos" | "posts" | "reposts">("videos");
   const [showSettings, setShowSettings] = useState(false);
   const [showScreen, setShowScreen] = useState<"followers" | "following" | null>(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showCart, setShowCart] = useState(false);
   const { userVideos: stories, removeMedia, addMedia, refreshMedia } = useUserMedia();
   const { user, token, logout, updateUser } = useAuth();
   const { theme, toggle: toggleTheme } = useTheme();
@@ -406,6 +410,8 @@ const ProfilePage = () => {
   if (showSettings) return <SettingsScreen onBack={() => setShowSettings(false)} />;
   if (showScreen === "followers") return <UserListScreen title="Подписчики" users={followersList} onBack={() => setShowScreen(null)} emptyText="Пока нет подписчиков" />;
   if (showScreen === "following") return <UserListScreen title="Подписки" users={followingUsers} onBack={() => setShowScreen(null)} emptyText="Ты пока ни на кого не подписан" showUnfollow />;
+  if (showAnalytics) return <AnalyticsScreen onBack={() => setShowAnalytics(false)} />;
+  if (showCart) return <CartScreen onBack={() => setShowCart(false)} />;
 
   return (
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
@@ -516,6 +522,24 @@ const ProfilePage = () => {
           className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-red-50 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
         >
           <Icon name="LogOut" size={18} className="text-red-500" />
+        </button>
+      </div>
+
+      {/* Аналитика + Корзина */}
+      <div className="flex gap-2 px-4 pb-4 md:px-3 md:pb-3">
+        <button
+          onClick={() => setShowAnalytics(true)}
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-sm md:text-xs"
+        >
+          <Icon name="BarChart3" size={16} />
+          Аналитика
+        </button>
+        <button
+          onClick={() => setShowCart(true)}
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-sm md:text-xs"
+        >
+          <Icon name="ShoppingCart" size={16} />
+          Корзина
         </button>
       </div>
 

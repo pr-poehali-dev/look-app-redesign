@@ -207,6 +207,15 @@ const CHUNKED_URL = "https://functions.poehali.dev/25a6b99d-32f3-45a4-baf7-a0880
 // 1 МБ * 1.37 (base64) ≈ 1.4 МБ JSON body. С запасом до лимита 6 МБ.
 const CHUNK_SIZE = 1 * 1024 * 1024;
 
+export interface UploadProductMeta {
+  title: string;
+  price: number;
+  old_price?: number;
+  image?: string;
+  promo_code?: string;
+  product_url?: string;
+}
+
 export interface DirectUploadMeta {
   category: string;
   destinations?: string[];
@@ -216,6 +225,8 @@ export interface DirectUploadMeta {
   handle?: string;
   user_id?: string;
   thumbData?: string; // base64 jpeg кадр для превью видео
+  templateId?: string | null;
+  products?: UploadProductMeta[];
 }
 
 async function blobToBase64(blob: Blob): Promise<string> {
@@ -330,6 +341,8 @@ export async function uploadFileDirect(
       author: meta.author || "Я",
       handle: meta.handle || "user",
       user_id: meta.user_id || "anonymous",
+      template_id: meta.templateId || null,
+      products: meta.products || [],
     },
   });
   const finalUrl = finish.url as string | undefined;
