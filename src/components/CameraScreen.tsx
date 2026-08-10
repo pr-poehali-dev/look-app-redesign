@@ -32,7 +32,9 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
   const streamRef = useRef<MediaStream | null>(null);
   const [facing, setFacing] = useState<"user" | "environment">("environment");
   const [filter, setFilter] = useState("none");
-  const [mode, setMode] = useState("Видео");
+  const [mode, setMode] = useState(() => {
+    try { return sessionStorage.getItem("pending_template_id") ? "Конструктор" : "Видео"; } catch { return "Видео"; }
+  });
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
   const [flash, setFlash] = useState(false);

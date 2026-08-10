@@ -40,6 +40,7 @@ const PostCard = ({ post }: { post: Post }) => {
   };
 
   const useTemplate = () => {
+    try { sessionStorage.setItem("pending_template_id", "blank"); } catch { /* ignore */ }
     window.dispatchEvent(new CustomEvent("use-template", { detail: { templateId: "blank" } }));
   };
 

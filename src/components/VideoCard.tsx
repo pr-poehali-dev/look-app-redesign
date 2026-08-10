@@ -82,6 +82,9 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const { addToCart } = useCart();
 
   const handleUseTemplate = () => {
+    // Сохраняем в sessionStorage — CameraScreen/MediaEditor монтируются позже клика,
+    // поэтому одноразовое CustomEvent они могут не успеть поймать
+    try { sessionStorage.setItem("pending_template_id", video.templateId || ""); } catch { /* ignore */ }
     window.dispatchEvent(new CustomEvent("use-template", { detail: { templateId: video.templateId } }));
     toast.success("Шаблон открыт в конструкторе");
   };

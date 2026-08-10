@@ -309,14 +309,16 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
      
   }, [clips.length]);
 
-  // Клик «Использовать шаблон» под чужим видео в ленте — запоминаем и открываем выбор файла
+  // Клик «Использовать шаблон» под чужим видео/постом в ленте — читаем из sessionStorage
+  // (CameraScreen монтирует MediaEditor асинхронно, поэтому CustomEvent может не долететь)
   useEffect(() => {
-    const onUseTemplate = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { templateId?: string } | undefined;
-      if (detail?.templateId) selectTemplateThenPick(detail.templateId);
-    };
-    window.addEventListener("use-template", onUseTemplate);
-    return () => window.removeEventListener("use-template", onUseTemplate);
+    try {
+      const pending = sessionStorage.getItem("pending_template_id");
+      if (pending) {
+        sessionStorage.removeItem("pending_template_id");
+        selectTemplateThenPick(pending);
+      }
+    } catch { /* ignore */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
