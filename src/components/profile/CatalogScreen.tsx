@@ -78,6 +78,15 @@ const CatalogScreen = ({ onBack }: { onBack: () => void }) => {
                     Промокод: {p.promo_code}
                   </span>
                 )}
+                {p.owner_handle && !p.is_partner && (
+                  <button
+                    onClick={() => window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: p.owner_handle } }))}
+                    className="flex items-center gap-1 text-gray-400 active:text-gray-600 transition-colors"
+                  >
+                    <Icon name="Store" size={11} />
+                    <span className="text-[10px] font-medium truncate">@{p.owner_handle}</span>
+                  </button>
+                )}
                 <button
                   onClick={() => handleAdd(p.id)}
                   disabled={addingId === p.id}

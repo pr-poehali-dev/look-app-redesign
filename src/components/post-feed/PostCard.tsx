@@ -362,34 +362,49 @@ const PostCard = ({ post }: { post: Post }) => {
             ) : (
               <div className="flex flex-col gap-3">
                 {products.map((p) => (
-                  <div key={p.id} className="flex items-center gap-3 bg-white/5 rounded-2xl p-3">
-                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 flex-shrink-0">
-                      {p.image && <img src={p.image} alt={p.title} className="w-full h-full object-cover" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-semibold truncate">{p.title}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-white font-bold text-sm">{p.price.toLocaleString("ru-RU")} ₽</span>
-                        {p.old_price && p.old_price > p.price && (
-                          <span className="text-white/40 text-xs line-through">{p.old_price.toLocaleString("ru-RU")} ₽</span>
+                  <div key={p.id} className="flex flex-col gap-2 bg-white/5 rounded-2xl p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 flex-shrink-0">
+                        {p.image && <img src={p.image} alt={p.title} className="w-full h-full object-cover" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-semibold truncate">{p.title}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-white font-bold text-sm">{p.price.toLocaleString("ru-RU")} ₽</span>
+                          {p.old_price && p.old_price > p.price && (
+                            <span className="text-white/40 text-xs line-through">{p.old_price.toLocaleString("ru-RU")} ₽</span>
+                          )}
+                        </div>
+                        {p.promo_code && (
+                          <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#fe2c55]/20 text-[#fe2c55] text-[10px] font-bold">
+                            Промокод: {p.promo_code}
+                          </span>
                         )}
                       </div>
-                      {p.promo_code && (
-                        <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#fe2c55]/20 text-[#fe2c55] text-[10px] font-bold">
-                          Промокод: {p.promo_code}
-                        </span>
-                      )}
+                      <button
+                        onClick={() => handleAddToCart(p.id)}
+                        disabled={addingProductId === p.id}
+                        className="flex-shrink-0 w-9 h-9 rounded-full bg-[#fe2c55] flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
+                        title="В корзину"
+                      >
+                        {addingProductId === p.id
+                          ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          : <Icon name="Plus" size={18} className="text-white" />}
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleAddToCart(p.id)}
-                      disabled={addingProductId === p.id}
-                      className="flex-shrink-0 w-9 h-9 rounded-full bg-[#fe2c55] flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
-                      title="В корзину"
-                    >
-                      {addingProductId === p.id
-                        ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        : <Icon name="Plus" size={18} className="text-white" />}
-                    </button>
+                    {p.owner_handle && !p.is_partner && (
+                      <button
+                        onClick={() => {
+                          setShowProducts(false);
+                          window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: p.owner_handle } }));
+                        }}
+                        className="flex items-center gap-1.5 self-start pl-1 text-white/60 active:text-white/90 transition-colors"
+                      >
+                        <Icon name="Store" size={12} />
+                        <span className="text-[11px] font-medium">Магазин @{p.owner_handle}</span>
+                        <Icon name="ChevronRight" size={12} />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

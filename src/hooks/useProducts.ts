@@ -8,6 +8,9 @@ export interface Product {
   id: number;
   video_id?: number | null;
   owner_user_id?: string;
+  owner_handle?: string | null;
+  owner_name?: string | null;
+  owner_avatar?: string | null;
   title: string;
   description?: string;
   price: number;

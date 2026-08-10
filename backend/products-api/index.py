@@ -17,6 +17,13 @@ PRODUCT_FIELDS = (
     "promo_code, product_url, category, in_stock, status, is_partner, moderation_note, created_at"
 )
 
+# Те же поля товара + хэндл/имя/аватар продавца (для кнопки "Перейти в профиль" на карточке товара)
+PRODUCT_FIELDS_WITH_OWNER = (
+    "p.id, p.video_id, p.owner_user_id, p.title, p.description, p.price, p.old_price, p.image, "
+    "p.promo_code, p.product_url, p.category, p.in_stock, p.status, p.is_partner, p.moderation_note, p.created_at, "
+    "u.handle, u.name, u.avatar"
+)
+
 
 def _resp(status, payload):
     return {'statusCode': status, 'headers': {**CORS, 'Content-Type': 'application/json'}, 'body': json.dumps(payload)}
@@ -33,6 +40,14 @@ def _row_to_product(r):
         'status': r[12], 'is_partner': bool(r[13]), 'moderation_note': r[14] or '',
         'created_at': r[15].isoformat() if r[15] else None,
     }
+
+
+def _row_to_product_with_owner(r):
+    prod = _row_to_product(r[:16])
+    prod['owner_handle'] = r[16] if len(r) > 16 else None
+    prod['owner_name'] = r[17] if len(r) > 17 else None
+    prod['owner_avatar'] = r[18] if len(r) > 18 else None
+    return prod
 
 
 def _s3():
@@ -95,25 +110,26 @@ def handler(event: dict, context) -> dict:
 
             # Товары, привязанные напрямую через video_id
             cur.execute(
-                f"SELECT {PRODUCT_FIELDS} FROM {schema}.products "
-                f"WHERE video_id IN ({placeholders}) AND video_id != 0 AND status = 'active' ORDER BY id ASC",
+                f"SELECT {PRODUCT_FIELDS_WITH_OWNER} FROM {schema}.products p "
+                f"LEFT JOIN {schema}.app_users u ON u.id = p.owner_user_id "
+                f"WHERE p.video_id IN ({placeholders}) AND p.video_id != 0 AND p.status = 'active' ORDER BY p.id ASC",
                 tuple(ids)
             )
             for r in cur.fetchall():
                 vid = str(r[1])
-                result.setdefault(vid, []).append(_row_to_product(r))
+                result.setdefault(vid, []).append(_row_to_product_with_owner(r))
 
             # Товары, привязанные через хотспоты (метки на кадре)
-            prefixed_fields = ", ".join(f"p.{f.strip()}" for f in PRODUCT_FIELDS.split(","))
             cur.execute(
-                f"SELECT h.video_id, {prefixed_fields} FROM {schema}.product_hotspots h "
+                f"SELECT h.video_id, {PRODUCT_FIELDS_WITH_OWNER} FROM {schema}.product_hotspots h "
                 f"JOIN {schema}.products p ON p.id = h.product_id "
+                f"LEFT JOIN {schema}.app_users u ON u.id = p.owner_user_id "
                 f"WHERE h.video_id IN ({placeholders}) AND p.status = 'active' ORDER BY p.id ASC",
                 tuple(ids)
             )
             for r in cur.fetchall():
                 vid = str(r[0])
-                prod = _row_to_product(r[1:])
+                prod = _row_to_product_with_owner(r[1:])
                 lst = result.setdefault(vid, [])
                 if not any(p['id'] == prod['id'] for p in lst):
                     lst.append(prod)
@@ -179,17 +195,19 @@ def handler(event: dict, context) -> dict:
             offset = max(int(params.get('offset') or 0), 0)
             if category and category != 'all':
                 cur.execute(
-                    f"SELECT {PRODUCT_FIELDS} FROM {schema}.products "
-                    f"WHERE status = 'active' AND category = %s ORDER BY id DESC LIMIT %s OFFSET %s",
+                    f"SELECT {PRODUCT_FIELDS_WITH_OWNER} FROM {schema}.products p "
+                    f"LEFT JOIN {schema}.app_users u ON u.id = p.owner_user_id "
+                    f"WHERE p.status = 'active' AND p.category = %s ORDER BY p.id DESC LIMIT %s OFFSET %s",
                     (category, limit, offset)
                 )
             else:
                 cur.execute(
-                    f"SELECT {PRODUCT_FIELDS} FROM {schema}.products "
-                    f"WHERE status = 'active' ORDER BY id DESC LIMIT %s OFFSET %s",
+                    f"SELECT {PRODUCT_FIELDS_WITH_OWNER} FROM {schema}.products p "
+                    f"LEFT JOIN {schema}.app_users u ON u.id = p.owner_user_id "
+                    f"WHERE p.status = 'active' ORDER BY p.id DESC LIMIT %s OFFSET %s",
                     (limit, offset)
                 )
-            products = [_row_to_product(r) for r in cur.fetchall()]
+            products = [_row_to_product_with_owner(r) for r in cur.fetchall()]
             return _resp(200, {'products': products})
 
         # --- Создать товар в своей витрине (video_id не обязателен) ---
