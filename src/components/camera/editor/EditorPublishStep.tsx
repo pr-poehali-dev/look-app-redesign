@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Clip } from "./editorTypes";
-import { uploadProductImage } from "@/hooks/useProducts";
+import { uploadProductImage, useMyProducts, usePartnerCatalog, type Product } from "@/hooks/useProducts";
 
 export interface PendingProduct {
   title: string;
@@ -10,6 +10,8 @@ export interface PendingProduct {
   promoCode?: string;
   productUrl?: string;
   image?: string;
+  sourceProductId?: number;
+  isPartner?: boolean;
 }
 
 const VIDEO_CATEGORIES = [
@@ -65,6 +67,7 @@ const EditorPublishStep = ({
   userId,
 }: Props) => {
   const [showAddProduct, setShowAddProduct] = useState(false);
+  const [addTab, setAddTab] = useState<"mine" | "partner" | "new">("mine");
   const [newTitle, setNewTitle] = useState("");
   const [newPrice, setNewPrice] = useState("");
   const [newOldPrice, setNewOldPrice] = useState("");
@@ -73,6 +76,9 @@ const EditorPublishStep = ({
   const [newImage, setNewImage] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
+
+  const { products: myProducts } = useMyProducts(userId);
+  const partnerProducts = usePartnerCatalog();
 
   const resetForm = () => {
     setNewTitle(""); setNewPrice(""); setNewOldPrice(""); setNewPromo(""); setNewUrl(""); setNewImage("");
@@ -100,6 +106,20 @@ const EditorPublishStep = ({
       image: newImage || undefined,
     }]);
     resetForm();
+  };
+
+  const pickExistingProduct = (p: Product) => {
+    setProducts([...products, {
+      title: p.title,
+      price: p.price,
+      oldPrice: p.old_price || undefined,
+      promoCode: p.promo_code || undefined,
+      productUrl: p.product_url || undefined,
+      image: p.image || undefined,
+      sourceProductId: p.id,
+      isPartner: !!p.is_partner,
+    }]);
+    setShowAddProduct(false);
   };
 
   const removeProduct = (idx: number) => {
@@ -202,7 +222,14 @@ const EditorPublishStep = ({
                     {p.image && <img src={p.image} className="w-full h-full object-cover" alt="" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-medium truncate">{p.title}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-white text-sm font-medium truncate">{p.title}</p>
+                      {p.isPartner && (
+                        <span className="flex-shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[#8b5cf6]/20 text-[#8b5cf6] text-[10px] font-bold">
+                          <Icon name="BadgeCheck" size={10} /> Партнёр
+                        </span>
+                      )}
+                    </div>
                     <p className="text-white/50 text-xs">{p.price.toLocaleString("ru-RU")} ₽{p.promoCode ? ` · промо ${p.promoCode}` : ""}</p>
                   </div>
                   <button onClick={() => removeProduct(i)} className="text-red-400 flex-shrink-0"><Icon name="Trash2" size={16} /></button>
@@ -213,64 +240,143 @@ const EditorPublishStep = ({
 
           {showAddProduct ? (
             <div className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-2">
-              <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageFile} />
-              <button
-                type="button"
-                onClick={() => imageInputRef.current?.click()}
-                className="w-full aspect-video rounded-lg bg-white/5 border-2 border-dashed border-white/15 overflow-hidden relative flex items-center justify-center"
-              >
-                {newImage ? (
-                  <img src={newImage} className="w-full h-full object-cover" alt="" />
+              <div className="flex gap-1.5">
+                {([
+                  { id: "mine", label: "Мои товары" },
+                  { id: "partner", label: "Партнёрские" },
+                  { id: "new", label: "Загрузить новый" },
+                ] as const).map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setAddTab(t.id)}
+                    className={`px-2.5 py-1.5 rounded-full text-[11px] font-semibold flex-shrink-0 ${addTab === t.id ? "bg-white text-black" : "bg-white/10 text-white/70"}`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              {addTab === "mine" && (
+                myProducts.filter((p) => p.status === "active").length === 0 ? (
+                  <p className="text-white/40 text-xs py-2">У тебя пока нет активных товаров. Добавь их в «Магазине» профиля.</p>
                 ) : (
-                  <div className="flex flex-col items-center gap-1 text-white/40">
-                    <Icon name="ImagePlus" size={22} />
-                    <span className="text-[11px] font-medium">Загрузить фото товара</span>
+                  <div className="flex flex-col gap-1.5 max-h-56 overflow-y-auto">
+                    {myProducts.filter((p) => p.status === "active").map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => pickExistingProduct(p)}
+                        className="flex items-center gap-2 bg-white/5 hover:bg-white/10 rounded-lg p-2 text-left"
+                      >
+                        <div className="w-9 h-9 rounded-lg overflow-hidden bg-white/10 flex-shrink-0">
+                          {p.image && <img src={p.image} className="w-full h-full object-cover" alt="" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-sm truncate">{p.title}</p>
+                          <p className="text-white/50 text-xs">{p.price.toLocaleString("ru-RU")} ₽</p>
+                        </div>
+                        <Icon name="Plus" size={16} className="text-[#fe2c55] flex-shrink-0" />
+                      </button>
+                    ))}
                   </div>
-                )}
-                {uploadingImage && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                )
+              )}
+
+              {addTab === "partner" && (
+                partnerProducts.length === 0 ? (
+                  <p className="text-white/40 text-xs py-2">Пока нет партнёрских товаров.</p>
+                ) : (
+                  <div className="flex flex-col gap-1.5 max-h-56 overflow-y-auto">
+                    {partnerProducts.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => pickExistingProduct(p)}
+                        className="flex items-center gap-2 bg-white/5 hover:bg-white/10 rounded-lg p-2 text-left"
+                      >
+                        <div className="w-9 h-9 rounded-lg overflow-hidden bg-white/10 flex-shrink-0">
+                          {p.image && <img src={p.image} className="w-full h-full object-cover" alt="" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-white text-sm truncate">{p.title}</p>
+                            <span className="flex-shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[#8b5cf6]/20 text-[#8b5cf6] text-[10px] font-bold">
+                              <Icon name="BadgeCheck" size={10} /> Партнёр
+                            </span>
+                          </div>
+                          <p className="text-white/50 text-xs">{p.price.toLocaleString("ru-RU")} ₽</p>
+                        </div>
+                        <Icon name="Plus" size={16} className="text-[#fe2c55] flex-shrink-0" />
+                      </button>
+                    ))}
                   </div>
-                )}
-              </button>
-              <input
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="Название товара"
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
-              />
-              <div className="flex gap-2">
-                <input
-                  value={newPrice}
-                  onChange={(e) => setNewPrice(e.target.value.replace(/[^\d.]/g, ""))}
-                  placeholder="Цена ₽"
-                  inputMode="decimal"
-                  className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
-                />
-                <input
-                  value={newOldPrice}
-                  onChange={(e) => setNewOldPrice(e.target.value.replace(/[^\d.]/g, ""))}
-                  placeholder="Старая цена (если скидка)"
-                  inputMode="decimal"
-                  className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
-                />
-              </div>
-              <input
-                value={newPromo}
-                onChange={(e) => setNewPromo(e.target.value)}
-                placeholder="Промокод (необязательно)"
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
-              />
-              <input
-                value={newUrl}
-                onChange={(e) => setNewUrl(e.target.value)}
-                placeholder="Ссылка на товар (необязательно)"
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
-              />
-              <div className="flex gap-2 pt-1">
-                <button onClick={resetForm} className="flex-1 py-2 rounded-lg bg-white/10 text-white/70 text-sm font-semibold">Отмена</button>
-                <button onClick={addProduct} disabled={!newTitle.trim() || !newPrice} className="flex-1 py-2 rounded-lg bg-[#fe2c55] text-white text-sm font-semibold disabled:opacity-40">Добавить</button>
-              </div>
+                )
+              )}
+
+              {addTab === "new" && (
+                <>
+                  <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageFile} />
+                  <button
+                    type="button"
+                    onClick={() => imageInputRef.current?.click()}
+                    className="w-full aspect-video rounded-lg bg-white/5 border-2 border-dashed border-white/15 overflow-hidden relative flex items-center justify-center"
+                  >
+                    {newImage ? (
+                      <img src={newImage} className="w-full h-full object-cover" alt="" />
+                    ) : (
+                      <div className="flex flex-col items-center gap-1 text-white/40">
+                        <Icon name="ImagePlus" size={22} />
+                        <span className="text-[11px] font-medium">Загрузить фото товара</span>
+                      </div>
+                    )}
+                    {uploadingImage && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </button>
+                  <input
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    placeholder="Название товара"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+                  />
+                  <div className="flex gap-2">
+                    <input
+                      value={newPrice}
+                      onChange={(e) => setNewPrice(e.target.value.replace(/[^\d.]/g, ""))}
+                      placeholder="Цена ₽"
+                      inputMode="decimal"
+                      className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+                    />
+                    <input
+                      value={newOldPrice}
+                      onChange={(e) => setNewOldPrice(e.target.value.replace(/[^\d.]/g, ""))}
+                      placeholder="Старая цена (если скидка)"
+                      inputMode="decimal"
+                      className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+                    />
+                  </div>
+                  <input
+                    value={newPromo}
+                    onChange={(e) => setNewPromo(e.target.value)}
+                    placeholder="Промокод (необязательно)"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+                  />
+                  <input
+                    value={newUrl}
+                    onChange={(e) => setNewUrl(e.target.value)}
+                    placeholder="Ссылка на товар (необязательно)"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+                  />
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={resetForm} className="flex-1 py-2 rounded-lg bg-white/10 text-white/70 text-sm font-semibold">Отмена</button>
+                    <button onClick={addProduct} disabled={!newTitle.trim() || !newPrice} className="flex-1 py-2 rounded-lg bg-[#fe2c55] text-white text-sm font-semibold disabled:opacity-40">Добавить</button>
+                  </div>
+                </>
+              )}
+
+              {addTab !== "new" && (
+                <button onClick={() => setShowAddProduct(false)} className="w-full py-2 rounded-lg bg-white/10 text-white/70 text-sm font-semibold">Закрыть</button>
+              )}
             </div>
           ) : products.length === 0 && (
             <p className="text-white/30 text-xs">Добавь товары — под видео появится значок «Товары в кадре», зрители смогут купить прямо из ленты.</p>
