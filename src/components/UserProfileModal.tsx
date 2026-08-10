@@ -4,6 +4,7 @@ import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { getAuthor } from "@/data/authors";
 import { useFollowing, useFollowerCount } from "@/hooks/useFollowing";
+import { useShopProducts } from "@/hooks/useProducts";
 
 interface Props {
   handle: string;
@@ -24,10 +25,11 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
   const data = getAuthor(handle);
   const { following, toggle: toggleFollow, isSelf } = useFollowing(handle);
   const realFollowers = useFollowerCount(handle);
-  const [tab, setTab] = useState<"media" | "files" | "links">("media");
+  const [tab, setTab] = useState<"media" | "shop" | "files" | "links">("media");
   const [openedItem, setOpenedItem] = useState<number | null>(null);
   const [gender, setGender] = useState<string | null>(null);
-  const [realUser, setRealUser] = useState<{ id: number; name: string; handle: string; avatar: string | null } | null>(null);
+  const [realUser, setRealUser] = useState<{ id: string; name: string; handle: string; avatar: string | null } | null>(null);
+  const { products: shopProducts, loading: shopLoading } = useShopProducts(realUser?.id);
   const [userMedia, setUserMedia] = useState<{ id: number; image: string; isVideo: boolean }[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
   const [notifMenu, setNotifMenu] = useState(false);
@@ -259,6 +261,17 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
             >
               Медиа
             </button>
+            {shopProducts.length > 0 && (
+              <button
+                onClick={() => setTab("shop")}
+                className={`flex-1 py-3 text-sm font-medium border-b-2 transition-all flex items-center justify-center gap-1 ${
+                  tab === "shop" ? "border-[#2AABEE] text-[#2AABEE]" : "border-transparent text-gray-500"
+                }`}
+              >
+                <Icon name="Store" size={14} />
+                Магазин
+              </button>
+            )}
             <button
               onClick={() => setTab("files")}
               className={`flex-1 py-3 text-sm font-medium border-b-2 transition-all ${
@@ -277,7 +290,43 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
             </button>
           </div>
 
-          {tab === "media" ? (
+          {tab === "shop" ? (
+            shopLoading && shopProducts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 bg-white">
+                <div className="w-8 h-8 border-2 border-[#2AABEE] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : shopProducts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 bg-white">
+                <Icon name="Store" size={48} className="text-gray-300" />
+                <p className="text-gray-400 text-sm">В магазине пока нет товаров</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 p-3 bg-white">
+                {shopProducts.map((p) => (
+                  <a
+                    key={p.id}
+                    href={p.product_url || undefined}
+                    target={p.product_url ? "_blank" : undefined}
+                    rel={p.product_url ? "noopener noreferrer" : undefined}
+                    className="rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 flex flex-col"
+                  >
+                    <div className="aspect-square bg-gray-100">
+                      {p.image && <img src={p.image} alt={p.title} className="w-full h-full object-cover" />}
+                    </div>
+                    <div className="p-2.5">
+                      <p className="text-black text-xs font-semibold truncate">{p.title}</p>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="text-black text-sm font-bold">{p.price.toLocaleString("ru-RU")} ₽</span>
+                        {p.old_price && p.old_price > p.price && (
+                          <span className="text-gray-400 text-[11px] line-through">{p.old_price.toLocaleString("ru-RU")} ₽</span>
+                        )}
+                      </div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            )
+          ) : tab === "media" ? (
             mediaLoading && gallery.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 gap-3 bg-white">
                 <div className="w-8 h-8 border-2 border-[#2AABEE] border-t-transparent rounded-full animate-spin" />

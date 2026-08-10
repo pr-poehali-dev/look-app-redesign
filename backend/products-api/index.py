@@ -159,6 +159,39 @@ def handler(event: dict, context) -> dict:
             products = [_row_to_product(r) for r in cur.fetchall()]
             return _resp(200, {'products': products})
 
+        # --- Публичная витрина конкретного продавца (только активные товары) ---
+        if method == 'GET' and action == 'shop':
+            owner_id = (params.get('user_id') or '').strip()[:100]
+            if not owner_id:
+                return _resp(400, {'error': 'user_id required'})
+            cur.execute(
+                f"SELECT {PRODUCT_FIELDS} FROM {schema}.products "
+                f"WHERE owner_user_id = %s AND is_partner = FALSE AND status = 'active' ORDER BY id DESC LIMIT 200",
+                (owner_id,)
+            )
+            products = [_row_to_product(r) for r in cur.fetchall()]
+            return _resp(200, {'products': products})
+
+        # --- Общий каталог всех активных товаров пользователей (маркетплейс) ---
+        if method == 'GET' and action == 'catalog':
+            category = (params.get('category') or '').strip()[:50]
+            limit = min(int(params.get('limit') or 60), 100)
+            offset = max(int(params.get('offset') or 0), 0)
+            if category and category != 'all':
+                cur.execute(
+                    f"SELECT {PRODUCT_FIELDS} FROM {schema}.products "
+                    f"WHERE status = 'active' AND category = %s ORDER BY id DESC LIMIT %s OFFSET %s",
+                    (category, limit, offset)
+                )
+            else:
+                cur.execute(
+                    f"SELECT {PRODUCT_FIELDS} FROM {schema}.products "
+                    f"WHERE status = 'active' ORDER BY id DESC LIMIT %s OFFSET %s",
+                    (limit, offset)
+                )
+            products = [_row_to_product(r) for r in cur.fetchall()]
+            return _resp(200, {'products': products})
+
         # --- Создать товар в своей витрине (video_id не обязателен) ---
         if method == 'POST' and action == 'create':
             if not user_id:

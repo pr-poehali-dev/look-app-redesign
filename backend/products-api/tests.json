@@ -33,6 +33,18 @@
       "method": "GET",
       "path": "/?action=mine",
       "expectedStatus": 401
+    },
+    {
+      "name": "GET shop без user_id -> 400",
+      "method": "GET",
+      "path": "/?action=shop",
+      "expectedStatus": 400
+    },
+    {
+      "name": "GET catalog",
+      "method": "GET",
+      "path": "/?action=catalog",
+      "expectedStatus": 200
     }
   ]
 }

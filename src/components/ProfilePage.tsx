@@ -5,6 +5,7 @@ import SettingsScreen from "./SettingsScreen";
 import AnalyticsScreen from "./profile/AnalyticsScreen";
 import CartScreen from "./profile/CartScreen";
 import ShopScreen from "./profile/ShopScreen";
+import CatalogScreen from "./profile/CatalogScreen";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -321,6 +322,7 @@ const ProfilePage = () => {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [showShop, setShowShop] = useState(false);
+  const [showCatalog, setShowCatalog] = useState(false);
   const { userVideos: stories, removeMedia, addMedia, refreshMedia } = useUserMedia();
   const { user, token, logout, updateUser } = useAuth();
   const { theme, toggle: toggleTheme } = useTheme();
@@ -415,6 +417,7 @@ const ProfilePage = () => {
   if (showAnalytics) return <AnalyticsScreen onBack={() => setShowAnalytics(false)} />;
   if (showCart) return <CartScreen onBack={() => setShowCart(false)} />;
   if (showShop) return <ShopScreen onBack={() => setShowShop(false)} />;
+  if (showCatalog) return <CatalogScreen onBack={() => setShowCatalog(false)} />;
 
   return (
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
@@ -528,25 +531,32 @@ const ProfilePage = () => {
         </button>
       </div>
 
-      {/* Аналитика + Магазин + Корзина */}
-      <div className="flex gap-2 px-4 pb-4 md:px-3 md:pb-3">
+      {/* Аналитика + Магазин + Каталог + Корзина */}
+      <div className="grid grid-cols-4 gap-1.5 px-4 pb-4 md:px-3 md:pb-3">
         <button
           onClick={() => setShowAnalytics(true)}
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-sm md:text-xs"
+          className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[11px] md:text-xs"
         >
           <Icon name="BarChart3" size={16} />
           Аналитика
         </button>
         <button
           onClick={() => setShowShop(true)}
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-sm md:text-xs"
+          className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[11px] md:text-xs"
         >
           <Icon name="Store" size={16} />
           Магазин
         </button>
         <button
+          onClick={() => setShowCatalog(true)}
+          className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[11px] md:text-xs"
+        >
+          <Icon name="LayoutGrid" size={16} />
+          Каталог
+        </button>
+        <button
           onClick={() => setShowCart(true)}
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-sm md:text-xs"
+          className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[11px] md:text-xs"
         >
           <Icon name="ShoppingCart" size={16} />
           Корзина

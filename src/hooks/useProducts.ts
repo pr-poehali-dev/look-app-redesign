@@ -179,6 +179,46 @@ export const usePartnerCatalog = () => {
   return products;
 };
 
+/** Публичная витрина товаров конкретного продавца (только активные). */
+export const useShopProducts = (userId?: string | null) => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!userId) { setProducts([]); return; }
+    let cancelled = false;
+    setLoading(true);
+    fetch(`${PRODUCTS_URL}?action=shop&user_id=${encodeURIComponent(userId)}`)
+      .then(parseBody)
+      .then((data) => { if (!cancelled) setProducts(data.products || []); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  return { products, loading };
+};
+
+/** Общий каталог активных товаров всех продавцов (маркетплейс). */
+export const useCatalog = (category?: string) => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const refresh = useCallback(() => {
+    setLoading(true);
+    const q = category && category !== "all" ? `&category=${encodeURIComponent(category)}` : "";
+    fetch(`${PRODUCTS_URL}?action=catalog${q}`)
+      .then(parseBody)
+      .then((data) => setProducts(data.products || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [category]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  return { products, loading, refresh };
+};
+
 export interface HotspotToAttach { product_id: number; x: number; y: number; time_start: number }
 
 export const attachHotspotsToVideo = async (videoId: number, hotspots: HotspotToAttach[], userId?: string) => {
