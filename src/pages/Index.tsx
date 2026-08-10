@@ -47,7 +47,6 @@ const Index = () => {
   const [profileHandle, setProfileHandle] = useState<string | null>(null);
   const [pendingDirectHandle, setPendingDirectHandle] = useState<string | null>(null);
   const { totalUnread } = useUnread();
-  const [desktopOverlay, setDesktopOverlay] = useState<"support" | "terms" | "privacy" | null>(null);
 
   const handleLogout = () => {
     if (confirm("Выйти из аккаунта?")) logout();
@@ -56,7 +55,7 @@ const Index = () => {
   // «Глубокий» экран, который закрывается кнопкой «Назад».
   // Между вкладками переключаемся нижним меню — их сюда НЕ включаем.
   const canGoBack =
-    showLive || showCamera || !!desktopOverlay || !!profileHandle;
+    showLive || showCamera || !!profileHandle;
 
   // Видимая кнопка «Назад» — только для полноэкранных оверлеев.
   // Камеру исключаем: у неё уже есть свои кнопки закрытия/назад в шапке,
@@ -67,7 +66,6 @@ const Index = () => {
   const goBack = () => {
     if (showLive) { setShowLive(false); return; }
     if (showCamera) { setShowCamera(false); return; }
-    if (desktopOverlay) { setDesktopOverlay(null); return; }
     if (profileHandle) { setProfileHandle(null); return; }
   };
 
@@ -93,19 +91,13 @@ const Index = () => {
       setActiveTab("messages");
     };
     const onUseTemplate = () => setShowCamera(true);
-    const onLegal = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { screen?: "support" | "terms" | "privacy" };
-      if (detail?.screen) setDesktopOverlay(detail.screen);
-    };
     window.addEventListener("open-user-profile", onOpen);
     window.addEventListener("open-direct-message", onMessage);
     window.addEventListener("use-template", onUseTemplate);
-    window.addEventListener("open-legal-screen", onLegal);
     return () => {
       window.removeEventListener("open-user-profile", onOpen);
       window.removeEventListener("open-direct-message", onMessage);
       window.removeEventListener("use-template", onUseTemplate);
-      window.removeEventListener("open-legal-screen", onLegal);
     };
   }, []);
 
@@ -170,7 +162,7 @@ const Index = () => {
             return (
               <button
                 key={tab.id}
-                onClick={() => { setDesktopOverlay(null); return isAdd ? setShowCamera(true) : setActiveTab(tab.id); }}
+                onClick={() => isAdd ? setShowCamera(true) : setActiveTab(tab.id)}
                 className={`flex items-center gap-4 px-4 py-2 rounded-xl transition-colors ${
                   active ? "bg-white/10" : "hover:bg-white/5"
                 }`}
@@ -206,25 +198,31 @@ const Index = () => {
             );
           })}
           <button
-            onClick={() => setDesktopOverlay("support")}
-            className="flex items-center gap-4 px-4 py-2 rounded-xl hover:bg-white/5 transition-colors text-left"
+            onClick={() => setActiveTab("support")}
+            className={`flex items-center gap-4 px-4 py-2 rounded-xl transition-colors text-left ${
+              activeTab === "support" ? "bg-white/10" : "hover:bg-white/5"
+            }`}
           >
-            <Icon name="LifeBuoy" size={22} className="text-white/80" />
-            <span className="text-sm text-white/90">Поддержка</span>
+            <Icon name="LifeBuoy" size={22} className={activeTab === "support" ? "text-white" : "text-white/80"} />
+            <span className={`text-sm ${activeTab === "support" ? "text-white font-bold" : "text-white/90"}`}>Поддержка</span>
           </button>
           <button
-            onClick={() => setDesktopOverlay("terms")}
-            className="flex items-center gap-4 px-4 py-2 rounded-xl hover:bg-white/5 transition-colors text-left"
+            onClick={() => setActiveTab("terms")}
+            className={`flex items-center gap-4 px-4 py-2 rounded-xl transition-colors text-left ${
+              activeTab === "terms" ? "bg-white/10" : "hover:bg-white/5"
+            }`}
           >
-            <Icon name="FileText" size={22} className="text-white/80" />
-            <span className="text-sm text-white/90">Условия использования</span>
+            <Icon name="FileText" size={22} className={activeTab === "terms" ? "text-white" : "text-white/80"} />
+            <span className={`text-sm ${activeTab === "terms" ? "text-white font-bold" : "text-white/90"}`}>Условия использования</span>
           </button>
           <button
-            onClick={() => setDesktopOverlay("privacy")}
-            className="flex items-center gap-4 px-4 py-2 rounded-xl hover:bg-white/5 transition-colors text-left"
+            onClick={() => setActiveTab("privacy")}
+            className={`flex items-center gap-4 px-4 py-2 rounded-xl transition-colors text-left ${
+              activeTab === "privacy" ? "bg-white/10" : "hover:bg-white/5"
+            }`}
           >
-            <Icon name="ShieldCheck" size={22} className="text-white/80" />
-            <span className="text-sm text-white/90">Политика конфиденциальности</span>
+            <Icon name="ShieldCheck" size={22} className={activeTab === "privacy" ? "text-white" : "text-white/80"} />
+            <span className={`text-sm ${activeTab === "privacy" ? "text-white font-bold" : "text-white/90"}`}>Политика конфиденциальности</span>
           </button>
           <button
             onClick={handleLogout}
@@ -273,29 +271,6 @@ const Index = () => {
         {showCamera && (
           <div className="absolute inset-0 z-50">
             <CameraScreen onClose={() => setShowCamera(false)} />
-          </div>
-        )}
-
-        {/* Desktop info overlays (Support / Terms / Privacy) */}
-        {desktopOverlay && (
-          <div className="absolute inset-0 z-50 bg-gray-100">
-            {desktopOverlay === "support" && <SupportScreen onBack={() => setDesktopOverlay(null)} />}
-            {desktopOverlay === "terms" && (
-              <LegalScreen
-                onBack={() => setDesktopOverlay(null)}
-                title="Условия использования"
-                settingKey="terms_of_use"
-                fallback="Используя приложение Look, вы соглашаетесь с нашими условиями использования."
-              />
-            )}
-            {desktopOverlay === "privacy" && (
-              <LegalScreen
-                onBack={() => setDesktopOverlay(null)}
-                title="Политика конфиденциальности"
-                settingKey="privacy_policy"
-                fallback="Мы уважаем вашу конфиденциальность."
-              />
-            )}
           </div>
         )}
 
@@ -425,6 +400,27 @@ const Index = () => {
             />
           )}
           {activeTab === "profile" && <ProfilePage />}
+          {activeTab === "support" && <div className="hidden md:block w-full h-full bg-gray-100"><SupportScreen onBack={() => setActiveTab("home")} /></div>}
+          {activeTab === "terms" && (
+            <div className="hidden md:block w-full h-full bg-gray-100">
+              <LegalScreen
+                onBack={() => setActiveTab("home")}
+                title="Условия использования"
+                settingKey="terms_of_use"
+                fallback="Используя приложение Look, вы соглашаетесь с нашими условиями использования."
+              />
+            </div>
+          )}
+          {activeTab === "privacy" && (
+            <div className="hidden md:block w-full h-full bg-gray-100">
+              <LegalScreen
+                onBack={() => setActiveTab("home")}
+                title="Политика конфиденциальности"
+                settingKey="privacy_policy"
+                fallback="Мы уважаем вашу конфиденциальность."
+              />
+            </div>
+          )}
         </div>
 
         {/* Bottom Tab Bar (mobile only) */}
