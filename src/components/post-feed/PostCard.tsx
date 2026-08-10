@@ -39,11 +39,6 @@ const PostCard = ({ post }: { post: Post }) => {
     window.dispatchEvent(new CustomEvent("open-direct-message", { detail: { handle: post.handle } }));
   };
 
-  const useTemplate = () => {
-    try { sessionStorage.setItem("pending_template_id", "blank"); } catch { /* ignore */ }
-    window.dispatchEvent(new CustomEvent("use-template", { detail: { templateId: "blank" } }));
-  };
-
   return (
     <div className="bg-black border-b border-white/8 flex flex-col h-full max-h-full">
 
@@ -111,13 +106,6 @@ const PostCard = ({ post }: { post: Post }) => {
             <Icon name="ShareForward" size={26} className="action-icon-glyph" />
           </button>
         </div>
-        <button
-          onClick={useTemplate}
-          className="ml-auto flex items-center gap-1 bg-white/10 rounded-full px-2.5 py-1.5 active:scale-95 transition-transform"
-        >
-          <Icon name="Wand2" size={13} className="text-white" />
-          <span className="text-white text-[11px] font-semibold">Использовать шаблон</span>
-        </button>
       </div>
 
       {/* Текстовый блок — ограничен по высоте, при длинной подписи прокручивается */}
