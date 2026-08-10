@@ -7,17 +7,26 @@ interface Props {
 interface State {
   hasError: boolean;
   message: string;
+  isChunkError: boolean;
 }
+
+// Ошибка загрузки чанка возникает, когда в браузере открыта старая версия
+// страницы (HTML), а на сервере уже выложен новый билд — старые JS-файлы
+// удалены и ссылка на них 404-ится. Лечится обычной перезагрузкой страницы.
+const isChunkLoadError = (message: string) =>
+  /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|ChunkLoadError/i.test(message);
+
+const RELOAD_FLAG = "look_chunk_reload_ts";
 
 class ErrorBoundary extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, message: "" };
+    this.state = { hasError: false, message: "", isChunkError: false };
   }
 
   static getDerivedStateFromError(error: unknown): State {
     const message = error instanceof Error ? error.message : String(error);
-    return { hasError: true, message };
+    return { hasError: true, message, isChunkError: isChunkLoadError(message) };
   }
 
   componentDidCatch(error: unknown) {
@@ -27,10 +36,49 @@ class ErrorBoundary extends React.Component<Props, State> {
     } catch (e) {
       void e;
     }
+    // Автоматически перезагружаем страницу один раз, если это устаревший
+    // кэш чанка — так пользователь не видит экран ошибки вообще.
+    if (this.state.isChunkError) {
+      try {
+        const lastReload = Number(sessionStorage.getItem(RELOAD_FLAG) || 0);
+        const now = Date.now();
+        if (now - lastReload > 10000) {
+          sessionStorage.setItem(RELOAD_FLAG, String(now));
+          window.location.reload();
+        }
+      } catch {
+        window.location.reload();
+      }
+    }
   }
 
   render() {
     if (this.state.hasError) {
+      // Пока идёт автоматическая перезагрузка из-за устаревшего кэша —
+      // показываем нейтральный экран без текста об ошибке.
+      if (this.state.isChunkError) {
+        return (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "#0d2a18",
+              color: "#fff",
+              fontFamily: "system-ui, sans-serif",
+              fontSize: 24,
+              fontWeight: 700,
+            }}
+          >
+            Лоок
+          </div>
+        );
+      }
       return (
         <div
           style={{

@@ -103,21 +103,42 @@
   // Если современные возможности недоступны (старый Smart TV браузер) —
   // показываем понятное сообщение вместо пустого зелёного экрана.
   (function () {
+    // Частая причина такой же ошибки — не старый браузер, а устаревшая
+    // закэшированная страница: после обновления сайта её ссылки на JS-файлы
+    // с прежними именами уже недействительны (сервер отдаёт 404/HTML вместо
+    // скрипта, из-за чего браузер видит "SyntaxError"). Лечится одной
+    // перезагрузкой страницы — пробуем её один раз, прежде чем решить,
+    // что дело в браузере.
+    var RELOAD_KEY = 'look_boot_reload_ts';
+    function tryAutoReload() {
+      try {
+        var last = Number(sessionStorage.getItem(RELOAD_KEY) || 0);
+        var now = Date.now();
+        if (now - last > 10000) {
+          sessionStorage.setItem(RELOAD_KEY, String(now));
+          window.location.reload();
+          return true;
+        }
+      } catch (e) {}
+      return false;
+    }
+    function showOutdatedMsg() {
+      var el = document.getElementById('fallback-msg');
+      if (el) el.style.display = 'flex';
+    }
     // Показываем сообщение ТОЛЬКО если приложение реально не запустилось.
     // Если через 15 секунд React так и не смонтировался — значит браузер не тянет.
     window.setTimeout(function () {
       var root = document.getElementById('root');
       var mounted = root && root.getAttribute('data-app-mounted') === '1';
       if (!mounted) {
-        var el = document.getElementById('fallback-msg');
-        if (el) el.style.display = 'flex';
+        if (!tryAutoReload()) showOutdatedMsg();
       }
     }, 15000);
     window.addEventListener('error', function (ev) {
       var msg = ev && ev.message ? String(ev.message) : '';
       if (msg.indexOf('SyntaxError') !== -1 || msg.indexOf('Unexpected token') !== -1) {
-        var el = document.getElementById('fallback-msg');
-        if (el) el.style.display = 'flex';
+        if (!tryAutoReload()) showOutdatedMsg();
       }
     });
   })();
