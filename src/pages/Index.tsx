@@ -298,13 +298,6 @@ const Index = () => {
                   {activeCategory === LIVE_CATEGORY.id ? LIVE_CATEGORY.label : (CATEGORIES.find((c) => c.id === activeCategory)?.label || "Все")}
                   <Icon name={(activeCategory === "all" && gridOpenVideoId !== null) ? "ArrowLeft" : (mobileCatOpen ? "ChevronUp" : "ChevronDown")} size={14} className="cat-toggle-icon md:text-black text-white" />
                 </button>
-                <button
-                  onClick={toggleTheme}
-                  className="hidden md:flex pointer-events-auto ml-auto w-8 h-8 rounded-full bg-white/10 backdrop-blur items-center justify-center hover:bg-white/20 transition-colors"
-                  title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
-                >
-                  <Icon name={theme === "dark" ? "Sun" : "Moon"} size={16} className="text-white" />
-                </button>
                 {mobileCatOpen && (
                   <div
                     className="pointer-events-auto absolute left-4 right-4 md:right-auto md:w-[420px] top-full mt-1 backdrop-blur rounded-2xl p-2 max-h-[60vh] overflow-y-auto z-40"
