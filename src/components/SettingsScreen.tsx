@@ -384,8 +384,8 @@ const LegalScreen = ({ onBack, title, settingKey, fallback }: { onBack: () => vo
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
       <div className="md:max-w-2xl md:mx-auto">
         <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
-          <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
-          <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">{title}</span>
+          <button onClick={onBack} className="p-1 md:hidden"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
+          <span className="flex-1 text-center text-black font-bold text-lg md:text-base md:pr-0 pr-7">{title}</span>
         </div>
         <div className="px-4 py-6 md:py-4">
           {loading ? (
@@ -862,10 +862,10 @@ const SupportScreen = ({ onBack }: { onBack: () => void }) => {
     <div className="h-full bg-gray-100 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
       <div className="md:max-w-2xl md:mx-auto">
         <div className="flex items-center gap-3 px-4 pt-14 pb-4 md:pt-10 md:pb-3 bg-white border-b border-gray-100">
-          <button onClick={onBack} className="p-1">
+          <button onClick={onBack} className="p-1 md:hidden">
             <Icon name="ArrowLeft" size={22} className="text-black" />
           </button>
-          <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Поддержка</span>
+          <span className="flex-1 text-center text-black font-bold text-lg md:text-base md:pr-0 pr-7">Поддержка</span>
         </div>
 
         {sent ? (
