@@ -7,6 +7,8 @@ import { useFollowing, useFollowerCount } from "@/hooks/useFollowing";
 import { useShopProducts } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import ProductMasonryCard from "@/components/products/ProductMasonryCard";
+import { useUserBoards } from "@/hooks/useBoards";
+import BoardDetailScreen from "@/components/profile/BoardDetailScreen";
 
 interface Props {
   handle: string;
@@ -27,11 +29,13 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
   const data = getAuthor(handle);
   const { following, toggle: toggleFollow, isSelf } = useFollowing(handle);
   const realFollowers = useFollowerCount(handle);
-  const [tab, setTab] = useState<"media" | "shop" | "files" | "links">("media");
+  const [tab, setTab] = useState<"media" | "shop" | "boards" | "files" | "links">("media");
   const [openedItem, setOpenedItem] = useState<number | null>(null);
+  const [openedBoardId, setOpenedBoardId] = useState<number | null>(null);
   const [gender, setGender] = useState<string | null>(null);
   const [realUser, setRealUser] = useState<{ id: string; name: string; handle: string; avatar: string | null } | null>(null);
   const { products: shopProducts, loading: shopLoading } = useShopProducts(realUser?.id);
+  const { boards: userBoards, loading: boardsLoading } = useUserBoards(realUser?.id);
   const { addToCart } = useCart();
   const [addingId, setAddingId] = useState<number | null>(null);
   const handleAddToCart = async (id: number) => {
@@ -496,6 +500,12 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
               Отмена
             </button>
           </div>
+        </div>
+      )}
+
+      {openedBoardId !== null && (
+        <div className="fixed inset-0 z-[10003] bg-white">
+          <BoardDetailScreen boardId={openedBoardId} onBack={() => setOpenedBoardId(null)} />
         </div>
       )}
     </div>,
