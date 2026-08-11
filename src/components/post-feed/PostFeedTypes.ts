@@ -21,6 +21,8 @@ export interface Post {
   isVideo?: boolean;
   templateId?: string | null;
   hasProducts?: boolean;
+  views?: number;
+  isVerified?: boolean;
 }
 
 export const GET_PHOTOS_URL = "https://functions.poehali.dev/f58115ec-de09-405d-a2db-08fe1cd958e1";

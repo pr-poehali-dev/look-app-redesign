@@ -3,6 +3,9 @@ import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { Post } from "./PostFeedTypes";
+import { Product } from "@/hooks/useProducts";
+
+const PRODUCTS_URL = "https://functions.poehali.dev/c4d3aa37-b7c2-4047-880a-ab17127da315";
 
 const RECENT_KEY = "search_recent_v1";
 
@@ -29,11 +32,32 @@ interface Props {
 const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>(readRecent);
+  const [resultTab, setResultTab] = useState<"posts" | "products">("posts");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) { setProducts([]); return; }
+    let cancelled = false;
+    setProductsLoading(true);
+    const timeout = setTimeout(() => {
+      fetch(`${PRODUCTS_URL}?action=search&q=${encodeURIComponent(q)}`)
+        .then((r) => r.json())
+        .then((raw) => {
+          const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+          if (!cancelled) setProducts(data.products || []);
+        })
+        .catch(() => { if (!cancelled) setProducts([]); })
+        .finally(() => { if (!cancelled) setProductsLoading(false); });
+    }, 300);
+    return () => { cancelled = true; clearTimeout(timeout); };
+  }, [query]);
 
   const trending = useMemo(() => {
     const freq: Record<string, number> = {};
@@ -84,32 +108,79 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
 
       <div className="flex-1 overflow-y-auto px-4 py-4" style={{ scrollbarWidth: "none" }}>
         {query.trim() ? (
-          results.length > 0 ? (
-            <div className="flex gap-2 items-start">
-              {[0, 1].map((col) => (
-                <div key={col} className="flex-1 min-w-0 flex flex-col gap-2">
-                  {results.filter((_, i) => i % 2 === col).map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => { commitSearch(query); onOpenPost(p); }}
-                      className="rounded-2xl overflow-hidden bg-white/5 text-left active:opacity-90"
-                    >
-                      <img src={p.image} alt={p.caption} className="w-full aspect-square object-cover" loading="lazy" />
-                      <div className="p-2">
-                        <p className="text-white text-[12px] leading-snug line-clamp-2">{p.caption}</p>
-                        <span className="text-white/40 text-[10px]">@{p.handle}</span>
-                      </div>
-                    </button>
+          <>
+            <div className="flex items-center gap-2 mb-4">
+              <button
+                onClick={() => setResultTab("posts")}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold ${resultTab === "posts" ? "bg-white text-black" : "bg-white/10 text-white/60"}`}
+              >
+                Посты {results.length > 0 ? `(${results.length})` : ""}
+              </button>
+              <button
+                onClick={() => setResultTab("products")}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 ${resultTab === "products" ? "bg-white text-black" : "bg-white/10 text-white/60"}`}
+              >
+                <Icon name="ShoppingBag" size={12} />
+                Товары {products.length > 0 ? `(${products.length})` : ""}
+              </button>
+            </div>
+
+            {resultTab === "posts" ? (
+              results.length > 0 ? (
+                <div className="flex gap-2 items-start">
+                  {[0, 1].map((col) => (
+                    <div key={col} className="flex-1 min-w-0 flex flex-col gap-2">
+                      {results.filter((_, i) => i % 2 === col).map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => { commitSearch(query); onOpenPost(p); }}
+                          className="rounded-2xl overflow-hidden bg-white/5 text-left active:opacity-90"
+                        >
+                          <img src={p.image} alt={p.caption} className="w-full aspect-square object-cover" loading="lazy" />
+                          <div className="p-2">
+                            <p className="text-white text-[12px] leading-snug line-clamp-2">{p.caption}</p>
+                            <span className="text-white/40 text-[10px]">@{p.handle}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 gap-2">
-              <Icon name="SearchX" size={32} className="text-white/20" />
-              <p className="text-white/40 text-sm">Ничего не найдено</p>
-            </div>
-          )
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 gap-2">
+                  <Icon name="SearchX" size={32} className="text-white/20" />
+                  <p className="text-white/40 text-sm">Ничего не найдено</p>
+                </div>
+              )
+            ) : productsLoading && products.length === 0 ? (
+              <div className="flex justify-center py-16">
+                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              </div>
+            ) : products.length > 0 ? (
+              <div className="columns-2 gap-3">
+                {products.map((p) => (
+                  <a
+                    key={p.id}
+                    onClick={() => commitSearch(query)}
+                    className="mb-3 block break-inside-avoid rounded-2xl overflow-hidden bg-white/5"
+                  >
+                    <div className="bg-white/10">
+                      {p.image && <img src={p.image} alt={p.title} className="w-full h-auto object-cover block" loading="lazy" />}
+                    </div>
+                    <div className="p-2.5">
+                      <p className="text-white text-[12px] leading-snug line-clamp-2 mb-1">{p.title}</p>
+                      <span className="text-[#fe2c55] text-sm font-bold">{p.price.toLocaleString("ru-RU")} ₽</span>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 gap-2">
+                <Icon name="ShoppingBag" size={32} className="text-white/20" />
+                <p className="text-white/40 text-sm">Товары не найдены</p>
+              </div>
+            )}
+          </>
         ) : (
           <>
             {recent.length > 0 && (

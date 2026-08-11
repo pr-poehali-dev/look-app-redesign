@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { trackVideoView, markNotInterested, markMoreLikeThis, hideAuthor } from "@/hooks/useFeedSignals";
 import { useProductsByVideos, trackProductClick } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
+import AddToBoardSheet from "@/components/products/AddToBoardSheet";
 
 export interface VideoData {
   id: number;
@@ -30,6 +31,8 @@ export interface VideoData {
   isVideo?: boolean;
   templateId?: string | null;
   hasProducts?: boolean;
+  views?: number;
+  isVerified?: boolean;
 }
 
 interface VideoCardProps {
@@ -70,6 +73,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const [showComments, setShowComments] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const [showAddToBoard, setShowAddToBoard] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showProducts, setShowProducts] = useState(false);
   const [addingProductId, setAddingProductId] = useState<number | null>(null);
@@ -100,7 +104,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const [playerUrl, setPlayerUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [commentText, setCommentText] = useState("");
-  const [likedComments, setLikedComments] = useState<(string | number)[]>([]);
+  const [replyingTo, setReplyingTo] = useState<{ id: number | string; name: string } | null>(null);
+  const commentInputRef = useRef<HTMLInputElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [downloadDone, setDownloadDone] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -149,10 +154,6 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
     const m = Math.floor(s / 60);
     const sec = Math.floor(s % 60);
     return `${m}:${sec.toString().padStart(2, "0")}`;
-  };
-
-  const toggleCommentLike = (id: string | number) => {
-    setLikedComments(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
   const handleSeek = (value: number) => {
@@ -242,7 +243,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   };
   const initialCommentCount = parseShortNum(video.comments);
   const initialLikeCount = parseShortNum(video.likes);
-  const { comments: allComments, count: commentCount, send } = useComments("video", video.id, showComments, initialCommentCount);
+  const { comments: allComments, count: commentCount, send, toggleLike: toggleCommentLike } = useComments("video", video.id, showComments, initialCommentCount);
   const { liked, count: likeCount, toggle: toggleLike } = useLikes("video", video.id, initialLikeCount);
   const formatCount = (n: number) => n >= 1_000_000 ? (n / 1_000_000).toFixed(1) + "M" : n >= 1000 ? (n / 1000).toFixed(1) + "K" : String(n);
 
@@ -344,8 +345,15 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
   const handleSendComment = () => {
     if (!commentText.trim()) return;
-    send(commentText);
+    send(commentText, undefined, replyingTo?.id ?? null);
     setCommentText("");
+    setReplyingTo(null);
+  };
+
+  const startReply = (id: number | string, name: string) => {
+    setReplyingTo({ id, name });
+    setCommentText(`@${name} `);
+    commentInputRef.current?.focus();
   };
 
   const isVideo = video.isVideo ?? (video.image.includes('.mp4') || video.image.includes('.mov') || video.image.includes('.webm'));
@@ -475,9 +483,10 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         <div className="flex items-center gap-2 mb-3">
           <button
             onClick={() => window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: video.handle } }))}
-            className="font-bold text-white text-base active:opacity-70"
+            className="flex items-center gap-1 font-bold text-white text-base active:opacity-70"
           >
             @{video.handle}
+            {video.isVerified && <Icon name="BadgeCheck" size={14} className="text-[#61d4f0]" />}
           </button>
           {isSelf ? null : !following ? (
             <button
@@ -523,6 +532,9 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             <Icon name="Music" size={10} className="text-white" />
           </div>
           <span className="text-white/80 text-xs truncate max-w-[180px]">{video.song}</span>
+          {typeof video.views === "number" && video.views > 0 && (
+            <span className="text-white/50 text-xs">· {formatCount(video.views)} просмотров</span>
+          )}
           {video.templateId && (
             <button
               onClick={(e) => { e.stopPropagation(); handleUseTemplate(); }}
@@ -683,6 +695,20 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
               <span className="text-white text-sm font-medium">
                 {saved ? "Убрать из коллекции" : "Сохранить в коллекцию"}
               </span>
+            </button>
+
+            {/* Добавить на доску */}
+            <button
+              onClick={() => {
+                setShowMore(false);
+                setShowAddToBoard(true);
+              }}
+              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3"
+            >
+              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                <Icon name="Layers" size={20} className="text-white" />
+              </div>
+              <span className="text-white text-sm font-medium">Добавить на доску</span>
             </button>
 
             {/* Перейти в профиль */}
@@ -985,24 +1011,32 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             {/* Comments list */}
             <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-4" style={{ scrollbarWidth: "none" }}>
               {allComments.map(c => (
-                <div key={c.id} className="flex items-start gap-3">
+                <div key={c.id} className={`flex items-start gap-3 ${c.parentId ? "pl-9" : ""}`}>
                   <div className="w-8 h-8 flex-shrink-0">
                     <UserAvatar name={c.name} />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
                       <span className="text-white font-semibold text-sm">{c.name}</span>
                       <span className="text-white/30 text-xs">{c.time}</span>
                     </div>
-                    <p className="text-white/80 text-sm">{c.text}</p>
+                    <p className="text-white/80 text-sm break-words">{c.text}</p>
+                    <button
+                      type="button"
+                      onClick={() => startReply(c.id, c.name)}
+                      className="text-white/40 text-xs font-semibold mt-1"
+                    >
+                      Ответить
+                    </button>
                   </div>
                   <div className="flex-shrink-0 mt-1 flex items-center gap-1">
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); toggleCommentLike(c.id); }}
-                      className="p-1"
+                      className="p-1 flex flex-col items-center gap-0.5"
                     >
-                      <Icon name="Heart" size={14} className={likedComments.includes(c.id) ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white/40"} />
+                      <Icon name="Heart" size={14} className={c.liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white/40"} />
+                      {c.likes > 0 && <span className="text-white/30 text-[10px]">{c.likes}</span>}
                     </button>
                     <ReportButton
                       targetType="comment"
@@ -1015,29 +1049,50 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             </div>
 
             {/* Input */}
-            <div className="flex items-center gap-3 px-4 py-3 border-t border-white/10 pb-8 md:pb-3">
-              <div className="flex-1 flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
-                <input
-                  value={commentText}
-                  onChange={e => setCommentText(e.target.value)}
-                  placeholder="Написать комментарий..."
-                  className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/40"
-                  onKeyDown={e => e.key === "Enter" && handleSendComment()}
-                  autoComplete="off"
-                  autoFocus
-                />
+            <div className="flex flex-col border-t border-white/10 pb-8 md:pb-3">
+              {replyingTo && (
+                <div className="flex items-center justify-between px-4 pt-2 text-xs text-white/50">
+                  <span>Ответ для <span className="text-white/80 font-semibold">{replyingTo.name}</span></span>
+                  <button onClick={() => { setReplyingTo(null); setCommentText(""); }}>
+                    <Icon name="X" size={14} className="text-white/40" />
+                  </button>
+                </div>
+              )}
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div className="flex-1 flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
+                  <input
+                    ref={commentInputRef}
+                    value={commentText}
+                    onChange={e => setCommentText(e.target.value)}
+                    placeholder="Написать комментарий..."
+                    className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/40"
+                    onKeyDown={e => e.key === "Enter" && handleSendComment()}
+                    autoComplete="off"
+                    autoFocus
+                  />
+                </div>
+                <button
+                  onClick={handleSendComment}
+                  disabled={!commentText.trim()}
+                  className="w-9 h-9 rounded-full bg-[#fe2c55] flex items-center justify-center disabled:opacity-40"
+                >
+                  <Icon name="Send" size={16} className="text-white" />
+                </button>
               </div>
-              <button
-                onClick={handleSendComment}
-                disabled={!commentText.trim()}
-                className="w-9 h-9 rounded-full bg-[#fe2c55] flex items-center justify-center disabled:opacity-40"
-              >
-                <Icon name="Send" size={16} className="text-white" />
-              </button>
             </div>
           </div>
         </div>,
         document.body
+      )}
+
+      {showAddToBoard && (
+        <AddToBoardSheet
+          itemType="video"
+          itemId={video.dbId ?? video.id}
+          image={video.image}
+          title={video.description}
+          onClose={() => setShowAddToBoard(false)}
+        />
       )}
     </div>
   );

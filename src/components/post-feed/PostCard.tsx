@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
@@ -12,6 +12,7 @@ import { useProductsByVideos, trackProductClick } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 import ReportButton from "@/components/ReportButton";
+import AddToBoardSheet from "@/components/products/AddToBoardSheet";
 
 const PostCard = ({ post }: { post: Post }) => {
   const { user } = useAuth();
@@ -25,16 +26,19 @@ const PostCard = ({ post }: { post: Post }) => {
   const [showComments, setShowComments] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showAddToBoard, setShowAddToBoard] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showProducts, setShowProducts] = useState(false);
   const [addingProductId, setAddingProductId] = useState<number | null>(null);
   const [commentText, setCommentText] = useState("");
   const [copied, setCopied] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<{ id: number | string; name: string } | null>(null);
+  const commentInputRef = useRef<HTMLInputElement>(null);
 
   const { liked, count: likes, toggle: handleLike } = useLikes("post", post.id, post.likes);
   // enabled=true — превью последних комментариев грузится сразу, чтобы показать 2 штуки под постом
-  const { comments: allComments, count: commentCount, send } = useComments("post", post.id, true, post.comments || 0);
-  const previewComments = allComments.slice(0, 2);
+  const { comments: allComments, count: commentCount, send, toggleLike: toggleCommentLike } = useComments("post", post.id, true, post.comments || 0);
+  const previewComments = allComments.filter(c => !c.parentId).slice(0, 2);
 
   // Товары грузим ТОЛЬКО если у поста реально есть привязанные товары (экономим трафик)
   const productVideoIds = post.hasProducts ? [post.id] : [];
@@ -58,8 +62,15 @@ const PostCard = ({ post }: { post: Post }) => {
 
   const handleSendComment = () => {
     if (!commentText.trim()) return;
-    send(commentText);
+    send(commentText, undefined, replyingTo?.id ?? null);
     setCommentText("");
+    setReplyingTo(null);
+  };
+
+  const startReply = (id: number | string, name: string) => {
+    setReplyingTo({ id, name });
+    setCommentText(`@${name} `);
+    commentInputRef.current?.focus();
   };
 
   const goToChat = () => {
@@ -80,7 +91,7 @@ const PostCard = ({ post }: { post: Post }) => {
           <div>
             <div className="flex items-center gap-1.5">
               <span className="text-white font-semibold text-[13px]">{post.handle}</span>
-              <Icon name="BadgeCheck" size={12} className="text-[#61d4f0]" />
+              {post.isVerified && <Icon name="BadgeCheck" size={12} className="text-[#61d4f0]" />}
               {isSelf ? null : !following ? (
                 <button
                   onClick={toggleFollow}
@@ -213,8 +224,11 @@ const PostCard = ({ post }: { post: Post }) => {
         )}
 
         {/* Time */}
-        <div className="px-3 pb-3 pt-0.5">
+        <div className="px-3 pb-3 pt-0.5 flex items-center gap-2">
           <span className="text-white/30 text-[11px] uppercase tracking-wide">{post.time}</span>
+          {typeof post.views === "number" && post.views > 0 && (
+            <span className="text-white/30 text-[11px]">· {formatLikes(post.views)} просмотров</span>
+          )}
         </div>
       </div>
 
@@ -224,6 +238,7 @@ const PostCard = ({ post }: { post: Post }) => {
           <div className="sheet-theme rounded-t-3xl overflow-hidden pb-8 md:rounded-2xl md:pb-0 md:mr-6 md:w-[300px] md:shadow-2xl" onClick={e => e.stopPropagation()}>
             {[
               { icon: "Bookmark", label: saved ? "Убрать из сохранённых" : "Сохранить", action: () => { toggleSaved(); setShowMenu(false); }, active: saved },
+              { icon: "Layers", label: "Добавить на доску", action: () => { setShowMenu(false); setShowAddToBoard(true); } },
               { icon: "User", label: "Перейти в профиль", action: () => { setShowMenu(false); window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: post.handle } })); } },
               { icon: "BellOff", label: "Выключить уведомления", action: () => setShowMenu(false) },
               { icon: "Link", label: "Скопировать ссылку", action: () => { navigator.clipboard.writeText(window.location.href).catch(() => {}); setShowMenu(false); } },
@@ -268,31 +283,55 @@ const PostCard = ({ post }: { post: Post }) => {
             </div>
             <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-4" style={{ scrollbarWidth: "none" }}>
               {allComments.map(c => (
-                <div key={c.id} className="flex items-start gap-3">
+                <div key={c.id} className={`flex items-start gap-3 ${c.parentId ? "pl-9" : ""}`}>
                   <div className="w-8 h-8 flex-shrink-0">
                     <UserAvatar name={c.name} />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <span className="text-white font-semibold text-sm mr-2">{c.name}</span>
-                    <span className="text-white/80 text-sm">{c.text}</span>
-                    <div className="text-white/30 text-xs mt-1">{c.time}</div>
+                    <span className="text-white/80 text-sm break-words">{c.text}</span>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-white/30 text-xs">{c.time}</span>
+                      <button type="button" onClick={() => startReply(c.id, c.name)} className="text-white/40 text-xs font-semibold">
+                        Ответить
+                      </button>
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); toggleCommentLike(c.id); }}
+                    className="flex-shrink-0 mt-1 p-1 flex flex-col items-center gap-0.5"
+                  >
+                    <Icon name="Heart" size={14} className={c.liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white/40"} />
+                    {c.likes > 0 && <span className="text-white/30 text-[10px]">{c.likes}</span>}
+                  </button>
                 </div>
               ))}
             </div>
-            <div className="flex items-center gap-3 px-4 py-3 border-t border-white/10 pb-8">
-              <div className="flex-1 flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
-                <input
-                  value={commentText}
-                  onChange={e => setCommentText(e.target.value)}
-                  placeholder="Написать комментарий..."
-                  className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/40"
-                  onKeyDown={e => e.key === "Enter" && handleSendComment()}
-                />
+            <div className="flex flex-col border-t border-white/10 pb-8">
+              {replyingTo && (
+                <div className="flex items-center justify-between px-4 pt-2 text-xs text-white/50">
+                  <span>Ответ для <span className="text-white/80 font-semibold">{replyingTo.name}</span></span>
+                  <button onClick={() => { setReplyingTo(null); setCommentText(""); }}>
+                    <Icon name="X" size={14} className="text-white/40" />
+                  </button>
+                </div>
+              )}
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div className="flex-1 flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
+                  <input
+                    ref={commentInputRef}
+                    value={commentText}
+                    onChange={e => setCommentText(e.target.value)}
+                    placeholder="Написать комментарий..."
+                    className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/40"
+                    onKeyDown={e => e.key === "Enter" && handleSendComment()}
+                  />
+                </div>
+                <button onClick={handleSendComment} className="w-9 h-9 rounded-full bg-[#fe2c55] flex items-center justify-center flex-shrink-0">
+                  <Icon name="Send" size={16} className="text-white" />
+                </button>
               </div>
-              <button onClick={handleSendComment} className="w-9 h-9 rounded-full bg-[#fe2c55] flex items-center justify-center flex-shrink-0">
-                <Icon name="Send" size={16} className="text-white" />
-              </button>
             </div>
           </div>
         </div>,
@@ -412,6 +451,16 @@ const PostCard = ({ post }: { post: Post }) => {
           </div>
         </div>,
         document.body
+      )}
+
+      {showAddToBoard && (
+        <AddToBoardSheet
+          itemType="post"
+          itemId={post.id}
+          image={post.image}
+          title={post.caption}
+          onClose={() => setShowAddToBoard(false)}
+        />
       )}
     </div>
   );

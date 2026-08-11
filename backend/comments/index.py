@@ -120,9 +120,18 @@ def handler(event: dict, context) -> dict:
                 return _resp(400, {'error': 'target_type and target_id required'})
 
             cur.execute(
-                f"SELECT id, author_name, author_handle, text, created_at FROM {schema}.comments WHERE target_type = '{target_type}' AND target_id = '{target_id}' ORDER BY created_at DESC LIMIT 200"
+                f"SELECT id, author_name, author_handle, text, created_at, parent_id FROM {schema}.comments "
+                f"WHERE target_type = '{target_type}' AND target_id = '{target_id}' ORDER BY created_at ASC LIMIT 500"
             )
             rows = cur.fetchall()
+            ids = [str(r[0]) for r in rows]
+            like_counts: dict = {}
+            if ids:
+                in_list = ", ".join(f"'{_esc(i)}'" for i in ids)
+                cur.execute(
+                    f"SELECT target_id, COUNT(*) FROM {schema}.likes WHERE target_type = 'comment' AND target_id IN ({in_list}) GROUP BY target_id"
+                )
+                like_counts = {r[0]: r[1] for r in cur.fetchall()}
             comments = [
                 {
                     'id': r[0],
@@ -130,10 +139,19 @@ def handler(event: dict, context) -> dict:
                     'handle': r[2] or '',
                     'text': r[3],
                     'time': r[4].isoformat() if r[4] else None,
+                    'parent_id': r[5],
+                    'likes': like_counts.get(str(r[0]), 0),
                 }
                 for r in rows
             ]
-            return _resp(200, {'comments': comments, 'count': len(comments)})
+            top = [c for c in comments if not c['parent_id']]
+            top.sort(key=lambda c: c['id'], reverse=True)
+            replies = [c for c in comments if c['parent_id']]
+            ordered = []
+            for t in top:
+                ordered.append(t)
+                ordered.extend([r for r in replies if r['parent_id'] == t['id']])
+            return _resp(200, {'comments': ordered, 'count': len(comments)})
 
         if method == 'POST':
             body = json.loads(event.get('body') or '{}')
@@ -142,6 +160,7 @@ def handler(event: dict, context) -> dict:
             text = (body.get('text') or '').strip()
             author_name = (body.get('author_name') or 'Я').strip()[:100]
             author_handle = (body.get('author_handle') or '').strip()[:100]
+            parent_id = body.get('parent_id')
 
             if not target_type or not target_id or not text:
                 return _resp(400, {'error': 'target_type, target_id and text required'})
@@ -152,14 +171,17 @@ def handler(event: dict, context) -> dict:
             safe_name = _esc(author_name)
             safe_handle = _esc(author_handle)
             safe_user = _esc(user_id) if user_id else ''
+            parent_sql = str(int(parent_id)) if parent_id else 'NULL'
 
             if safe_user:
                 cur.execute(
-                    f"INSERT INTO {schema}.comments (target_type, target_id, author_name, author_handle, text, user_id) VALUES ('{safe_type}', '{safe_id}', '{safe_name}', '{safe_handle}', '{safe_text}', '{safe_user}') RETURNING id, created_at"
+                    f"INSERT INTO {schema}.comments (target_type, target_id, author_name, author_handle, text, user_id, parent_id) "
+                    f"VALUES ('{safe_type}', '{safe_id}', '{safe_name}', '{safe_handle}', '{safe_text}', '{safe_user}', {parent_sql}) RETURNING id, created_at"
                 )
             else:
                 cur.execute(
-                    f"INSERT INTO {schema}.comments (target_type, target_id, author_name, author_handle, text) VALUES ('{safe_type}', '{safe_id}', '{safe_name}', '{safe_handle}', '{safe_text}') RETURNING id, created_at"
+                    f"INSERT INTO {schema}.comments (target_type, target_id, author_name, author_handle, text, parent_id) "
+                    f"VALUES ('{safe_type}', '{safe_id}', '{safe_name}', '{safe_handle}', '{safe_text}', {parent_sql}) RETURNING id, created_at"
                 )
             row = cur.fetchone()
             conn.commit()
@@ -170,6 +192,8 @@ def handler(event: dict, context) -> dict:
                     'handle': author_handle,
                     'text': text,
                     'time': row[1].isoformat() if row[1] else None,
+                    'parent_id': int(parent_id) if parent_id else None,
+                    'likes': 0,
                 }
             })
 

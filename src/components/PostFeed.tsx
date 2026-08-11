@@ -12,12 +12,13 @@ import { Post, Story, MOCK_POSTS, GET_PHOTOS_URL, formatTime, parseServerDate } 
 import { useBulkCounts } from "@/hooks/useBulkCounts";
 import { useFollowingList } from "@/hooks/useFollowing";
 
-type FeedScope = "recommend" | "following" | "nearby";
+type FeedScope = "recommend" | "following" | "nearby" | "trending";
 type ViewMode = "masonry" | "feed";
 
 const SCOPES: { id: FeedScope; label: string }[] = [
   { id: "following", label: "Подписки" },
   { id: "recommend", label: "Рекомендации" },
+  { id: "trending", label: "Тренды" },
   { id: "nearby", label: "Рядом" },
 ];
 
@@ -77,6 +78,8 @@ const PostFeed = () => {
         isVideo,
         templateId: v.template_id || null,
         hasProducts: !!v.has_products,
+        views: typeof v.views === "number" ? v.views : undefined,
+        isVerified: !!v.is_verified,
       };
     };
 
@@ -146,6 +149,18 @@ const PostFeed = () => {
     }
     if (scope === "nearby") {
       return [...visiblePosts].sort((a, b) => hashStr(String(a.id)) - hashStr(String(b.id)));
+    }
+    if (scope === "trending") {
+      // Популярность = лайки + просмотры/10, с бонусом за свежесть (последние 7 дней)
+      const weekMs = 7 * 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      const score = (p: Post) => {
+        const base = p.likes + (p.views || 0) / 10;
+        const age = p.createdAt ? now - p.createdAt : weekMs;
+        const freshBonus = age < weekMs ? (1 - age / weekMs) * base * 0.5 : 0;
+        return base + freshBonus;
+      };
+      return [...visiblePosts].sort((a, b) => score(b) - score(a));
     }
     return visiblePosts;
     // eslint-disable-next-line react-hooks/exhaustive-deps

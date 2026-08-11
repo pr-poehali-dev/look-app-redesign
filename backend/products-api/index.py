@@ -210,6 +210,23 @@ def handler(event: dict, context) -> dict:
             products = [_row_to_product_with_owner(r) for r in cur.fetchall()]
             return _resp(200, {'products': products})
 
+        # --- Поиск товаров по названию/описанию (для общего поиска в приложении) ---
+        if method == 'GET' and action == 'search':
+            q = (params.get('q') or '').strip()[:100]
+            if not q:
+                return _resp(200, {'products': []})
+            limit = min(int(params.get('limit') or 30), 60)
+            like = f"%{q}%"
+            cur.execute(
+                f"SELECT {PRODUCT_FIELDS_WITH_OWNER} FROM {schema}.products p "
+                f"LEFT JOIN {schema}.app_users u ON u.id = p.owner_user_id "
+                f"WHERE p.status = 'active' AND (p.title ILIKE %s OR p.description ILIKE %s) "
+                f"ORDER BY p.id DESC LIMIT %s",
+                (like, like, limit)
+            )
+            products = [_row_to_product_with_owner(r) for r in cur.fetchall()]
+            return _resp(200, {'products': products})
+
         # --- Создать товар в своей витрине (video_id не обязателен) ---
         if method == 'POST' and action == 'create':
             if not user_id:

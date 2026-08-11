@@ -325,7 +325,7 @@ function Dashboard({ token }: { token: string }) {
   );
 }
 
-interface UserRow { id: string; name: string; handle: string; email: string; avatar?: string; created_at?: string; email_verified?: boolean; banned?: boolean }
+interface UserRow { id: string; name: string; handle: string; email: string; avatar?: string; created_at?: string; email_verified?: boolean; banned?: boolean; is_verified?: boolean }
 
 function Users({ token }: { token: string }) {
   const [users, setUsers] = useState<UserRow[]>([]);
@@ -359,6 +359,16 @@ function Users({ token }: { token: string }) {
     }
   };
 
+  const toggleVerify = async (u: UserRow) => {
+    const next = !u.is_verified;
+    setUsers((list) => list.map((x) => x.id === u.id ? { ...x, is_verified: next } : x));
+    try {
+      await api("user_verify", { user_id: u.id, verified: next }, token);
+    } catch {
+      load();
+    }
+  };
+
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold hidden md:block">Пользователи</h2>
@@ -384,11 +394,18 @@ function Users({ token }: { token: string }) {
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate flex items-center gap-1.5">
                   {u.name} <span className="text-white/40 text-xs">@{u.handle}</span>
+                  {u.is_verified && <Icon name="BadgeCheck" size={13} className="text-[#61d4f0]" />}
                   {u.banned && <span className="px-1.5 py-0.5 rounded bg-[#fe2c55]/20 text-[#fe2c55] text-[10px] font-semibold">Заблокирован</span>}
                 </p>
                 <p className="text-white/50 text-xs truncate">{u.email} · {u.id}</p>
               </div>
-              {u.email_verified && <Icon name="BadgeCheck" size={16} className="text-blue-400 flex-shrink-0" />}
+              <button
+                onClick={() => toggleVerify(u)}
+                title={u.is_verified ? "Убрать верификацию" : "Верифицировать профиль"}
+                className={`p-2 rounded-lg flex-shrink-0 ${u.is_verified ? "text-[#61d4f0] hover:bg-[#61d4f0]/10" : "text-white/20 hover:bg-white/5"}`}
+              >
+                <Icon name="BadgeCheck" size={18} />
+              </button>
               <button
                 onClick={() => toggleBan(u)}
                 title={u.banned ? "Разблокировать" : "Заблокировать вход"}

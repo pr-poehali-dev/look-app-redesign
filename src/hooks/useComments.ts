@@ -11,6 +11,9 @@ export interface CommentItem {
   handle?: string;
   text: string;
   time: string;
+  parentId?: number | null;
+  likes: number;
+  liked?: boolean;
 }
 
 export type TargetType = "video" | "post";
@@ -48,12 +51,14 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
     try {
       const res = await fetch(`${COMMENTS_URL}?target_type=${targetType}&target_id=${encodeURIComponent(String(targetId))}`);
       const data = await res.json();
-      const list: CommentItem[] = (data.comments || []).map((c: { id: number; name: string; handle?: string; text: string; time?: string }) => ({
+      const list: CommentItem[] = (data.comments || []).map((c: { id: number; name: string; handle?: string; text: string; time?: string; parent_id?: number | null; likes?: number }) => ({
         id: c.id,
         name: c.name,
         handle: c.handle,
         text: c.text,
         time: formatRelative(c.time),
+        parentId: c.parent_id ?? null,
+        likes: c.likes || 0,
       }));
       setComments(list);
       setCount(prev => Math.max(prev, list.length));
@@ -83,7 +88,7 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
     setCount(prev => (prev === 0 || initialCount > prev ? initialCount : prev));
   }, [initialCount]);
 
-  const send = useCallback(async (text: string, authorName?: string) => {
+  const send = useCallback(async (text: string, authorName?: string, parentId?: number | string | null) => {
     const trimmed = text.trim();
     if (!trimmed || !targetId) return;
     const finalName = authorName || userName;
@@ -92,8 +97,18 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
       name: finalName,
       text: trimmed,
       time: "сейчас",
+      parentId: parentId ? Number(parentId) : null,
+      likes: 0,
     };
-    setComments(prev => [optimistic, ...prev]);
+    setComments(prev => parentId
+      ? (() => {
+          const idx = prev.map(c => c.parentId).lastIndexOf(Number(parentId));
+          const insertAt = idx === -1 ? prev.findIndex(c => c.id === parentId) + 1 : idx + 1;
+          const copy = [...prev];
+          copy.splice(insertAt <= 0 ? prev.length : insertAt, 0, optimistic);
+          return copy;
+        })()
+      : [optimistic, ...prev]);
     setCount(c => c + 1);
     try {
       const res = await fetch(COMMENTS_URL, {
@@ -104,6 +119,7 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
           target_id: String(targetId),
           text: trimmed,
           author_name: finalName,
+          parent_id: parentId || undefined,
         }),
       });
       const data = await res.json();
@@ -114,6 +130,8 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
           handle: data.comment.handle,
           text: data.comment.text,
           time: formatRelative(data.comment.time),
+          parentId: data.comment.parent_id ?? null,
+          likes: data.comment.likes || 0,
         } : c));
       }
     } catch {
@@ -121,5 +139,20 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
     }
   }, [targetType, targetId, userId, userName]);
 
-  return { comments, count, loading, send, reload: load };
+  const toggleLike = useCallback(async (commentId: number | string) => {
+    setComments(prev => prev.map(c => c.id === commentId
+      ? { ...c, liked: !c.liked, likes: c.likes + (c.liked ? -1 : 1) }
+      : c));
+    try {
+      await fetch(`${COMMENTS_URL}?action=likes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": userId },
+        body: JSON.stringify({ target_type: "comment", target_id: String(commentId) }),
+      });
+    } catch {
+      // оставляем оптимистичное состояние
+    }
+  }, [userId]);
+
+  return { comments, count, loading, send, reload: load, toggleLike };
 };

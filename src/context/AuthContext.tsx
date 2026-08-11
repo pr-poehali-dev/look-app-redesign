@@ -11,6 +11,7 @@ export interface AppUser {
   phone?: string | null;
   gender?: string | null;
   links?: ProfileLink[];
+  is_verified?: boolean;
 }
 
 interface AuthContextType {

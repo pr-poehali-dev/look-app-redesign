@@ -315,7 +315,7 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         if search:
             pat = '%' + _esc_like(search) + '%'
             _q(cur, """
-                SELECT id, name, handle, email, avatar, created_at, email_verified, COALESCE(banned, FALSE) AS banned
+                SELECT id, name, handle, email, avatar, created_at, email_verified, COALESCE(banned, FALSE) AS banned, COALESCE(is_verified, FALSE) AS is_verified
                 FROM {S}.app_users
                 WHERE name ILIKE %s ESCAPE '\\' OR handle ILIKE %s ESCAPE '\\' OR email ILIKE %s ESCAPE '\\' OR id = %s
                 ORDER BY created_at DESC NULLS LAST
@@ -323,7 +323,7 @@ def _route(cur, conn, action: str, body: dict) -> dict:
             """, (pat, pat, pat, search, limit, offset))
         else:
             _q(cur, """
-                SELECT id, name, handle, email, avatar, created_at, email_verified, COALESCE(banned, FALSE) AS banned
+                SELECT id, name, handle, email, avatar, created_at, email_verified, COALESCE(banned, FALSE) AS banned, COALESCE(is_verified, FALSE) AS is_verified
                 FROM {S}.app_users
                 ORDER BY created_at DESC NULLS LAST
                 LIMIT %s OFFSET %s
@@ -352,6 +352,15 @@ def _route(cur, conn, action: str, body: dict) -> dict:
             _q(cur, "UPDATE {S}.app_users SET banned = FALSE WHERE id = %s", (uid,))
         conn.commit()
         return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True, 'banned': banned})}
+
+    if action == 'user_verify':
+        uid = body.get('user_id')
+        if not uid:
+            return {'statusCode': 400, 'headers': _cors(), 'body': json.dumps({'error': 'user_id required'})}
+        verified = bool(body.get('verified', True))
+        _q(cur, "UPDATE {S}.app_users SET is_verified = %s WHERE id = %s", (verified, uid))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True, 'verified': verified})}
 
     if action == 'user_update':
         uid = body.get('user_id')

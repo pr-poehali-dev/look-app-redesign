@@ -356,6 +356,8 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
           avatar: v.avatar || "",
           templateId: v.template_id || null,
           hasProducts: !!v.has_products,
+          views: typeof v.views === "number" ? v.views : undefined,
+          isVerified: !!v.is_verified,
         });
         }));
         setActiveIndex(0);
