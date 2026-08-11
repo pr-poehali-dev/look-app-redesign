@@ -5,6 +5,8 @@ import UserAvatar from "@/components/ui/user-avatar";
 import { getAuthor } from "@/data/authors";
 import { useFollowing, useFollowerCount } from "@/hooks/useFollowing";
 import { useShopProducts } from "@/hooks/useProducts";
+import { useCart } from "@/hooks/useCart";
+import ProductMasonryCard from "@/components/products/ProductMasonryCard";
 
 interface Props {
   handle: string;
@@ -30,6 +32,13 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
   const [gender, setGender] = useState<string | null>(null);
   const [realUser, setRealUser] = useState<{ id: string; name: string; handle: string; avatar: string | null } | null>(null);
   const { products: shopProducts, loading: shopLoading } = useShopProducts(realUser?.id);
+  const { addToCart } = useCart();
+  const [addingId, setAddingId] = useState<number | null>(null);
+  const handleAddToCart = async (id: number) => {
+    setAddingId(id);
+    await addToCart(id);
+    setAddingId(null);
+  };
   const [userMedia, setUserMedia] = useState<{ id: number; image: string; isVideo: boolean }[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
   const [notifMenu, setNotifMenu] = useState(false);
@@ -301,28 +310,9 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
                 <p className="text-gray-400 text-sm">В магазине пока нет товаров</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3 p-3 bg-white">
+              <div className="columns-2 gap-3 p-3 bg-white">
                 {shopProducts.map((p) => (
-                  <a
-                    key={p.id}
-                    href={p.product_url || undefined}
-                    target={p.product_url ? "_blank" : undefined}
-                    rel={p.product_url ? "noopener noreferrer" : undefined}
-                    className="rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 flex flex-col"
-                  >
-                    <div className="aspect-square bg-gray-100">
-                      {p.image && <img src={p.image} alt={p.title} className="w-full h-full object-cover" />}
-                    </div>
-                    <div className="p-2.5">
-                      <p className="text-black text-xs font-semibold truncate">{p.title}</p>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <span className="text-black text-sm font-bold">{p.price.toLocaleString("ru-RU")} ₽</span>
-                        {p.old_price && p.old_price > p.price && (
-                          <span className="text-gray-400 text-[11px] line-through">{p.old_price.toLocaleString("ru-RU")} ₽</span>
-                        )}
-                      </div>
-                    </div>
-                  </a>
+                  <ProductMasonryCard key={p.id} p={p} onAdd={handleAddToCart} adding={addingId === p.id} hideOwner />
                 ))}
               </div>
             )

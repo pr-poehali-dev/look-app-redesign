@@ -921,7 +921,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-sm font-semibold truncate">{p.title}</p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-white font-bold text-sm">{p.price.toLocaleString("ru-RU")} ₽</span>
+                          <span className="text-[#fe2c55] font-bold text-sm">{p.price.toLocaleString("ru-RU")} ₽</span>
                           {p.old_price && p.old_price > p.price && (
                             <span className="text-white/40 text-xs line-through">{p.old_price.toLocaleString("ru-RU")} ₽</span>
                           )}
@@ -940,7 +940,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
                       >
                         {addingProductId === p.id
                           ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          : <Icon name="Plus" size={18} className="text-white" />}
+                          : <Icon name="Heart" size={16} className="text-white" />}
                       </button>
                     </div>
                     {p.owner_handle && !p.is_partner && (
