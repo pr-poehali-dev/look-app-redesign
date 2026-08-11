@@ -3,7 +3,7 @@ import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { useAuth } from "@/context/AuthContext";
 import { useUserMedia } from "@/context/UserMediaContext";
-import StoryViewer from "./post-feed/StoryViewer";
+import StoryViewerModal, { StoryViewerItem } from "./shared/StoryViewerModal";
 import PostCard from "./post-feed/PostCard";
 import NoteViewer from "./post-feed/NoteViewer";
 import MasonryFeed from "./post-feed/MasonryFeed";
@@ -106,6 +106,7 @@ const PostFeed = () => {
   }, [user, mediaVersion]);
 
   const [storyHandle, setStoryHandle] = useState<string | null>(null);
+  const [storyOrigin, setStoryOrigin] = useState<DOMRect | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scrollByDir = (dir: 1 | -1) => {
@@ -132,10 +133,10 @@ const PostFeed = () => {
     return true;
   }).slice(0, 12);
   // При открытии показываем ВСЕ истории выбранного пользователя
-  const storiesByHandle = (handle: string): Story[] =>
+  const storiesByHandle = (handle: string): StoryViewerItem[] =>
     storySource
       .filter(p => (p.handle || p.author || "").toLowerCase().trim() === handle.toLowerCase().trim())
-      .map(p => ({ id: p.id, handle: p.handle, avatar: p.avatar, image: p.image }));
+      .map(p => ({ id: p.id, label: p.handle, avatar: p.avatar, image: p.image, isVideo: p.isVideo }));
 
   // Фильтрация по вкладке: Подписки / Рекомендации / Рядом
   const visiblePosts = storySource.filter(p => !removedIds.has(p.id));
@@ -168,9 +169,14 @@ const PostFeed = () => {
 
   return (
     <div className="relative h-full bg-black">
-      {/* Story viewer — все истории выбранного пользователя */}
+      {/* Story viewer — все истории выбранного пользователя, раскрывается из круга аватара */}
       {storyHandle !== null && (
-        <StoryViewer stories={storiesByHandle(storyHandle)} startIndex={0} onClose={() => setStoryHandle(null)} />
+        <StoryViewerModal
+          items={storiesByHandle(storyHandle)}
+          startIndex={0}
+          originRect={storyOrigin}
+          onClose={() => { setStoryHandle(null); setStoryOrigin(null); }}
+        />
       )}
 
       {showSearch && (
@@ -238,8 +244,16 @@ const PostFeed = () => {
           <span className="text-white/80 text-[10px] w-16 text-center truncate">Ваша история</span>
         </button>
         {storyUsers.map((post) => (
-          <button key={post.id} onClick={() => setStoryHandle(post.handle || post.author)} className="flex flex-col items-center gap-1 flex-shrink-0">
-            <div className="w-[62px] h-[62px] rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]">
+          <button
+            key={post.id}
+            onClick={(e) => {
+              const ring = e.currentTarget.querySelector("[data-story-ring]");
+              setStoryOrigin((ring || e.currentTarget).getBoundingClientRect());
+              setStoryHandle(post.handle || post.author);
+            }}
+            className="flex flex-col items-center gap-1 flex-shrink-0"
+          >
+            <div data-story-ring className="w-[62px] h-[62px] rounded-full p-[2px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]">
               <div className="w-full h-full rounded-full overflow-hidden border-2 border-black">
                 <UserAvatar src={post.avatar} name={post.handle} alt={post.handle} />
               </div>
