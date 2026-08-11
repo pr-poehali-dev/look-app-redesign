@@ -281,6 +281,17 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
                 Магазин
               </button>
             )}
+            {userBoards.length > 0 && (
+              <button
+                onClick={() => setTab("boards")}
+                className={`flex-1 py-3 text-sm font-medium border-b-2 transition-all flex items-center justify-center gap-1 ${
+                  tab === "boards" ? "border-[#2AABEE] text-[#2AABEE]" : "border-transparent text-gray-500"
+                }`}
+              >
+                <Icon name="Layers" size={14} />
+                Доски
+              </button>
+            )}
             <button
               onClick={() => setTab("files")}
               className={`flex-1 py-3 text-sm font-medium border-b-2 transition-all ${
@@ -313,6 +324,38 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
               <div className="columns-2 gap-3 p-3 bg-white">
                 {shopProducts.map((p) => (
                   <ProductMasonryCard key={p.id} p={p} onAdd={handleAddToCart} adding={addingId === p.id} hideOwner />
+                ))}
+              </div>
+            )
+          ) : tab === "boards" ? (
+            boardsLoading && userBoards.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 bg-white">
+                <div className="w-8 h-8 border-2 border-[#2AABEE] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : userBoards.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 bg-white">
+                <Icon name="Layers" size={48} className="text-gray-300" />
+                <p className="text-gray-400 text-sm">Пока нет публичных досок</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 p-3 bg-white">
+                {userBoards.map((b) => (
+                  <button
+                    key={b.id}
+                    onClick={() => setOpenedBoardId(b.id)}
+                    className="relative rounded-2xl overflow-hidden bg-gray-50 aspect-square active:opacity-80"
+                  >
+                    {b.cover_image ? (
+                      <img src={b.cover_image} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                        <Icon name="Layers" size={28} className="text-gray-300" />
+                      </div>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 py-2">
+                      <span className="text-white text-xs font-semibold truncate block">{b.title}</span>
+                    </div>
+                  </button>
                 ))}
               </div>
             )
