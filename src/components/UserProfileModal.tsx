@@ -9,6 +9,7 @@ import { useCart } from "@/hooks/useCart";
 import ProductMasonryCard from "@/components/products/ProductMasonryCard";
 import { useUserBoards } from "@/hooks/useBoards";
 import BoardDetailScreen from "@/components/profile/BoardDetailScreen";
+import StoryViewerModal, { StoryViewerItem } from "@/components/shared/StoryViewerModal";
 
 interface Props {
   handle: string;
@@ -31,6 +32,7 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
   const realFollowers = useFollowerCount(handle);
   const [tab, setTab] = useState<"media" | "shop" | "boards" | "files" | "links">("media");
   const [openedItem, setOpenedItem] = useState<number | null>(null);
+  const [openedOrigin, setOpenedOrigin] = useState<DOMRect | null>(null);
   const [openedBoardId, setOpenedBoardId] = useState<number | null>(null);
   const [gender, setGender] = useState<string | null>(null);
   const [realUser, setRealUser] = useState<{ id: string; name: string; handle: string; avatar: string | null } | null>(null);
@@ -177,7 +179,7 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
           {/* Large avatar header — Telegram style */}
           <div className="flex flex-col items-center pt-8 pb-6 px-6 bg-white">
             <button
-              onClick={() => gallery[0] && setOpenedItem(0)}
+              onClick={(e) => { if (gallery[0]) { setOpenedOrigin(e.currentTarget.getBoundingClientRect()); setOpenedItem(0); } }}
               className="w-28 h-28 rounded-full overflow-hidden active:opacity-80"
             >
               <UserAvatar src={displayAvatar} name={displayName} alt={displayName} />
@@ -374,7 +376,7 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
                 {gallery.map((item, i) => (
                   <button
                     key={i}
-                    onClick={() => setOpenedItem(i)}
+                    onClick={(e) => { setOpenedOrigin(e.currentTarget.getBoundingClientRect()); setOpenedItem(i); }}
                     className="relative aspect-square overflow-hidden bg-gray-200 active:opacity-80"
                   >
                     {item.isVideo ? (
@@ -418,28 +420,12 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
       </div>
 
       {opened && (
-        <div
-          className="fixed inset-0 z-[10001] bg-black flex flex-col"
-          onClick={() => setOpenedItem(null)}
-        >
-          <div className="flex items-center justify-between px-4 pt-12 pb-3">
-            <button onClick={() => setOpenedItem(null)} className="p-2 -ml-2">
-              <Icon name="ArrowLeft" size={24} className="text-white" />
-            </button>
-            <span className="text-white font-semibold text-sm">@{displayHandle}</span>
-            <div className="w-10" />
-          </div>
-          <div className="flex-1 flex items-center justify-center overflow-hidden" onClick={e => e.stopPropagation()}>
-            {opened.isVideo ? (
-              <video src={opened.image} className="max-h-full max-w-full object-contain" controls autoPlay playsInline loop />
-            ) : (
-              <img src={opened.image} alt="" className="max-h-full max-w-full object-contain" />
-            )}
-          </div>
-          {opened.views && (
-            <div className="px-5 py-3 text-white/70 text-sm">{opened.views} просмотров</div>
-          )}
-        </div>
+        <StoryViewerModal
+          items={gallery.map((g, i): StoryViewerItem => ({ id: i, image: g.image, isVideo: g.isVideo, label: displayHandle, avatar: displayAvatar || undefined }))}
+          startIndex={openedItem ?? 0}
+          originRect={openedOrigin}
+          onClose={() => { setOpenedItem(null); setOpenedOrigin(null); }}
+        />
       )}
 
       {/* Меню «Уведомл.» */}

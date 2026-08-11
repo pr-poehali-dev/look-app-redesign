@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface StoryViewerItem {
   id: number | string;
@@ -20,18 +19,16 @@ interface Rect {
   radius: number;
 }
 
-const getTargetRect = (isMobile: boolean): Rect => {
-  if (isMobile) {
-    const size = Math.min(Math.min(window.innerWidth, window.innerHeight) * 0.78, 380);
-    return {
-      top: (window.innerHeight - size) / 2,
-      left: (window.innerWidth - size) / 2,
-      width: size,
-      height: size,
-      radius: size / 2,
-    };
-  }
-  return { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight, radius: 0 };
+// Просмотрщик всегда остаётся круглым — и на ПК, и на телефоне
+const getTargetRect = (): Rect => {
+  const size = Math.min(Math.min(window.innerWidth, window.innerHeight) * 0.7, 420);
+  return {
+    top: (window.innerHeight - size) / 2,
+    left: (window.innerWidth - size) / 2,
+    width: size,
+    height: size,
+    radius: size / 2,
+  };
 };
 
 const rectFromDom = (r: DOMRect): Rect => ({
@@ -49,20 +46,19 @@ interface Props {
   originRect: DOMRect | null;
 }
 
-/** Универсальный просмотрщик историй: раскрывается анимацией из круглого аватара.
- * На десктопе — в полноэкранный вид, на телефоне — остаётся компактным круглым окном по центру. */
+/** Универсальный просмотрщик историй: раскрывается анимацией из круглого аватара
+ * и всегда остаётся круглым окном по центру экрана — и на ПК, и на телефоне. */
 const StoryViewerModal = ({ items, startIndex, onClose, originRect }: Props) => {
-  const isMobile = useIsMobile();
   const [index, setIndex] = useState(startIndex);
   const [progress, setProgress] = useState(0);
   const [opened, setOpened] = useState(false);
-  const [rect, setRect] = useState<Rect>(() => (originRect ? rectFromDom(originRect) : getTargetRect(isMobile)));
+  const [rect, setRect] = useState<Rect>(() => (originRect ? rectFromDom(originRect) : getTargetRect()));
   const videoRef = useRef<HTMLVideoElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
-      setRect(getTargetRect(isMobile));
+      setRect(getTargetRect());
       setOpened(true);
     });
     return () => cancelAnimationFrame(raf);
