@@ -1,0 +1,35 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "GET mine без X-User-Id -> 401",
+      "method": "GET",
+      "path": "/?action=mine",
+      "expectedStatus": 401
+    },
+    {
+      "name": "GET user_boards без user_id -> 400",
+      "method": "GET",
+      "path": "/?action=user_boards",
+      "expectedStatus": 400
+    },
+    {
+      "name": "GET view без board_id -> 400",
+      "method": "GET",
+      "path": "/?action=view",
+      "expectedStatus": 400
+    },
+    {
+      "name": "POST create без X-User-Id -> 401",
+      "method": "POST",
+      "path": "/?action=create",
+      "body": {"title": "Test board"},
+      "expectedStatus": 401
+    }
+  ]
+}
