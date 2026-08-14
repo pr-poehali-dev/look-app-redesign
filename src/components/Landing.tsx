@@ -28,6 +28,10 @@ const FEATURES = [
   { icon: "Clapperboard", title: "Видео редактор", desc: "Монтируй ролики, обрезай, добавляй музыку и переходы", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/6b4d29f0-ffee-4ef3-b4b7-801ad103ab6a.jpg" },
   { icon: "ImagePlus", title: "Фото редактор", desc: "Накладывай фильтры, ретушируй и оформляй снимки", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/19644308-1a86-4207-b5d3-47ceb1a3f651.jpg" },
   { icon: "LayoutTemplate", title: "Конструктор", desc: "Собирай посты и истории из готовых блоков и шаблонов", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/3252970f-c696-449c-885e-2ccd2b8253b7.jpg" },
+  { icon: "ShoppingBag", title: "Магазин", desc: "Продавай и покупай товары прямо в приложении, без сторонних сайтов", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/d5bb12c3-1ad5-421d-b62c-d763887029e4.jpg" },
+  { icon: "Handshake", title: "Партнёрская программа", desc: "Делись ссылками на товары и получай комиссию с каждой покупки", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/2978caea-e615-4790-83a9-7a880d3d7f4b.jpg" },
+  { icon: "Repeat2", title: "Репосты", desc: "Делись понравившимися видео и постами в своём профиле в один клик", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/e91f65e3-c467-4781-aeec-ef6e9a91a795.jpg" },
+  { icon: "LayoutGrid", title: "Доски и подборки", desc: "Сохраняй понравившиеся видео и товары в свои коллекции", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/3263a0ec-a3f7-44a0-a762-a97264a2a6dc.jpg" },
 ];
 
 const Landing = ({ onLogin, onRegister }: LandingProps) => {
