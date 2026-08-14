@@ -278,6 +278,20 @@ export interface ReferralStat {
   earned: number;
 }
 
+/** Удаляет свою партнёрскую ссылку на товар (сам товар и уже начисленные продажи не трогает). */
+export const deleteReferralLink = async (productId: number, userId: string): Promise<boolean> => {
+  try {
+    await fetch(`${PRODUCTS_URL}?action=delete_referral`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-User-Id": userId },
+      body: JSON.stringify({ product_id: productId }),
+    });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 /** Статистика по своим партнёрским ссылкам: переходы и заработок с продаж. */
 export const useMyReferrals = (userId?: string | null) => {
   const [referrals, setReferrals] = useState<ReferralStat[]>([]);

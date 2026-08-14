@@ -1,10 +1,13 @@
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
-import { useMyReferrals } from "@/hooks/useProducts";
+import { useMyReferrals, deleteReferralLink } from "@/hooks/useProducts";
 
 const ReferralsScreen = ({ onBack }: { onBack: () => void }) => {
   const { user } = useAuth();
-  const { referrals, loading } = useMyReferrals(user?.id);
+  const { referrals, loading, refresh } = useMyReferrals(user?.id);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const totalEarned = referrals.reduce((sum, r) => sum + r.earned, 0);
   const totalClicks = referrals.reduce((sum, r) => sum + r.clicks, 0);
@@ -12,6 +15,15 @@ const ReferralsScreen = ({ onBack }: { onBack: () => void }) => {
   const copyLink = async (productId: number, code: string) => {
     const url = `${window.location.origin}/?product=${productId}&ref=${code}`;
     try { await navigator.clipboard.writeText(url); } catch { /* ignore */ }
+  };
+
+  const handleDelete = async (productId: number) => {
+    if (!user?.id) return;
+    setDeletingId(productId);
+    await deleteReferralLink(productId, user.id);
+    setDeletingId(null);
+    setConfirmDeleteId(null);
+    refresh();
   };
 
   return (
@@ -72,11 +84,40 @@ const ReferralsScreen = ({ onBack }: { onBack: () => void }) => {
                 >
                   <Icon name="Copy" size={16} className="text-gray-600" />
                 </button>
+                <button
+                  onClick={() => setConfirmDeleteId(r.product_id)}
+                  className="p-2.5 rounded-full bg-white shadow-sm flex-shrink-0"
+                  title="Удалить ссылку"
+                >
+                  <Icon name="Trash2" size={16} className="text-red-500" />
+                </button>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {confirmDeleteId !== null && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={() => setConfirmDeleteId(null)}>
+          <div className="bg-white rounded-t-2xl w-full max-w-sm p-5 flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
+            <p className="text-center font-semibold text-gray-800">Удалить партнёрскую ссылку?</p>
+            <p className="text-center text-gray-400 text-xs -mt-1">Уже начисленный заработок по прошлым продажам сохранится</p>
+            <button
+              disabled={deletingId === confirmDeleteId}
+              className="w-full py-3 rounded-xl bg-red-500 text-white font-semibold disabled:opacity-60"
+              onClick={() => handleDelete(confirmDeleteId)}
+            >
+              {deletingId === confirmDeleteId ? "Удаляем..." : "Удалить"}
+            </button>
+            <button
+              className="w-full py-3 rounded-xl bg-gray-100 text-gray-700 font-semibold"
+              onClick={() => setConfirmDeleteId(null)}
+            >
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

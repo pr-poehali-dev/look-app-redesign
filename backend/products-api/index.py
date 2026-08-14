@@ -397,6 +397,28 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return _resp(200, {'referral_code': final_code, 'product_id': product_id})
 
+        # --- Удалить свою партнёрскую ссылку на товар (сам товар и продажи по нему не трогаем) ---
+        if method in ('POST', 'DELETE') and action == 'delete_referral':
+            if not user_id:
+                return _resp(401, {'error': 'X-User-Id required'})
+            if method == 'DELETE':
+                product_id = params.get('product_id')
+            else:
+                body = json.loads(event.get('body') or '{}')
+                product_id = body.get('product_id')
+            if not product_id:
+                return _resp(400, {'error': 'product_id required'})
+            cur.execute(
+                f"DELETE FROM {schema}.referral_orders WHERE product_id = %s AND referrer_user_id = %s",
+                (product_id, user_id)
+            )
+            cur.execute(
+                f"DELETE FROM {schema}.referral_clicks WHERE product_id = %s AND referrer_user_id = %s",
+                (product_id, user_id)
+            )
+            conn.commit()
+            return _resp(200, {'ok': True})
+
         # --- Статистика по своим партнёрским ссылкам: переходы и продажи ---
         if method == 'GET' and action == 'my_referrals':
             if not user_id:
