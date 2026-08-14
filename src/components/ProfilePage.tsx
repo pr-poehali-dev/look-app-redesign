@@ -88,7 +88,7 @@ interface Story {
   label: string;
 }
 
-const MediaViewer = ({ items, startIndex, onClose, onDelete }: { items: Story[]; startIndex: number; onClose: () => void; onDelete: (id: number) => void }) => {
+const MediaViewer = ({ items, startIndex, onClose, onDelete, isRepostView }: { items: Story[]; startIndex: number; onClose: () => void; onDelete: (id: number) => void; isRepostView?: boolean }) => {
   const [index, setIndex] = useState(startIndex);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleted, setDeleted] = useState(false);
@@ -121,14 +121,14 @@ const MediaViewer = ({ items, startIndex, onClose, onDelete }: { items: Story[];
         <span className="w-10" />
       </div>
 
-      {/* Delete button — внизу, явная кнопка */}
+      {/* Delete/unrepost button — внизу, явная кнопка */}
       <button
         onClick={() => setConfirmDelete(true)}
         className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center gap-2 px-4 pt-4 pb-10 bg-gradient-to-t from-black/70 to-transparent text-red-400 font-semibold text-sm hover:text-red-300 transition-colors cursor-pointer"
         style={{ touchAction: "manipulation" }}
       >
-        <Icon name="Trash2" size={20} />
-        Удалить
+        <Icon name={isRepostView ? "Repeat2" : "Trash2"} fallback="Trash2" size={20} />
+        {isRepostView ? "Убрать репост" : "Удалить"}
       </button>
 
       {/* Confirm delete */}
@@ -136,8 +136,8 @@ const MediaViewer = ({ items, startIndex, onClose, onDelete }: { items: Story[];
         <div className="absolute inset-0 z-50 bg-black/70 flex items-end justify-center pb-16" onClick={() => setConfirmDelete(false)}>
           <div className="bg-white rounded-2xl mx-4 w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="p-5 text-center">
-              <p className="font-bold text-black text-base">Удалить?</p>
-              <p className="text-gray-500 text-sm mt-1">Это действие нельзя отменить</p>
+              <p className="font-bold text-black text-base">{isRepostView ? "Убрать репост?" : "Удалить?"}</p>
+              <p className="text-gray-500 text-sm mt-1">{isRepostView ? "Публикация исчезнет из твоего профиля" : "Это действие нельзя отменить"}</p>
             </div>
             <div className="flex border-t border-gray-100">
               <button
@@ -151,7 +151,7 @@ const MediaViewer = ({ items, startIndex, onClose, onDelete }: { items: Story[];
                 onClick={handleDelete}
                 className="flex-1 py-3.5 text-red-500 font-semibold text-sm"
                 style={{ touchAction: "manipulation" }}
-              >Удалить</button>
+              >{isRepostView ? "Убрать" : "Удалить"}</button>
             </div>
           </div>
         </div>
@@ -160,8 +160,8 @@ const MediaViewer = ({ items, startIndex, onClose, onDelete }: { items: Story[];
       {/* Toast */}
       {deleted && (
         <div className="absolute top-24 left-1/2 -translate-x-1/2 z-40 bg-white/90 backdrop-blur-sm rounded-2xl px-5 py-3 flex items-center gap-2 shadow-lg">
-          <Icon name="Trash2" size={16} className="text-red-500" />
-          <span className="text-black text-sm font-medium">Удалено</span>
+          <Icon name={isRepostView ? "Repeat2" : "Trash2"} fallback="Trash2" size={16} className="text-red-500" />
+          <span className="text-black text-sm font-medium">{isRepostView ? "Репост убран" : "Удалено"}</span>
         </div>
       )}
 
@@ -269,12 +269,12 @@ const ProfilePage = () => {
   }, [user?.handle]);
   const [viewingStory, setViewingStory] = useState<number | null>(null);
   const [storyOrigin, setStoryOrigin] = useState<DOMRect | null>(null);
-  const [mediaViewer, setMediaViewer] = useState<{ tab: "video" | "image"; index: number } | null>(null);
+  const [mediaViewer, setMediaViewer] = useState<{ tab: "video" | "image"; index: number; onlyReposts?: boolean } | null>(null);
   const [avatarLoading, setAvatarLoading] = useState(false);
 
   useEffect(() => {
     if (mediaViewer === null) return;
-    const liveItems = stories.filter(s => s.type === mediaViewer.tab);
+    const liveItems = stories.filter(s => s.type === mediaViewer.tab && (!mediaViewer.onlyReposts || s.is_repost));
     if (liveItems.length === 0) setMediaViewer(null);
   }, [stories, mediaViewer]);
 
@@ -350,13 +350,14 @@ const ProfilePage = () => {
         />
       )}
       {mediaViewer !== null && (() => {
-        const liveItems = stories.filter(s => s.type === mediaViewer.tab);
+        const liveItems = stories.filter(s => s.type === mediaViewer.tab && (!mediaViewer.onlyReposts || s.is_repost));
         if (liveItems.length === 0) return null;
         const safeIndex = Math.min(Math.max(mediaViewer.index, 0), liveItems.length - 1);
         return (
           <MediaViewer
             items={liveItems}
             startIndex={safeIndex}
+            isRepostView={!!mediaViewer.onlyReposts}
             onClose={() => setMediaViewer(null)}
             onDelete={(id) => {
               removeMedia(id);
@@ -731,11 +732,12 @@ const ProfilePage = () => {
             </div>
           ) : (
             <div className="grid grid-cols-3 md:grid-cols-4 gap-1 bg-gray-200 p-1">
-              {reposts.map((item) => (
+              {reposts.map((item, i) => (
                 <div
                   key={item.id}
                   className="relative aspect-square overflow-hidden cursor-pointer"
                   style={{ background: "linear-gradient(135deg, #0a2e1a 0%, #1a1a1a 100%)" }}
+                  onClick={() => setMediaViewer({ tab: item.type, index: i, onlyReposts: true })}
                 >
                   {(item.thumb || item.thumbnail) ? (
                     <img src={item.thumb || item.thumbnail} alt="" className="w-full h-full object-cover rounded-md" />

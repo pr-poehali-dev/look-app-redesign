@@ -455,7 +455,8 @@ def handler(event: dict, context) -> dict:
                 cur.close(); conn.close()
             return ok({'ok': True, 'category': new_category})
 
-        # delete media
+        # delete media — удаляет либо своё видео, либо (если это репост) убирает репост из своего профиля,
+        # не трогая оригинальное видео автора
         video_id = body.get('id')
         token = body.get('token') or ''
         user_id = body.get('user_id') or ''
@@ -463,7 +464,7 @@ def handler(event: dict, context) -> dict:
         try:
             video_id = int(video_id)
         except (ValueError, TypeError):
-            pass
+            return err('Некорректный id')
         conn = get_conn(); cur = conn.cursor()
         try:
             if token:
@@ -476,11 +477,19 @@ def handler(event: dict, context) -> dict:
                 uid = user_id
             else:
                 return err('token или user_id обязательны', 401)
+
+            # Сначала проверяем, не репост ли это (тот же id прилетает с фронта для репоста)
+            cur.execute("SELECT id FROM reposts WHERE original_video_id=%s AND user_id=%s", (video_id, uid))
+            repost_row = cur.fetchone()
+            if repost_row:
+                cur.execute("DELETE FROM reposts WHERE id=%s", (repost_row[0],))
+                cur.execute("UPDATE videos SET shares=GREATEST(COALESCE(shares,0)-1,0) WHERE id=%s", (video_id,))
+                conn.commit()
+                return ok({'ok': True})
+
+            # Иначе — удаление своего видео. Владельца проверяем строго, без чужого fallback.
             cur.execute("SELECT url FROM videos WHERE id=%s AND user_id=%s", (video_id, uid))
             row = cur.fetchone()
-            if not row:
-                cur.execute("SELECT url FROM videos WHERE id=%s", (video_id,))
-                row = cur.fetchone()
             if not row:
                 return err('Not found', 404)
             try:

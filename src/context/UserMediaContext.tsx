@@ -30,6 +30,7 @@ interface UserMediaContextType {
   repostMedia: (videoId: number) => Promise<boolean>;
   removeMedia: (id: number) => void;
   refreshMedia: (bumpVersion?: boolean) => Promise<void>;
+  isReposted: (videoId: number) => boolean;
   loading: boolean;
   removedIds: Set<number>;
   mediaVersion: number;
@@ -147,8 +148,11 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
       .catch(() => {});
   };
 
+  // Проверяет, репостнул ли я уже это видео (id — id ОРИГИНАЛЬНОГО видео, как хранит backend в reposts)
+  const isReposted = (videoId: number) => userVideos.some(v => v.is_repost && v.id === videoId);
+
   return (
-    <UserMediaContext.Provider value={{ userVideos, addMedia, repostMedia, removeMedia, refreshMedia, loading, removedIds, mediaVersion }}>
+    <UserMediaContext.Provider value={{ userVideos, addMedia, repostMedia, removeMedia, refreshMedia, isReposted, loading, removedIds, mediaVersion }}>
       {children}
     </UserMediaContext.Provider>
   );

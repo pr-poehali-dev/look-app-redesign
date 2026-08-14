@@ -52,20 +52,21 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
     handle: video.handle,
   });
   const { following, toggle: toggleFollow, isSelf } = useFollowing(video.handle);
-  const { repostMedia } = useUserMedia();
+  const { repostMedia, isReposted } = useUserMedia();
   const { user } = useAuth();
   const [reposting, setReposting] = useState(false);
-  const [reposted, setReposted] = useState(false);
+  const [repostResult, setRepostResult] = useState<"added" | "removed" | null>(null);
+  const alreadyReposted = isReposted(video.dbId ?? video.id);
 
   const handleRepost = async () => {
     if (reposting) return;
     if (!user) { alert("Войди в аккаунт, чтобы делать репосты"); return; }
     const targetId = video.dbId ?? video.id;
     setReposting(true);
-    const ok = await repostMedia(targetId);
+    const nowReposted = await repostMedia(targetId);
     setReposting(false);
-    setReposted(ok);
-    setTimeout(() => { setReposted(false); setShowShare(false); }, 1200);
+    setRepostResult(nowReposted ? "added" : "removed");
+    setTimeout(() => { setRepostResult(null); setShowShare(false); }, 1200);
   };
   const [paused, setPaused] = useState(false);
   const [showPauseIcon, setShowPauseIcon] = useState(false);
@@ -920,12 +921,19 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
               disabled={reposting}
               className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3 disabled:opacity-60"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#fe2c55]/20 flex items-center justify-center flex-shrink-0">
-                <Icon name={reposted ? "Check" : "Repeat2"} size={20} className={reposted ? "text-green-400" : "text-[#fe2c55]"} />
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${alreadyReposted && !repostResult ? "bg-white/10" : "bg-[#fe2c55]/20"}`}>
+                <Icon
+                  name={repostResult ? "Check" : "Repeat2"}
+                  fallback="Repeat"
+                  size={20}
+                  className={repostResult === "added" ? "text-green-400" : repostResult === "removed" ? "text-white/60" : alreadyReposted ? "text-white/60" : "text-[#fe2c55]"}
+                />
               </div>
               <div className="text-left">
-                <p className="text-white text-sm font-medium">{reposted ? "Готово!" : reposting ? "Репостим…" : "Репост к себе"}</p>
-                <p className="text-white/40 text-xs">Видео появится в твоём профиле</p>
+                <p className="text-white text-sm font-medium">
+                  {repostResult === "added" ? "Готово!" : repostResult === "removed" ? "Убрано!" : reposting ? (alreadyReposted ? "Убираем…" : "Репостим…") : alreadyReposted ? "Убрать репост" : "Репост к себе"}
+                </p>
+                <p className="text-white/40 text-xs">{alreadyReposted && !repostResult ? "Уже в твоём профиле" : "Видео появится в твоём профиле"}</p>
               </div>
             </button>
 
