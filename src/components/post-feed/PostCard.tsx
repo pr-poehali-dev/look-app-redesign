@@ -8,6 +8,7 @@ import { useLikes } from "@/hooks/useLikes";
 import { useSavedItem } from "@/hooks/useSaved";
 import { useFollowing } from "@/hooks/useFollowing";
 import { useAuth } from "@/context/AuthContext";
+import { useUserMedia } from "@/context/UserMediaContext";
 import { useProductsByVideos, trackProductClick } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
@@ -22,6 +23,9 @@ const PostCard = ({ post }: { post: Post }) => {
     handle: post.handle,
   });
   const { following, toggle: toggleFollow, isSelf } = useFollowing(post.handle);
+  const { repostMedia } = useUserMedia();
+  const [reposting, setReposting] = useState(false);
+  const [reposted, setReposted] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showShare, setShowShare] = useState(false);
@@ -34,6 +38,17 @@ const PostCard = ({ post }: { post: Post }) => {
   const [copied, setCopied] = useState(false);
   const [replyingTo, setReplyingTo] = useState<{ id: number | string; name: string } | null>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
+
+  const handleRepost = async () => {
+    if (reposting) return;
+    if (!user) { toast.error("Войди в аккаунт, чтобы делать репосты"); return; }
+    setReposting(true);
+    const ok = await repostMedia(post.id);
+    setReposting(false);
+    setReposted(ok);
+    if (ok) toast.success("Репостнуто к себе");
+    setTimeout(() => { setReposted(false); setShowShare(false); }, 1200);
+  };
 
   const { liked, count: likes, toggle: handleLike } = useLikes("post", post.id, post.likes);
   // enabled=true — превью последних комментариев грузится сразу, чтобы показать 2 штуки под постом
@@ -394,6 +409,24 @@ const PostCard = ({ post }: { post: Post }) => {
                 </a>
               ))}
             </div>
+
+            {/* Repost */}
+            {!isSelf && (
+              <button
+                onClick={handleRepost}
+                disabled={reposting}
+                className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3 disabled:opacity-60"
+              >
+                <div className="w-10 h-10 rounded-xl bg-[#fe2c55]/20 flex items-center justify-center flex-shrink-0">
+                  <Icon name={reposted ? "Check" : "Repeat2"} fallback="Repeat" size={20} className={reposted ? "text-green-400" : "text-[#fe2c55]"} />
+                </div>
+                <div className="text-left">
+                  <p className="text-white text-sm font-medium">{reposted ? "Готово!" : reposting ? "Репостим…" : "Репост к себе"}</p>
+                  <p className="text-white/40 text-xs">Публикация появится в твоём профиле</p>
+                </div>
+              </button>
+            )}
+
             <button
               onClick={() => { navigator.clipboard.writeText(window.location.href).catch(() => {}); setCopied(true); setTimeout(() => { setCopied(false); setShowShare(false); }, 1500); }}
               className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3"
