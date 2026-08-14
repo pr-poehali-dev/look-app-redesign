@@ -80,12 +80,17 @@ const PostFeed = () => {
         hasProducts: !!v.has_products,
         views: typeof v.views === "number" ? v.views : undefined,
         isVerified: !!v.is_verified,
+        isAd: !!v.is_ad,
+        adLabel: v.ad_label || null,
+        repostedBy: v.reposted_by || null,
+        repostedByAvatar: v.reposted_by_avatar || null,
       };
     };
 
+    const uidParam = user?.id ? `&user_id=${encodeURIComponent(String(user.id))}` : "";
     Promise.all([
-      fetch(`${GET_PHOTOS_URL}?type=image`).then(r => r.json()),
-      fetch(`${GET_PHOTOS_URL}?type=video`).then(r => r.json()),
+      fetch(`${GET_PHOTOS_URL}?type=image${uidParam}`).then(r => r.json()),
+      fetch(`${GET_PHOTOS_URL}?type=video${uidParam}`).then(r => r.json()),
     ])
       .then(([rawImages, rawVideos]) => {
         const imgData = typeof rawImages.body === 'string' ? JSON.parse(rawImages.body) : rawImages;

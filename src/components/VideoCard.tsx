@@ -33,6 +33,9 @@ export interface VideoData {
   hasProducts?: boolean;
   views?: number;
   isVerified?: boolean;
+  isAd?: boolean;
+  adLabel?: string | null;
+  repostedBy?: string | null;
 }
 
 interface VideoCardProps {
@@ -100,6 +103,19 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
     setAddingProductId(null);
     if (ok) toast.success("Добавлено в корзину");
     else toast.error("Войди в аккаунт, чтобы добавить в корзину");
+  };
+
+  const handleBuyNow = async (productId: number) => {
+    setAddingProductId(productId);
+    trackProductClick(productId, dbVideoId, user?.id);
+    const ok = await addToCart(productId);
+    setAddingProductId(null);
+    if (ok) {
+      setShowProducts(false);
+      window.dispatchEvent(new CustomEvent("open-cart"));
+    } else {
+      toast.error("Войди в аккаунт, чтобы купить");
+    }
   };
   const [playerUrl, setPlayerUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -480,6 +496,17 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
       {/* Bottom left info — внутри видео */}
       <div className="absolute bottom-28 md:bottom-20 left-4 z-10" style={{ right: '80px' }}>
+        {video.repostedBy && (
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: video.repostedBy } }))}
+            className="flex items-center gap-1.5 mb-1.5 text-left"
+          >
+            <Icon name="Repeat2" fallback="Repeat" size={13} className="text-white/60" />
+            <span className="text-white/60 text-xs">
+              Репост от <span className="text-white/90 font-medium">@{video.repostedBy}</span>
+            </span>
+          </button>
+        )}
         <div className="flex items-center gap-2 mb-3">
           <button
             onClick={() => window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: video.handle } }))}
@@ -488,6 +515,11 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             @{video.handle}
             {video.isVerified && <Icon name="BadgeCheck" size={14} className="text-[#61d4f0]" />}
           </button>
+          {video.isAd && (
+            <span className="px-1.5 py-0.5 rounded bg-white/15 text-white/70 text-[10px] font-semibold uppercase tracking-wide">
+              {video.adLabel || "Реклама"}
+            </span>
+          )}
           {isSelf ? null : !following ? (
             <button
               onClick={toggleFollow}
@@ -958,16 +990,25 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
                           </span>
                         )}
                       </div>
-                      <button
-                        onClick={() => handleAddToCart(p.id)}
-                        disabled={addingProductId === p.id}
-                        className="flex-shrink-0 w-9 h-9 rounded-full bg-[#fe2c55] flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
-                        title="В корзину"
-                      >
-                        {addingProductId === p.id
-                          ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          : <Icon name="Heart" size={16} className="text-white" />}
-                      </button>
+                      <div className="flex flex-col gap-1.5 flex-shrink-0">
+                        <button
+                          onClick={() => handleBuyNow(p.id)}
+                          disabled={addingProductId === p.id}
+                          className="px-3 py-1.5 rounded-full bg-[#fe2c55] text-white text-xs font-bold active:scale-95 transition-transform disabled:opacity-50 whitespace-nowrap"
+                        >
+                          Купить
+                        </button>
+                        <button
+                          onClick={() => handleAddToCart(p.id)}
+                          disabled={addingProductId === p.id}
+                          className="w-9 h-9 mx-auto rounded-full bg-white/10 flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
+                          title="В корзину"
+                        >
+                          {addingProductId === p.id
+                            ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            : <Icon name="ShoppingCart" size={15} className="text-white" />}
+                        </button>
+                      </div>
                     </div>
                     {p.owner_handle && !p.is_partner && (
                       <button

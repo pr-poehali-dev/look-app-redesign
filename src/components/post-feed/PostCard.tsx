@@ -60,6 +60,19 @@ const PostCard = ({ post }: { post: Post }) => {
     else toast.error("Войди в аккаунт, чтобы добавить в корзину");
   };
 
+  const handleBuyNow = async (productId: number) => {
+    setAddingProductId(productId);
+    trackProductClick(productId, post.id, user?.id);
+    const ok = await addToCart(productId);
+    setAddingProductId(null);
+    if (ok) {
+      setShowProducts(false);
+      window.dispatchEvent(new CustomEvent("open-cart"));
+    } else {
+      toast.error("Войди в аккаунт, чтобы купить");
+    }
+  };
+
   const handleSendComment = () => {
     if (!commentText.trim()) return;
     send(commentText, undefined, replyingTo?.id ?? null);
@@ -80,6 +93,19 @@ const PostCard = ({ post }: { post: Post }) => {
   return (
     <div className="bg-black border-b border-white/8 flex flex-col h-full max-h-full">
 
+      {/* Repost banner */}
+      {post.repostedBy && (
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: post.repostedBy } }))}
+          className="flex items-center gap-2 px-3 pt-2.5 pb-0.5 flex-shrink-0 text-left"
+        >
+          <Icon name="Repeat2" fallback="Repeat" size={14} className="text-white/50" />
+          <span className="text-white/50 text-[12px]">
+            Репост от <span className="text-white/80 font-medium">@{post.repostedBy}</span>
+          </span>
+        </button>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 flex-shrink-0">
         <div className="flex items-center gap-2.5">
@@ -92,6 +118,11 @@ const PostCard = ({ post }: { post: Post }) => {
             <div className="flex items-center gap-1.5">
               <span className="text-white font-semibold text-[13px]">{post.handle}</span>
               {post.isVerified && <Icon name="BadgeCheck" size={12} className="text-[#61d4f0]" />}
+              {post.isAd && (
+                <span className="px-1.5 py-0.5 rounded bg-white/10 text-white/60 text-[10px] font-semibold uppercase tracking-wide">
+                  {post.adLabel || "Реклама"}
+                </span>
+              )}
               {isSelf ? null : !following ? (
                 <button
                   onClick={toggleFollow}
@@ -420,16 +451,25 @@ const PostCard = ({ post }: { post: Post }) => {
                           </span>
                         )}
                       </div>
-                      <button
-                        onClick={() => handleAddToCart(p.id)}
-                        disabled={addingProductId === p.id}
-                        className="flex-shrink-0 w-9 h-9 rounded-full bg-[#fe2c55] flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
-                        title="В корзину"
-                      >
-                        {addingProductId === p.id
-                          ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          : <Icon name="Heart" size={16} className="text-white" />}
-                      </button>
+                      <div className="flex flex-col gap-1.5 flex-shrink-0">
+                        <button
+                          onClick={() => handleBuyNow(p.id)}
+                          disabled={addingProductId === p.id}
+                          className="px-3 py-1.5 rounded-full bg-[#fe2c55] text-white text-xs font-bold active:scale-95 transition-transform disabled:opacity-50 whitespace-nowrap"
+                        >
+                          Купить
+                        </button>
+                        <button
+                          onClick={() => handleAddToCart(p.id)}
+                          disabled={addingProductId === p.id}
+                          className="w-9 h-9 mx-auto rounded-full bg-white/10 flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
+                          title="В корзину"
+                        >
+                          {addingProductId === p.id
+                            ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            : <Icon name="ShoppingCart" size={15} className="text-white" />}
+                        </button>
+                      </div>
                     </div>
                     {p.owner_handle && !p.is_partner && (
                       <button

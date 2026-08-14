@@ -23,6 +23,10 @@ export interface Post {
   hasProducts?: boolean;
   views?: number;
   isVerified?: boolean;
+  isAd?: boolean;
+  adLabel?: string | null;
+  repostedBy?: string | null;
+  repostedByAvatar?: string | null;
 }
 
 export const GET_PHOTOS_URL = "https://functions.poehali.dev/f58115ec-de09-405d-a2db-08fe1cd958e1";

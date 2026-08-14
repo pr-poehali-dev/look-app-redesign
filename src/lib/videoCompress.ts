@@ -227,6 +227,7 @@ export interface DirectUploadMeta {
   thumbData?: string; // base64 jpeg кадр для превью видео
   templateId?: string | null;
   products?: UploadProductMeta[];
+  isAd?: boolean;
 }
 
 async function blobToBase64(blob: Blob): Promise<string> {
@@ -343,6 +344,7 @@ export async function uploadFileDirect(
       user_id: meta.user_id || "anonymous",
       template_id: meta.templateId || null,
       products: meta.products || [],
+      is_ad: !!meta.isAd,
     },
   });
   const finalUrl = finish.url as string | undefined;

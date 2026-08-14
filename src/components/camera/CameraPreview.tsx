@@ -61,6 +61,8 @@ interface CameraPreviewProps {
   destination: "home" | "feed";
   hashtags: string;
   description: string;
+  isAd: boolean;
+  onIsAdChange: (v: boolean) => void;
   onHashtagsChange: (v: string) => void;
   onDescriptionChange: (v: string) => void;
   onDestinationChange: (d: "home" | "feed") => void;
@@ -88,6 +90,8 @@ const CameraPreview = ({
   showCategoryPicker,
   hashtags,
   description,
+  isAd,
+  onIsAdChange,
   onHashtagsChange,
   onDescriptionChange,
   onCloseMedia,
@@ -325,6 +329,23 @@ const CameraPreview = ({
                     )}
                   </div>
                 )}
+
+                {/* Реклама / спонсорская публикация */}
+                <button
+                  onClick={() => onIsAdChange(!isAd)}
+                  className="w-full flex items-center justify-between bg-white/10 border border-white/15 rounded-xl px-3 py-3"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Icon name="Megaphone" size={16} className="text-white/70" />
+                    <div className="text-left">
+                      <p className="text-white text-sm font-medium">Это реклама</p>
+                      <p className="text-white/40 text-xs">Будет помечено «Реклама» в ленте</p>
+                    </div>
+                  </div>
+                  <div className={`w-10 h-6 rounded-full flex items-center px-0.5 transition-colors flex-shrink-0 ${isAd ? "bg-[#fe2c55]" : "bg-white/15"}`}>
+                    <div className={`w-5 h-5 rounded-full bg-white transition-transform ${isAd ? "translate-x-4" : "translate-x-0"}`} />
+                  </div>
+                </button>
               </>
             )}
 

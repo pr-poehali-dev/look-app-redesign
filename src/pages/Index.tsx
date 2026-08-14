@@ -13,6 +13,7 @@ import UserProfileModal from "@/components/UserProfileModal";
 import { SupportScreen, LegalScreen } from "@/components/SettingsScreen";
 import { useUnread } from "@/context/UnreadContext";
 import { useAuth } from "@/context/AuthContext";
+import { setPendingReferral } from "@/hooks/useProducts";
 
 const TABS = [
   { id: "home", icon: "Home", label: "Главная" },
@@ -91,13 +92,16 @@ const Index = () => {
       setActiveTab("messages");
     };
     const onUseTemplate = () => setShowCamera(true);
+    const onOpenCart = () => setActiveTab("profile");
     window.addEventListener("open-user-profile", onOpen);
     window.addEventListener("open-direct-message", onMessage);
     window.addEventListener("use-template", onUseTemplate);
+    window.addEventListener("open-cart", onOpenCart);
     return () => {
       window.removeEventListener("open-user-profile", onOpen);
       window.removeEventListener("open-direct-message", onMessage);
       window.removeEventListener("use-template", onUseTemplate);
+      window.removeEventListener("open-cart", onOpenCart);
     };
   }, []);
 
@@ -109,6 +113,20 @@ const Index = () => {
       window.history.replaceState({}, "", url.toString());
     }
   }, [initialCommunityFromUrl]);
+
+  // Партнёрская ссылка ?product=<id>&ref=<code> — запоминаем, чтобы засчитать переход/покупку рекомендателю
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const productId = url.searchParams.get("product");
+    const ref = url.searchParams.get("ref");
+    if (productId && ref) {
+      setPendingReferral(Number(productId), ref);
+      url.searchParams.delete("product");
+      url.searchParams.delete("ref");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, []);
 
   // Обработка ссылки-приглашения ?invite=<token>
   useEffect(() => {

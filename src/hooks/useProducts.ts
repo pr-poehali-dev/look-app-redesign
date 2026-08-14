@@ -77,11 +77,31 @@ export const useProductHotspots = (videoId?: number | string | null) => {
   return hotspots;
 };
 
+const REF_STORAGE_KEY = "look_pending_referral";
+
+/** Запоминает партнёрскую ссылку, по которой пришёл пользователь (?product=&ref=), на время сессии. */
+export const setPendingReferral = (productId: number, ref: string) => {
+  try { sessionStorage.setItem(REF_STORAGE_KEY, JSON.stringify({ productId, ref })); } catch { /* ignore */ }
+};
+
+/** Достаёт запомненный ref-код, если он относится к этому товару. */
+export const getPendingReferral = (productId: number): string | null => {
+  try {
+    const raw = sessionStorage.getItem(REF_STORAGE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    return data.productId === productId ? (data.ref || null) : null;
+  } catch {
+    return null;
+  }
+};
+
 export const trackProductClick = (productId: number, videoId?: number, userId?: string) => {
+  const ref = getPendingReferral(productId) || undefined;
   fetch(`${PRODUCTS_URL}?action=click`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(userId ? { "X-User-Id": userId } : {}) },
-    body: JSON.stringify({ product_id: productId, video_id: videoId }),
+    body: JSON.stringify({ product_id: productId, video_id: videoId, ref }),
   }).catch(() => {});
 };
 
@@ -231,4 +251,49 @@ export const attachHotspotsToVideo = async (videoId: number, hotspots: HotspotTo
     headers: { "Content-Type": "application/json", ...(userId ? { "X-User-Id": userId } : {}) },
     body: JSON.stringify({ video_id: videoId, hotspots }),
   }).catch(() => {});
+};
+
+/** Получить (или создать) свою партнёрскую ссылку на товар — можно продвигать чужой товар за комиссию. */
+export const generateReferralLink = async (productId: number, userId: string): Promise<string | null> => {
+  try {
+    const res = await fetch(`${PRODUCTS_URL}?action=generate_referral`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-User-Id": userId },
+      body: JSON.stringify({ product_id: productId }),
+    });
+    const data = await parseBody(res);
+    return data.referral_code || null;
+  } catch {
+    return null;
+  }
+};
+
+export interface ReferralStat {
+  product_id: number;
+  title: string;
+  image?: string | null;
+  referral_code: string;
+  clicks: number;
+  orders_count: number;
+  earned: number;
+}
+
+/** Статистика по своим партнёрским ссылкам: переходы и заработок с продаж. */
+export const useMyReferrals = (userId?: string | null) => {
+  const [referrals, setReferrals] = useState<ReferralStat[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const refresh = useCallback(() => {
+    if (!userId) { setReferrals([]); return; }
+    setLoading(true);
+    fetch(`${PRODUCTS_URL}?action=my_referrals`, { headers: { "X-User-Id": userId } })
+      .then(parseBody)
+      .then((data) => setReferrals(data.referrals || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [userId]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  return { referrals, loading, refresh };
 };

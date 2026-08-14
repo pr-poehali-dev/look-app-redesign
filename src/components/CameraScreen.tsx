@@ -57,6 +57,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
   const [destination, setDestination] = useState<"home" | "feed">("home");
   const [hashtags, setHashtags] = useState("");
   const [description, setDescription] = useState("");
+  const [isAd, setIsAd] = useState(false);
   const [showLive, setShowLive] = useState(false);
   const [editingPhoto, setEditingPhoto] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -118,6 +119,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
           author: user?.name || "Пользователь",
           handle: user?.handle || user?.name || "user",
           user_id: user?.id || "anonymous",
+          isAd,
         },
         (p) => setPublishProgress({ stage: "upload", percent: p }),
       );
@@ -366,7 +368,9 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
         onHashtagsChange={setHashtags}
         description={description}
         onDescriptionChange={setDescription}
-        onCloseMedia={() => { setUploadedMedia(null); setPublished(false); setHashtags(""); setDescription(""); }}
+        isAd={isAd}
+        onIsAdChange={setIsAd}
+        onCloseMedia={() => { setUploadedMedia(null); setPublished(false); setHashtags(""); setDescription(""); setIsAd(false); }}
         onEditPhoto={() => setEditingPhoto(true)}
         onPublish={handlePublish}
         onCategoryChange={(id) => { setSelectedCategory(id); setShowCategoryPicker(false); }}

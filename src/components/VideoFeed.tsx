@@ -358,6 +358,9 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
           hasProducts: !!v.has_products,
           views: typeof v.views === "number" ? v.views : undefined,
           isVerified: !!v.is_verified,
+          isAd: !!v.is_ad,
+          adLabel: v.ad_label || null,
+          repostedBy: v.reposted_by || null,
         });
         }));
         setActiveIndex(0);

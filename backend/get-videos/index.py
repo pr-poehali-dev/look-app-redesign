@@ -4,7 +4,7 @@ import psycopg2
 
 
 def handler(event: dict, context) -> dict:
-    """Лента видео с гибридными рекомендациями: контентная + коллаборативная фильтрация, подписки, watch-time сигналы (скорость/глубина просмотра, повторы), популярность, свежесть, элемент случайности против пузыря фильтров, а также фильтрация скрытых авторов и видео "не интересно"."""
+    """Лента видео с гибридными рекомендациями: контентная + коллаборативная фильтрация, подписки, watch-time сигналы (скорость/глубина просмотра, повторы), популярность, свежесть, элемент случайности против пузыря фильтров, репосты от подписок с пометкой "кто поделился", рекламные публикации, а также фильтрация скрытых авторов и видео "не интересно"."""
     if event.get('httpMethod') == 'OPTIONS':
         return {
             'statusCode': 200,
@@ -32,7 +32,9 @@ def handler(event: dict, context) -> dict:
             f"lu.profile_photo, v.thumbnail, v.user_id, v.template_id, "
             f"EXISTS(SELECT 1 FROM {schema}.products p WHERE p.video_id = v.id AND p.status = 'active') AS has_products, "
             f"COALESCE((SELECT COUNT(*) FROM {schema}.video_views vv WHERE vv.video_id = v.id), 0) AS views, "
-            f"COALESCE(au.is_verified, FALSE) AS is_verified "
+            f"COALESCE(au.is_verified, FALSE) AS is_verified, "
+            f"COALESCE(v.is_ad, FALSE) AS is_ad, v.ad_label, "
+            f"NULL::text AS reposted_by, NULL::text AS reposted_by_avatar, NULL::text AS reposted_by_id "
             f"FROM {schema}.videos v "
             f"LEFT JOIN {schema}.legacy_posts lp ON lp.migrated_to_video_id = v.id "
             f"LEFT JOIN {schema}.legacy_users lu ON lu.id = lp.user_id "
@@ -53,6 +55,44 @@ def handler(event: dict, context) -> dict:
                 (media_type,)
             )
             rows = cur.fetchall()
+
+        # Репосты — подмешиваем в ленту с пометкой "кто поделился".
+        # Позволяет всплыть старому контенту через социальное расшаривание, как в Instagram.
+        existing_ids = {r[0] for r in rows}
+        repost_select = (
+            f"SELECT v.id, v.url, v.author, v.handle, v.description, v.hashtags, "
+            f"v.category, v.type, v.likes, v.comments, v.shares, r.created_at, "
+            f"lu.profile_photo, v.thumbnail, v.user_id, v.template_id, "
+            f"EXISTS(SELECT 1 FROM {schema}.products p WHERE p.video_id = v.id AND p.status = 'active') AS has_products, "
+            f"COALESCE((SELECT COUNT(*) FROM {schema}.video_views vv WHERE vv.video_id = v.id), 0) AS views, "
+            f"COALESCE(au.is_verified, FALSE) AS is_verified, "
+            f"COALESCE(v.is_ad, FALSE) AS is_ad, v.ad_label, "
+            f"ru.handle AS reposted_by, ru.avatar AS reposted_by_avatar, ru.id AS reposted_by_id "
+            f"FROM {schema}.reposts r "
+            f"JOIN {schema}.videos v ON v.id = r.original_video_id "
+            f"LEFT JOIN {schema}.app_users ru ON ru.id = r.user_id "
+            f"LEFT JOIN {schema}.legacy_posts lp ON lp.migrated_to_video_id = v.id "
+            f"LEFT JOIN {schema}.legacy_users lu ON lu.id = lp.user_id "
+            f"LEFT JOIN {schema}.app_users au ON au.id = v.user_id "
+            f"WHERE v.type = %s AND (v.hidden IS NULL OR v.hidden = FALSE) "
+        )
+        try:
+            if category and category != 'all':
+                cur.execute(repost_select + "AND v.category = %s ORDER BY r.created_at DESC LIMIT 40", (media_type, category))
+            else:
+                cur.execute(repost_select + "ORDER BY r.created_at DESC LIMIT 60", (media_type,))
+            repost_rows_raw = cur.fetchall()
+        except Exception:
+            repost_rows_raw = []
+
+        seen_repost_video = set()
+        repost_rows = []
+        for r in repost_rows_raw:
+            if r[0] in existing_ids or r[0] in seen_repost_video:
+                continue
+            seen_repost_video.add(r[0])
+            repost_rows.append(r)
+        rows = list(rows) + repost_rows
 
         # Профиль интересов пользователя для гибридных рекомендаций
         liked_categories = {}
@@ -192,6 +232,8 @@ def handler(event: dict, context) -> dict:
         likes = r[8] or 0
         created = r[11]
         owner = str(r[14]) if r[14] is not None else ''
+        is_ad = bool(r[19])
+        reposted_by_id = r[23]
 
         s = 0.0
         # Контентная фильтрация: совпадение категории/хэштегов с интересами
@@ -204,6 +246,11 @@ def handler(event: dict, context) -> dict:
         # Подписки
         if owner and owner in followed_user_ids:
             s += 5.0
+        # Репост от того, на кого подписан — сильный социальный сигнал
+        if reposted_by_id and str(reposted_by_id) in followed_user_ids:
+            s += 6.0
+        elif reposted_by_id:
+            s += 1.0
         # Коллаборативная фильтрация
         if user_id and vid in collab_video_ids:
             s += 4.0
@@ -216,6 +263,9 @@ def handler(event: dict, context) -> dict:
         if created:
             age_h = max(0.0, (now - created).total_seconds() / 3600.0)
             s += max(0.0, 3.0 - age_h / 56.0)
+        # Реклама: умеренный буст, чтобы показывалась периодически, но не доминировала
+        if is_ad:
+            s += 2.0
         # Случайность против "пузыря фильтров": случайный буст,
         # иногда продвигает контент вне привычных интересов
         s += random.uniform(0, 3.0)
@@ -231,6 +281,7 @@ def handler(event: dict, context) -> dict:
         rows = rows[:60]
 
     videos = []
+    ad_video_ids = []
     for r in rows:
         legacy_avatar = r[12]
         thumbnail = r[13]
@@ -240,6 +291,9 @@ def handler(event: dict, context) -> dict:
             avatar = legacy_avatar
         else:
             avatar = None
+        is_ad = bool(r[19])
+        if is_ad:
+            ad_video_ids.append(r[0])
         videos.append({
             'id': r[0],
             'url': r[1],
@@ -259,7 +313,35 @@ def handler(event: dict, context) -> dict:
             'has_products': bool(r[16]),
             'views': int(r[17]),
             'is_verified': bool(r[18]),
+            'is_ad': is_ad,
+            'ad_label': r[20],
+            'reposted_by': r[21],
+            'reposted_by_avatar': r[22],
         })
+
+    # Фиксируем показы рекламы (счётчик показов для рекламодателя)
+    if ad_video_ids:
+        try:
+            log_conn = psycopg2.connect(os.environ['DATABASE_URL'])
+            log_cur = log_conn.cursor()
+            try:
+                schema = os.environ['MAIN_DB_SCHEMA']
+                placeholders = ','.join(['%s'] * len(ad_video_ids))
+                log_cur.execute(
+                    f"UPDATE {schema}.videos SET ad_impressions = ad_impressions + 1 WHERE id IN ({placeholders})",
+                    tuple(ad_video_ids)
+                )
+                for vid in ad_video_ids:
+                    log_cur.execute(
+                        f"INSERT INTO {schema}.ad_impressions_log (video_id, user_id) VALUES (%s, %s)",
+                        (vid, user_id or None)
+                    )
+                log_conn.commit()
+            finally:
+                log_cur.close()
+                log_conn.close()
+        except Exception:
+            pass
 
     return {
         'statusCode': 200,

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
-import { Product } from "@/hooks/useProducts";
+import { Product, generateReferralLink } from "@/hooks/useProducts";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 interface Props {
   p: Product;
@@ -11,6 +13,8 @@ interface Props {
 
 const ProductMasonryCard = ({ p, onAdd, adding, hideOwner }: Props) => {
   const [liked, setLiked] = useState(false);
+  const { user } = useAuth();
+  const [gettingLink, setGettingLink] = useState(false);
 
   const openSeller = () => {
     if (p.owner_handle && !p.is_partner) {
@@ -21,6 +25,22 @@ const ProductMasonryCard = ({ p, onAdd, adding, hideOwner }: Props) => {
   const handleLike = () => {
     setLiked(true);
     onAdd(p.id);
+  };
+
+  const shareReferral = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user?.id) { toast.error("Войди в аккаунт, чтобы получить партнёрскую ссылку"); return; }
+    setGettingLink(true);
+    const code = await generateReferralLink(p.id, user.id);
+    setGettingLink(false);
+    if (!code) { toast.error("Не удалось создать ссылку"); return; }
+    const url = `${window.location.origin}/?product=${p.id}&ref=${code}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Партнёрская ссылка скопирована!");
+    } catch {
+      toast.success(url);
+    }
   };
 
   return (
@@ -70,6 +90,19 @@ const ProductMasonryCard = ({ p, onAdd, adding, hideOwner }: Props) => {
             Партнёр
           </span>
         ) : null}
+
+        <button
+          onClick={shareReferral}
+          disabled={gettingLink}
+          className="flex items-center justify-center gap-1.5 pt-1.5 border-t border-gray-100 mt-0.5 text-gray-500 active:text-black transition-colors disabled:opacity-50"
+        >
+          {gettingLink ? (
+            <div className="w-3 h-3 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <Icon name="Link" size={12} />
+          )}
+          <span className="text-[11px] font-medium">Партнёрская ссылка</span>
+        </button>
       </div>
     </div>
   );

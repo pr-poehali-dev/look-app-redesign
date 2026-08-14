@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { getPendingReferral } from "@/hooks/useProducts";
 
 const CART_URL = "https://functions.poehali.dev/32fdb3d3-b4f4-4dda-ac97-b0b038649b0f";
 
@@ -39,10 +40,11 @@ export const useCart = () => {
   const addToCart = useCallback(async (productId: number, quantity = 1) => {
     if (!user?.id) return false;
     try {
+      const ref = getPendingReferral(productId) || undefined;
       await fetch(`${CART_URL}?action=add`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-User-Id": user.id },
-        body: JSON.stringify({ product_id: productId, quantity }),
+        body: JSON.stringify({ product_id: productId, quantity, ref }),
       });
       refresh();
       return true;

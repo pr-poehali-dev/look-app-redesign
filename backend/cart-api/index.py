@@ -53,6 +53,7 @@ def handler(event: dict, context) -> dict:
             body = json.loads(event.get('body') or '{}')
             product_id = body.get('product_id')
             quantity = int(body.get('quantity') or 1)
+            ref_code = (body.get('ref') or '').strip()[:40] or None
             if not product_id:
                 return _resp(400, {'error': 'product_id required'})
             cur.execute(
@@ -62,13 +63,13 @@ def handler(event: dict, context) -> dict:
             existing = cur.fetchone()
             if existing:
                 cur.execute(
-                    f"UPDATE {schema}.cart_items SET quantity = quantity + %s WHERE id = %s",
-                    (quantity, existing[0])
+                    f"UPDATE {schema}.cart_items SET quantity = quantity + %s{', ref_code = %s' if ref_code else ''} WHERE id = %s",
+                    (quantity, ref_code, existing[0]) if ref_code else (quantity, existing[0])
                 )
             else:
                 cur.execute(
-                    f"INSERT INTO {schema}.cart_items (user_id, product_id, quantity) VALUES (%s, %s, %s)",
-                    (user_id, product_id, quantity)
+                    f"INSERT INTO {schema}.cart_items (user_id, product_id, quantity, ref_code) VALUES (%s, %s, %s, %s)",
+                    (user_id, product_id, quantity, ref_code)
                 )
             conn.commit()
             return _resp(200, {'ok': True})
@@ -99,7 +100,7 @@ def handler(event: dict, context) -> dict:
 
         if method == 'POST' and action == 'checkout':
             cur.execute(
-                f"SELECT ci.product_id, ci.quantity, p.title, p.price "
+                f"SELECT ci.product_id, ci.quantity, p.title, p.price, ci.ref_code "
                 f"FROM {schema}.cart_items ci JOIN {schema}.products p ON p.id = ci.product_id "
                 f"WHERE ci.user_id = %s",
                 (user_id,)
@@ -114,6 +115,25 @@ def handler(event: dict, context) -> dict:
                 (user_id, json.dumps(items), total)
             )
             order_id = cur.fetchone()[0]
+
+            # Фиксируем продажи по партнёрским ссылкам (для комиссии рекомендателя)
+            for r in rows:
+                product_id, quantity, _title, price, ref_code = r
+                if not ref_code:
+                    continue
+                cur.execute(
+                    f"SELECT DISTINCT referrer_user_id FROM {schema}.referral_clicks "
+                    f"WHERE product_id = %s AND referral_code = %s LIMIT 1",
+                    (product_id, ref_code)
+                )
+                ref_row = cur.fetchone()
+                if ref_row and ref_row[0] != user_id:
+                    cur.execute(
+                        f"INSERT INTO {schema}.referral_orders (order_id, product_id, referral_code, referrer_user_id, buyer_user_id, amount) "
+                        f"VALUES (%s, %s, %s, %s, %s, %s)",
+                        (order_id, product_id, ref_code, ref_row[0], user_id, float(price) * quantity)
+                    )
+
             cur.execute(f"DELETE FROM {schema}.cart_items WHERE user_id = %s", (user_id,))
             conn.commit()
             return _resp(200, {'order_id': order_id, 'total': total})

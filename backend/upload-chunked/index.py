@@ -117,14 +117,17 @@ def handler(event: dict, context) -> dict:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
             try:
+                is_ad = bool(meta.get('is_ad'))
+                ad_label = (meta.get('ad_label') or '').strip()[:60] or ('Реклама' if is_ad else None)
                 cur.execute(
-                    "INSERT INTO videos (url, thumbnail, author, handle, description, hashtags, category, type, user_id, template_id) "
-                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+                    "INSERT INTO videos (url, thumbnail, author, handle, description, hashtags, category, type, user_id, template_id, is_ad, ad_label) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
                     (cdn_url, thumb_url,
                      meta.get('author', 'Я'), meta.get('handle', 'user'),
                      meta.get('description', ''), meta.get('hashtags', ''),
                      meta.get('category', 'humor'), media_type,
-                     meta.get('user_id', 'anonymous'), meta.get('template_id')),
+                     meta.get('user_id', 'anonymous'), meta.get('template_id'),
+                     is_ad, ad_label),
                 )
                 video_id = cur.fetchone()[0]
 

@@ -65,6 +65,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
   const [category, setCategory] = useState("humor");
   const [description, setDescription] = useState("");
   const [hashtags, setHashtags] = useState("");
+  const [isAd, setIsAd] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [publishProgress, setPublishProgress] = useState<{ stage: "compress" | "upload" | "save"; percent: number } | null>(null);
   const [step, setStep] = useState<"edit" | "publish">("edit");
@@ -618,6 +619,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
             title: p.title, price: p.price, old_price: p.oldPrice,
             promo_code: p.promoCode, product_url: p.productUrl, image: p.image,
           })),
+          isAd,
         },
         (p) => setPublishProgress({ stage: "upload", percent: p }),
       );
@@ -691,6 +693,8 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
         products={pendingProducts}
         setProducts={setPendingProducts}
         userId={user?.id}
+        isAd={isAd}
+        setIsAd={setIsAd}
       />
     );
   }

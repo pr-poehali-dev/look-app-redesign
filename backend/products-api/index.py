@@ -2,6 +2,7 @@ import json
 import os
 import uuid
 import base64
+import secrets
 import boto3
 import psycopg2
 
@@ -14,14 +15,14 @@ CORS = {
 
 PRODUCT_FIELDS = (
     "id, video_id, owner_user_id, title, description, price, old_price, image, "
-    "promo_code, product_url, category, in_stock, status, is_partner, moderation_note, created_at"
+    "promo_code, product_url, category, in_stock, status, is_partner, moderation_note, created_at, referral_code"
 )
 
 # Те же поля товара + хэндл/имя/аватар продавца (для кнопки "Перейти в профиль" на карточке товара)
 PRODUCT_FIELDS_WITH_OWNER = (
     "p.id, p.video_id, p.owner_user_id, p.title, p.description, p.price, p.old_price, p.image, "
     "p.promo_code, p.product_url, p.category, p.in_stock, p.status, p.is_partner, p.moderation_note, p.created_at, "
-    "u.handle, u.name, u.avatar"
+    "p.referral_code, u.handle, u.name, u.avatar"
 )
 
 
@@ -39,14 +40,15 @@ def _row_to_product(r):
         'category': r[10] or 'other', 'in_stock': bool(r[11]),
         'status': r[12], 'is_partner': bool(r[13]), 'moderation_note': r[14] or '',
         'created_at': r[15].isoformat() if r[15] else None,
+        'referral_code': r[16] if len(r) > 16 else None,
     }
 
 
 def _row_to_product_with_owner(r):
-    prod = _row_to_product(r[:16])
-    prod['owner_handle'] = r[16] if len(r) > 16 else None
-    prod['owner_name'] = r[17] if len(r) > 17 else None
-    prod['owner_avatar'] = r[18] if len(r) > 18 else None
+    prod = _row_to_product(r[:17])
+    prod['owner_handle'] = r[17] if len(r) > 17 else None
+    prod['owner_name'] = r[18] if len(r) > 18 else None
+    prod['owner_avatar'] = r[19] if len(r) > 19 else None
     return prod
 
 
@@ -337,19 +339,92 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return _resp(200, {'ok': True})
 
-        # --- Клик по товару (аналитика переходов) ---
+        # --- Клик по товару (аналитика переходов + учёт партнёрских переходов по ref-коду) ---
         if method == 'POST' and action == 'click':
             body = json.loads(event.get('body') or '{}')
             product_id = body.get('product_id')
             video_id = body.get('video_id')
+            ref_code = (body.get('ref') or '').strip()[:40]
             if not product_id:
                 return _resp(400, {'error': 'product_id required'})
             cur.execute(
                 f"INSERT INTO {schema}.product_clicks (product_id, video_id, user_id) VALUES (%s, %s, %s)",
                 (product_id, video_id, user_id or None)
             )
+            if ref_code:
+                cur.execute(
+                    f"SELECT DISTINCT referrer_user_id FROM {schema}.referral_clicks "
+                    f"WHERE product_id = %s AND referral_code = %s LIMIT 1",
+                    (product_id, ref_code)
+                )
+                row = cur.fetchone()
+                if row:
+                    cur.execute(
+                        f"INSERT INTO {schema}.referral_clicks (product_id, referral_code, referrer_user_id, visitor_user_id) "
+                        f"VALUES (%s, %s, %s, %s)",
+                        (product_id, ref_code, row[0], user_id or None)
+                    )
             conn.commit()
             return _resp(200, {'ok': True})
+
+        # --- Получить/создать свою партнёрскую ссылку на товар (доступно любому пользователю) ---
+        if method == 'POST' and action == 'generate_referral':
+            if not user_id:
+                return _resp(401, {'error': 'X-User-Id required'})
+            body = json.loads(event.get('body') or '{}')
+            product_id = body.get('product_id')
+            if not product_id:
+                return _resp(400, {'error': 'product_id required'})
+            cur.execute(f"SELECT status FROM {schema}.products WHERE id = %s", (product_id,))
+            row = cur.fetchone()
+            if not row or row[0] != 'active':
+                return _resp(404, {'error': 'product not found or inactive'})
+            # Код закреплён за товаром (общий на всех промоутеров), продавец видит переходы по referrer_user_id
+            code = f"{product_id}-{secrets.token_hex(4)}"
+            cur.execute(
+                f"INSERT INTO {schema}.referral_clicks (product_id, referral_code, referrer_user_id) "
+                f"SELECT %s, %s, %s WHERE NOT EXISTS ("
+                f"SELECT 1 FROM {schema}.referral_clicks WHERE product_id = %s AND referrer_user_id = %s LIMIT 1)",
+                (product_id, code, user_id, product_id, user_id)
+            )
+            cur.execute(
+                f"SELECT referral_code FROM {schema}.referral_clicks "
+                f"WHERE product_id = %s AND referrer_user_id = %s ORDER BY id ASC LIMIT 1",
+                (product_id, user_id)
+            )
+            existing = cur.fetchone()
+            final_code = existing[0] if existing else code
+            conn.commit()
+            return _resp(200, {'referral_code': final_code, 'product_id': product_id})
+
+        # --- Статистика по своим партнёрским ссылкам: переходы и продажи ---
+        if method == 'GET' and action == 'my_referrals':
+            if not user_id:
+                return _resp(401, {'error': 'X-User-Id required'})
+            cur.execute(
+                f"SELECT rc.product_id, p.title, p.image, rc.referral_code, COUNT(DISTINCT rc.id) AS clicks "
+                f"FROM {schema}.referral_clicks rc "
+                f"JOIN {schema}.products p ON p.id = rc.product_id "
+                f"WHERE rc.referrer_user_id = %s "
+                f"GROUP BY rc.product_id, p.title, p.image, rc.referral_code "
+                f"ORDER BY clicks DESC",
+                (user_id,)
+            )
+            rows = cur.fetchall()
+            result = []
+            for r in rows:
+                cur.execute(
+                    f"SELECT COUNT(*), COALESCE(SUM(amount), 0) FROM {schema}.referral_orders "
+                    f"WHERE referrer_user_id = %s AND product_id = %s",
+                    (user_id, r[0])
+                )
+                orders_count, orders_sum = cur.fetchone()
+                result.append({
+                    'product_id': r[0], 'title': r[1], 'image': r[2], 'referral_code': r[3],
+                    'clicks': r[4], 'orders_count': orders_count or 0,
+                    'earned': float(orders_sum or 0),
+                })
+            return _resp(200, {'referrals': result})
 
         # ============= АДМИНСКАЯ МОДЕРАЦИЯ =============
 

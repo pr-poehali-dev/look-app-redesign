@@ -7,6 +7,7 @@ import CartScreen from "./profile/CartScreen";
 import ShopScreen from "./profile/ShopScreen";
 import CatalogScreen from "./profile/CatalogScreen";
 import BoardsScreen from "./profile/BoardsScreen";
+import ReferralsScreen from "./profile/ReferralsScreen";
 import StoryViewerModal, { StoryViewerItem } from "./shared/StoryViewerModal";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
@@ -231,6 +232,7 @@ const ProfilePage = () => {
   const [showShop, setShowShop] = useState(false);
   const [showCatalog, setShowCatalog] = useState(false);
   const [showBoards, setShowBoards] = useState(false);
+  const [showReferrals, setShowReferrals] = useState(false);
   const { userVideos: stories, removeMedia, addMedia, refreshMedia } = useUserMedia();
   const { user, token, logout, updateUser } = useAuth();
   const { theme, toggle: toggleTheme } = useTheme();
@@ -275,6 +277,13 @@ const ProfilePage = () => {
     const liveItems = stories.filter(s => s.type === mediaViewer.tab);
     if (liveItems.length === 0) setMediaViewer(null);
   }, [stories, mediaViewer]);
+
+  // Кнопка «Купить» из ленты/видео открывает профиль сразу на экране корзины
+  useEffect(() => {
+    const onOpenCart = () => setShowCart(true);
+    window.addEventListener("open-cart", onOpenCart);
+    return () => window.removeEventListener("open-cart", onOpenCart);
+  }, []);
   const [deleteStoryId, setDeleteStoryId] = useState<number | null>(null);
   const [categoryEditId, setCategoryEditId] = useState<number | null>(null);
   const [savingCategory, setSavingCategory] = useState(false);
@@ -328,6 +337,7 @@ const ProfilePage = () => {
   if (showShop) return <ShopScreen onBack={() => setShowShop(false)} />;
   if (showCatalog) return <CatalogScreen onBack={() => setShowCatalog(false)} />;
   if (showBoards) return <BoardsScreen onBack={() => setShowBoards(false)} />;
+  if (showReferrals) return <ReferralsScreen onBack={() => setShowReferrals(false)} />;
 
   return (
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
@@ -449,8 +459,8 @@ const ProfilePage = () => {
         </button>
       </div>
 
-      {/* Аналитика + Магазин + Каталог + Корзина + Доски */}
-      <div className="grid grid-cols-5 gap-1.5 px-4 pb-4 md:px-3 md:pb-3">
+      {/* Аналитика + Магазин + Каталог + Корзина + Доски + Партнёрка */}
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-1.5 px-4 pb-4 md:px-3 md:pb-3">
         <button
           onClick={() => setShowAnalytics(true)}
           className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
@@ -485,6 +495,13 @@ const ProfilePage = () => {
         >
           <Icon name="Layers" size={15} />
           Доски
+        </button>
+        <button
+          onClick={() => setShowReferrals(true)}
+          className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
+        >
+          <Icon name="Link" size={15} />
+          Партнёрка
         </button>
       </div>
 
