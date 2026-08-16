@@ -138,16 +138,16 @@ const StoryViewerModal = ({ items, startIndex, onClose, originRect }: Props) => 
           ))}
         </div>
 
-        {/* Header */}
+        {/* Header — z-20, выше tap-зон (z-10), иначе клик по крестику перехватывает зона "дальше" */}
         <div
-          className="absolute top-4 left-0 right-0 flex items-center gap-2 px-3 pt-4 pb-3 z-10 bg-gradient-to-b from-black/50 to-transparent transition-opacity duration-200"
+          className="absolute top-4 left-0 right-0 flex items-center gap-2 px-3 pt-4 pb-3 z-20 bg-gradient-to-b from-black/50 to-transparent transition-opacity duration-200"
           style={{ opacity: opened ? 1 : 0 }}
         >
           <div className="w-8 h-8 rounded-full overflow-hidden border border-white/40 flex-shrink-0">
             <UserAvatar src={item.avatar} name={item.label} alt={item.label} />
           </div>
           <span className="text-white font-semibold text-sm truncate flex-1">{item.label}</span>
-          <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="flex-shrink-0">
+          <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="flex-shrink-0 p-1 -m-1">
             <Icon name="X" size={22} className="text-white" />
           </button>
         </div>
