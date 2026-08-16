@@ -19,17 +19,14 @@ interface Rect {
   radius: number;
 }
 
-// Просмотрщик всегда остаётся круглым — и на ПК, и на телефоне
-const getTargetRect = (): Rect => {
-  const size = Math.min(Math.min(window.innerWidth, window.innerHeight) * 0.7, 420);
-  return {
-    top: (window.innerHeight - size) / 2,
-    left: (window.innerWidth - size) / 2,
-    width: size,
-    height: size,
-    radius: size / 2,
-  };
-};
+// Просмотрщик раскрывается анимацией из круглого аватара и разворачивается на весь экран
+const getTargetRect = (): Rect => ({
+  top: 0,
+  left: 0,
+  width: window.innerWidth,
+  height: window.innerHeight,
+  radius: 0,
+});
 
 const rectFromDom = (r: DOMRect): Rect => ({
   top: r.top,
@@ -176,6 +173,24 @@ const StoryViewerModal = ({ items, startIndex, onClose, originRect }: Props) => 
           <div className="flex-1" onClick={goPrev} />
           <div className="flex-1" onClick={goNext} />
         </div>
+
+        {/* Arrows */}
+        {index > 0 && (
+          <button
+            onClick={(e) => { e.stopPropagation(); goPrev(); }}
+            className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 rounded-full p-2 transition-opacity duration-200"
+            style={{ opacity: opened ? 1 : 0 }}
+          >
+            <Icon name="ChevronLeft" size={26} className="text-white" />
+          </button>
+        )}
+        <button
+          onClick={(e) => { e.stopPropagation(); goNext(); }}
+          className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 rounded-full p-2 transition-opacity duration-200"
+          style={{ opacity: opened ? 1 : 0 }}
+        >
+          <Icon name="ChevronRight" size={26} className="text-white" />
+        </button>
       </div>
     </div>,
     document.body
