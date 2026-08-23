@@ -7,6 +7,8 @@ import GroupCallScreen from "./GroupCallScreen";
 import PollsPanel from "./community/PollsPanel";
 import PollMessage from "./community/PollMessage";
 import MembersScreen from "./community/MembersScreen";
+import VoiceMessageBubble from "./chat-room/VoiceMessageBubble";
+import VideoNoteBubble from "./chat-room/VideoNoteBubble";
 import { useAuth } from "@/context/AuthContext";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
@@ -15,10 +17,71 @@ interface Message {
   id: number;
   user_id: string;
   user_name: string;
-  type: "text" | "voice" | "image" | "file" | "location" | "contact" | "poll" | "sticker";
+  type: "text" | "voice" | "image" | "file" | "location" | "contact" | "poll" | "sticker" | "video_note";
   content: string;
   time: string;
 }
+
+const MAX_VOICE_SEC = 120;
+const MAX_VIDEO_NOTE_SEC = 60;
+
+const blobToDataUrl = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+
+const pickAudioMime = () => {
+  const cands = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+  for (const c of cands) {
+    if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(c)) return c;
+  }
+  return "";
+};
+
+const pickVideoNoteMime = () => {
+  const cands = ["video/webm;codecs=vp8,opus", "video/webm", "video/mp4"];
+  for (const c of cands) {
+    if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(c)) return c;
+  }
+  return "";
+};
+
+interface SpeechRecognizerLike {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: { resultIndex: number; results: { isFinal: boolean; [i: number]: { transcript: string } }[] }) => void) | null;
+  onerror: ((event: unknown) => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
+// Расшифровка речи прямо во время записи через Web Speech API (браузерное распознавание, бесплатно).
+// Работает в Chrome/Edge/Android. В Safari/iOS текста не будет — само сообщение всё равно запишется и отправится.
+const createSpeechRecognizer = (onFinalText: (text: string) => void): SpeechRecognizerLike | null => {
+  const w = window as unknown as {
+    webkitSpeechRecognition?: new () => SpeechRecognizerLike;
+    SpeechRecognition?: new () => SpeechRecognizerLike;
+  };
+  const Ctor = w.webkitSpeechRecognition || w.SpeechRecognition;
+  if (!Ctor) return null;
+  const rec = new Ctor();
+  rec.lang = "ru-RU";
+  rec.continuous = true;
+  rec.interimResults = false;
+  rec.onresult = (e) => {
+    let text = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) text += e.results[i][0].transcript;
+    }
+    if (text.trim()) onFinalText(text.trim());
+  };
+  rec.onerror = () => {};
+  return rec;
+};
 
 const EMOJI_CATEGORIES: { id: string; icon: string; emojis: string[] }[] = [
   {
@@ -110,6 +173,23 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const [call, setCall] = useState<"audio" | "video" | null>(null);
   const [recording, setRecording] = useState(false);
   const [recSecs, setRecSecs] = useState(0);
+  const [videoNoteOpen, setVideoNoteOpen] = useState(false);
+  const [videoNoteRecording, setVideoNoteRecording] = useState(false);
+  const [videoNoteSecs, setVideoNoteSecs] = useState(0);
+  const [videoNotePreview, setVideoNotePreview] = useState<{ url: string; blob: Blob } | null>(null);
+  const [videoNoteFacing, setVideoNoteFacing] = useState<"user" | "environment">("user");
+  const [transcribing, setTranscribing] = useState<number | null>(null);
+  const [transcripts, setTranscripts] = useState<Record<number, string>>({});
+  const voiceMediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const voiceChunksRef = useRef<Blob[]>([]);
+  const voiceStreamRef = useRef<MediaStream | null>(null);
+  const voiceLiveTextRef = useRef<string>("");
+  const voiceRecognizerRef = useRef<SpeechRecognizerLike | null>(null);
+  const videoNoteStreamRef = useRef<MediaStream | null>(null);
+  const videoNoteMediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const videoNoteChunksRef = useRef<Blob[]>([]);
+  const videoNoteVideoRef = useRef<HTMLVideoElement>(null);
+  const videoNoteTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [showAttach, setShowAttach] = useState(false);
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -451,6 +531,23 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Переключение камеры (фронт/тыл) во время подготовки видеосообщения
+  useEffect(() => {
+    if (!videoNoteOpen || videoNoteRecording) return;
+    navigator.mediaDevices
+      .getUserMedia({ video: { facingMode: videoNoteFacing, width: { ideal: 480 }, height: { ideal: 480 } }, audio: true })
+      .then((stream) => {
+        videoNoteStreamRef.current?.getTracks().forEach((t) => t.stop());
+        videoNoteStreamRef.current = stream;
+        if (videoNoteVideoRef.current) {
+          videoNoteVideoRef.current.srcObject = stream;
+          videoNoteVideoRef.current.play().catch(() => {});
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoNoteFacing]);
+
   const sendMsg = async (content: string, type: Message["type"] = "text") => {
     if (sending) return;
     setSending(true);
@@ -501,17 +598,180 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     setInput("");
   };
 
-  const startVoice = () => {
-    setRecording(true);
-    setRecSecs(0);
-    recTimer.current = setInterval(() => setRecSecs((s) => s + 1), 1000);
+  const startVoice = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      voiceStreamRef.current = stream;
+      const mime = pickAudioMime();
+      const rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      voiceChunksRef.current = [];
+      voiceLiveTextRef.current = "";
+      rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) voiceChunksRef.current.push(e.data); };
+      voiceMediaRecorderRef.current = rec;
+      rec.start(250);
+
+      const recognizer = createSpeechRecognizer((text) => { voiceLiveTextRef.current = (voiceLiveTextRef.current + " " + text).trim(); });
+      voiceRecognizerRef.current = recognizer;
+      try { recognizer?.start(); } catch { /* ignore */ }
+
+      setRecording(true);
+      setRecSecs(0);
+      recTimer.current = setInterval(() => {
+        setRecSecs((s) => {
+          if (s + 1 >= MAX_VOICE_SEC) { stopVoice(); return s; }
+          return s + 1;
+        });
+      }, 1000);
+    } catch (e) {
+      console.error("[ChatRoom] mic access failed", e);
+      showToast("Нет доступа к микрофону");
+    }
   };
 
-  const stopVoice = () => {
+  const stopVoice = async () => {
     setRecording(false);
     if (recTimer.current) clearInterval(recTimer.current);
-    sendMsg(`voice:${recSecs || 1}`, "voice");
+    const rec = voiceMediaRecorderRef.current;
+    const durSecs = recSecs || 1;
     setRecSecs(0);
+    try { voiceRecognizerRef.current?.stop(); } catch { /* ignore */ }
+    if (!rec || rec.state === "inactive") {
+      voiceStreamRef.current?.getTracks().forEach((t) => t.stop());
+      return;
+    }
+    const stopped = new Promise<void>((resolve) => { rec.onstop = () => resolve(); });
+    rec.stop();
+    await stopped;
+    voiceStreamRef.current?.getTracks().forEach((t) => t.stop());
+    voiceStreamRef.current = null;
+    if (voiceChunksRef.current.length === 0) return;
+    const blob = new Blob(voiceChunksRef.current, { type: voiceChunksRef.current[0].type || "audio/webm" });
+    voiceChunksRef.current = [];
+    try {
+      const dataUrl = await blobToDataUrl(blob);
+      const payload = JSON.stringify({ duration: durSecs, data: dataUrl, transcript: voiceLiveTextRef.current || "" });
+      sendMsg(payload, "voice");
+    } catch (e) {
+      console.error("[ChatRoom] voice encode failed", e);
+      showToast("Не удалось отправить голосовое");
+    }
+  };
+
+  const openVideoNote = async () => {
+    setShowAttach(false);
+    setVideoNoteOpen(true);
+    setVideoNotePreview(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: videoNoteFacing, width: { ideal: 480 }, height: { ideal: 480 } },
+        audio: true,
+      });
+      videoNoteStreamRef.current = stream;
+      if (videoNoteVideoRef.current) {
+        videoNoteVideoRef.current.srcObject = stream;
+        videoNoteVideoRef.current.play().catch(() => {});
+      }
+    } catch (e) {
+      console.error("[ChatRoom] camera access failed", e);
+      showToast("Нет доступа к камере");
+      setVideoNoteOpen(false);
+    }
+  };
+
+  const closeVideoNote = () => {
+    if (videoNoteTimerRef.current) clearInterval(videoNoteTimerRef.current);
+    videoNoteStreamRef.current?.getTracks().forEach((t) => t.stop());
+    videoNoteStreamRef.current = null;
+    if (videoNotePreview?.url) URL.revokeObjectURL(videoNotePreview.url);
+    setVideoNotePreview(null);
+    setVideoNoteRecording(false);
+    setVideoNoteSecs(0);
+    setVideoNoteOpen(false);
+  };
+
+  const startVideoNote = () => {
+    const stream = videoNoteStreamRef.current;
+    if (!stream) return;
+    const mime = pickVideoNoteMime();
+    const rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+    videoNoteChunksRef.current = [];
+    rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) videoNoteChunksRef.current.push(e.data); };
+    rec.onstop = () => {
+      const blob = new Blob(videoNoteChunksRef.current, { type: videoNoteChunksRef.current[0]?.type || "video/webm" });
+      videoNoteChunksRef.current = [];
+      const url = URL.createObjectURL(blob);
+      setVideoNotePreview({ url, blob });
+      videoNoteStreamRef.current?.getTracks().forEach((t) => t.stop());
+      videoNoteStreamRef.current = null;
+    };
+    videoNoteMediaRecorderRef.current = rec;
+    rec.start(250);
+    setVideoNoteRecording(true);
+    setVideoNoteSecs(0);
+    videoNoteTimerRef.current = setInterval(() => {
+      setVideoNoteSecs((s) => {
+        if (s + 1 >= MAX_VIDEO_NOTE_SEC) { stopVideoNote(); return s; }
+        return s + 1;
+      });
+    }, 1000);
+  };
+
+  const stopVideoNote = () => {
+    if (videoNoteTimerRef.current) clearInterval(videoNoteTimerRef.current);
+    setVideoNoteRecording(false);
+    const rec = videoNoteMediaRecorderRef.current;
+    if (rec && rec.state !== "inactive") rec.stop();
+  };
+
+  const retakeVideoNote = () => {
+    if (videoNotePreview?.url) URL.revokeObjectURL(videoNotePreview.url);
+    setVideoNotePreview(null);
+    setVideoNoteSecs(0);
+    navigator.mediaDevices
+      .getUserMedia({ video: { facingMode: videoNoteFacing, width: { ideal: 480 }, height: { ideal: 480 } }, audio: true })
+      .then((stream) => {
+        videoNoteStreamRef.current = stream;
+        if (videoNoteVideoRef.current) {
+          videoNoteVideoRef.current.srcObject = stream;
+          videoNoteVideoRef.current.play().catch(() => {});
+        }
+      })
+      .catch(() => showToast("Нет доступа к камере"));
+  };
+
+  const sendVideoNote = async () => {
+    if (!videoNotePreview) return;
+    try {
+      const dataUrl = await blobToDataUrl(videoNotePreview.blob);
+      const payload = JSON.stringify({ duration: videoNoteSecs || 1, data: dataUrl, transcript: "" });
+      sendMsg(payload, "video_note");
+    } catch (e) {
+      console.error("[ChatRoom] video note encode failed", e);
+      showToast("Не удалось отправить видео-сообщение");
+    }
+    closeVideoNote();
+  };
+
+  const requestTranscript = async (msgId: number, mediaDataUrl: string, kind: "voice" | "video_note") => {
+    setTranscribing(msgId);
+    try {
+      const res = await fetch(`${API}?module=transcribe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": MY_ID },
+        body: JSON.stringify({ data: mediaDataUrl, kind }),
+      });
+      const raw = await res.json();
+      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      if (data.text) {
+        setTranscripts((p) => ({ ...p, [msgId]: data.text }));
+      } else {
+        showToast("Не удалось распознать речь");
+      }
+    } catch (e) {
+      console.error("[ChatRoom] transcribe failed", e);
+      showToast("Не удалось распознать речь");
+    }
+    setTranscribing(null);
   };
 
   const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -759,22 +1019,22 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
         </div>
       );
     }
-    if (msg.type === "voice") {
-      const dur = msg.content.replace("voice:", "");
-      return (
-        <div className={`flex items-center gap-2 px-4 py-3 rounded-2xl max-w-[65%] ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
-          <button className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-            <Icon name="Play" size={14} className="text-white ml-0.5" />
-          </button>
-          <div className="flex items-center gap-0.5 flex-1">
-            {Array.from({ length: 20 }).map((_, i) => (
-              <div key={i} className="w-0.5 bg-white/50 rounded-full" style={{ height: `${Math.random() * 16 + 4}px` }} />
-            ))}
-          </div>
-          <span className="text-white/70 text-xs flex-shrink-0">{dur}с</span>
-          {isMe && <Ticks msg={msg} />}
-        </div>
-      );
+    if (msg.type === "voice" || msg.type === "video_note") {
+      let info: { duration?: number; data?: string; transcript?: string } = {};
+      try { info = JSON.parse(msg.content); } catch { info = { duration: Number(msg.content.replace("voice:", "")) || 1, data: "" }; }
+      const transcript = transcripts[msg.id] || info.transcript || "";
+      const commonProps = {
+        isMe,
+        dataUrl: info.data || "",
+        duration: info.duration || 1,
+        time: msg.time,
+        transcript,
+        transcribing: transcribing === msg.id,
+        onTranscribe: () => info.data && requestTranscript(msg.id, info.data, msg.type as "voice" | "video_note"),
+        ticks: <Ticks msg={msg} />,
+      };
+      if (msg.type === "video_note") return <VideoNoteBubble {...commonProps} />;
+      return <VoiceMessageBubble {...commonProps} />;
     }
     return (
       <div className={`px-4 py-2.5 rounded-2xl max-w-[78%] ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
@@ -1338,6 +1598,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
             { icon: "FileText", label: "Файл", action: () => docRef.current?.click(), show: true },
             { icon: "MapPin", label: "Геолокация", action: sendLocation, show: true },
             { icon: "Contact", label: "Контакт", action: openContactPicker, show: true },
+            { icon: "Video", label: "Видеосообщение", action: openVideoNote, show: true },
             { icon: "BarChart3", label: "Опрос", action: () => { setShowAttach(false); setShowPolls(true); }, show: isGroup && communityIsAdmin },
             { icon: "ListChecks", label: "Опросы", action: () => { setShowAttach(false); setShowPolls(true); }, show: isGroup && !communityIsAdmin },
           ].filter(item => item.show).map((item) => (
@@ -1382,7 +1643,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
           <div className="flex-1 flex items-center gap-3 bg-[#1a1a1a] rounded-3xl px-4 py-3">
             <div className="w-2 h-2 rounded-full bg-[#fe2c55] animate-pulse" />
             <span className="text-white/60 text-sm flex-1">
-              {String(Math.floor(recSecs / 60)).padStart(2, "0")}:{String(recSecs % 60).padStart(2, "0")}
+              {String(Math.floor(recSecs / 60)).padStart(2, "0")}:{String(recSecs % 60).padStart(2, "0")} / {String(Math.floor(MAX_VOICE_SEC / 60)).padStart(2, "0")}:{String(MAX_VOICE_SEC % 60).padStart(2, "0")}
             </span>
             <button onPointerUp={stopVoice} className="text-[#fe2c55]">
               <Icon name="Send" size={20} />
@@ -1767,6 +2028,73 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       {toast && (
         <div className="fixed left-1/2 -translate-x-1/2 bottom-32 z-[70] bg-black/90 border border-white/10 text-white text-sm px-4 py-2.5 rounded-xl shadow-2xl">
           {toast}
+        </div>
+      )}
+
+      {/* Video note recorder */}
+      {videoNoteOpen && (
+        <div className="fixed inset-0 z-[80] bg-black flex flex-col items-center justify-center">
+          <button onClick={closeVideoNote} className="absolute top-6 right-5 z-10 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+            <Icon name="X" size={20} className="text-white" />
+          </button>
+
+          <div className="relative w-72 h-72 rounded-full overflow-hidden ring-4 ring-white/10 bg-[#111]">
+            {videoNotePreview ? (
+              <video src={videoNotePreview.url} className="w-full h-full object-cover" autoPlay loop playsInline />
+            ) : (
+              <video ref={videoNoteVideoRef} className="w-full h-full object-cover" muted playsInline style={{ transform: videoNoteFacing === "user" ? "scaleX(-1)" : "none" }} />
+            )}
+            {videoNoteRecording && (
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/50 px-3 py-1 rounded-full">
+                <div className="w-2 h-2 rounded-full bg-[#fe2c55] animate-pulse" />
+                <span className="text-white text-xs">
+                  {String(Math.floor(videoNoteSecs / 60)).padStart(2, "0")}:{String(videoNoteSecs % 60).padStart(2, "0")}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-10 flex items-center gap-8">
+            {videoNotePreview ? (
+              <>
+                <button onClick={retakeVideoNote} className="flex flex-col items-center gap-1.5">
+                  <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center">
+                    <Icon name="RotateCcw" size={22} className="text-white" />
+                  </div>
+                  <span className="text-white/50 text-xs">Ещё раз</span>
+                </button>
+                <button onClick={sendVideoNote} className="flex flex-col items-center gap-1.5">
+                  <div className="w-16 h-16 rounded-full bg-[#fe2c55] flex items-center justify-center shadow-[0_0_20px_rgba(254,44,85,0.4)]">
+                    <Icon name="Send" size={26} className="text-white" />
+                  </div>
+                  <span className="text-white/70 text-xs">Отправить</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setVideoNoteFacing((v) => (v === "user" ? "environment" : "user"))}
+                  disabled={videoNoteRecording}
+                  className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center disabled:opacity-30"
+                >
+                  <Icon name="RefreshCw" size={18} className="text-white" />
+                </button>
+                <button
+                  onClick={videoNoteRecording ? stopVideoNote : startVideoNote}
+                  className={`w-18 h-18 rounded-full border-4 border-white flex items-center justify-center transition-all ${videoNoteRecording ? "bg-[#fe2c55]" : "bg-transparent"}`}
+                  style={{ width: 68, height: 68 }}
+                >
+                  {videoNoteRecording ? (
+                    <div className="w-6 h-6 rounded-sm bg-white" />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full bg-[#fe2c55]" />
+                  )}
+                </button>
+                <div className="w-12 h-12" />
+              </>
+            )}
+          </div>
+          <p className="text-white/30 text-xs mt-6">Круглое видеосообщение · до {MAX_VIDEO_NOTE_SEC} сек</p>
         </div>
       )}
     </div>
