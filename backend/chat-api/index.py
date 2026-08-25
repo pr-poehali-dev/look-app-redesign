@@ -1739,46 +1739,6 @@ def handler(event: dict, context) -> dict:
                 return {'statusCode': 200, 'headers': headers,
                         'body': json.dumps({'calls': calls})}
 
-        # ── TRANSCRIBE MODULE (расшифровка голосовых/видео-сообщений через OpenAI Whisper) ──
-        elif module == 'transcribe':
-            if method == 'POST':
-                body = json.loads(event.get('body') or '{}')
-                data_url = body.get('data', '')
-                kind = body.get('kind', 'voice')
-                if not data_url or ',' not in data_url:
-                    conn.commit()
-                    return {'statusCode': 400, 'headers': headers,
-                            'body': json.dumps({'error': 'data required'})}
-                api_key = os.environ.get('OPENAI_API_KEY')
-                if not api_key:
-                    conn.commit()
-                    return {'statusCode': 200, 'headers': headers,
-                            'body': json.dumps({'error': 'Расшифровка не настроена'})}
-                header_part, b64data = data_url.split(',', 1)
-                mime = header_part.split(';')[0].replace('data:', '') or ('video/webm' if kind == 'video_note' else 'audio/webm')
-                ext = 'mp4' if 'mp4' in mime else 'webm'
-                file_bytes = base64.b64decode(b64data)
-
-                import requests as _requests
-                import io as _io
-                files = {'file': (f'audio.{ext}', _io.BytesIO(file_bytes), mime)}
-                data = {'model': 'whisper-1', 'language': 'ru'}
-                resp = _requests.post(
-                    'https://api.openai.com/v1/audio/transcriptions',
-                    headers={'Authorization': f'Bearer {api_key}'},
-                    files=files,
-                    data=data,
-                    timeout=25,
-                )
-                conn.commit()
-                if resp.status_code != 200:
-                    return {'statusCode': 200, 'headers': headers,
-                            'body': json.dumps({'error': 'Не удалось распознать речь'})}
-                result = resp.json()
-                text = (result.get('text') or '').strip()
-                return {'statusCode': 200, 'headers': headers,
-                        'body': json.dumps({'text': text})}
-
         conn.commit()
         return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'unknown request'})}
 

@@ -3,16 +3,14 @@ import Icon from "@/components/ui/icon";
 
 interface VideoNoteBubbleProps {
   isMe: boolean;
-  dataUrl: string;
+  mediaUrl: string;
   duration: number;
   time: string;
   transcript?: string;
-  transcribing: boolean;
-  onTranscribe: () => void;
   ticks: ReactNode;
 }
 
-const VideoNoteBubble = ({ isMe, dataUrl, duration, time, transcript, transcribing, onTranscribe, ticks }: VideoNoteBubbleProps) => {
+const VideoNoteBubble = ({ isMe, mediaUrl, duration, time, transcript, ticks }: VideoNoteBubbleProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
 
@@ -25,12 +23,13 @@ const VideoNoteBubble = ({ isMe, dataUrl, duration, time, transcript, transcribi
   return (
     <div className={`flex flex-col max-w-[75%] ${isMe ? "items-end" : "items-start"}`}>
       <div className="relative w-44 h-44 rounded-full overflow-hidden ring-2 ring-white/15 shadow-xl bg-black">
-        {dataUrl && (
+        {mediaUrl && (
           <video
             ref={videoRef}
-            src={dataUrl}
+            src={mediaUrl}
             className="w-full h-full object-cover"
             playsInline
+            preload="metadata"
             onPlay={() => setPlaying(true)}
             onPause={() => setPlaying(false)}
             onEnded={() => setPlaying(false)}
@@ -52,24 +51,11 @@ const VideoNoteBubble = ({ isMe, dataUrl, duration, time, transcript, transcribi
         {isMe && ticks}
       </div>
 
-      {transcript ? (
+      {transcript && (
         <div className={`mt-1 px-3 py-2 rounded-xl max-w-full ${isMe ? "bg-[#fe2c55]/15" : "bg-white/5"}`}>
           <p className="text-white/70 text-xs leading-snug italic">{transcript}</p>
         </div>
-      ) : dataUrl ? (
-        <button
-          onClick={onTranscribe}
-          disabled={transcribing}
-          className="mt-1 flex items-center gap-1 text-white/40 hover:text-white/70 text-[11px] transition-colors disabled:opacity-50"
-        >
-          {transcribing ? (
-            <div className="w-3 h-3 border-2 border-white/40 border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <Icon name="FileText" size={12} />
-          )}
-          {transcribing ? "Распознаём..." : "Расшифровать"}
-        </button>
-      ) : null}
+      )}
     </div>
   );
 };
