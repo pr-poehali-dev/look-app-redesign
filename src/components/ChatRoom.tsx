@@ -11,6 +11,7 @@ import VoiceMessageBubble from "./chat-room/VoiceMessageBubble";
 import VideoNoteBubble from "./chat-room/VideoNoteBubble";
 import { useAuth } from "@/context/AuthContext";
 import { uploadChatMedia } from "@/lib/chatMediaUpload";
+import { transcribeAudioBlob } from "@/lib/audioTranscribe";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
@@ -40,40 +41,6 @@ const pickVideoNoteMime = () => {
     if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(c)) return c;
   }
   return "";
-};
-
-interface SpeechRecognizerLike {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  onresult: ((event: { resultIndex: number; results: { isFinal: boolean; [i: number]: { transcript: string } }[] }) => void) | null;
-  onerror: ((event: unknown) => void) | null;
-  start: () => void;
-  stop: () => void;
-}
-
-// Расшифровка речи прямо во время записи через Web Speech API (браузерное распознавание, бесплатно).
-// Работает в Chrome/Edge/Android. В Safari/iOS текста не будет — само сообщение всё равно запишется и отправится.
-const createSpeechRecognizer = (onFinalText: (text: string) => void): SpeechRecognizerLike | null => {
-  const w = window as unknown as {
-    webkitSpeechRecognition?: new () => SpeechRecognizerLike;
-    SpeechRecognition?: new () => SpeechRecognizerLike;
-  };
-  const Ctor = w.webkitSpeechRecognition || w.SpeechRecognition;
-  if (!Ctor) return null;
-  const rec = new Ctor();
-  rec.lang = "ru-RU";
-  rec.continuous = true;
-  rec.interimResults = false;
-  rec.onresult = (e) => {
-    let text = "";
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      if (e.results[i].isFinal) text += e.results[i][0].transcript;
-    }
-    if (text.trim()) onFinalText(text.trim());
-  };
-  rec.onerror = () => {};
-  return rec;
 };
 
 const EMOJI_CATEGORIES: { id: string; icon: string; emojis: string[] }[] = [
@@ -174,8 +141,8 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const voiceMediaRecorderRef = useRef<MediaRecorder | null>(null);
   const voiceChunksRef = useRef<Blob[]>([]);
   const voiceStreamRef = useRef<MediaStream | null>(null);
-  const voiceLiveTextRef = useRef<string>("");
-  const voiceRecognizerRef = useRef<SpeechRecognizerLike | null>(null);
+  const [transcribingId, setTranscribingId] = useState<number | null>(null);
+  const [transcripts, setTranscripts] = useState<Record<number, string>>({});
   const videoNoteStreamRef = useRef<MediaStream | null>(null);
   const videoNoteMediaRecorderRef = useRef<MediaRecorder | null>(null);
   const videoNoteChunksRef = useRef<Blob[]>([]);
@@ -539,13 +506,14 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoNoteFacing]);
 
-  const sendMsg = async (content: string, type: Message["type"] = "text") => {
-    if (sending) return;
+  const sendMsg = async (content: string, type: Message["type"] = "text"): Promise<number | null> => {
+    if (sending) return null;
     setSending(true);
     const now = new Date();
     const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
     const tempId = -Date.now();
     setMessages((p) => [...p, { id: tempId, user_id: MY_ID, user_name: MY_NAME, type, content, time }]);
+    let finalId: number | null = null;
     try {
       const res = await fetch(`${API}?module=chat`, {
         method: "POST",
@@ -572,6 +540,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
           : m
         ));
         if (data.id > lastIdRef.current) lastIdRef.current = data.id;
+        finalId = data.id;
       } else {
         console.warn("[ChatRoom] send failed, no id returned", data);
         setMessages((p) => p.filter(m => m.id !== tempId));
@@ -581,6 +550,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       setMessages((p) => p.filter(m => m.id !== tempId));
     }
     setSending(false);
+    return finalId;
   };
 
   const handleSend = () => {
@@ -596,14 +566,9 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       const mime = pickAudioMime();
       const rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
       voiceChunksRef.current = [];
-      voiceLiveTextRef.current = "";
       rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) voiceChunksRef.current.push(e.data); };
       voiceMediaRecorderRef.current = rec;
       rec.start(250);
-
-      const recognizer = createSpeechRecognizer((text) => { voiceLiveTextRef.current = (voiceLiveTextRef.current + " " + text).trim(); });
-      voiceRecognizerRef.current = recognizer;
-      try { recognizer?.start(); } catch { /* ignore */ }
 
       setRecording(true);
       setRecSecs(0);
@@ -625,7 +590,6 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     const rec = voiceMediaRecorderRef.current;
     const durSecs = recSecs || 1;
     setRecSecs(0);
-    try { voiceRecognizerRef.current?.stop(); } catch { /* ignore */ }
     if (!rec || rec.state === "inactive") {
       voiceStreamRef.current?.getTracks().forEach((t) => t.stop());
       return;
@@ -643,12 +607,24 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     try {
       showToast("Отправляем голосовое...");
       const url = await uploadChatMedia(blob, ext, mimeFull.split(";")[0]);
-      const payload = JSON.stringify({ duration: durSecs, url, transcript: voiceLiveTextRef.current || "" });
-      sendMsg(payload, "voice");
+      const payload = JSON.stringify({ duration: durSecs, url, transcript: "" });
+      const msgId = await sendMsg(payload, "voice");
+      if (msgId) transcribeAndSave(msgId, blob);
     } catch (e) {
       console.error("[ChatRoom] voice upload failed", e);
       showToast("Не удалось отправить голосовое");
     }
+  };
+
+  const transcribeAndSave = async (msgId: number, blob: Blob) => {
+    setTranscribingId(msgId);
+    try {
+      const text = await transcribeAudioBlob(blob, MY_ID);
+      setTranscripts((p) => ({ ...p, [msgId]: text }));
+    } catch (e) {
+      console.error("[ChatRoom] transcribe failed", e);
+    }
+    setTranscribingId(null);
   };
 
   const openVideoNote = async () => {
@@ -744,7 +720,8 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       showToast("Отправляем видеосообщение...");
       const url = await uploadChatMedia(blob, ext, mimeFull.split(";")[0]);
       const payload = JSON.stringify({ duration: dur, url, transcript: "" });
-      sendMsg(payload, "video_note");
+      const msgId = await sendMsg(payload, "video_note");
+      if (msgId) transcribeAndSave(msgId, blob);
     } catch (e) {
       console.error("[ChatRoom] video note upload failed", e);
       showToast("Не удалось отправить видео-сообщение");
@@ -1004,7 +981,8 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
         mediaUrl: info.url || "",
         duration: info.duration || 1,
         time: msg.time,
-        transcript: info.transcript || "",
+        transcript: transcripts[msg.id] || info.transcript || "",
+        transcribing: transcribingId === msg.id,
         ticks: <Ticks msg={msg} />,
       };
       if (msg.type === "video_note") return <VideoNoteBubble {...commonProps} />;

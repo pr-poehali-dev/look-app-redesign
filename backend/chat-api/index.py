@@ -3,8 +3,56 @@ import os
 import random
 import base64
 import time
+import uuid
 import psycopg2
 import boto3
+import requests
+
+_SALUTE_TOKEN_CACHE = {'token': None, 'exp': 0}
+
+
+def _salutespeech_get_token(auth_key: str) -> str:
+    """Получает access_token для SaluteSpeech (кэшируется на время жизни процесса)."""
+    now = time.time()
+    if _SALUTE_TOKEN_CACHE['token'] and _SALUTE_TOKEN_CACHE['exp'] > now + 30:
+        return _SALUTE_TOKEN_CACHE['token']
+    resp = requests.post(
+        'https://ngw.devices.sberbank.ru:9443/api/v2/oauth',
+        headers={
+            'Authorization': f'Basic {auth_key}',
+            'RqUID': str(uuid.uuid4()),
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        data={'scope': 'SALUTE_SPEECH_PERS'},
+        verify=False,
+        timeout=15,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    token = data['access_token']
+    _SALUTE_TOKEN_CACHE['token'] = token
+    _SALUTE_TOKEN_CACHE['exp'] = now + int(data.get('expires_at', now + 1500)) / 1000 if data.get('expires_at', 0) > 10 ** 12 else now + 1500
+    return token
+
+
+def _salutespeech_recognize(auth_key: str, audio_bytes: bytes, content_type: str = 'audio/ogg;codecs=opus') -> str:
+    """Распознаёт речь из аудио через SaluteSpeech STT API (SmartSpeech)."""
+    token = _salutespeech_get_token(auth_key)
+    resp = requests.post(
+        'https://smartspeech.sber.ru/rest/v1/speech:recognize',
+        headers={
+            'Authorization': f'Bearer {token}',
+            'Content-Type': content_type,
+        },
+        data=audio_bytes,
+        verify=False,
+        timeout=25,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    chunks = data.get('result') or []
+    return ' '.join(chunks).strip()
+
 
 SEED_COMMUNITIES = [
     ('com_photo_ru', 'Фотографы России', 'Делимся снимками, лайфхаками и вдохновением', 'open', 'Фото', 'https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/dbf882bc-5b07-4604-a1fa-628313ce915f.jpg'),
@@ -1738,6 +1786,37 @@ def handler(event: dict, context) -> dict:
                 conn.commit()
                 return {'statusCode': 200, 'headers': headers,
                         'body': json.dumps({'calls': calls})}
+
+        # ── TRANSCRIBE MODULE (расшифровка голосовых/видео-сообщений через SaluteSpeech) ──
+        elif module == 'transcribe':
+            if method == 'POST':
+                body = json.loads(event.get('body') or '{}')
+                audio_b64 = body.get('audio', '')
+                if not audio_b64:
+                    conn.commit()
+                    return {'statusCode': 400, 'headers': headers,
+                            'body': json.dumps({'error': 'audio required'})}
+                mime = body.get('mime', 'audio/webm;codecs=opus')
+                if 'pcm16' in mime:
+                    content_type = 'audio/x-pcm;bit=16;rate=16000'
+                elif 'mp4' in mime or 'm4a' in mime:
+                    content_type = 'audio/mpeg'
+                else:
+                    content_type = 'audio/ogg;codecs=opus'
+                auth_key = os.environ.get('GIGACHAT_AUTH_KEY')
+                if not auth_key:
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'error': 'Расшифровка не настроена'})}
+                try:
+                    text = _salutespeech_recognize(auth_key, base64.b64decode(audio_b64), content_type)
+                except Exception as se:
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'error': f'Не удалось распознать речь: {se}'})}
+                conn.commit()
+                return {'statusCode': 200, 'headers': headers,
+                        'body': json.dumps({'text': text})}
 
         conn.commit()
         return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'unknown request'})}
