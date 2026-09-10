@@ -27,7 +27,8 @@ def _salutespeech_get_token(auth_key: str) -> str:
         verify=False,
         timeout=15,
     )
-    resp.raise_for_status()
+    if resp.status_code != 200:
+        raise Exception(f'oauth {resp.status_code}: {resp.text[:300]}')
     data = resp.json()
     token = data['access_token']
     _SALUTE_TOKEN_CACHE['token'] = token
