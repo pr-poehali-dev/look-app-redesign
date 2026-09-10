@@ -32,6 +32,12 @@ const FEATURES = [
   { icon: "Handshake", title: "Партнёрская программа", desc: "Делись ссылками на товары и получай комиссию с каждой покупки", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/2978caea-e615-4790-83a9-7a880d3d7f4b.jpg" },
   { icon: "Repeat2", title: "Репосты", desc: "Делись понравившимися видео и постами в своём профиле в один клик", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/e91f65e3-c467-4781-aeec-ef6e9a91a795.jpg" },
   { icon: "LayoutGrid", title: "Доски и подборки", desc: "Сохраняй понравившиеся видео и товары в свои коллекции", img: "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/3263a0ec-a3f7-44a0-a762-a97264a2a6dc.jpg" },
+  { icon: "Mic", title: "Голосовые с расшифровкой", desc: "Записывай голосовые сообщения — текст речи появится автоматически" },
+  { icon: "Disc", title: "Видео-кружочки", desc: "Записывай круглые видеосообщения прямо в чате, как в любимых мессенджерах" },
+  { icon: "Users2", title: "Групповые звонки", desc: "Созванивайся сразу с несколькими друзьями — голосом или по видео" },
+  { icon: "QrCode", title: "Вход по QR-коду", desc: "Заходи в аккаунт на новом устройстве за секунду — просто отсканируй код" },
+  { icon: "ListChecks", title: "Опросы в группах", desc: "Создавай опросы с одним или несколькими вариантами ответа" },
+  { icon: "Timer", title: "Исчезающие сообщения", desc: "Настраивай автоудаление переписки и оформление темы чата" },
 ];
 
 const Landing = ({ onLogin, onRegister }: LandingProps) => {
