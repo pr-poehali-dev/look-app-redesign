@@ -34,10 +34,45 @@ export function warmupWhisper() {
   getPipeline().catch(() => {});
 }
 
+/**
+ * Убирает "заезженную пластинку" — типичную галлюцинацию Whisper на тихом/шумном
+ * аудио, когда модель бесконечно повторяет одно и то же слово или фразу.
+ */
+function normalizeWord(w: string): string {
+  return w.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+}
+
+function collapseRepeats(text: string): string {
+  const words = text.trim().split(/\s+/);
+  if (words.length < 6) return text.trim();
+  const norm = words.map(normalizeWord);
+
+  for (let n = 1; n <= 4; n++) {
+    let repeatCount = 1;
+    for (let i = words.length - n; i >= n; i -= n) {
+      const a = norm.slice(i, i + n).join(" ");
+      const b = norm.slice(i - n, i).join(" ");
+      if (a && a === b) repeatCount++;
+      else break;
+    }
+    if (repeatCount >= 4) {
+      const tailStart = words.length - n * repeatCount;
+      const kept = words.slice(0, tailStart + n);
+      return kept.join(" ").trim();
+    }
+  }
+  return text.trim();
+}
+
 export async function transcribeBlobLocally(blob: Blob): Promise<string> {
   const samples = await decodeToFloat32Mono16k(blob);
   const pipe = await getPipeline();
-  const result = await pipe(samples, { language: "russian", task: "transcribe" });
+  const result = await pipe(samples, {
+    language: "russian",
+    task: "transcribe",
+    no_repeat_ngram_size: 3,
+    repetition_penalty: 1.3,
+  });
   const text = Array.isArray(result) ? result[0]?.text : result?.text;
-  return (text || "").trim();
+  return collapseRepeats(text || "");
 }
