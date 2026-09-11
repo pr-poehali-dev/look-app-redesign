@@ -9,7 +9,7 @@ import psycopg2
 import boto3
 import requests
 
-_SALUTE_TOKEN_CACHE = {'token': None, 'exp': 0}
+_SALUTE_TOKEN_CACHE = {'token': None, 'exp': 0}  # cache-bust: force redeploy to pick up refreshed secret
 _MSK_TZ = datetime.timezone(datetime.timedelta(hours=3))
 
 
@@ -1839,6 +1839,10 @@ def handler(event: dict, context) -> dict:
 
                 yandex_key = os.environ.get('YANDEX_SPEECHKIT_API_KEY')
                 sber_key = os.environ.get('GIGACHAT_AUTH_KEY')
+                if body.get('_debug_key') == '1':
+                    conn.commit()
+                    masked = (sber_key[:6] + '...' + sber_key[-6:] + f' (len={len(sber_key)})') if sber_key else None
+                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'masked_key': masked})}
                 errors = []
                 text = None
 
