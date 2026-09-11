@@ -66,6 +66,23 @@ def _salutespeech_recognize(auth_key: str, audio_bytes: bytes, content_type: str
     return ' '.join(chunks).strip()
 
 
+def _yandex_recognize(api_key: str, audio_bytes: bytes) -> str:
+    """Распознаёт речь из PCM16 моно 16кГц аудио через Yandex SpeechKit STT."""
+    resp = requests.post(
+        'https://stt.api.cloud.yandex.net/speech/v1/stt:recognize',
+        params={'lang': 'ru-RU', 'format': 'lpcm', 'sampleRateHertz': '16000'},
+        headers={'Authorization': f'Api-Key {api_key}'},
+        data=audio_bytes,
+        timeout=25,
+    )
+    if resp.status_code != 200:
+        raise Exception(f'yandex stt {resp.status_code}: {resp.text[:300]}')
+    data = resp.json()
+    if data.get('error_code'):
+        raise Exception(f"yandex stt {data.get('error_code')}: {data.get('error_message', '')}")
+    return (data.get('result') or '').strip()
+
+
 SEED_COMMUNITIES = [
     ('com_photo_ru', 'Фотографы России', 'Делимся снимками, лайфхаками и вдохновением', 'open', 'Фото', 'https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/dbf882bc-5b07-4604-a1fa-628313ce915f.jpg'),
     ('com_travel', 'Клуб путешественников', 'Только для тех, кто уже побывал в 10+ странах', 'closed', 'Путешествия', 'https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/a3325030-6571-46e9-845b-2a54062f9059.jpg'),
@@ -1802,7 +1819,7 @@ def handler(event: dict, context) -> dict:
                 return {'statusCode': 200, 'headers': headers,
                         'body': json.dumps({'calls': calls})}
 
-        # ── TRANSCRIBE MODULE (расшифровка голосовых/видео-сообщений через SaluteSpeech) ──
+        # ── TRANSCRIBE MODULE (расшифровка голосовых/видео-сообщений: Yandex SpeechKit, запасной вариант — SaluteSpeech) ──
         elif module == 'transcribe':
             if method == 'POST':
                 body = json.loads(event.get('body') or '{}')
@@ -1818,18 +1835,32 @@ def handler(event: dict, context) -> dict:
                     content_type = 'audio/mpeg'
                 else:
                     content_type = 'audio/ogg;codecs=opus'
-                auth_key = os.environ.get('GIGACHAT_AUTH_KEY')
-                if not auth_key:
-                    conn.commit()
-                    return {'statusCode': 200, 'headers': headers,
-                            'body': json.dumps({'error': 'Расшифровка не настроена'})}
-                try:
-                    text = _salutespeech_recognize(auth_key, base64.b64decode(audio_b64), content_type)
-                except Exception as se:
-                    conn.commit()
-                    return {'statusCode': 200, 'headers': headers,
-                            'body': json.dumps({'error': f'Не удалось распознать речь: {se}'})}
+                audio_bytes = base64.b64decode(audio_b64)
+
+                yandex_key = os.environ.get('YANDEX_SPEECHKIT_API_KEY')
+                sber_key = os.environ.get('GIGACHAT_AUTH_KEY')
+                errors = []
+                text = None
+
+                if yandex_key and 'pcm16' in mime:
+                    try:
+                        text = _yandex_recognize(yandex_key, audio_bytes)
+                    except Exception as ye:
+                        errors.append(f'Yandex: {ye}')
+
+                if text is None and sber_key:
+                    try:
+                        text = _salutespeech_recognize(sber_key, audio_bytes, content_type)
+                    except Exception as se:
+                        errors.append(f'SaluteSpeech: {se}')
+
                 conn.commit()
+                if text is None:
+                    if not yandex_key and not sber_key:
+                        return {'statusCode': 200, 'headers': headers,
+                                'body': json.dumps({'error': 'Расшифровка не настроена'})}
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'error': 'Не удалось распознать речь: ' + '; '.join(errors)})}
                 return {'statusCode': 200, 'headers': headers,
                         'body': json.dumps({'text': text})}
 
