@@ -9,7 +9,6 @@ import psycopg2
 import boto3
 import requests
 
-_SALUTE_TOKEN_CACHE = {'token': None, 'exp': 0}
 _MSK_TZ = datetime.timezone(datetime.timedelta(hours=3))
 
 
@@ -20,50 +19,6 @@ def _fmt_time(dt) -> str:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=datetime.timezone.utc)
     return dt.astimezone(_MSK_TZ).strftime('%H:%M')
-
-
-def _salutespeech_get_token(auth_key: str) -> str:
-    """Получает access_token для SaluteSpeech (кэшируется на время жизни процесса)."""
-    now = time.time()
-    if _SALUTE_TOKEN_CACHE['token'] and _SALUTE_TOKEN_CACHE['exp'] > now + 30:
-        return _SALUTE_TOKEN_CACHE['token']
-    resp = requests.post(
-        'https://ngw.devices.sberbank.ru:9443/api/v2/oauth',
-        headers={
-            'Authorization': f'Basic {auth_key}',
-            'RqUID': str(uuid.uuid4()),
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        data={'scope': 'SALUTE_SPEECH_PERS'},
-        verify=False,
-        timeout=15,
-    )
-    if resp.status_code != 200:
-        raise Exception(f'oauth {resp.status_code}: {resp.text[:300]}')
-    data = resp.json()
-    token = data['access_token']
-    _SALUTE_TOKEN_CACHE['token'] = token
-    _SALUTE_TOKEN_CACHE['exp'] = now + int(data.get('expires_at', now + 1500)) / 1000 if data.get('expires_at', 0) > 10 ** 12 else now + 1500
-    return token
-
-
-def _salutespeech_recognize(auth_key: str, audio_bytes: bytes, content_type: str = 'audio/ogg;codecs=opus') -> str:
-    """Распознаёт речь из аудио через SaluteSpeech STT API (SmartSpeech)."""
-    token = _salutespeech_get_token(auth_key)
-    resp = requests.post(
-        'https://smartspeech.sber.ru/rest/v1/speech:recognize',
-        headers={
-            'Authorization': f'Bearer {token}',
-            'Content-Type': content_type,
-        },
-        data=audio_bytes,
-        verify=False,
-        timeout=25,
-    )
-    resp.raise_for_status()
-    data = resp.json()
-    chunks = data.get('result') or []
-    return ' '.join(chunks).strip()
 
 
 def _yandex_recognize(api_key: str, audio_bytes: bytes) -> str:
@@ -1819,7 +1774,7 @@ def handler(event: dict, context) -> dict:
                 return {'statusCode': 200, 'headers': headers,
                         'body': json.dumps({'calls': calls})}
 
-        # ── TRANSCRIBE MODULE (расшифровка голосовых/видео-сообщений: Yandex SpeechKit, запасной вариант — SaluteSpeech) ──
+        # ── TRANSCRIBE MODULE (расшифровка голосовых/видео-сообщений через Yandex SpeechKit) ──
         elif module == 'transcribe':
             if method == 'POST':
                 body = json.loads(event.get('body') or '{}')
@@ -1829,16 +1784,9 @@ def handler(event: dict, context) -> dict:
                     return {'statusCode': 400, 'headers': headers,
                             'body': json.dumps({'error': 'audio required'})}
                 mime = body.get('mime', 'audio/webm;codecs=opus')
-                if 'pcm16' in mime:
-                    content_type = 'audio/x-pcm;bit=16;rate=16000'
-                elif 'mp4' in mime or 'm4a' in mime:
-                    content_type = 'audio/mpeg'
-                else:
-                    content_type = 'audio/ogg;codecs=opus'
                 audio_bytes = base64.b64decode(audio_b64)
 
                 yandex_key = os.environ.get('YANDEX_SPEECHKIT_API_KEY')
-                sber_key = os.environ.get('API_SALUTESPEECH') or os.environ.get('GIGACHAT_AUTH_KEY')
                 errors = []
                 text = None
 
@@ -1848,15 +1796,9 @@ def handler(event: dict, context) -> dict:
                     except Exception as ye:
                         errors.append(f'Yandex: {ye}')
 
-                if text is None and sber_key:
-                    try:
-                        text = _salutespeech_recognize(sber_key, audio_bytes, content_type)
-                    except Exception as se:
-                        errors.append(f'SaluteSpeech: {se}')
-
                 conn.commit()
                 if text is None:
-                    if not yandex_key and not sber_key:
+                    if not yandex_key:
                         return {'statusCode': 200, 'headers': headers,
                                 'body': json.dumps({'error': 'Расшифровка не настроена'})}
                     return {'statusCode': 200, 'headers': headers,
