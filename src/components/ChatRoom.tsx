@@ -623,6 +623,22 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       setTranscripts((p) => ({ ...p, [msgId]: text }));
     } catch (e) {
       console.error("[ChatRoom] transcribe failed", e);
+      showToast("Не удалось распознать речь");
+    }
+    setTranscribingId(null);
+  };
+
+  const transcribeByUrl = async (msgId: number, mediaUrl: string) => {
+    if (!mediaUrl || transcribingId === msgId) return;
+    setTranscribingId(msgId);
+    try {
+      const res = await fetch(mediaUrl);
+      const blob = await res.blob();
+      const text = await transcribeAudioBlob(blob, MY_ID);
+      setTranscripts((p) => ({ ...p, [msgId]: text }));
+    } catch (e) {
+      console.error("[ChatRoom] transcribe by url failed", e);
+      showToast("Не удалось распознать речь");
     }
     setTranscribingId(null);
   };
@@ -976,6 +992,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     if (msg.type === "voice" || msg.type === "video_note") {
       let info: { duration?: number; url?: string; transcript?: string } = {};
       try { info = JSON.parse(msg.content); } catch { info = { duration: Number(msg.content.replace("voice:", "")) || 1, url: "" }; }
+      const hasTranscript = !!(transcripts[msg.id] || info.transcript);
       const commonProps = {
         isMe,
         mediaUrl: info.url || "",
@@ -983,6 +1000,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
         time: msg.time,
         transcript: transcripts[msg.id] || info.transcript || "",
         transcribing: transcribingId === msg.id,
+        onTranscribe: hasTranscript ? undefined : () => transcribeByUrl(msg.id, info.url || ""),
         ticks: <Ticks msg={msg} />,
       };
       if (msg.type === "video_note") return <VideoNoteBubble {...commonProps} />;

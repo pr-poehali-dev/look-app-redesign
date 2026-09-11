@@ -8,10 +8,11 @@ interface VoiceMessageBubbleProps {
   time: string;
   transcript?: string;
   transcribing?: boolean;
+  onTranscribe?: () => void;
   ticks: ReactNode;
 }
 
-const VoiceMessageBubble = ({ isMe, mediaUrl, duration, time, transcript, transcribing, ticks }: VoiceMessageBubbleProps) => {
+const VoiceMessageBubble = ({ isMe, mediaUrl, duration, time, transcript, transcribing, onTranscribe, ticks }: VoiceMessageBubbleProps) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
 
@@ -44,6 +45,15 @@ const VoiceMessageBubble = ({ isMe, mediaUrl, duration, time, transcript, transc
           ))}
         </div>
         <span className="text-white/70 text-xs flex-shrink-0">{duration}с</span>
+        {onTranscribe && !transcribing && (
+          <button
+            onClick={onTranscribe}
+            className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0"
+            title="Расшифровать"
+          >
+            <span className="text-white text-[11px] font-semibold">T</span>
+          </button>
+        )}
         {isMe && ticks}
       </div>
 

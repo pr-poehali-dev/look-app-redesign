@@ -8,10 +8,11 @@ interface VideoNoteBubbleProps {
   time: string;
   transcript?: string;
   transcribing?: boolean;
+  onTranscribe?: () => void;
   ticks: ReactNode;
 }
 
-const VideoNoteBubble = ({ isMe, mediaUrl, duration, time, transcript, transcribing, ticks }: VideoNoteBubbleProps) => {
+const VideoNoteBubble = ({ isMe, mediaUrl, duration, time, transcript, transcribing, onTranscribe, ticks }: VideoNoteBubbleProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
 
@@ -45,6 +46,15 @@ const VideoNoteBubble = ({ isMe, mediaUrl, duration, time, transcript, transcrib
           </button>
         )}
         <span className="absolute bottom-2 right-2 text-white text-[10px] bg-black/50 px-1.5 py-0.5 rounded-full">{duration}с</span>
+        {onTranscribe && !transcribing && (
+          <button
+            onClick={onTranscribe}
+            className="absolute top-1 right-1 w-7 h-7 rounded-full bg-[#2b7fff] flex items-center justify-center shadow-lg"
+            title="Расшифровать"
+          >
+            <span className="text-white text-[13px] font-semibold">T</span>
+          </button>
+        )}
       </div>
 
       <div className={`flex items-center gap-1.5 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
