@@ -17,10 +17,14 @@ async function getPipeline(): Promise<Pipeline> {
     pipelinePromise = (async () => {
       const { pipeline } = await import("@huggingface/transformers");
       const pipe = await pipeline("automatic-speech-recognition", "onnx-community/whisper-tiny", {
-        dtype: "q8",
+        dtype: "fp32",
+        device: "wasm",
       });
       return pipe as unknown as Pipeline;
-    })();
+    })().catch((e) => {
+      pipelinePromise = null;
+      throw e;
+    });
   }
   return pipelinePromise;
 }
