@@ -15,12 +15,22 @@ interface VoiceMessageBubbleProps {
 const VoiceMessageBubble = ({ isMe, mediaUrl, duration, time, transcript, transcribing, onTranscribe, ticks }: VoiceMessageBubbleProps) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const toggle = () => {
     const a = audioRef.current;
     if (!a) return;
     if (playing) { a.pause(); } else { a.play().catch(() => {}); }
   };
+
+  const handleTimeUpdate = () => {
+    const a = audioRef.current;
+    if (!a || !a.duration) return;
+    setProgress(a.currentTime / a.duration);
+  };
+
+  const barsCount = 20;
+  const activeBars = Math.round(progress * barsCount);
 
   return (
     <div className={`flex flex-col max-w-[75%] ${isMe ? "items-end" : "items-start"}`}>
@@ -32,7 +42,8 @@ const VoiceMessageBubble = ({ isMe, mediaUrl, duration, time, transcript, transc
             preload="metadata"
             onPlay={() => setPlaying(true)}
             onPause={() => setPlaying(false)}
-            onEnded={() => setPlaying(false)}
+            onEnded={() => { setPlaying(false); setProgress(0); }}
+            onTimeUpdate={handleTimeUpdate}
             className="hidden"
           />
         )}
@@ -40,8 +51,12 @@ const VoiceMessageBubble = ({ isMe, mediaUrl, duration, time, transcript, transc
           <Icon name={playing ? "Pause" : "Play"} size={14} className="text-white ml-0.5" />
         </button>
         <div className="flex items-center gap-0.5 flex-1">
-          {Array.from({ length: 20 }).map((_, i) => (
-            <div key={i} className="w-0.5 bg-white/50 rounded-full" style={{ height: `${((i * 37) % 16) + 4}px` }} />
+          {Array.from({ length: barsCount }).map((_, i) => (
+            <div
+              key={i}
+              className={`w-0.5 rounded-full transition-colors ${i < activeBars ? "bg-white" : "bg-white/50"}`}
+              style={{ height: `${((i * 37) % 16) + 4}px` }}
+            />
           ))}
         </div>
         <span className="text-white/70 text-xs flex-shrink-0">{duration}с</span>

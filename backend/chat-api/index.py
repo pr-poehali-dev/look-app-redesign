@@ -4,11 +4,22 @@ import random
 import base64
 import time
 import uuid
+import datetime
 import psycopg2
 import boto3
 import requests
 
 _SALUTE_TOKEN_CACHE = {'token': None, 'exp': 0}
+_MSK_TZ = datetime.timezone(datetime.timedelta(hours=3))
+
+
+def _fmt_time(dt) -> str:
+    """Форматирует datetime из БД (UTC) в строку ЧЧ:ММ по московскому времени."""
+    if dt is None:
+        return ''
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=datetime.timezone.utc)
+    return dt.astimezone(_MSK_TZ).strftime('%H:%M')
 
 
 def _salutespeech_get_token(auth_key: str) -> str:
@@ -143,7 +154,7 @@ def handler(event: dict, context) -> dict:
                     messages = [
                         {'id': r[0], 'user_id': r[1], 'user_name': r[2],
                          'type': r[3], 'content': r[4],
-                         'time': r[5].strftime('%H:%M')}
+                         'time': _fmt_time(r[5])}
                         for r in rows
                     ]
                     conn.commit()
@@ -286,6 +297,10 @@ def handler(event: dict, context) -> dict:
                                 last_msg = '🎤 Голосовое'
                             elif r[5] == 'video':
                                 last_msg = '🎬 Видео'
+                            elif r[5] == 'video_note':
+                                last_msg = '🎥 Видеосообщение'
+                            elif r[5] == 'sticker':
+                                last_msg = '🎨 Стикер'
                             elif r[5] == 'poll':
                                 poll_q = ''
                                 try:
@@ -300,7 +315,6 @@ def handler(event: dict, context) -> dict:
                             else:
                                 last_msg = r[6] or ''
                         if r[7]:
-                            import datetime
                             now = datetime.datetime.now(r[7].tzinfo) if r[7].tzinfo else datetime.datetime.now()
                             diff = now - r[7]
                             if diff.total_seconds() < 60:
@@ -656,7 +670,7 @@ def handler(event: dict, context) -> dict:
                 row = cur.fetchone()
                 conn.commit()
                 return {'statusCode': 200, 'headers': headers,
-                        'body': json.dumps({'id': row[0], 'time': row[1].strftime('%H:%M'), 'ok': True})}
+                        'body': json.dumps({'id': row[0], 'time': _fmt_time(row[1]), 'ok': True})}
 
         # ── COMMUNITIES MODULE ───────────────────────────────────────
         elif module == 'community':
