@@ -25,12 +25,13 @@ const VideoNoteBubble = ({ isMe, mediaUrl, duration, time, transcript, transcrib
   return (
     <div className={`flex flex-col max-w-[75%] ${isMe ? "items-end" : "items-start"}`}>
       <div className="relative w-44 h-44">
-        <div className="w-full h-full rounded-full overflow-hidden ring-2 ring-white/15 shadow-xl bg-black">
+        <div className="w-full h-full rounded-full overflow-hidden ring-2 ring-white/15 shadow-xl bg-black" style={{ clipPath: "circle(50%)" }}>
           {mediaUrl && (
             <video
               ref={videoRef}
               src={mediaUrl}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover rounded-full"
+              style={{ clipPath: "circle(50%)" }}
               playsInline
               preload="metadata"
               onPlay={() => setPlaying(true)}
