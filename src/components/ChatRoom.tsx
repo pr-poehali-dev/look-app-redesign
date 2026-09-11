@@ -12,6 +12,7 @@ import VideoNoteBubble from "./chat-room/VideoNoteBubble";
 import { useAuth } from "@/context/AuthContext";
 import { uploadChatMedia } from "@/lib/chatMediaUpload";
 import { transcribeAudioBlob } from "@/lib/audioTranscribe";
+import { startLiveSpeechRecognition, isLiveSpeechSupported } from "@/lib/liveSpeechRecognition";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
@@ -137,12 +138,15 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const [videoNoteRecording, setVideoNoteRecording] = useState(false);
   const [videoNoteSecs, setVideoNoteSecs] = useState(0);
   const [videoNotePreview, setVideoNotePreview] = useState<{ url: string; blob: Blob } | null>(null);
+  const videoNoteLiveTextRef = useRef<string>("");
   const [videoNoteFacing, setVideoNoteFacing] = useState<"user" | "environment">("user");
   const voiceMediaRecorderRef = useRef<MediaRecorder | null>(null);
   const voiceChunksRef = useRef<Blob[]>([]);
   const voiceStreamRef = useRef<MediaStream | null>(null);
   const [transcribingId, setTranscribingId] = useState<number | null>(null);
   const [transcripts, setTranscripts] = useState<Record<number, string>>({});
+  const liveSpeechRef = useRef<{ stop: () => Promise<string> } | null>(null);
+  const liveSpeechUnsupportedShownRef = useRef(false);
   const videoNoteStreamRef = useRef<MediaStream | null>(null);
   const videoNoteMediaRecorderRef = useRef<MediaRecorder | null>(null);
   const videoNoteChunksRef = useRef<Blob[]>([]);
@@ -569,6 +573,11 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) voiceChunksRef.current.push(e.data); };
       voiceMediaRecorderRef.current = rec;
       rec.start(250);
+      liveSpeechRef.current = startLiveSpeechRecognition();
+      if (!isLiveSpeechSupported() && !liveSpeechUnsupportedShownRef.current) {
+        liveSpeechUnsupportedShownRef.current = true;
+        showToast("Расшифровка речи доступна только в Chrome");
+      }
 
       setRecording(true);
       setRecSecs(0);
@@ -590,8 +599,11 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     const rec = voiceMediaRecorderRef.current;
     const durSecs = recSecs || 1;
     setRecSecs(0);
+    const liveRec = liveSpeechRef.current;
+    liveSpeechRef.current = null;
     if (!rec || rec.state === "inactive") {
       voiceStreamRef.current?.getTracks().forEach((t) => t.stop());
+      liveRec?.stop().catch(() => {});
       return;
     }
     const stopped = new Promise<void>((resolve) => { rec.onstop = () => resolve(); });
@@ -599,6 +611,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     await stopped;
     voiceStreamRef.current?.getTracks().forEach((t) => t.stop());
     voiceStreamRef.current = null;
+    const liveText = liveRec ? await liveRec.stop().catch(() => "") : "";
     if (voiceChunksRef.current.length === 0) return;
     const mimeFull = voiceChunksRef.current[0].type || "audio/webm";
     const blob = new Blob(voiceChunksRef.current, { type: mimeFull });
@@ -607,9 +620,12 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     try {
       showToast("Отправляем голосовое...");
       const url = await uploadChatMedia(blob, ext, mimeFull.split(";")[0]);
-      const payload = JSON.stringify({ duration: durSecs, url, transcript: "" });
+      const payload = JSON.stringify({ duration: durSecs, url, transcript: liveText || "" });
       const msgId = await sendMsg(payload, "voice");
-      if (msgId) transcribeAndSave(msgId, blob);
+      if (msgId) {
+        if (liveText) setTranscripts((p) => ({ ...p, [msgId]: liveText }));
+        else transcribeAndSave(msgId, blob);
+      }
     } catch (e) {
       console.error("[ChatRoom] voice upload failed", e);
       showToast("Не удалось отправить голосовое");
@@ -692,6 +708,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     };
     videoNoteMediaRecorderRef.current = rec;
     rec.start(250);
+    liveSpeechRef.current = startLiveSpeechRecognition();
     setVideoNoteRecording(true);
     setVideoNoteSecs(0);
     videoNoteTimerRef.current = setInterval(() => {
@@ -702,9 +719,12 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     }, 1000);
   };
 
-  const stopVideoNote = () => {
+  const stopVideoNote = async () => {
     if (videoNoteTimerRef.current) clearInterval(videoNoteTimerRef.current);
     setVideoNoteRecording(false);
+    const liveRec = liveSpeechRef.current;
+    liveSpeechRef.current = null;
+    videoNoteLiveTextRef.current = liveRec ? await liveRec.stop().catch(() => "") : "";
     const rec = videoNoteMediaRecorderRef.current;
     if (rec && rec.state !== "inactive") rec.stop();
   };
@@ -731,13 +751,18 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     const blob = videoNotePreview.blob;
     const mimeFull = blob.type || "video/webm";
     const ext = mimeFull.includes("mp4") ? "mp4" : "webm";
+    const liveText = videoNoteLiveTextRef.current;
+    videoNoteLiveTextRef.current = "";
     closeVideoNote();
     try {
       showToast("Отправляем видеосообщение...");
       const url = await uploadChatMedia(blob, ext, mimeFull.split(";")[0]);
-      const payload = JSON.stringify({ duration: dur, url, transcript: "" });
+      const payload = JSON.stringify({ duration: dur, url, transcript: liveText || "" });
       const msgId = await sendMsg(payload, "video_note");
-      if (msgId) transcribeAndSave(msgId, blob);
+      if (msgId) {
+        if (liveText) setTranscripts((p) => ({ ...p, [msgId]: liveText }));
+        else transcribeAndSave(msgId, blob);
+      }
     } catch (e) {
       console.error("[ChatRoom] video note upload failed", e);
       showToast("Не удалось отправить видео-сообщение");
