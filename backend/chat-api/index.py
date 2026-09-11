@@ -9,7 +9,7 @@ import psycopg2
 import boto3
 import requests
 
-_SALUTE_TOKEN_CACHE = {'token': None, 'exp': 0}  # cache-bust: force redeploy to pick up refreshed secret
+_SALUTE_TOKEN_CACHE = {'token': None, 'exp': 0}  # cache-bust v2: force redeploy to pick up refreshed secret
 _MSK_TZ = datetime.timezone(datetime.timedelta(hours=3))
 
 
