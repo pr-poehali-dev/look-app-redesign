@@ -24,28 +24,30 @@ const VideoNoteBubble = ({ isMe, mediaUrl, duration, time, transcript, transcrib
 
   return (
     <div className={`flex flex-col max-w-[75%] ${isMe ? "items-end" : "items-start"}`}>
-      <div className="relative w-44 h-44 rounded-full overflow-hidden ring-2 ring-white/15 shadow-xl bg-black">
-        {mediaUrl && (
-          <video
-            ref={videoRef}
-            src={mediaUrl}
-            className="w-full h-full object-cover"
-            playsInline
-            preload="metadata"
-            onPlay={() => setPlaying(true)}
-            onPause={() => setPlaying(false)}
-            onEnded={() => setPlaying(false)}
-            onClick={toggle}
-          />
-        )}
-        {!playing && (
-          <button onClick={toggle} className="absolute inset-0 flex items-center justify-center bg-black/25">
-            <div className="w-11 h-11 rounded-full bg-white/25 backdrop-blur flex items-center justify-center">
-              <Icon name="Play" size={20} className="text-white ml-0.5" />
-            </div>
-          </button>
-        )}
-        <span className="absolute bottom-2 right-2 text-white text-[10px] bg-black/50 px-1.5 py-0.5 rounded-full">{duration}с</span>
+      <div className="relative w-44 h-44">
+        <div className="w-full h-full rounded-full overflow-hidden ring-2 ring-white/15 shadow-xl bg-black">
+          {mediaUrl && (
+            <video
+              ref={videoRef}
+              src={mediaUrl}
+              className="w-full h-full object-cover"
+              playsInline
+              preload="metadata"
+              onPlay={() => setPlaying(true)}
+              onPause={() => setPlaying(false)}
+              onEnded={() => setPlaying(false)}
+              onClick={toggle}
+            />
+          )}
+          {!playing && (
+            <button onClick={toggle} className="absolute inset-0 flex items-center justify-center bg-black/25">
+              <div className="w-11 h-11 rounded-full bg-white/25 backdrop-blur flex items-center justify-center">
+                <Icon name="Play" size={20} className="text-white ml-0.5" />
+              </div>
+            </button>
+          )}
+          <span className="absolute bottom-2 right-2 text-white text-[10px] bg-black/50 px-1.5 py-0.5 rounded-full">{duration}с</span>
+        </div>
         {onTranscribe && !transcribing && (
           <button
             onClick={onTranscribe}
