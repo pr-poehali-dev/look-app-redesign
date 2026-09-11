@@ -11,8 +11,8 @@ import VoiceMessageBubble from "./chat-room/VoiceMessageBubble";
 import VideoNoteBubble from "./chat-room/VideoNoteBubble";
 import { useAuth } from "@/context/AuthContext";
 import { uploadChatMedia } from "@/lib/chatMediaUpload";
-import { transcribeAudioBlob } from "@/lib/audioTranscribe";
-import { startLiveSpeechRecognition, isLiveSpeechSupported } from "@/lib/liveSpeechRecognition";
+import { transcribeBlobLocally } from "@/lib/whisperTranscribe";
+import { startLiveSpeechRecognition } from "@/lib/liveSpeechRecognition";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
@@ -146,7 +146,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const [transcribingId, setTranscribingId] = useState<number | null>(null);
   const [transcripts, setTranscripts] = useState<Record<number, string>>({});
   const liveSpeechRef = useRef<{ stop: () => Promise<string> } | null>(null);
-  const liveSpeechUnsupportedShownRef = useRef(false);
+
   const videoNoteStreamRef = useRef<MediaStream | null>(null);
   const videoNoteMediaRecorderRef = useRef<MediaRecorder | null>(null);
   const videoNoteChunksRef = useRef<Blob[]>([]);
@@ -574,10 +574,6 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       voiceMediaRecorderRef.current = rec;
       rec.start(250);
       liveSpeechRef.current = startLiveSpeechRecognition();
-      if (!isLiveSpeechSupported() && !liveSpeechUnsupportedShownRef.current) {
-        liveSpeechUnsupportedShownRef.current = true;
-        showToast("Расшифровка речи доступна только в Chrome");
-      }
 
       setRecording(true);
       setRecSecs(0);
@@ -635,8 +631,8 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const transcribeAndSave = async (msgId: number, blob: Blob) => {
     setTranscribingId(msgId);
     try {
-      const text = await transcribeAudioBlob(blob, MY_ID);
-      setTranscripts((p) => ({ ...p, [msgId]: text }));
+      const text = await transcribeBlobLocally(blob);
+      setTranscripts((p) => ({ ...p, [msgId]: text || "Речь не распознана" }));
     } catch (e) {
       console.error("[ChatRoom] transcribe failed", e);
       showToast("Не удалось распознать речь");
@@ -650,8 +646,8 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     try {
       const res = await fetch(mediaUrl);
       const blob = await res.blob();
-      const text = await transcribeAudioBlob(blob, MY_ID);
-      setTranscripts((p) => ({ ...p, [msgId]: text }));
+      const text = await transcribeBlobLocally(blob);
+      setTranscripts((p) => ({ ...p, [msgId]: text || "Речь не распознана" }));
     } catch (e) {
       console.error("[ChatRoom] transcribe by url failed", e);
       showToast("Не удалось распознать речь");
