@@ -5,10 +5,10 @@
  * скачивает модель и кэширует её (Cache Storage), повторные расшифровки быстрые.
  *
  * На телефонах (особенно iOS Safari) память WebAssembly сильно ограничена,
- * поэтому модель whisper-base (~290 Мб, fp32) там не помещается и роняет
- * вкладку. На мобильных используем компактную whisper-tiny (~150 Мб, fp32 —
- * квантованные версии сейчас несовместимы с браузерным ONNX Runtime), на
- * десктопе — более точную whisper-base.
+ * поэтому используем whisper-base (~290 Мб, fp32 — квантованные версии сейчас
+ * несовместимы с браузерным ONNX Runtime). На десктопе памяти достаточно —
+ * там используем более точную whisper-small (~970 Мб) для лучшего качества
+ * распознавания русской речи.
  */
 
 import { decodeToFloat32Mono16k } from "@/lib/audioDecode";
@@ -24,7 +24,7 @@ function isMobileDevice(): boolean {
   );
 }
 
-const MODEL_ID = isMobileDevice() ? "onnx-community/whisper-tiny" : "onnx-community/whisper-base";
+const MODEL_ID = isMobileDevice() ? "onnx-community/whisper-base" : "onnx-community/whisper-small";
 
 let pipelinePromise: Promise<Pipeline> | null = null;
 
