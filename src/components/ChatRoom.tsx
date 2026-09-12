@@ -11,7 +11,7 @@ import VoiceMessageBubble from "./chat-room/VoiceMessageBubble";
 import VideoNoteBubble from "./chat-room/VideoNoteBubble";
 import { useAuth } from "@/context/AuthContext";
 import { uploadChatMedia } from "@/lib/chatMediaUpload";
-import { transcribeBlobLocally, isUsingFallbackModel } from "@/lib/whisperTranscribe";
+import { transcribeBlobOnServer } from "@/lib/serverTranscribe";
 import { startLiveSpeechRecognition } from "@/lib/liveSpeechRecognition";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
@@ -147,7 +147,6 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const [transcribingId, setTranscribingId] = useState<number | null>(null);
   const [transcripts, setTranscripts] = useState<Record<number, string>>({});
   const [hiddenTranscripts, setHiddenTranscripts] = useState<Record<number, boolean>>({});
-  const fallbackNoticeShownRef = useRef(false);
   const liveSpeechRef = useRef<{ stop: () => Promise<string> } | null>(null);
 
   const videoNoteStreamRef = useRef<MediaStream | null>(null);
@@ -631,22 +630,14 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     }
   };
 
-  const notifyIfFallback = () => {
-    if (fallbackNoticeShownRef.current) return;
-    if (!isUsingFallbackModel()) return;
-    fallbackNoticeShownRef.current = true;
-    showToast("Распознавание речи работает в облегчённом режиме — текст может быть менее точным");
-  };
-
   const transcribeAndSave = async (msgId: number, blob: Blob) => {
     setTranscribingId(msgId);
     try {
-      const text = await transcribeBlobLocally(blob);
+      const text = await transcribeBlobOnServer(blob);
       setTranscripts((p) => ({ ...p, [msgId]: text || "Речь не распознана" }));
-      notifyIfFallback();
     } catch (e) {
       console.error("[ChatRoom] transcribe failed", e);
-      showToast("Не удалось распознать речь на этом устройстве");
+      showToast("Не удалось распознать речь");
     }
     setTranscribingId(null);
   };
@@ -657,12 +648,11 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     try {
       const res = await fetch(mediaUrl);
       const blob = await res.blob();
-      const text = await transcribeBlobLocally(blob);
+      const text = await transcribeBlobOnServer(blob);
       setTranscripts((p) => ({ ...p, [msgId]: text || "Речь не распознана" }));
-      notifyIfFallback();
     } catch (e) {
       console.error("[ChatRoom] transcribe by url failed", e);
-      showToast("Не удалось распознать речь на этом устройстве");
+      showToast("Не удалось распознать речь");
     }
     setTranscribingId(null);
   };
