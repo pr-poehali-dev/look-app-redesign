@@ -1,8 +1,9 @@
 /**
  * Локальное распознавание речи прямо в браузере через Whisper (transformers.js).
  * Работает во всех современных браузерах (Chrome, Safari, Firefox), без сервера
- * и без оплаты. При первом вызове браузер скачивает модель (~40-80 Мб) и кэширует
- * её (Cache Storage), повторные расшифровки быстрые и офлайн.
+ * и без оплаты. При первом вызове браузер скачивает модель (~290 Мб, whisper-base
+ * fp32 — квантованные версии сейчас несовместимы с браузерным ONNX Runtime) и
+ * кэширует её (Cache Storage), повторные расшифровки быстрые и офлайн.
  */
 
 import { decodeToFloat32Mono16k } from "@/lib/audioDecode";
@@ -16,7 +17,7 @@ async function getPipeline(): Promise<Pipeline> {
   if (!pipelinePromise) {
     pipelinePromise = (async () => {
       const { pipeline } = await import("@huggingface/transformers");
-      const pipe = await pipeline("automatic-speech-recognition", "onnx-community/whisper-tiny", {
+      const pipe = await pipeline("automatic-speech-recognition", "onnx-community/whisper-base", {
         dtype: "fp32",
         device: "wasm",
       });
