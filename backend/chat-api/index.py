@@ -127,7 +127,7 @@ def handler(event: dict, context) -> dict:
                     cleared_until = int(cleared_row[0]) if cleared_row and cleared_row[0] else 0
                     effective_since = max(int(since_id), cleared_until)
                     cur.execute(
-                        "SELECT id, user_id, user_name, type, content, created_at "
+                        "SELECT id, user_id, user_name, type, content, created_at, expires_at "
                         "FROM sa_messages WHERE chat_id = %s AND id > %s "
                         "ORDER BY created_at ASC LIMIT 100",
                         (chat_id, effective_since)
@@ -136,7 +136,8 @@ def handler(event: dict, context) -> dict:
                     messages = [
                         {'id': r[0], 'user_id': r[1], 'user_name': r[2],
                          'type': r[3], 'content': r[4],
-                         'time': _fmt_time(r[5])}
+                         'time': _fmt_time(r[5]),
+                         'expires_at': r[6].isoformat() if r[6] else None}
                         for r in rows
                     ]
                     conn.commit()

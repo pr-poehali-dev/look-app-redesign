@@ -10,10 +10,11 @@ interface VideoNoteBubbleProps {
   transcribing?: boolean;
   onTranscribe?: () => void;
   onCloseTranscript?: () => void;
+  expiring?: boolean;
   ticks: ReactNode;
 }
 
-const VideoNoteBubble = ({ isMe, mediaUrl, duration, time, transcript, transcribing, onTranscribe, onCloseTranscript, ticks }: VideoNoteBubbleProps) => {
+const VideoNoteBubble = ({ isMe, mediaUrl, duration, time, transcript, transcribing, onTranscribe, onCloseTranscript, expiring, ticks }: VideoNoteBubbleProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
 
@@ -62,6 +63,7 @@ const VideoNoteBubble = ({ isMe, mediaUrl, duration, time, transcript, transcrib
       </div>
 
       <div className={`flex items-center gap-1.5 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
+        {expiring && <Icon name="Timer" size={11} className="text-white/40" />}
         <span className="text-white/30 text-[10px]">{time}</span>
         {isMe && ticks}
       </div>

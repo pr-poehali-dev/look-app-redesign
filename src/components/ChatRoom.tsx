@@ -23,6 +23,7 @@ interface Message {
   type: "text" | "voice" | "image" | "file" | "location" | "contact" | "poll" | "sticker" | "video_note";
   content: string;
   time: string;
+  expires_at?: string | null;
 }
 
 const MAX_VOICE_SEC = 120;
@@ -903,6 +904,11 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     );
   };
 
+  const DisappearBadge = ({ msg }: { msg: Message }) =>
+    msg.expires_at ? (
+      <Icon name="Timer" size={11} className="text-white/40 flex-shrink-0" aria-label="Исчезающее сообщение" />
+    ) : null;
+
   const renderMsg = (msg: Message) => {
     const isMe = msg.user_id === MY_ID;
     if (msg.type === "poll") {
@@ -914,7 +920,10 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       return (
         <div className={`px-4 py-2.5 rounded-2xl max-w-[78%] ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
           <p className="text-white text-sm">📊 Опрос</p>
-          <div className="text-white/40 text-[10px] mt-1 text-right">{msg.time}</div>
+          <div className="flex items-center justify-end gap-1 mt-1">
+            <DisappearBadge msg={msg} />
+            <span className="text-white/40 text-[10px]">{msg.time}</span>
+          </div>
         </div>
       );
     }
@@ -928,6 +937,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
             <span className="text-[76px] leading-none select-none">{msg.content}</span>
           )}
           <div className={`flex items-center gap-1.5 mt-0.5 ${isMe ? "justify-end" : "justify-start"}`}>
+            <DisappearBadge msg={msg} />
             <span className="text-white/40 text-[10px]">{msg.time}</span>
             {isMe && <Ticks msg={msg} />}
           </div>
@@ -939,6 +949,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
         <div className={`max-w-[70%] rounded-2xl overflow-hidden ${isMe ? "rounded-br-sm" : "rounded-bl-sm"}`}>
           <img src={msg.content} className="w-full object-cover max-h-56" alt="img" />
           <div className="bg-[#1a1a1a] px-3 py-1.5 flex justify-end items-center gap-1.5">
+            <DisappearBadge msg={msg} />
             <span className="text-white/30 text-[10px]">{msg.time}</span>
             {isMe && <Ticks msg={msg} />}
           </div>
@@ -964,6 +975,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
             <div className="flex items-center gap-1.5">
               <span className="text-white/60 text-[11px]">{sizeKb} КБ</span>
               <span className="text-white/40 text-[10px]">·</span>
+              <DisappearBadge msg={msg} />
               <span className="text-white/40 text-[10px]">{msg.time}</span>
               {isMe && <Ticks msg={msg} />}
             </div>
@@ -984,6 +996,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
             <p className="text-white text-sm font-medium">Геолокация</p>
             <p className="text-white/60 text-[11px]">{loc.lat?.toFixed(4)}, {loc.lng?.toFixed(4)}</p>
             <div className="flex items-center justify-end gap-1.5 mt-1">
+              <DisappearBadge msg={msg} />
               <span className="text-white/40 text-[10px]">{msg.time}</span>
               {isMe && <Ticks msg={msg} />}
             </div>
@@ -1004,6 +1017,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
             <div className="flex items-center gap-1.5">
               <span className="text-white/60 text-[11px]">Контакт</span>
               <span className="text-white/40 text-[10px]">·</span>
+              <DisappearBadge msg={msg} />
               <span className="text-white/40 text-[10px]">{msg.time}</span>
               {isMe && <Ticks msg={msg} />}
             </div>
@@ -1030,6 +1044,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
             ? () => setHiddenTranscripts((p) => ({ ...p, [msg.id]: false }))
             : undefined,
         onCloseTranscript: hasTranscript && !isHidden ? () => setHiddenTranscripts((p) => ({ ...p, [msg.id]: true })) : undefined,
+        expiring: !!msg.expires_at,
         ticks: <Ticks msg={msg} />,
       };
       if (msg.type === "video_note") return <VideoNoteBubble {...commonProps} />;
@@ -1039,6 +1054,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       <div className={`px-4 py-2.5 rounded-2xl max-w-[78%] ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
         <p className="text-white text-sm leading-snug">{msg.content}</p>
         <div className={`flex items-center gap-1.5 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
+          <DisappearBadge msg={msg} />
           <span className="text-white/40 text-[10px]">{msg.time}</span>
           {isMe && <Ticks msg={msg} />}
         </div>

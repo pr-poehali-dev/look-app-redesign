@@ -10,10 +10,11 @@ interface VoiceMessageBubbleProps {
   transcribing?: boolean;
   onTranscribe?: () => void;
   onCloseTranscript?: () => void;
+  expiring?: boolean;
   ticks: ReactNode;
 }
 
-const VoiceMessageBubble = ({ isMe, mediaUrl, duration, time, transcript, transcribing, onTranscribe, onCloseTranscript, ticks }: VoiceMessageBubbleProps) => {
+const VoiceMessageBubble = ({ isMe, mediaUrl, duration, time, transcript, transcribing, onTranscribe, onCloseTranscript, expiring, ticks }: VoiceMessageBubbleProps) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -91,7 +92,10 @@ const VoiceMessageBubble = ({ isMe, mediaUrl, duration, time, transcript, transc
         </div>
       )}
 
-      <span className="text-white/30 text-[10px] mt-0.5">{time}</span>
+      <div className="flex items-center gap-1 mt-0.5">
+        {expiring && <Icon name="Timer" size={11} className="text-white/40" />}
+        <span className="text-white/30 text-[10px]">{time}</span>
+      </div>
     </div>
   );
 };
