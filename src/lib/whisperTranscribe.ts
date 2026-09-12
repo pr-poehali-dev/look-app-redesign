@@ -18,6 +18,14 @@
  * cdn.jsdelivr.net — этот CDN у части пользователей открывается нестабильно,
  * из-за чего распознавание речи не запускалось вовсе. Раздаём эти файлы прямо
  * со своего домена (public/onnx-wasm), чтобы не зависеть от внешнего CDN.
+ *
+ * Chrome (особенно на Android и в целом строже других браузеров) ограничивает
+ * объём памяти, который вкладка может выделить под WebAssembly. Модель может
+ * успешно ЗАГРУЗИТЬСЯ, но затем упасть с нехваткой памяти прямо ВО ВРЕМЯ
+ * распознавания — поэтому откат на более лёгкую модель нужен не только при
+ * ошибке загрузки, а на каждом шаге, включая сам вызов распознавания. Если
+ * модель падает во время работы, она помечается "сломанной" и больше не
+ * используется в этой вкладке — следующая попытка сразу идёт на модель полегче.
  */
 
 import { decodeToFloat32Mono16k } from "@/lib/audioDecode";
@@ -33,12 +41,14 @@ function isMobileDevice(): boolean {
   );
 }
 
-// От большей к меньшей — если тяжёлая модель не скачалась (обрыв сети), пробуем следующую
+// От большей к меньшей — если модель не скачалась ИЛИ упала во время распознавания
+// (нехватка памяти в браузере), пробуем следующую, более лёгкую
 const MODEL_CHAIN = isMobileDevice()
   ? ["onnx-community/whisper-base", "onnx-community/whisper-tiny"]
   : ["onnx-community/whisper-small", "onnx-community/whisper-base", "onnx-community/whisper-tiny"];
 
-let pipelinePromise: Promise<Pipeline> | null = null;
+const pipelineCache = new Map<string, Promise<Pipeline>>();
+const brokenModels = new Set<string>();
 let wasmConfigured = false;
 
 function configureLocalWasm(env: { backends: { onnx: { wasm: { wasmPaths?: unknown } } } }, isSafari: boolean) {
@@ -52,40 +62,31 @@ function configureLocalWasm(env: { backends: { onnx: { wasm: { wasmPaths?: unkno
       };
 }
 
-async function loadPipeline(): Promise<Pipeline> {
-  const { pipeline, env } = await import("@huggingface/transformers");
-  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  configureLocalWasm(env as any, isSafari);
-  let lastError: unknown;
-  for (const modelId of MODEL_CHAIN) {
-    try {
+async function getPipelineFor(modelId: string): Promise<Pipeline> {
+  let promise = pipelineCache.get(modelId);
+  if (!promise) {
+    promise = (async () => {
+      const { pipeline, env } = await import("@huggingface/transformers");
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      configureLocalWasm(env as any, isSafari);
       const pipe = await pipeline("automatic-speech-recognition", modelId, {
         dtype: "fp32",
         device: "wasm",
       });
       return pipe as unknown as Pipeline;
-    } catch (e) {
-      console.error(`[whisperTranscribe] failed to load ${modelId}, trying next`, e);
-      lastError = e;
-    }
+    })();
+    pipelineCache.set(modelId, promise);
   }
-  throw lastError instanceof Error ? lastError : new Error("Не удалось загрузить ни одну модель распознавания речи");
+  return promise;
 }
 
-async function getPipeline(): Promise<Pipeline> {
-  if (!pipelinePromise) {
-    pipelinePromise = loadPipeline().catch((e) => {
-      pipelinePromise = null;
-      throw e;
-    });
-  }
-  return pipelinePromise;
-}
-
-/** Прогревает (скачивает и инициализирует) модель заранее, не дожидаясь первой расшифровки. */
+/** Прогревает (скачивает и инициализирует) самую тяжёлую модель заранее, не дожидаясь первой расшифровки. */
 export function warmupWhisper() {
-  getPipeline().catch(() => {});
+  const modelId = MODEL_CHAIN[0];
+  getPipelineFor(modelId).catch(() => {
+    pipelineCache.delete(modelId);
+  });
 }
 
 /**
@@ -162,15 +163,13 @@ function trimSilence(samples: Float32Array): Float32Array {
   return samples.slice(startFrame * frameSize, endFrame * frameSize);
 }
 
-export async function transcribeBlobLocally(blob: Blob): Promise<string> {
-  const rawSamples = await decodeToFloat32Mono16k(blob);
-  const samples = trimSilence(rawSamples);
+// Если распознавание зависло дольше этого — считаем модель нерабочей на этом
+// устройстве (например, память браузера "задыхается") и переходим на более лёгкую,
+// вместо того чтобы бесконечно висеть с крутящимся индикатором
+const INFERENCE_TIMEOUT_MS = 90_000;
 
-  // Меньше ~0.3с осмысленного звука — говорить было явно нечего, не гадаем
-  if (samples.length < SAMPLE_RATE * 0.3) return "";
-
-  const pipe = await getPipeline();
-  const result = await pipe(samples, {
+async function runInference(pipe: Pipeline, samples: Float32Array): Promise<string> {
+  const inference = pipe(samples, {
     language: "russian",
     task: "transcribe",
     // Без chunk_length_s Whisper молча обрезает всё, что длиннее 30 секунд,
@@ -181,6 +180,39 @@ export async function transcribeBlobLocally(blob: Blob): Promise<string> {
     no_repeat_ngram_size: 3,
     repetition_penalty: 1.3,
   });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result: any = await Promise.race([
+    inference,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("whisper inference timeout")), INFERENCE_TIMEOUT_MS),
+    ),
+  ]);
   const text = Array.isArray(result) ? result[0]?.text : result?.text;
   return collapseRepeats(text || "");
+}
+
+export async function transcribeBlobLocally(blob: Blob): Promise<string> {
+  const rawSamples = await decodeToFloat32Mono16k(blob);
+  const samples = trimSilence(rawSamples);
+
+  // Меньше ~0.3с осмысленного звука — говорить было явно нечего, не гадаем
+  if (samples.length < SAMPLE_RATE * 0.3) return "";
+
+  let lastError: unknown;
+  for (const modelId of MODEL_CHAIN) {
+    if (brokenModels.has(modelId)) continue;
+    try {
+      const pipe = await getPipelineFor(modelId);
+      return await runInference(pipe, samples);
+    } catch (e) {
+      console.error(`[whisperTranscribe] ${modelId} failed, trying lighter model`, e);
+      // Модель либо не смогла загрузиться, либо браузеру не хватило памяти прямо
+      // во время распознавания — в обоих случаях с ней больше нет смысла возиться
+      // в этой вкладке, сразу переходим на более лёгкую
+      brokenModels.add(modelId);
+      pipelineCache.delete(modelId);
+      lastError = e;
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("Не удалось распознать речь ни одной моделью");
 }
