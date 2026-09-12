@@ -145,6 +145,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const voiceStreamRef = useRef<MediaStream | null>(null);
   const [transcribingId, setTranscribingId] = useState<number | null>(null);
   const [transcripts, setTranscripts] = useState<Record<number, string>>({});
+  const [hiddenTranscripts, setHiddenTranscripts] = useState<Record<number, boolean>>({});
   const liveSpeechRef = useRef<{ stop: () => Promise<string> } | null>(null);
 
   const videoNoteStreamRef = useRef<MediaStream | null>(null);
@@ -1013,15 +1014,22 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     if (msg.type === "voice" || msg.type === "video_note") {
       let info: { duration?: number; url?: string; transcript?: string } = {};
       try { info = JSON.parse(msg.content); } catch { info = { duration: Number(msg.content.replace("voice:", "")) || 1, url: "" }; }
-      const hasTranscript = !!(transcripts[msg.id] || info.transcript);
+      const fullText = transcripts[msg.id] || info.transcript || "";
+      const hasTranscript = !!fullText;
+      const isHidden = !!hiddenTranscripts[msg.id];
       const commonProps = {
         isMe,
         mediaUrl: info.url || "",
         duration: info.duration || 1,
         time: msg.time,
-        transcript: transcripts[msg.id] || info.transcript || "",
+        transcript: isHidden ? "" : fullText,
         transcribing: transcribingId === msg.id,
-        onTranscribe: hasTranscript ? undefined : () => transcribeByUrl(msg.id, info.url || ""),
+        onTranscribe: !hasTranscript
+          ? () => transcribeByUrl(msg.id, info.url || "")
+          : isHidden
+            ? () => setHiddenTranscripts((p) => ({ ...p, [msg.id]: false }))
+            : undefined,
+        onCloseTranscript: hasTranscript && !isHidden ? () => setHiddenTranscripts((p) => ({ ...p, [msg.id]: true })) : undefined,
         ticks: <Ticks msg={msg} />,
       };
       if (msg.type === "video_note") return <VideoNoteBubble {...commonProps} />;

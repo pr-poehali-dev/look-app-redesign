@@ -9,10 +9,11 @@ interface VideoNoteBubbleProps {
   transcript?: string;
   transcribing?: boolean;
   onTranscribe?: () => void;
+  onCloseTranscript?: () => void;
   ticks: ReactNode;
 }
 
-const VideoNoteBubble = ({ isMe, mediaUrl, duration, time, transcript, transcribing, onTranscribe, ticks }: VideoNoteBubbleProps) => {
+const VideoNoteBubble = ({ isMe, mediaUrl, duration, time, transcript, transcribing, onTranscribe, onCloseTranscript, ticks }: VideoNoteBubbleProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
 
@@ -73,8 +74,13 @@ const VideoNoteBubble = ({ isMe, mediaUrl, duration, time, transcript, transcrib
       )}
 
       {transcript && (
-        <div className={`mt-1 px-3 py-2 rounded-xl max-w-full ${isMe ? "bg-[#fe2c55]/15" : "bg-white/5"}`}>
-          <p className="text-white/70 text-xs leading-snug italic">{transcript}</p>
+        <div className={`mt-1 flex items-start gap-1.5 px-3 py-2 rounded-xl max-w-full ${isMe ? "bg-[#fe2c55]/15" : "bg-white/5"}`}>
+          <p className="text-white/70 text-xs leading-snug italic flex-1">{transcript}</p>
+          {onCloseTranscript && (
+            <button onClick={onCloseTranscript} className="flex-shrink-0 text-white/40 hover:text-white/70">
+              <Icon name="X" size={14} />
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -9,10 +9,11 @@ interface VoiceMessageBubbleProps {
   transcript?: string;
   transcribing?: boolean;
   onTranscribe?: () => void;
+  onCloseTranscript?: () => void;
   ticks: ReactNode;
 }
 
-const VoiceMessageBubble = ({ isMe, mediaUrl, duration, time, transcript, transcribing, onTranscribe, ticks }: VoiceMessageBubbleProps) => {
+const VoiceMessageBubble = ({ isMe, mediaUrl, duration, time, transcript, transcribing, onTranscribe, onCloseTranscript, ticks }: VoiceMessageBubbleProps) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -80,8 +81,13 @@ const VoiceMessageBubble = ({ isMe, mediaUrl, duration, time, transcript, transc
       )}
 
       {transcript && (
-        <div className={`mt-1 px-3 py-2 rounded-xl max-w-full ${isMe ? "bg-[#fe2c55]/15" : "bg-white/5"}`}>
-          <p className="text-white/70 text-xs leading-snug italic">{transcript}</p>
+        <div className={`mt-1 flex items-start gap-1.5 px-3 py-2 rounded-xl max-w-full ${isMe ? "bg-[#fe2c55]/15" : "bg-white/5"}`}>
+          <p className="text-white/70 text-xs leading-snug italic flex-1">{transcript}</p>
+          {onCloseTranscript && (
+            <button onClick={onCloseTranscript} className="flex-shrink-0 text-white/40 hover:text-white/70">
+              <Icon name="X" size={14} />
+            </button>
+          )}
         </div>
       )}
 
