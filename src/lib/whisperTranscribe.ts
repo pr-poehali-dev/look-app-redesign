@@ -191,6 +191,15 @@ async function runInference(pipe: Pipeline, samples: Float32Array): Promise<stri
   return collapseRepeats(text || "");
 }
 
+/**
+ * true, если основная (самая точная) модель из цепочки хоть раз подвела в этой
+ * вкладке и распознавание перешло на облегчённую — используется, чтобы один раз
+ * предупредить пользователя, почему расшифровка может быть менее точной.
+ */
+export function isUsingFallbackModel(): boolean {
+  return brokenModels.has(MODEL_CHAIN[0]);
+}
+
 export async function transcribeBlobLocally(blob: Blob): Promise<string> {
   const rawSamples = await decodeToFloat32Mono16k(blob);
   const samples = trimSilence(rawSamples);
