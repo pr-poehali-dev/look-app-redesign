@@ -12,7 +12,6 @@ import VideoNoteBubble from "./chat-room/VideoNoteBubble";
 import { useAuth } from "@/context/AuthContext";
 import { uploadChatMedia } from "@/lib/chatMediaUpload";
 import { transcribeBlobLocally } from "@/lib/whisperTranscribe";
-import { transcribeBlobOnServer } from "@/lib/serverTranscribe";
 import { startLiveSpeechRecognition } from "@/lib/liveSpeechRecognition";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
@@ -631,33 +630,14 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     }
   };
 
-  // Мобильные браузеры (особенно iOS Safari) не тянут локальную Whisper-модель
-  // (~290 МБ) — не хватает памяти, вкладка падает. Поэтому там сразу используем
-  // серверную расшифровку (Yandex SpeechKit). На десктопе сервер тоже пробуем
-  // первым — он быстрее, а Whisper остаётся запасным вариантом.
-  const isMobileDevice = () =>
-    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-    (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.userAgent));
-
-  const transcribeBlob = async (blob: Blob): Promise<string> => {
-    try {
-      const text = await transcribeBlobOnServer(blob);
-      if (text) return text;
-    } catch (e) {
-      console.error("[ChatRoom] server transcribe failed", e);
-    }
-    if (isMobileDevice()) throw new Error("Расшифровка недоступна на этом устройстве");
-    return transcribeBlobLocally(blob);
-  };
-
   const transcribeAndSave = async (msgId: number, blob: Blob) => {
     setTranscribingId(msgId);
     try {
-      const text = await transcribeBlob(blob);
+      const text = await transcribeBlobLocally(blob);
       setTranscripts((p) => ({ ...p, [msgId]: text || "Речь не распознана" }));
     } catch (e) {
       console.error("[ChatRoom] transcribe failed", e);
-      showToast("Не удалось распознать речь");
+      showToast("Не удалось распознать речь на этом устройстве");
     }
     setTranscribingId(null);
   };
@@ -668,11 +648,11 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     try {
       const res = await fetch(mediaUrl);
       const blob = await res.blob();
-      const text = await transcribeBlob(blob);
+      const text = await transcribeBlobLocally(blob);
       setTranscripts((p) => ({ ...p, [msgId]: text || "Речь не распознана" }));
     } catch (e) {
       console.error("[ChatRoom] transcribe by url failed", e);
-      showToast("Не удалось распознать речь");
+      showToast("Не удалось распознать речь на этом устройстве");
     }
     setTranscribingId(null);
   };

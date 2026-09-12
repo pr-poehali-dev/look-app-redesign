@@ -1,9 +1,14 @@
 /**
  * Локальное распознавание речи прямо в браузере через Whisper (transformers.js).
- * Работает во всех современных браузерах (Chrome, Safari, Firefox), без сервера
- * и без оплаты. При первом вызове браузер скачивает модель (~290 Мб, whisper-base
- * fp32 — квантованные версии сейчас несовместимы с браузерным ONNX Runtime) и
- * кэширует её (Cache Storage), повторные расшифровки быстрые и офлайн.
+ * Работает во всех современных браузерах (Chrome, Safari, Firefox), полностью
+ * офлайн — без сервера, без ключей и без оплаты. При первом вызове браузер
+ * скачивает модель и кэширует её (Cache Storage), повторные расшифровки быстрые.
+ *
+ * На телефонах (особенно iOS Safari) память WebAssembly сильно ограничена,
+ * поэтому модель whisper-base (~290 Мб, fp32) там не помещается и роняет
+ * вкладку. На мобильных используем компактную whisper-tiny (~150 Мб, fp32 —
+ * квантованные версии сейчас несовместимы с браузерным ONNX Runtime), на
+ * десктопе — более точную whisper-base.
  */
 
 import { decodeToFloat32Mono16k } from "@/lib/audioDecode";
@@ -11,13 +16,23 @@ import { decodeToFloat32Mono16k } from "@/lib/audioDecode";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Pipeline = (audio: Float32Array, options?: Record<string, unknown>) => Promise<any>;
 
+function isMobileDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return (
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.userAgent))
+  );
+}
+
+const MODEL_ID = isMobileDevice() ? "onnx-community/whisper-tiny" : "onnx-community/whisper-base";
+
 let pipelinePromise: Promise<Pipeline> | null = null;
 
 async function getPipeline(): Promise<Pipeline> {
   if (!pipelinePromise) {
     pipelinePromise = (async () => {
       const { pipeline } = await import("@huggingface/transformers");
-      const pipe = await pipeline("automatic-speech-recognition", "onnx-community/whisper-base", {
+      const pipe = await pipeline("automatic-speech-recognition", MODEL_ID, {
         dtype: "fp32",
         device: "wasm",
       });
