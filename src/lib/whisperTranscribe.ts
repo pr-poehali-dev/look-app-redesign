@@ -4,11 +4,15 @@
  * офлайн — без сервера, без ключей и без оплаты. При первом вызове браузер
  * скачивает модель и кэширует её (Cache Storage), повторные расшифровки быстрые.
  *
- * На телефонах (особенно iOS Safari) память WebAssembly сильно ограничена,
- * поэтому используем whisper-base (~290 Мб, fp32 — квантованные версии сейчас
- * несовместимы с браузерным ONNX Runtime). На десктопе памяти достаточно —
- * там используем более точную whisper-small (~970 Мб) для лучшего качества
- * распознавания русской речи.
+ * Квантованные версии Whisper (q8/int8/fp16) сейчас несовместимы с браузерным
+ * ONNX Runtime (падают с ошибкой TransposeDQWeightsForMatMulNBits), поэтому
+ * единственный рабочий вариант — тяжёлая модель fp32. На телефонах (особенно
+ * iOS Safari) память WebAssembly сильно ограничена, там используем whisper-base
+ * (~290 Мб). На десктопе — более точную whisper-small (~970 Мб).
+ *
+ * Скачивание такой большой модели может оборваться на нестабильном интернете —
+ * тогда пробуем более лёгкую модель (которая весит меньше и вероятнее скачается),
+ * вместо того чтобы сразу показывать пользователю ошибку.
  */
 
 import { decodeToFloat32Mono16k } from "@/lib/audioDecode";
@@ -24,20 +28,34 @@ function isMobileDevice(): boolean {
   );
 }
 
-const MODEL_ID = isMobileDevice() ? "onnx-community/whisper-base" : "onnx-community/whisper-small";
+// От большей к меньшей — если тяжёлая модель не скачалась (обрыв сети), пробуем следующую
+const MODEL_CHAIN = isMobileDevice()
+  ? ["onnx-community/whisper-base", "onnx-community/whisper-tiny"]
+  : ["onnx-community/whisper-small", "onnx-community/whisper-base", "onnx-community/whisper-tiny"];
 
 let pipelinePromise: Promise<Pipeline> | null = null;
 
-async function getPipeline(): Promise<Pipeline> {
-  if (!pipelinePromise) {
-    pipelinePromise = (async () => {
-      const { pipeline } = await import("@huggingface/transformers");
-      const pipe = await pipeline("automatic-speech-recognition", MODEL_ID, {
+async function loadPipeline(): Promise<Pipeline> {
+  const { pipeline } = await import("@huggingface/transformers");
+  let lastError: unknown;
+  for (const modelId of MODEL_CHAIN) {
+    try {
+      const pipe = await pipeline("automatic-speech-recognition", modelId, {
         dtype: "fp32",
         device: "wasm",
       });
       return pipe as unknown as Pipeline;
-    })().catch((e) => {
+    } catch (e) {
+      console.error(`[whisperTranscribe] failed to load ${modelId}, trying next`, e);
+      lastError = e;
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("Не удалось загрузить ни одну модель распознавания речи");
+}
+
+async function getPipeline(): Promise<Pipeline> {
+  if (!pipelinePromise) {
+    pipelinePromise = loadPipeline().catch((e) => {
       pipelinePromise = null;
       throw e;
     });
