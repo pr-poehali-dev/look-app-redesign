@@ -13,6 +13,11 @@
  * Скачивание такой большой модели может оборваться на нестабильном интернете —
  * тогда пробуем более лёгкую модель (которая весит меньше и вероятнее скачается),
  * вместо того чтобы сразу показывать пользователю ошибку.
+ *
+ * Сам движок для запуска модели (ONNX Runtime WASM) по умолчанию грузится с
+ * cdn.jsdelivr.net — этот CDN у части пользователей открывается нестабильно,
+ * из-за чего распознавание речи не запускалось вовсе. Раздаём эти файлы прямо
+ * со своего домена (public/onnx-wasm), чтобы не зависеть от внешнего CDN.
  */
 
 import { decodeToFloat32Mono16k } from "@/lib/audioDecode";
@@ -34,9 +39,24 @@ const MODEL_CHAIN = isMobileDevice()
   : ["onnx-community/whisper-small", "onnx-community/whisper-base", "onnx-community/whisper-tiny"];
 
 let pipelinePromise: Promise<Pipeline> | null = null;
+let wasmConfigured = false;
+
+function configureLocalWasm(env: { backends: { onnx: { wasm: { wasmPaths?: unknown } } } }, isSafari: boolean) {
+  if (wasmConfigured) return;
+  wasmConfigured = true;
+  env.backends.onnx.wasm.wasmPaths = isSafari
+    ? { mjs: "/onnx-wasm/ort-wasm-simd-threaded.mjs", wasm: "/onnx-wasm/ort-wasm-simd-threaded.wasm" }
+    : {
+        mjs: "/onnx-wasm/ort-wasm-simd-threaded.asyncify.mjs",
+        wasm: "/onnx-wasm/ort-wasm-simd-threaded.asyncify.wasm",
+      };
+}
 
 async function loadPipeline(): Promise<Pipeline> {
-  const { pipeline } = await import("@huggingface/transformers");
+  const { pipeline, env } = await import("@huggingface/transformers");
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  configureLocalWasm(env as any, isSafari);
   let lastError: unknown;
   for (const modelId of MODEL_CHAIN) {
     try {
