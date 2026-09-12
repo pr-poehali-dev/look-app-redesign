@@ -80,12 +80,66 @@ function collapseRepeats(text: string): string {
   return text.trim();
 }
 
+const SAMPLE_RATE = 16000;
+
+/**
+ * Обрезает тишину в начале/конце записи и полностью отбрасывает беззвучные клипы.
+ * Whisper на тишине/шуме часто "галлюцинирует" — придумывает случайные слова или
+ * типовые фразы из обучающих субтитров, поэтому лишнюю тишину лучше не скармливать модели.
+ */
+function trimSilence(samples: Float32Array): Float32Array {
+  const frameSize = Math.round(SAMPLE_RATE * 0.02); // 20 мс
+  const frames = Math.floor(samples.length / frameSize);
+  if (frames === 0) return samples;
+
+  const rms: number[] = new Array(frames);
+  let maxRms = 0;
+  for (let f = 0; f < frames; f++) {
+    let sum = 0;
+    const start = f * frameSize;
+    const end = start + frameSize;
+    for (let i = start; i < end; i++) sum += samples[i] * samples[i];
+    const value = Math.sqrt(sum / frameSize);
+    rms[f] = value;
+    if (value > maxRms) maxRms = value;
+  }
+
+  // Клип практически без звука — реальной речи в нём нет, отправлять в Whisper бессмысленно
+  if (maxRms < 0.004) return new Float32Array(0);
+
+  const threshold = Math.max(maxRms * 0.08, 0.006);
+  let first = -1;
+  let last = -1;
+  for (let f = 0; f < frames; f++) {
+    if (rms[f] >= threshold) {
+      if (first === -1) first = f;
+      last = f;
+    }
+  }
+  if (first === -1) return new Float32Array(0);
+
+  const marginFrames = Math.round(0.3 / 0.02); // запас 300 мс с каждой стороны
+  const startFrame = Math.max(0, first - marginFrames);
+  const endFrame = Math.min(frames, last + marginFrames + 1);
+  return samples.slice(startFrame * frameSize, endFrame * frameSize);
+}
+
 export async function transcribeBlobLocally(blob: Blob): Promise<string> {
-  const samples = await decodeToFloat32Mono16k(blob);
+  const rawSamples = await decodeToFloat32Mono16k(blob);
+  const samples = trimSilence(rawSamples);
+
+  // Меньше ~0.3с осмысленного звука — говорить было явно нечего, не гадаем
+  if (samples.length < SAMPLE_RATE * 0.3) return "";
+
   const pipe = await getPipeline();
   const result = await pipe(samples, {
     language: "russian",
     task: "transcribe",
+    // Без chunk_length_s Whisper молча обрезает всё, что длиннее 30 секунд,
+    // и расшифровывает только первый кусок — из-за этого длинные голосовые
+    // и видеосообщения превращались в "что попало", не совпадающее с текстом.
+    chunk_length_s: 30,
+    stride_length_s: 5,
     no_repeat_ngram_size: 3,
     repetition_penalty: 1.3,
   });
