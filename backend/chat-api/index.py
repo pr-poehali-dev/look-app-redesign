@@ -21,6 +21,13 @@ def _fmt_time(dt) -> str:
     return dt.astimezone(_MSK_TZ).strftime('%H:%M')
 
 
+_DISAPPEAR_INTERVALS = {
+    '24 часа': datetime.timedelta(hours=24),
+    '7 дней': datetime.timedelta(days=7),
+    '90 дней': datetime.timedelta(days=90),
+}
+
+
 def _yandex_recognize(api_key: str, audio_bytes: bytes) -> str:
     """Распознаёт речь из PCM16 моно 16кГц аудио через Yandex SpeechKit STT."""
     resp = requests.post(
@@ -99,6 +106,9 @@ def handler(event: dict, context) -> dict:
 
         # ── CHAT MODULE ──────────────────────────────────────────────
         if module == 'chat':
+            # Лениво удаляем просроченные "исчезающие" сообщения (без крона)
+            cur.execute("DELETE FROM sa_messages WHERE expires_at IS NOT NULL AND expires_at <= NOW()")
+
             if method == 'GET':
                 action = params.get('action', 'messages')
 
@@ -634,10 +644,21 @@ def handler(event: dict, context) -> dict:
                                 "INSERT INTO sa_chat_members (chat_id, user_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
                                 (chat_id, pid)
                             )
+                # Если у отправителя включён таймер исчезающих сообщений для этого чата —
+                # проставляем срок жизни сообщения
                 cur.execute(
-                    "INSERT INTO sa_messages (chat_id, user_id, user_name, type, content) "
-                    "VALUES (%s, %s, %s, %s, %s) RETURNING id, created_at",
-                    (chat_id, user_id, user_name, msg_type, content)
+                    "SELECT disappear FROM chat_settings WHERE user_id = %s AND chat_id = %s",
+                    (user_id, chat_id)
+                )
+                disappear_row = cur.fetchone()
+                disappear_val = disappear_row[0] if disappear_row else None
+                interval = _DISAPPEAR_INTERVALS.get(disappear_val or '')
+                expires_at = (datetime.datetime.now(datetime.timezone.utc) + interval) if interval else None
+
+                cur.execute(
+                    "INSERT INTO sa_messages (chat_id, user_id, user_name, type, content, expires_at) "
+                    "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id, created_at",
+                    (chat_id, user_id, user_name, msg_type, content, expires_at)
                 )
                 row = cur.fetchone()
                 conn.commit()
