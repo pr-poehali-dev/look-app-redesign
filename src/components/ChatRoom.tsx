@@ -11,7 +11,7 @@ import VoiceMessageBubble from "./chat-room/VoiceMessageBubble";
 import VideoNoteBubble from "./chat-room/VideoNoteBubble";
 import { useAuth } from "@/context/AuthContext";
 import { uploadChatMedia } from "@/lib/chatMediaUpload";
-import { transcribeBlobLocally, isUsingFallbackModel } from "@/lib/whisperTranscribe";
+import { transcribeBlobOnServer } from "@/lib/serverTranscribe";
 import { startLiveSpeechRecognition } from "@/lib/liveSpeechRecognition";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
