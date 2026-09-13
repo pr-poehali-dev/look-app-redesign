@@ -930,13 +930,13 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     if (msg.type === "sticker") {
       const isImg = /^https?:\/\//.test(msg.content) || msg.content.startsWith("data:");
       return (
-        <div className="max-w-[45%] flex flex-col">
+        <div className="max-w-[45%] flex flex-col items-center">
           {isImg ? (
             <img src={msg.content} className="w-32 h-32 object-contain drop-shadow-lg" alt="sticker" />
           ) : (
             <span className="text-[76px] leading-none select-none">{msg.content}</span>
           )}
-          <div className={`flex items-center gap-1.5 mt-0.5 ${isMe ? "justify-end" : "justify-start"}`}>
+          <div className="flex items-center justify-center gap-1.5 mt-0.5">
             <DisappearBadge msg={msg} />
             <span className="text-white/40 text-[10px]">{msg.time}</span>
             {isMe && <Ticks msg={msg} />}
