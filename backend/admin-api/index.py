@@ -283,7 +283,7 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         result['likes_total'] = cur.fetchone()['c']
         _q(cur, "SELECT COUNT(*) AS c FROM {S}.sa_messages")
         result['messages_total'] = cur.fetchone()['c']
-        _q(cur, "SELECT COUNT(*) AS c FROM {S}.sa_chats")
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.sa_chats WHERE (name IS NULL OR name != '__merged__')")
         result['chats_total'] = cur.fetchone()['c']
         _q(cur, "SELECT COUNT(*) AS c FROM {S}.live_streams WHERE status = 'active'")
         result['streams_active'] = cur.fetchone()['c']
@@ -754,6 +754,11 @@ def _route(cur, conn, action: str, body: dict) -> dict:
                    (SELECT COUNT(*) FROM {S}.sa_chat_members m WHERE m.chat_id = c.id) AS members,
                    (SELECT COUNT(*) FROM {S}.sa_messages msg WHERE msg.chat_id = c.id) AS messages
             FROM {S}.sa_chats c
+            WHERE (c.name IS NULL OR c.name != '__merged__')
+              AND NOT EXISTS (
+                SELECT 1 FROM {S}.communities co
+                WHERE co.id = c.id AND COALESCE(co.is_hidden, FALSE) = TRUE
+              )
             ORDER BY c.created_at DESC NULLS LAST
             LIMIT %s OFFSET %s
         """, (limit, offset))

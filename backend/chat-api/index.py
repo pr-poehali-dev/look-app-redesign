@@ -612,7 +612,8 @@ def handler(event: dict, context) -> dict:
                         "INSERT INTO sa_chats (id, type, name, avatar) VALUES (%s, 'personal', %s, %s) "
                         "ON CONFLICT (id) DO UPDATE SET "
                         "name = COALESCE(NULLIF(sa_chats.name, ''), EXCLUDED.name), "
-                        "avatar = COALESCE(NULLIF(sa_chats.avatar, ''), EXCLUDED.avatar)",
+                        "avatar = COALESCE(NULLIF(sa_chats.avatar, ''), EXCLUDED.avatar) "
+                        "WHERE sa_chats.name IS DISTINCT FROM '__merged__'",
                         (chat_id, peer_name_explicit, peer_avatar_explicit)
                     )
                 else:
