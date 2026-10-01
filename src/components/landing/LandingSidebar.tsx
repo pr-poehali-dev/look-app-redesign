@@ -1,95 +1,70 @@
-import { useState } from "react";
 import Icon from "@/components/ui/icon";
-
-export type LandingTab = "foryou" | "explore";
+import { useTheme } from "@/context/ThemeContext";
 
 interface LandingSidebarProps {
-  tab: LandingTab;
-  onTab: (t: LandingTab) => void;
   onLocked: (reason: string) => void;
   onLogin: () => void;
 }
 
-const LOGO =
-  "https://static.rustore.ru/imgproxy/vs3_tA6Fiyv_VxNKTcByf1sXvc4-Qy2G_VlA-uzDgTs/preset:web_app_icon_62/plain/https://static.rustore.ru/2025/9/16/49/apk/2063656157/content/ICON/586db88b-5139-4dc5-b8f4-5a7e07f892ba.png@webp";
+const ITEM =
+  "flex items-center gap-4 px-4 py-2 rounded-xl transition-colors text-left hover:bg-white/5";
 
-const LandingSidebar = ({ tab, onTab, onLocked, onLogin }: LandingSidebarProps) => {
-  const [query, setQuery] = useState("");
+const LandingSidebar = ({ onLocked, onLogin }: LandingSidebarProps) => {
+  const { theme, toggle } = useTheme();
 
   const locked = (icon: string, label: string, reason: string) => (
-    <button
-      key={label}
-      onClick={() => onLocked(reason)}
-      className="flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left text-[17px] font-semibold text-[#161823] hover:bg-black/5"
-    >
-      <Icon name={icon} size={26} />
-      {label}
+    <button key={label} onClick={() => onLocked(reason)} className={ITEM}>
+      <Icon name={icon} size={22} className="opacity-80" />
+      <span className="text-sm opacity-90">{label}</span>
     </button>
   );
 
   return (
-    <aside className="hidden h-full w-[260px] shrink-0 flex-col overflow-y-auto border-r border-black/5 bg-white px-4 py-5 lg:flex">
-      <div className="mb-4 flex items-center gap-2 px-2">
-        <img src={LOGO} alt="Лоок" className="h-9 w-9 rounded-xl object-cover" />
-        <span className="text-2xl font-black text-[#14723f]">Лоок</span>
+    <aside
+      className="hidden md:flex flex-col w-[240px] xl:w-[280px] h-full border-r border-white/10 flex-shrink-0 z-40"
+      style={{ background: "var(--look-sidebar-bg)", color: "var(--look-fg)" }}
+    >
+      <div className="px-6 pt-4 pb-2">
+        <span className="font-bold text-xl tracking-tight">Лоок</span>
       </div>
-
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onLocked("Войди, чтобы искать видео, людей и сообщества.");
-        }}
-        className="mb-3 flex items-center gap-2 rounded-full bg-black/5 px-4 py-2.5"
-      >
-        <Icon name="Search" size={18} className="text-black/40" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Поиск"
-          className="w-full bg-transparent text-sm text-[#161823] outline-none placeholder:text-black/40"
-        />
-      </form>
-
-      <nav className="flex flex-col gap-0.5">
-        <button
-          onClick={() => onTab("foryou")}
-          className={`flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left text-[17px] font-bold hover:bg-black/5 ${
-            tab === "foryou" ? "text-[#14723f]" : "text-[#161823]"
-          }`}
-        >
-          <Icon name="Home" size={26} />
-          Рекомендации
+      <nav className="flex-1 flex flex-col gap-0.5 px-3 overflow-y-auto min-h-0">
+        <button className={`${ITEM} bg-white/10`}>
+          <Icon name="Home" size={22} />
+          <span className="text-sm font-bold">Главная</span>
         </button>
+        {locked("LayoutList", "Лента", "Войди, чтобы смотреть ленту ваших подписок.")}
         <button
-          onClick={() => onTab("explore")}
-          className={`flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left text-[17px] font-bold hover:bg-black/5 ${
-            tab === "explore" ? "text-[#14723f]" : "text-[#161823]"
-          }`}
+          onClick={() => onLocked("Войди, чтобы публиковать свои видео и фото.")}
+          className={ITEM}
         >
-          <Icon name="Compass" size={26} />
-          Смотреть
+          <div className="relative flex items-center h-6 w-9">
+            <div className="w-6 h-5 rounded-md absolute left-0" style={{ background: "var(--look-accent)", opacity: 0.6 }} />
+            <div className="w-6 h-5 rounded-md absolute right-0" style={{ background: "var(--look-accent)" }} />
+            <div
+              className="w-6 h-5 rounded-md flex items-center justify-center relative z-10 mx-auto"
+              style={{ background: "#ffffff", border: "1.5px solid rgba(0,0,0,0.15)" }}
+            >
+              <Icon name="Plus" size={14} strokeWidth={3} style={{ color: "#1f6b3a" }} />
+            </div>
+          </div>
+          <span className="text-sm opacity-90">Создать</span>
         </button>
-        {locked("UserPlus", "Подписки", "Войди, чтобы видеть ролики тех, на кого ты подписан.")}
-        {locked("Users", "Сообщества", "Войди, чтобы находить единомышленников и вступать в сообщества.")}
-        {locked("MessageCircle", "Чаты и звонки", "Войди, чтобы общаться в чатах и созваниваться с друзьями.")}
-        {locked("Radio", "Трансляции", "Войди, чтобы смотреть и вести прямые эфиры.")}
-        {locked("PlusSquare", "Загрузить", "Войди, чтобы публиковать свои видео и фото.")}
-        {locked("ShoppingBag", "Магазин", "Войди, чтобы покупать и продавать товары прямо в приложении.")}
+        {locked("MessageCircle", "Чаты", "Войди, чтобы общаться в чатах и созваниваться с друзьями.")}
         {locked("User", "Профиль", "Войди, чтобы открыть свой профиль.")}
-        {locked("MoreHorizontal", "Ещё", "Войди, чтобы увидеть все возможности Лоок.")}
+        {locked("LifeBuoy", "Поддержка", "Войди, чтобы написать в поддержку.")}
+        {locked("FileText", "Условия использования", "Войди, чтобы продолжить.")}
+        {locked("ShieldCheck", "Политика конфиденциальности", "Войди, чтобы продолжить.")}
+        <button onClick={onLogin} className={ITEM}>
+          <Icon name="LogIn" size={22} className="text-[#fe2c55]" />
+          <span className="text-sm text-[#fe2c55]">Войти</span>
+        </button>
+        <button onClick={toggle} className={ITEM} title="Переключить тему">
+          <Icon name={theme === "dark" ? "Sun" : "Moon"} size={22} className="opacity-80" />
+          <span className="text-sm opacity-90">{theme === "dark" ? "Светлая тема" : "Тёмная тема"}</span>
+        </button>
       </nav>
-
-      <button
-        onClick={onLogin}
-        className="mt-5 w-full rounded-lg bg-[#14723f] py-3 text-base font-bold text-white transition-opacity hover:opacity-90"
-      >
-        Войти
-      </button>
-
-      <div className="mt-5 border-t border-black/5 pt-4 text-xs leading-5 text-black/50">
-        <p className="font-semibold text-black/70">Социальная сеть нового поколения</p>
-        <p>Смотри. Делись. Общайся. Будь собой.</p>
-        <p className="mt-3">© 2026 Лоок</p>
+      <div className="px-6 py-2 flex-shrink-0">
+        <p className="opacity-40 text-[11px] leading-relaxed">© Лоок 2026</p>
       </div>
     </aside>
   );
