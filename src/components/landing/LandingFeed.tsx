@@ -161,6 +161,24 @@ const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) =
     </button>
   );
 
+  const sideAction = (icon: string, label: string, reason: string, cls = "") => (
+    <button key={icon} onClick={() => onLocked(reason)} className="flex flex-col items-center gap-1">
+      <div
+        className="flex h-12 w-12 items-center justify-center rounded-full"
+        style={{
+          background: "color-mix(in srgb, var(--look-fg) 10%, transparent)",
+          color: "var(--look-fg)",
+          ["--action-dot" as string]: "var(--look-bg)",
+        }}
+      >
+        <Icon name={icon} size={24} className={cls} />
+      </div>
+      {label !== "" && (
+        <span className="text-xs font-semibold" style={{ color: "var(--look-fg)" }}>{label}</span>
+      )}
+    </button>
+  );
+
   return (
     <div className="relative h-full w-full">
       <div
@@ -266,11 +284,23 @@ const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) =
                 </div>
               </div>
 
-              <div className="hidden flex-col items-center gap-5 pb-6 md:flex">
-                {action("Heart", v.likes, "Войди, чтобы ставить лайки.")}
-                {action("MessageCircle", v.comments, "Войди, чтобы читать и писать комментарии.")}
-                {action("ShareForward", v.shares, "Войди, чтобы делиться видео.")}
-                {action("Bookmark", "", "Войди, чтобы сохранять видео в свои подборки.")}
+              <div className="hidden flex-col items-center gap-3 pb-6 md:flex">
+                <div className="relative mb-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#fe2c55] text-lg font-bold uppercase text-white">
+                    {v.handle.charAt(0)}
+                  </div>
+                  <button
+                    onClick={() => onLocked("Войди, чтобы подписаться на автора.")}
+                    className="absolute -bottom-2 left-1/2 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full bg-[#fe2c55] text-white"
+                    aria-label="Подписаться"
+                  >
+                    <Icon name="Plus" size={14} strokeWidth={3} />
+                  </button>
+                </div>
+                {sideAction("Heart", v.likes, "Войди, чтобы ставить лайки.", "fill-current")}
+                {sideAction("CommentFilled", v.comments, "Войди, чтобы читать и писать комментарии.")}
+                {sideAction("Bookmark", "", "Войди, чтобы сохранять видео в свои подборки.", "fill-current")}
+                {sideAction("ShareForward", v.shares, "Войди, чтобы делиться видео.")}
                 <button
                   onClick={() => onLocked("Войди, чтобы увидеть все возможности Лоок.")}
                   className="text-xs font-bold text-white"
