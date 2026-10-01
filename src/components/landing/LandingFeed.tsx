@@ -261,7 +261,7 @@ const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) =
                 <div className="absolute bottom-24 right-3 flex flex-col items-center gap-4 md:hidden">
                   {action("Heart", v.likes, "Войди, чтобы ставить лайки.")}
                   {action("MessageCircle", v.comments, "Войди, чтобы читать и писать комментарии.")}
-                  {action("Share2", v.shares, "Войди, чтобы делиться видео.")}
+                  {action("ShareForward", v.shares, "Войди, чтобы делиться видео.")}
                   {action("Bookmark", "", "Войди, чтобы сохранять видео в свои подборки.")}
                 </div>
               </div>
@@ -269,7 +269,7 @@ const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) =
               <div className="hidden flex-col items-center gap-5 pb-6 md:flex">
                 {action("Heart", v.likes, "Войди, чтобы ставить лайки.")}
                 {action("MessageCircle", v.comments, "Войди, чтобы читать и писать комментарии.")}
-                {action("Share2", v.shares, "Войди, чтобы делиться видео.")}
+                {action("ShareForward", v.shares, "Войди, чтобы делиться видео.")}
                 {action("Bookmark", "", "Войди, чтобы сохранять видео в свои подборки.")}
                 <button
                   onClick={() => onLocked("Войди, чтобы увидеть все возможности Лоок.")}
