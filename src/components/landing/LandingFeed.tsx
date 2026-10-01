@@ -16,7 +16,7 @@ interface GuestVideo {
 }
 
 interface LandingFeedProps {
-  newestFirst: boolean;
+  category: string;
   onLocked: (reason: string) => void;
 }
 
@@ -27,7 +27,7 @@ const fmt = (s: number) => {
   return `${m}:${sec < 10 ? "0" : ""}${sec}`;
 };
 
-const LandingFeed = ({ newestFirst, onLocked }: LandingFeedProps) => {
+const LandingFeed = ({ category, onLocked }: LandingFeedProps) => {
   const [videos, setVideos] = useState<GuestVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState(0);
@@ -39,7 +39,8 @@ const LandingFeed = ({ newestFirst, onLocked }: LandingFeedProps) => {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${GET_VIDEOS_URL}?type=video`)
+    const catParam = category !== "all" && category !== "new" ? `&category=${category}` : "";
+    fetch(`${GET_VIDEOS_URL}?type=video${catParam}`)
       .then((r) => r.json())
       .then((raw) => {
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
@@ -69,13 +70,13 @@ const LandingFeed = ({ newestFirst, onLocked }: LandingFeedProps) => {
               views: typeof v.views === "number" ? v.views : undefined,
             };
           });
-        setVideos(newestFirst ? [...list].sort((a, b) => b.id - a.id) : list);
+        setVideos(category === "new" ? [...list].sort((a, b) => b.id - a.id) : list);
         setActive(0);
         if (containerRef.current) containerRef.current.scrollTop = 0;
       })
       .catch(() => setVideos([]))
       .finally(() => setLoading(false));
-  }, [newestFirst]);
+  }, [category]);
 
   useEffect(() => {
     const root = containerRef.current;
@@ -129,7 +130,7 @@ const LandingFeed = ({ newestFirst, onLocked }: LandingFeedProps) => {
   if (videos.length === 0) {
     return (
       <div className="flex h-full w-full items-center justify-center p-6 text-center text-white/60">
-        Пока нет видео. Зарегистрируйся и опубликуй первое!
+        В этой категории пока нет видео. Зарегистрируйся и опубликуй первое!
       </div>
     );
   }
