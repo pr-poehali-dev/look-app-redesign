@@ -986,3 +986,23 @@ html.theme-light [style*="--look-accent"] svg {
 .delay-800 {
   animation-delay: 0.8s;
 }
+
+/* Десктоп: кнопки действий вынесены за видео на фон темы — цвет по теме, не белый */
+@media (min-width: 768px) {
+  html .media-overlay-text .desktop-actions-col,
+  html .media-overlay-text .desktop-actions-col *,
+  html.theme-light .media-overlay-text .desktop-actions-col,
+  html.theme-light .media-overlay-text .desktop-actions-col *,
+  html.theme-light .media-overlay-text .desktop-actions-col .text-white {
+    color: var(--look-fg) !important;
+    text-shadow: none !important;
+  }
+  html .media-overlay-text .desktop-actions-col .action-icon-glyph,
+  html .media-overlay-text .desktop-actions-col .action-icon-circle svg,
+  html .media-overlay-text .desktop-actions-col .action-icon-circle svg * {
+    stroke: var(--look-fg) !important;
+  }
+  html .media-overlay-text .desktop-actions-col .text-\[\#fe2c55\] {
+    color: #fe2c55 !important;
+  }
+}

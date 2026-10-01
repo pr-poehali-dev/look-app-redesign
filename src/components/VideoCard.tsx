@@ -646,7 +646,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       </div>
 
       {/* Desktop right actions — вне видео, все 7 кнопок */}
-      <div className="hidden md:flex flex-col items-center gap-3 z-30 flex-shrink-0 justify-end pb-6 pl-2 pt-6" style={{ background: "var(--look-bg)" }}>
+      <div className="desktop-actions-col hidden md:flex flex-col items-center gap-3 z-30 flex-shrink-0 justify-end pb-6 pl-2 pt-6" style={{ background: "var(--look-bg)" }}>
         {/* Like */}
         <button onClick={() => toggleLike()} className="flex flex-col items-center gap-1">
           <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
