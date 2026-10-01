@@ -19,9 +19,10 @@ interface GridVideo {
 interface Props {
   onOpenVideo: (id: number) => void;
   category?: string;
+  onGuestAction?: (reason: string) => void;
 }
 
-const VideoGrid = ({ onOpenVideo, category = "all" }: Props) => {
+const VideoGrid = ({ onOpenVideo, category = "all", onGuestAction }: Props) => {
   const [videos, setVideos] = useState<GridVideo[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [version, setVersion] = useState(0);
@@ -151,7 +152,11 @@ const VideoGrid = ({ onOpenVideo, category = "all" }: Props) => {
                 </div>
               )}
               <button
-                onClick={(e) => { e.stopPropagation(); handleDownload(v); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onGuestAction) { onGuestAction("Войди, чтобы скачивать видео."); return; }
+                  handleDownload(v);
+                }}
                 disabled={downloadingId === v.id}
                 title="Скачать"
                 className="absolute top-2 left-2 w-7 h-7 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-100"
@@ -162,12 +167,26 @@ const VideoGrid = ({ onOpenVideo, category = "all" }: Props) => {
                   <Icon name="Download" size={14} className="text-white" />
                 )}
               </button>
-              <div className="absolute bottom-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm">
+              <div
+                onClick={(e) => {
+                  if (!onGuestAction) return;
+                  e.stopPropagation();
+                  onGuestAction("Войди, чтобы ставить лайки.");
+                }}
+                className="absolute bottom-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm"
+              >
                 <Icon name="Heart" size={11} className="text-white" />
                 <span className="text-white text-[10px] font-medium">{v.likes}</span>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-1">
+            <div
+              onClick={(e) => {
+                if (!onGuestAction) return;
+                e.stopPropagation();
+                onGuestAction("Войди, чтобы смотреть профиль автора и подписываться.");
+              }}
+              className="flex items-center gap-2 px-1"
+            >
               <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
                 <UserAvatar src={v.avatar} name={v.author} alt={v.author} />
               </div>

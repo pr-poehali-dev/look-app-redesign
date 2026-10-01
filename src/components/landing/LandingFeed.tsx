@@ -203,7 +203,12 @@ const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) =
 
                 <div className="absolute inset-x-0 bottom-0 p-4 pb-12 pr-20 text-white md:pr-4">
                   <div className="flex items-center gap-2">
-                    <p className="text-base font-bold">@{v.handle}</p>
+                    <button
+                    onClick={() => onLocked("Войди, чтобы смотреть профиль автора.")}
+                    className="text-base font-bold"
+                  >
+                    @{v.handle}
+                  </button>
                     <button
                       onClick={() => onLocked("Войди, чтобы подписаться на автора.")}
                       className="rounded-full border border-white/80 px-3 py-0.5 text-xs font-bold"

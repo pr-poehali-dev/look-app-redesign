@@ -26,7 +26,7 @@ const Landing = ({ onLogin, onRegister }: LandingProps) => {
 
       <main className="relative h-full min-w-0 flex-1">
         {showGrid ? (
-          <VideoGrid category={category} onOpenVideo={(id) => setOpenVideoId(id - 10000)} />
+          <VideoGrid category={category} onOpenVideo={(id) => setOpenVideoId(id - 10000)} onGuestAction={setPrompt} />
         ) : (
           <LandingFeed
             key={`${category}-${openVideoId ?? "feed"}`}
