@@ -96,7 +96,12 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
             />
           </div>
         </div>
-        <h1 className="font-black text-4xl slogan-shimmer">Лоок</h1>
+        <h1
+          className={`font-black text-4xl slogan-shimmer ${onBack ? "cursor-pointer" : ""}`}
+          onClick={onBack}
+        >
+          Лоок
+        </h1>
         <p className="text-lg font-extrabold tracking-tight mt-1 slogan-shimmer">Смотри#Делись#Общайся#Будь собой</p>
       </div>
 
