@@ -5,6 +5,7 @@ import LandingSidebar from "@/components/landing/LandingSidebar";
 import LandingFeed from "@/components/landing/LandingFeed";
 import VideoGrid from "@/components/VideoGrid";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { LegalScreen } from "@/components/SettingsScreen";
 import { CATEGORIES } from "@/components/VideoFeed";
 
 interface LandingProps {
@@ -17,14 +18,29 @@ const Landing = ({ onLogin, onRegister }: LandingProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [prompt, setPrompt] = useState<string | null>(null);
   const [openVideoId, setOpenVideoId] = useState<number | null>(null);
+  const [doc, setDoc] = useState<"terms" | "privacy" | null>(null);
   const isMobile = useIsMobile();
   const showGrid = !isMobile && category !== "new" && category !== "subs" && openVideoId === null;
 
   return (
     <div className="fixed inset-0 flex" style={{ background: "var(--look-bg)", color: "var(--look-fg)" }}>
-      <LandingSidebar onLocked={setPrompt} onLogin={onLogin} />
+      <LandingSidebar onLocked={setPrompt} onLogin={onLogin} onOpenDoc={setDoc} />
 
       <main className="relative h-full min-w-0 flex-1">
+        {doc && (
+          <div className="absolute inset-0 z-30 bg-gray-100">
+            <LegalScreen
+              onBack={() => setDoc(null)}
+              title={doc === "terms" ? "Условия использования" : "Политика конфиденциальности"}
+              settingKey={doc === "terms" ? "terms_of_use" : "privacy_policy"}
+              fallback={
+                doc === "terms"
+                  ? "Используя приложение Look, вы соглашаетесь с нашими условиями использования."
+                  : "Мы уважаем вашу конфиденциальность."
+              }
+            />
+          </div>
+        )}
         {showGrid ? (
           <VideoGrid category={category} onOpenVideo={(id) => setOpenVideoId(id - 10000)} onGuestAction={setPrompt} />
         ) : (

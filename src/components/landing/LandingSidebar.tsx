@@ -4,12 +4,13 @@ import { useTheme } from "@/context/ThemeContext";
 interface LandingSidebarProps {
   onLocked: (reason: string) => void;
   onLogin: () => void;
+  onOpenDoc: (doc: "terms" | "privacy") => void;
 }
 
 const ITEM =
   "flex items-center gap-4 px-4 py-2 rounded-xl transition-colors text-left hover:bg-white/5";
 
-const LandingSidebar = ({ onLocked, onLogin }: LandingSidebarProps) => {
+const LandingSidebar = ({ onLocked, onLogin, onOpenDoc }: LandingSidebarProps) => {
   const { theme, toggle } = useTheme();
 
   const locked = (icon: string, label: string, reason: string) => (
@@ -52,8 +53,14 @@ const LandingSidebar = ({ onLocked, onLogin }: LandingSidebarProps) => {
         {locked("MessageCircle", "Чаты", "Войди, чтобы общаться в чатах и созваниваться с друзьями.")}
         {locked("User", "Профиль", "Войди, чтобы открыть свой профиль.")}
         {locked("LifeBuoy", "Поддержка", "Войди, чтобы написать в поддержку.")}
-        {locked("FileText", "Условия использования", "Войди, чтобы продолжить.")}
-        {locked("ShieldCheck", "Политика конфиденциальности", "Войди, чтобы продолжить.")}
+        <button onClick={() => onOpenDoc("terms")} className={ITEM}>
+          <Icon name="FileText" size={22} className="opacity-80" />
+          <span className="text-sm opacity-90">Условия использования</span>
+        </button>
+        <button onClick={() => onOpenDoc("privacy")} className={ITEM}>
+          <Icon name="ShieldCheck" size={22} className="opacity-80" />
+          <span className="text-sm opacity-90">Политика конфиденциальности</span>
+        </button>
         <button onClick={onLogin} className={ITEM}>
           <Icon name="LogIn" size={22} className="text-[#fe2c55]" />
           <span className="text-sm text-[#fe2c55]">Войти</span>
