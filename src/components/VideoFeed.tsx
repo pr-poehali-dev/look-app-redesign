@@ -399,6 +399,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId, onCloseI
       ...v,
       comments: typeof c === "number" ? formatShort(c) : v.comments,
       likes: typeof l === "number" ? formatShort(l) : v.likes,
+      saves: counts.saves[String(v.id)] || 0,
     };
   });
 

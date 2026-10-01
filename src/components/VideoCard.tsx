@@ -27,6 +27,7 @@ export interface VideoData {
   likes: string;
   comments: string;
   shares: string;
+  saves?: number;
   avatar: string;
   isVideo?: boolean;
   templateId?: string | null;
@@ -684,6 +685,9 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
               className={saved ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"}
             />
           </div>
+          {!!video.saves && (
+            <span className="action-count-text text-white text-xs font-semibold">{formatCount(video.saves)}</span>
+          )}
         </button>
 
         {/* Ещё */}
