@@ -39,7 +39,7 @@ const LandingFeed = ({ category, onLocked }: LandingFeedProps) => {
 
   useEffect(() => {
     setLoading(true);
-    const catParam = category !== "all" && category !== "new" ? `&category=${category}` : "";
+    const catParam = category !== "all" && category !== "new" ? `&category=${category}` : "&full=1";
     fetch(`${GET_VIDEOS_URL}?type=video${catParam}`)
       .then((r) => r.json())
       .then((raw) => {

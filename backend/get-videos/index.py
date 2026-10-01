@@ -21,6 +21,7 @@ def handler(event: dict, context) -> dict:
     category = params.get('category', '')
     media_type = params.get('type', 'video')
     user_id = (params.get('user_id') or '').strip()
+    full_list = params.get('full') == '1'
 
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
@@ -51,7 +52,7 @@ def handler(event: dict, context) -> dict:
             rows = cur.fetchall()
         else:
             cur.execute(
-                base_select + "ORDER BY v.created_at DESC LIMIT 200",
+                base_select + ("ORDER BY v.created_at DESC LIMIT 2000" if full_list else "ORDER BY v.created_at DESC LIMIT 200"),
                 (media_type,)
             )
             rows = cur.fetchall()
@@ -278,7 +279,8 @@ def handler(event: dict, context) -> dict:
         head = rows[:30]
         random.shuffle(head)
         rows = head + rows[30:]
-        rows = rows[:60]
+        if not full_list:
+            rows = rows[:60]
 
     videos = []
     ad_video_ids = []
