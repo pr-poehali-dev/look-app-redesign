@@ -33,6 +33,7 @@ const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) =
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState(0);
   const [muted, setMuted] = useState(true);
+  const [paused, setPaused] = useState(false);
   const [time, setTime] = useState({ cur: 0, dur: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -110,6 +111,7 @@ const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) =
 
   useEffect(() => {
     setTime({ cur: 0, dur: 0 });
+    setPaused(false);
     videoRefs.current.forEach((v, i) => {
       if (!v) return;
       if (i === active) {
@@ -185,12 +187,28 @@ const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) =
                     muted={muted}
                     playsInline
                     preload={isActive ? "auto" : "metadata"}
-                    onClick={() => setMuted((m) => !m)}
+                    onClick={(e) => {
+                      const el = e.currentTarget;
+                      if (el.paused) {
+                        el.play().catch(() => {});
+                        setPaused(false);
+                      } else {
+                        el.pause();
+                        setPaused(true);
+                      }
+                    }}
                     onTimeUpdate={(e) => {
                       if (isActive) setTime({ cur: e.currentTarget.currentTime, dur: e.currentTarget.duration });
                     }}
                     className="h-full w-full cursor-pointer object-cover"
                   />
+                )}
+                {isActive && paused && (
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-black/40 text-white">
+                      <Icon name="Play" size={40} />
+                    </div>
+                  </div>
                 )}
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent" />
                 <button
