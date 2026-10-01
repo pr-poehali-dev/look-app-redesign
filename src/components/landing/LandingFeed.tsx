@@ -40,19 +40,19 @@ const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) =
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
-  const counts = useBulkCounts("video", videos.map((v) => v.id));
+  const counts = useBulkCounts("video", videos.map((v) => v.id + 10000));
   const short = (n: number) =>
     n >= 1_000_000 ? (n / 1_000_000).toFixed(1) + "M" : n >= 1000 ? (n / 1000).toFixed(1) + "K" : String(n);
   const likesOf = (v: GuestVideo) => {
-    const c = counts.likes[String(v.id)];
+    const c = counts.likes[String(v.id + 10000)];
     return typeof c === "number" ? short(c) : v.likes;
   };
   const savesOf = (v: GuestVideo) => {
-    const c = counts.saves[String(v.id)];
+    const c = counts.saves[String(v.id + 10000)];
     return typeof c === "number" && c > 0 ? short(c) : "";
   };
   const commentsOf = (v: GuestVideo) => {
-    const c = counts.comments[String(v.id)];
+    const c = counts.comments[String(v.id + 10000)];
     return typeof c === "number" ? short(c) : v.comments;
   };
 
