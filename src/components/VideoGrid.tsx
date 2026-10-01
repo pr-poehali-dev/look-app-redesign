@@ -71,7 +71,7 @@ const VideoGrid = ({ onOpenVideo, category = "all" }: Props) => {
   useEffect(() => {
     // «Новые» — это не реальная категория, а сортировка: грузим все видео и сортируем по новизне
     const isNew = category === "new";
-    const catParam = category && category !== "all" && !isNew ? `&category=${encodeURIComponent(category)}` : "";
+    const catParam = category && category !== "all" && !isNew ? `&category=${encodeURIComponent(category)}` : "&full=1";
     fetch(`${GET_VIDEOS_URL}?type=video${catParam}`)
       .then((r) => r.json())
       .then((raw) => {

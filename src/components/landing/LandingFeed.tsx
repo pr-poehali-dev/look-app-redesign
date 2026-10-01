@@ -17,6 +17,7 @@ interface GuestVideo {
 
 interface LandingFeedProps {
   category: string;
+  initialVideoId?: number;
   onLocked: (reason: string) => void;
 }
 
@@ -27,7 +28,7 @@ const fmt = (s: number) => {
   return `${m}:${sec < 10 ? "0" : ""}${sec}`;
 };
 
-const LandingFeed = ({ category, onLocked }: LandingFeedProps) => {
+const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) => {
   const [videos, setVideos] = useState<GuestVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState(0);
@@ -77,6 +78,18 @@ const LandingFeed = ({ category, onLocked }: LandingFeedProps) => {
       .catch(() => setVideos([]))
       .finally(() => setLoading(false));
   }, [category]);
+
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root || videos.length === 0 || initialVideoId === undefined) return;
+    const idx = videos.findIndex((v) => v.id === initialVideoId);
+    if (idx > 0) {
+      root.style.scrollBehavior = "auto";
+      root.scrollTop = idx * root.clientHeight;
+      root.style.scrollBehavior = "";
+      setActive(idx);
+    }
+  }, [videos, initialVideoId]);
 
   useEffect(() => {
     const root = containerRef.current;
