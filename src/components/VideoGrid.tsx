@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
+import { useBulkCounts } from "@/hooks/useBulkCounts";
 
 const GET_VIDEOS_URL = "https://functions.poehali.dev/f58115ec-de09-405d-a2db-08fe1cd958e1";
 
@@ -27,6 +28,12 @@ const VideoGrid = ({ onOpenVideo, category = "all", onGuestAction }: Props) => {
   const [loaded, setLoaded] = useState(false);
   const [version, setVersion] = useState(0);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const counts = useBulkCounts("video", videos.map((v) => v.id));
+  const likesOf = (v: GridVideo) => {
+    const c = counts.likes[String(v.id)];
+    if (typeof c !== "number") return v.likes;
+    return c >= 1_000_000 ? (c / 1_000_000).toFixed(1) + "M" : c >= 1000 ? (c / 1000).toFixed(1) + "K" : String(c);
+  };
 
   const handleDownload = async (v: GridVideo) => {
     if (downloadingId !== null) return;
@@ -176,7 +183,7 @@ const VideoGrid = ({ onOpenVideo, category = "all", onGuestAction }: Props) => {
                 className="absolute bottom-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm"
               >
                 <Icon name="Heart" size={11} className="text-white" />
-                <span className="text-white text-[10px] font-medium">{v.likes}</span>
+                <span className="text-white text-[10px] font-medium">{likesOf(v)}</span>
               </div>
             </div>
             <div
