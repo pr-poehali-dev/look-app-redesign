@@ -24,7 +24,17 @@ const Landing = ({ onLogin, onRegister }: LandingProps) => {
 
   return (
     <div className="fixed inset-0 flex" style={{ background: "var(--look-bg)", color: "var(--look-fg)" }}>
-      <LandingSidebar onLocked={setPrompt} onLogin={onLogin} onOpenDoc={setDoc} />
+      <LandingSidebar
+        onLocked={setPrompt}
+        onLogin={onLogin}
+        onOpenDoc={setDoc}
+        onHome={() => {
+          setDoc(null);
+          setOpenVideoId(null);
+          setMenuOpen(false);
+          setCategory("new");
+        }}
+      />
 
       <main className="relative h-full min-w-0 flex-1">
         {doc && (

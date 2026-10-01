@@ -4,13 +4,14 @@ import { useTheme } from "@/context/ThemeContext";
 interface LandingSidebarProps {
   onLocked: (reason: string) => void;
   onLogin: () => void;
+  onHome: () => void;
   onOpenDoc: (doc: "terms" | "privacy") => void;
 }
 
 const ITEM =
   "flex items-center gap-4 px-4 py-2 rounded-xl transition-colors text-left hover:bg-white/5";
 
-const LandingSidebar = ({ onLocked, onLogin, onOpenDoc }: LandingSidebarProps) => {
+const LandingSidebar = ({ onLocked, onLogin, onOpenDoc, onHome }: LandingSidebarProps) => {
   const { theme, toggle } = useTheme();
 
   const locked = (icon: string, label: string, reason: string) => (
@@ -29,7 +30,7 @@ const LandingSidebar = ({ onLocked, onLogin, onOpenDoc }: LandingSidebarProps) =
         <span className="font-bold text-xl tracking-tight">Лоок</span>
       </div>
       <nav className="flex-1 flex flex-col gap-0.5 px-3 overflow-y-auto min-h-0">
-        <button className={`${ITEM} bg-white/10`}>
+        <button onClick={onHome} className={`${ITEM} bg-white/10`}>
           <Icon name="Home" size={22} />
           <span className="text-sm font-bold">Главная</span>
         </button>
