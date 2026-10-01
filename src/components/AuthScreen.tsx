@@ -4,9 +4,10 @@ import { useAuth } from "@/context/AuthContext";
 
 interface AuthScreenProps {
   initialMode?: "login" | "register";
+  onBack?: () => void;
 }
 
-const AuthScreen = ({ initialMode = "login" }: AuthScreenProps = {}) => {
+const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => {
   const { login, register } = useAuth();
   const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [name, setName] = useState("");
@@ -81,7 +82,11 @@ const AuthScreen = ({ initialMode = "login" }: AuthScreenProps = {}) => {
       <div className="min-h-full flex flex-col">
       {/* Logo area */}
       <div className={`flex flex-col items-center justify-center px-8 gap-2 ${mode === "register" ? "py-8" : "flex-1 py-10"}`}>
-        <div className="relative mb-2">
+        <div
+          className={`relative mb-2 ${onBack ? "cursor-pointer" : ""}`}
+          onClick={onBack}
+          role={onBack ? "button" : undefined}
+        >
           <div className="absolute inset-0 rounded-2xl blur-2xl opacity-70 logo-glow-pulse" style={{ background: "radial-gradient(circle, #22e0a1 0%, #22d3ee 60%, transparent 100%)" }} />
           <div className="relative w-20 h-20 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/15">
             <img

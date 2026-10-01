@@ -377,7 +377,7 @@ const AppContent = () => {
         />
       );
     }
-    return <AuthScreen initialMode={authMode} />;
+    return <AuthScreen initialMode={authMode} onBack={() => setAuthMode("landing")} />;
   }
 
   return (
