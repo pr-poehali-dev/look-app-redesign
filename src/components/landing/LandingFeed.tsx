@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
+import { useBulkCounts } from "@/hooks/useBulkCounts";
 
 const GET_VIDEOS_URL = "https://functions.poehali.dev/f58115ec-de09-405d-a2db-08fe1cd958e1";
 
@@ -38,6 +39,18 @@ const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) =
   const containerRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+
+  const counts = useBulkCounts("video", videos.map((v) => v.id));
+  const short = (n: number) =>
+    n >= 1_000_000 ? (n / 1_000_000).toFixed(1) + "M" : n >= 1000 ? (n / 1000).toFixed(1) + "K" : String(n);
+  const likesOf = (v: GuestVideo) => {
+    const c = counts.likes[String(v.id)];
+    return typeof c === "number" ? short(c) : v.likes;
+  };
+  const commentsOf = (v: GuestVideo) => {
+    const c = counts.comments[String(v.id)];
+    return typeof c === "number" ? short(c) : v.comments;
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -259,16 +272,16 @@ const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) =
                 </div>
 
                 <div className="absolute bottom-24 right-3 flex flex-col items-center gap-4 md:hidden">
-                  {action("Heart", v.likes, "Войди, чтобы ставить лайки.")}
-                  {action("CommentFilled", v.comments, "Войди, чтобы читать и писать комментарии.")}
+                  {action("Heart", likesOf(v), "Войди, чтобы ставить лайки.")}
+                  {action("CommentFilled", commentsOf(v), "Войди, чтобы читать и писать комментарии.")}
                   {action("ShareForward", v.shares, "Войди, чтобы делиться видео.")}
                   {action("Bookmark", "", "Войди, чтобы сохранять видео в свои подборки.")}
                 </div>
               </div>
 
               <div className="hidden flex-col items-center gap-5 pb-6 md:flex">
-                {action("Heart", v.likes, "Войди, чтобы ставить лайки.")}
-                {action("CommentFilled", v.comments, "Войди, чтобы читать и писать комментарии.")}
+                {action("Heart", likesOf(v), "Войди, чтобы ставить лайки.")}
+                {action("CommentFilled", commentsOf(v), "Войди, чтобы читать и писать комментарии.")}
                 {action("ShareForward", v.shares, "Войди, чтобы делиться видео.")}
                 {action("Bookmark", "", "Войди, чтобы сохранять видео в свои подборки.")}
                 <button
