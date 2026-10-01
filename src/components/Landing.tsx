@@ -79,6 +79,16 @@ const Landing = ({ onLogin, onRegister }: LandingProps) => {
             </button>
             {menuOpen && (
               <div className="pointer-events-auto absolute left-0 top-full mt-1 flex w-[320px] max-w-[calc(100vw-24px)] flex-wrap gap-2 rounded-2xl bg-white p-2 shadow-lg">
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setPrompt("Войди, чтобы смотреть эфиры.");
+                  }}
+                  className="flex items-center gap-1 rounded-full bg-black/10 px-3 py-1 text-sm font-medium text-[#0d2a18]"
+                >
+                  <Icon name="Radio" size={13} />
+                  Эфиры
+                </button>
                 {CATEGORIES.map((c) => {
                   const on = c.id === category;
                   return (
