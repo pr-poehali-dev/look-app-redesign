@@ -1,4 +1,16 @@
 import { useEffect, useState, useCallback } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { getGuestId } from "@/lib/guestId";
+
+const COMMENTS_URL = "https://functions.poehali.dev/4ceed9c1-422c-484e-806e-b3cc8af8b9ec";
+
+const syncSaveToServer = (type: string, id: number | string, userId: string, saved: boolean) => {
+  fetch(`${COMMENTS_URL}?action=saves`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-User-Id": userId },
+    body: JSON.stringify({ target_type: type, target_id: String(id), saved }),
+  }).catch(() => {});
+};
 
 export type SavedItemType = "post" | "video";
 
@@ -64,6 +76,7 @@ export const isSavedNow = (type: SavedItemType, id: number | string) => {
 };
 
 export const useSavedItem = (type: SavedItemType, id: number | string, payload: Omit<SavedItem, "type" | "id" | "savedAt">) => {
+  const { user } = useAuth();
   const [saved, setSaved] = useState<boolean>(() => isSavedNow(type, id));
 
   useEffect(() => {
@@ -80,12 +93,15 @@ export const useSavedItem = (type: SavedItemType, id: number | string, payload: 
     const all = readAll();
     const k = keyOf(type, id);
     const exists = all.find(it => keyOf(it.type, it.id) === k);
+    const userId = user?.id || getGuestId();
     if (exists) {
       writeAll(all.filter(it => keyOf(it.type, it.id) !== k));
+      syncSaveToServer(type, id, userId, false);
     } else {
       writeAll([{ type, id, savedAt: Date.now(), ...payload }, ...all]);
+      syncSaveToServer(type, id, userId, true);
     }
-  }, [type, id, payload]);
+  }, [type, id, payload, user?.id]);
 
   return { saved, toggle };
 };

@@ -47,6 +47,10 @@ const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) =
     const c = counts.likes[String(v.id)];
     return typeof c === "number" ? short(c) : v.likes;
   };
+  const savesOf = (v: GuestVideo) => {
+    const c = counts.saves[String(v.id)];
+    return typeof c === "number" && c > 0 ? short(c) : "";
+  };
   const commentsOf = (v: GuestVideo) => {
     const c = counts.comments[String(v.id)];
     return typeof c === "number" ? short(c) : v.comments;
@@ -275,7 +279,7 @@ const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) =
                   {action("Heart", likesOf(v), "Войди, чтобы ставить лайки.")}
                   {action("CommentFilled", commentsOf(v), "Войди, чтобы читать и писать комментарии.")}
                   {action("ShareForward", v.shares, "Войди, чтобы делиться видео.")}
-                  {action("Bookmark", "", "Войди, чтобы сохранять видео в свои подборки.")}
+                  {action("Bookmark", savesOf(v), "Войди, чтобы сохранять видео в свои подборки.")}
                 </div>
               </div>
 
@@ -283,7 +287,7 @@ const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) =
                 {action("Heart", likesOf(v), "Войди, чтобы ставить лайки.")}
                 {action("CommentFilled", commentsOf(v), "Войди, чтобы читать и писать комментарии.")}
                 {action("ShareForward", v.shares, "Войди, чтобы делиться видео.")}
-                {action("Bookmark", "", "Войди, чтобы сохранять видео в свои подборки.")}
+                {action("Bookmark", savesOf(v), "Войди, чтобы сохранять видео в свои подборки.")}
                 <button
                   onClick={() => onLocked("Войди, чтобы увидеть все возможности Лоок.")}
                   className="text-xs font-bold text-white"

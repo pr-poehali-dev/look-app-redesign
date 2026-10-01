@@ -91,6 +91,30 @@ def handler(event: dict, context) -> dict:
 
             return _resp(405, {'error': 'Method not allowed'})
 
+        if action == 'saves' and method == 'POST':
+            body = json.loads(event.get('body') or '{}')
+            target_type = _esc((body.get('target_type') or '').strip())[:20]
+            target_id = _esc(str(body.get('target_id') or '').strip())[:100]
+            if not user_id:
+                return _resp(401, {'error': 'X-User-Id required'})
+            if not target_type or not target_id:
+                return _resp(400, {'error': 'target_type and target_id required'})
+            safe_user = _esc(user_id)
+            if body.get('saved'):
+                cur.execute(
+                    f"INSERT INTO {schema}.saves (target_type, target_id, user_id) VALUES ('{target_type}', '{target_id}', '{safe_user}') ON CONFLICT DO NOTHING"
+                )
+            else:
+                cur.execute(
+                    f"DELETE FROM {schema}.saves WHERE target_type = '{target_type}' AND target_id = '{target_id}' AND user_id = '{safe_user}'"
+                )
+            cur.execute(
+                f"SELECT COUNT(*) FROM {schema}.saves WHERE target_type = '{target_type}' AND target_id = '{target_id}'"
+            )
+            count = cur.fetchone()[0]
+            conn.commit()
+            return _resp(200, {'count': count})
+
         if action == 'count' and method == 'GET':
             target_type = _esc(params.get('target_type', ''))[:20]
             ids_raw = (params.get('target_ids') or '').strip()
@@ -108,9 +132,14 @@ def handler(event: dict, context) -> dict:
                 f"SELECT target_id, COUNT(*) FROM {schema}.likes WHERE target_type = '{target_type}' AND target_id IN ({in_list}) GROUP BY target_id"
             )
             l_rows = cur.fetchall()
+            cur.execute(
+                f"SELECT target_id, COUNT(*) FROM {schema}.saves WHERE target_type = '{target_type}' AND target_id IN ({in_list}) GROUP BY target_id"
+            )
+            s_rows = cur.fetchall()
             return _resp(200, {
                 'comments': {r[0]: r[1] for r in c_rows},
                 'likes': {r[0]: r[1] for r in l_rows},
+                'saves': {r[0]: r[1] for r in s_rows},
             })
 
         if method == 'GET':

@@ -7,10 +7,11 @@ export type BulkTarget = "video" | "post";
 interface Counts {
   comments: Record<string, number>;
   likes: Record<string, number>;
+  saves: Record<string, number>;
 }
 
 export const useBulkCounts = (targetType: BulkTarget, ids: Array<string | number>) => {
-  const [counts, setCounts] = useState<Counts>({ comments: {}, likes: {} });
+  const [counts, setCounts] = useState<Counts>({ comments: {}, likes: {}, saves: {} });
   const key = ids.join(",");
 
   useEffect(() => {
@@ -28,6 +29,7 @@ export const useBulkCounts = (targetType: BulkTarget, ids: Array<string | number
         setCounts({
           comments: data.comments || {},
           likes: data.likes || {},
+          saves: data.saves || {},
         });
       })
       .catch(() => {});
