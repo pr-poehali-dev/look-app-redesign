@@ -15,7 +15,7 @@ const Header = ({ title, onBack, right }: { title: string; onBack: () => void; r
   </div>
 );
 
-const Reader = ({ id, onBack, onEdit }: { id: number; onBack: () => void; onEdit: (a: Article) => void }) => {
+export const Reader = ({ id, onBack, onEdit }: { id: number; onBack: () => void; onEdit: (a: Article) => void }) => {
   const { user } = useAuth();
   const [a, setA] = useState<Article | null>(null);
   useEffect(() => { fetchArticle(id).then(setA); }, [id]);

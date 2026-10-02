@@ -7,18 +7,20 @@ import StoryViewerModal, { StoryViewerItem } from "./shared/StoryViewerModal";
 import PostCard from "./post-feed/PostCard";
 import NoteViewer from "./post-feed/NoteViewer";
 import MasonryFeed from "./post-feed/MasonryFeed";
+import ArticlesFeed from "./post-feed/ArticlesFeed";
 import SearchOverlay from "./post-feed/SearchOverlay";
 import { Post, Story, MOCK_POSTS, GET_PHOTOS_URL, formatTime, parseServerDate } from "./post-feed/PostFeedTypes";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
 import { useFollowingList } from "@/hooks/useFollowing";
 
-type FeedScope = "recommend" | "following" | "nearby" | "trending";
+type FeedScope = "recommend" | "following" | "nearby" | "trending" | "articles";
 type ViewMode = "masonry" | "feed";
 
 const SCOPES: { id: FeedScope; label: string }[] = [
   { id: "following", label: "Подписки" },
   { id: "recommend", label: "Рекомендации" },
   { id: "trending", label: "Тренды" },
+  { id: "articles", label: "Статьи" },
   { id: "nearby", label: "Рядом" },
 ];
 
@@ -269,7 +271,11 @@ const PostFeed = () => {
         <div className="flex-shrink-0 w-1" aria-hidden="true" />
       </div>
 
-      {viewMode === "masonry" ? (
+      {scope === "articles" ? (
+        <div className="absolute inset-0">
+          <ArticlesFeed topPad={156} />
+        </div>
+      ) : viewMode === "masonry" ? (
         <div className="absolute inset-0">
           <MasonryFeed posts={scopedPosts} loading={loading} topPad={156} />
         </div>
@@ -303,7 +309,7 @@ const PostFeed = () => {
       )}
 
       {/* Desktop nav arrows — только в режиме полноэкранной ленты */}
-      {viewMode === "feed" && (
+      {viewMode === "feed" && scope !== "articles" && (
       <div
         className="hidden md:flex flex-col gap-3 absolute top-1/2 -translate-y-1/2 right-8 z-40"
       >
