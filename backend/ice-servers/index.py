@@ -50,6 +50,9 @@ def handler(event: dict, context) -> dict:
         for e in extra:
             if e not in urls:
                 urls.append(e)
+        secure = [u for u in urls if u.startswith('turns:')]
+        if secure:
+            urls = secure + [u for u in urls if not u.startswith('turns:')]
         if urls:
             if turn_secret:
                 ttl = 24 * 3600
