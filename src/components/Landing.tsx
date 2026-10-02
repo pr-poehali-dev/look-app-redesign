@@ -59,6 +59,7 @@ const Landing = ({ onLogin, onRegister }: LandingProps) => {
             category={category}
             initialVideoId={openVideoId ?? undefined}
             onLocked={setPrompt}
+            onLogin={onLogin}
           />
         )}
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
+import GuestComments from "@/components/landing/GuestComments";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
 
 const GET_VIDEOS_URL = "https://functions.poehali.dev/f58115ec-de09-405d-a2db-08fe1cd958e1";
@@ -20,6 +21,7 @@ interface LandingFeedProps {
   category: string;
   initialVideoId?: number;
   onLocked: (reason: string) => void;
+  onLogin?: () => void;
 }
 
 const fmt = (s: number) => {
@@ -29,7 +31,8 @@ const fmt = (s: number) => {
   return `${m}:${sec < 10 ? "0" : ""}${sec}`;
 };
 
-const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) => {
+const LandingFeed = ({ category, initialVideoId, onLocked, onLogin }: LandingFeedProps) => {
+  const [commentsFor, setCommentsFor] = useState<GuestVideo | null>(null);
   const [videos, setVideos] = useState<GuestVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState(0);
@@ -167,10 +170,10 @@ const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) =
     );
   }
 
-  const action = (icon: string, label: string, reason: string) => (
+  const action = (icon: string, label: string, reason: string, onClick?: () => void) => (
     <button
       key={icon}
-      onClick={() => onLocked(reason)}
+      onClick={onClick || (() => onLocked(reason))}
       className="flex flex-col items-center gap-1 text-white"
     >
       <Icon name={icon} size={28} />
@@ -277,7 +280,7 @@ const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) =
 
                 <div className="absolute bottom-24 right-3 flex flex-col items-center gap-4 md:hidden">
                   {action("Heart", likesOf(v), "Войди, чтобы ставить лайки.")}
-                  {action("CommentFilled", commentsOf(v), "Войди, чтобы читать и писать комментарии.")}
+                  {action("CommentFilled", commentsOf(v), "", () => setCommentsFor(v))}
                   {action("ShareForward", v.shares, "Войди, чтобы делиться видео.")}
                   {action("Bookmark", savesOf(v), "Войди, чтобы сохранять видео в свои подборки.")}
                 </div>
@@ -285,7 +288,7 @@ const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) =
 
               <div className="hidden flex-col items-center gap-5 pb-6 md:flex">
                 {action("Heart", likesOf(v), "Войди, чтобы ставить лайки.")}
-                {action("CommentFilled", commentsOf(v), "Войди, чтобы читать и писать комментарии.")}
+                {action("CommentFilled", commentsOf(v), "", () => setCommentsFor(v))}
                 {action("ShareForward", v.shares, "Войди, чтобы делиться видео.")}
                 {action("Bookmark", savesOf(v), "Войди, чтобы сохранять видео в свои подборки.")}
                 <button
@@ -318,6 +321,19 @@ const LandingFeed = ({ category, initialVideoId, onLocked }: LandingFeedProps) =
           <Icon name="ChevronDown" size={22} />
         </button>
       </div>
+
+      {commentsFor && (
+        <GuestComments
+          videoId={commentsFor.id + 10000}
+          initialCount={Number(commentsOf(commentsFor)) || 0}
+          onClose={() => setCommentsFor(null)}
+          onLogin={() => {
+            setCommentsFor(null);
+            if (onLogin) onLogin();
+            else onLocked("Войди, чтобы комментировать.");
+          }}
+        />
+      )}
     </div>
   );
 };
