@@ -23,6 +23,15 @@ const VIDEO_CATEGORIES = [
   { id: "food", label: "Еда" },
   { id: "style", label: "Стиль" },
   { id: "gaming", label: "Игры" },
+  { id: "singdance", label: "Пение и танцы" },
+  { id: "anime", label: "Аниме и комиксы" },
+  { id: "relations", label: "Отношения" },
+  { id: "show", label: "Шоу" },
+  { id: "lipsync", label: "Липсинк" },
+  { id: "everyday", label: "Повседневность" },
+  { id: "society", label: "Общество" },
+  { id: "family", label: "Семья" },
+  { id: "drama", label: "Драма" },
 ];
 
 interface Props {

@@ -25,6 +25,15 @@ const SUGGESTED_TAGS: Record<string, string[]> = {
   diy: ["сделайсам", "творчество", "handmade", "дизайн", "проект"],
   science: ["наука", "технологии", "факты", "эксперимент", "познавательно"],
   auto: ["авто", "машина", "тюнинг", "drive", "car"],
+  singdance: ["пение", "танцы", "вокал", "кавер", "singing"],
+  anime: ["аниме", "комиксы", "манга", "косплей", "anime"],
+  relations: ["отношения", "любовь", "пара", "свидание", "love"],
+  show: ["шоу", "эфир", "выступление", "talent", "show"],
+  lipsync: ["липсинк", "lipsync", "озвучка", "дуэт", "трек"],
+  everyday: ["повседневность", "будни", "день", "влог", "lifestyle"],
+  society: ["общество", "мнение", "новости", "люди", "тема"],
+  family: ["семья", "дети", "родители", "дом", "family"],
+  drama: ["драма", "история", "сюжет", "эмоции", "drama"],
   feed: ["фото", "момент", "жизнь", "настроение", "daily"],
 };
 
@@ -43,6 +52,15 @@ const VIDEO_CATEGORIES = [
   { id: "diy", label: "Сделай сам" },
   { id: "science", label: "Наука" },
   { id: "auto", label: "Авто" },
+  { id: "singdance", label: "Пение и танцы" },
+  { id: "anime", label: "Аниме и комиксы" },
+  { id: "relations", label: "Отношения" },
+  { id: "show", label: "Шоу" },
+  { id: "lipsync", label: "Липсинк" },
+  { id: "everyday", label: "Повседневность" },
+  { id: "society", label: "Общество" },
+  { id: "family", label: "Семья" },
+  { id: "drama", label: "Драма" },
 ];
 
 interface CameraPreviewProps {

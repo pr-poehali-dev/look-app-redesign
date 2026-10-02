@@ -25,6 +25,15 @@ export const CATEGORIES = [
   { id: "diy", label: "Сделай сам" },
   { id: "science", label: "Наука" },
   { id: "auto", label: "Авто" },
+  { id: "singdance", label: "Пение и танцы" },
+  { id: "anime", label: "Аниме и комиксы" },
+  { id: "relations", label: "Отношения" },
+  { id: "show", label: "Шоу" },
+  { id: "lipsync", label: "Липсинк" },
+  { id: "everyday", label: "Повседневность" },
+  { id: "society", label: "Общество" },
+  { id: "family", label: "Семья" },
+  { id: "drama", label: "Драма" },
 ];
 
 const VIDEOS: (VideoData & { category: string })[] = [
