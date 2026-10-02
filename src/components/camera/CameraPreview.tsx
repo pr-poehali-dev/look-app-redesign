@@ -34,6 +34,9 @@ const SUGGESTED_TAGS: Record<string, string[]> = {
   society: ["общество", "мнение", "новости", "люди", "тема"],
   family: ["семья", "дети", "родители", "дом", "family"],
   drama: ["драма", "история", "сюжет", "эмоции", "drama"],
+  fitness: ["фитнес", "здоровье", "зож", "тренировка", "health"],
+  education: ["образование", "обучение", "учеба", "знания", "lifehack"],
+  tech: ["технологии", "гаджеты", "it", "обзор", "tech"],
   feed: ["фото", "момент", "жизнь", "настроение", "daily"],
 };
 
@@ -61,6 +64,9 @@ const VIDEO_CATEGORIES = [
   { id: "society", label: "Общество" },
   { id: "family", label: "Семья" },
   { id: "drama", label: "Драма" },
+  { id: "fitness", label: "Фитнес и здоровье" },
+  { id: "education", label: "Образование" },
+  { id: "tech", label: "Технологии" },
 ];
 
 interface CameraPreviewProps {

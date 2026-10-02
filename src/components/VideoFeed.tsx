@@ -34,6 +34,9 @@ export const CATEGORIES = [
   { id: "society", label: "Общество" },
   { id: "family", label: "Семья" },
   { id: "drama", label: "Драма" },
+  { id: "fitness", label: "Фитнес и здоровье" },
+  { id: "education", label: "Образование" },
+  { id: "tech", label: "Технологии" },
 ];
 
 const VIDEOS: (VideoData & { category: string })[] = [

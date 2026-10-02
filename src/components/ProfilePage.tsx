@@ -229,6 +229,9 @@ const VIDEO_CATEGORIES = [
   { id: "society", label: "Общество" },
   { id: "family", label: "Семья" },
   { id: "drama", label: "Драма" },
+  { id: "fitness", label: "Фитнес и здоровье" },
+  { id: "education", label: "Образование" },
+  { id: "tech", label: "Технологии" },
 ];
 const categoryLabel = (id?: string) => VIDEO_CATEGORIES.find(c => c.id === id)?.label || "Без категории";
 
