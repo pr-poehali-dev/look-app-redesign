@@ -7,6 +7,7 @@ import CartScreen from "./profile/CartScreen";
 import ShopScreen from "./profile/ShopScreen";
 import CatalogScreen from "./profile/CatalogScreen";
 import BoardsScreen from "./profile/BoardsScreen";
+import ArticlesScreen from "./profile/ArticlesScreen";
 import ReferralsScreen from "./profile/ReferralsScreen";
 import StoryViewerModal, { StoryViewerItem } from "./shared/StoryViewerModal";
 import { useUserMedia } from "@/context/UserMediaContext";
@@ -244,6 +245,7 @@ const ProfilePage = () => {
   const [showShop, setShowShop] = useState(false);
   const [showCatalog, setShowCatalog] = useState(false);
   const [showBoards, setShowBoards] = useState(false);
+  const [showArticles, setShowArticles] = useState(false);
   const [showReferrals, setShowReferrals] = useState(false);
   const { userVideos: stories, removeMedia, addMedia, refreshMedia } = useUserMedia();
   const { user, token, logout, updateUser } = useAuth();
@@ -348,6 +350,7 @@ const ProfilePage = () => {
   if (showCart) return <CartScreen onBack={() => setShowCart(false)} />;
   if (showShop) return <ShopScreen onBack={() => setShowShop(false)} />;
   if (showCatalog) return <CatalogScreen onBack={() => setShowCatalog(false)} />;
+  if (showArticles) return <ArticlesScreen onBack={() => setShowArticles(false)} />;
   if (showBoards) return <BoardsScreen onBack={() => setShowBoards(false)} />;
   if (showReferrals) return <ReferralsScreen onBack={() => setShowReferrals(false)} />;
 
@@ -473,7 +476,7 @@ const ProfilePage = () => {
       </div>
 
       {/* Аналитика + Магазин + Каталог + Корзина + Доски + Партнёрка */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-1.5 px-4 pb-4 md:px-3 md:pb-3">
+      <div className="grid grid-cols-4 md:grid-cols-7 gap-1.5 px-4 pb-4 md:px-3 md:pb-3">
         <button
           onClick={() => setShowAnalytics(true)}
           className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
@@ -508,6 +511,13 @@ const ProfilePage = () => {
         >
           <Icon name="Layers" size={15} />
           Доски
+        </button>
+        <button
+          onClick={() => setShowArticles(true)}
+          className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
+        >
+          <Icon name="FileText" size={15} />
+          Статьи
         </button>
         <button
           onClick={() => setShowReferrals(true)}

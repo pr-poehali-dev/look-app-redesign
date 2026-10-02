@@ -3,15 +3,18 @@ import Icon from "@/components/ui/icon";
 import { Product, generateReferralLink } from "@/hooks/useProducts";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import ReviewsSheet, { Stars } from "./ReviewsSheet";
 
 interface Props {
   p: Product;
   onAdd: (id: number) => void;
   adding: boolean;
   hideOwner?: boolean;
+  rating?: { avg: number; count: number };
 }
 
-const ProductMasonryCard = ({ p, onAdd, adding, hideOwner }: Props) => {
+const ProductMasonryCard = ({ p, onAdd, adding, hideOwner, rating }: Props) => {
+  const [showReviews, setShowReviews] = useState(false);
   const [liked, setLiked] = useState(false);
   const { user } = useAuth();
   const [gettingLink, setGettingLink] = useState(false);
@@ -77,6 +80,11 @@ const ProductMasonryCard = ({ p, onAdd, adding, hideOwner }: Props) => {
           )}
         </div>
 
+        <button onClick={() => setShowReviews(true)} className="flex items-center gap-1.5 w-fit">
+          <Stars value={rating?.avg || 0} size={11} />
+          <span className="text-gray-500 text-[11px]">{rating?.count ? `${rating.avg} · ${rating.count} отз.` : "Отзывы"}</span>
+        </button>
+
         {!hideOwner && p.owner_handle && !p.is_partner ? (
           <button onClick={openSeller} className="flex items-center gap-1.5 pt-0.5">
             <div className="w-4 h-4 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
@@ -104,6 +112,7 @@ const ProductMasonryCard = ({ p, onAdd, adding, hideOwner }: Props) => {
           <span className="text-[11px] font-medium">Партнёрская ссылка</span>
         </button>
       </div>
+      {showReviews && <ReviewsSheet productId={p.id} title={p.title} onClose={() => setShowReviews(false)} />}
     </div>
   );
 };

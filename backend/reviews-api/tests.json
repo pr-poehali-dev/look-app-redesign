@@ -1,0 +1,5 @@
+{"tests": [
+ {"name": "OPTIONS", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+ {"name": "list без product_id", "method": "GET", "path": "/?action=list", "expectedStatus": 400},
+ {"name": "add без пользователя", "method": "POST", "path": "/?action=add", "body": {"product_id": 1, "rating": 5}, "expectedStatus": 401}
+]}

@@ -1,4 +1,6 @@
 {
+  "articles-api": "https://functions.poehali.dev/8a82c5d6-f598-4faf-a1ff-9e418c1823d8",
+  "reviews-api": "https://functions.poehali.dev/624a62b6-f281-4c64-8f3d-7fc562265b8e",
   "boards-api": "https://functions.poehali.dev/4b244d4d-3141-468d-93cc-3b1f106390ca",
   "notifications-api": "https://functions.poehali.dev/8ae7d03e-5a18-4ff2-87f1-69f512fbacc3",
   "products-api": "https://functions.poehali.dev/c4d3aa37-b7c2-4047-880a-ab17127da315",

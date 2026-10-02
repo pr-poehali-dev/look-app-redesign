@@ -1,0 +1,6 @@
+{"tests": [
+ {"name": "OPTIONS", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+ {"name": "feed", "method": "GET", "path": "/?action=feed", "expectedStatus": 200, "expectedBody": {"articles": []}, "bodyMatcher": "partial"},
+ {"name": "create без пользователя", "method": "POST", "path": "/?action=create", "body": {"title": "a", "body": "b"}, "expectedStatus": 401},
+ {"name": "import без пользователя", "method": "POST", "path": "/?action=import_url", "body": {"url": "https://example.com"}, "expectedStatus": 401}
+]}

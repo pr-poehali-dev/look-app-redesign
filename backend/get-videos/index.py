@@ -137,6 +137,24 @@ def handler(event: dict, context) -> dict:
             except Exception:
                 pass
 
+            # Сохранения в закладки и доски — сильный сигнал интереса
+            try:
+                cur.execute(
+                    f"SELECT v.category, v.hashtags FROM {schema}.saves sv "
+                    f"JOIN {schema}.videos v ON v.id::text = sv.target_id "
+                    f"WHERE sv.target_type = 'video' AND sv.user_id = %s",
+                    (user_id,)
+                )
+                for cat, tags in cur.fetchall():
+                    if cat:
+                        liked_categories[cat] = liked_categories.get(cat, 0) + 2
+                    for t in (tags or '').replace('#', ' ').split():
+                        t = t.strip().lower()
+                        if t:
+                            liked_hashtags[t] = liked_hashtags.get(t, 0) + 2
+            except Exception:
+                conn.rollback()
+
             # На кого подписан (по following_id из таблицы follows)
             try:
                 cur.execute(
