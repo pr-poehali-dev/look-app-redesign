@@ -176,7 +176,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const [reads, setReads] = useState<Record<string, number>>({});
   const readPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSentReadRef = useRef(0);
-  const [peerInfo, setPeerInfo] = useState<{ id?: string; name?: string; avatar?: string; online?: boolean } | null>(null);
+  const [peerInfo, setPeerInfo] = useState<{ id?: string; name?: string; avatar?: string; online?: boolean; phone?: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -483,7 +483,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
         const raw = await res.json();
         const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
         const found = (data.users || []).find((u: { id: string }) => u.id === peerId);
-        if (found) setPeerInfo({ id: found.id, name: found.name, avatar: found.avatar, online: found.online });
+        if (found) setPeerInfo({ id: found.id, name: found.name, avatar: found.avatar, online: found.online, phone: found.phone });
       } catch (e) { void e; }
     };
     load();
@@ -1769,6 +1769,15 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
               </div>
               <p className="text-white text-xl font-semibold">{displayName}</p>
               <p className="text-white/40 text-sm mt-1">{displayOnline ? "в сети" : "был(а) недавно"}</p>
+              {!isGroup && peerInfo?.phone && peerInfo.phone.replace(/\D/g, "").length >= 10 && (
+                <a
+                  href={`tel:+${peerInfo.phone.replace(/\D/g, "")}`}
+                  className="mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-green-500/15 text-green-400 text-sm font-semibold"
+                >
+                  <Icon name="PhoneCall" size={18} />
+                  Позвонить на телефон
+                </a>
+              )}
               <div className="grid grid-cols-3 gap-3 mt-6 w-full">
                 <button onClick={() => { setShowProfile(false); startCall("audio"); }} className="flex flex-col items-center gap-1 py-3 bg-white/5 rounded-xl">
                   <Icon name="Phone" size={20} className="text-white" />

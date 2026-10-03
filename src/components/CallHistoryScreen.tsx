@@ -43,6 +43,8 @@ const formatWhen = (ts: number) => {
 };
 
 const CallHistoryScreen = ({ onBack, onCall }: Props) => {
+  const [dial, setDial] = useState("");
+  const dialDigits = dial.replace(/\D/g, "");
   const { user } = useAuth();
   const [calls, setCalls] = useState<CallRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,6 +74,24 @@ const CallHistoryScreen = ({ onBack, onCall }: Props) => {
         </button>
         <h2 className="text-white font-bold text-xl">Звонки</h2>
         <div className="w-9 h-9" />
+      </div>
+
+      <div className="flex gap-2 px-4 pb-3">
+        <input
+          type="tel"
+          inputMode="tel"
+          value={dial}
+          onChange={(e) => setDial(e.target.value)}
+          placeholder="Номер телефона, например +7 999 123-45-67"
+          className="flex-1 min-w-0 px-4 py-2.5 rounded-full bg-white/10 text-white text-sm outline-none placeholder:text-white/40"
+        />
+        <a
+          href={dialDigits.length >= 10 ? `tel:+${dialDigits}` : undefined}
+          aria-disabled={dialDigits.length < 10}
+          className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${dialDigits.length >= 10 ? "bg-green-500" : "bg-white/10 pointer-events-none"}`}
+        >
+          <Icon name="PhoneCall" size={18} className={dialDigits.length >= 10 ? "text-white" : "text-white/30"} />
+        </a>
       </div>
 
       <div className="flex gap-2 px-4 pb-3">
