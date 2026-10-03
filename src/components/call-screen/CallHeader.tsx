@@ -8,6 +8,7 @@ interface CallHeaderProps {
   mode: "audio" | "video";
   status: CallStatus;
   quality: CallQuality;
+  route?: "p2p" | "relay" | null;
   connectionWarning: boolean;
   seconds: number;
 }
@@ -15,7 +16,7 @@ interface CallHeaderProps {
 const formatTime = (s: number) =>
   `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
-const CallHeader = ({ name, avatar, mode, status, quality, connectionWarning, seconds }: CallHeaderProps) => {
+const CallHeader = ({ name, avatar, mode, status, quality, route, connectionWarning, seconds }: CallHeaderProps) => {
   const statusLabel = {
     connecting: "Подключение...",
     ringing: "Вызов...",
@@ -63,6 +64,11 @@ const CallHeader = ({ name, avatar, mode, status, quality, connectionWarning, se
           <span>
             {quality === "good" ? "Хорошее соединение" : quality === "fair" ? "Среднее соединение" : "Слабое соединение"}
           </span>
+          {route && (
+            <span className="px-1.5 py-0.5 rounded-full bg-white/10 text-white/70 text-[10px]">
+              {route === "p2p" ? "Напрямую (P2P)" : "Через сервер"}
+            </span>
+          )}
         </div>
       )}
     </div>

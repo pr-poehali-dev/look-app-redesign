@@ -27,6 +27,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller }: CallS
     cameraOff,
     status,
     quality,
+    route,
     connectionWarning,
     endReason,
     diagText,
@@ -134,6 +135,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller }: CallS
           mode={mode}
           status={status}
           quality={quality}
+          route={route}
           connectionWarning={connectionWarning}
           seconds={seconds}
         />

@@ -26,6 +26,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [status, setStatus] = useState<CallStatus>("connecting");
   const [quality, setQuality] = useState<CallQuality>("unknown");
+  const [route, setRoute] = useState<"p2p" | "relay" | null>(null);
   const [connectionWarning, setConnectionWarning] = useState(false);
   const [endReason, setEndReason] = useState<string>("");
   const [diagText, setDiagText] = useState<string>("");
@@ -665,7 +666,13 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
       try {
         const stats = await pc.getStats();
         let lost = 0, total = 0, rtt = 0, hasInbound = false;
+        const cands: Record<string, string> = {};
+        let selectedPair: { local?: string; remote?: string } | null = null;
         stats.forEach((r) => {
+          if (r.type === "local-candidate" || r.type === "remote-candidate") cands[r.id] = r.candidateType;
+          if (r.type === "candidate-pair" && (r.nominated || r.selected) && r.state === "succeeded") {
+            selectedPair = { local: r.localCandidateId, remote: r.remoteCandidateId };
+          }
           if (r.type === "inbound-rtp" && !r.isRemote) {
             lost += r.packetsLost || 0;
             total += (r.packetsReceived || 0) + (r.packetsLost || 0);
@@ -675,6 +682,12 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
             rtt = r.currentRoundTripTime * 1000;
           }
         });
+        const sp = selectedPair as { local?: string; remote?: string } | null;
+        if (sp) {
+          const lt = sp.local ? cands[sp.local] : undefined;
+          const rt = sp.remote ? cands[sp.remote] : undefined;
+          if (lt || rt) setRoute(lt === "relay" || rt === "relay" ? "relay" : "p2p");
+        }
         if (!hasInbound) return;
         const deltaLost = lost - prevPacketsLostRef.current;
         const deltaTotal = total - prevPacketsRef.current;
@@ -1006,6 +1019,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
     cameraOff,
     status,
     quality,
+    route,
     connectionWarning,
     endReason,
     diagText,
