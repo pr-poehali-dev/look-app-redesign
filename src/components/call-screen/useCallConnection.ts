@@ -621,10 +621,16 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
             const nominated = pairs.some((p) => p.includes("nominated=true"));
             const anyBytes = pairs.some((p) => !p.includes("bytes=0/0"));
             let summary = "";
+            const turnErrs = iceErrorsRef.current.length;
             if (myTotal === 0) {
               summary = "Не удалось получить сеть (ICE-кандидаты не собрались). Проверь интернет/микрофон.";
+            } else if (peerCands === 0 && pc.iceConnectionState === "new") {
+              summary = "Собеседник не ответил или его ответ не дошёл: соединение ещё не начиналось. Пусть откроет приложение на экране звонка и примет вызов. " +
+                (myRelay === 0 ? "Дополнительно: твоя сеть не дала связаться с TURN (мобильный оператор или VPN могут блокировать порты 3478/5349)." : "");
             } else if (myRelay === 0) {
-              summary = "TURN не выдал relay-адрес — проблема в ключе TURN (turn.look.com.ru).";
+              summary = turnErrs
+                ? "Твоя сеть не смогла связаться с TURN-сервером (см. ошибки выше). Чаще всего мобильный оператор или VPN блокирует порты 3478/5349. Попробуй другой Wi-Fi или отключи VPN."
+                : "TURN не выдал relay-адрес: сеть блокирует связь с turn.look.com.ru. Попробуй другой Wi-Fi или отключи VPN.";
             } else if (peerCands === 0) {
               summary = "Собеседник не прислал свои адреса — сигналинг не доставил данные второй стороне.";
             } else if (peerRelay === 0) {
@@ -639,7 +645,9 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
               `• мои адреса: ${myTotal} (из них TURN-relay: ${myRelay})\n` +
               `• адреса собеседника: ${peerCands}\n` +
               `• соединение выбрано: ${nominated ? "да" : "нет"}\n` +
-              `• состояние: ${pc.iceConnectionState}\n\n` +
+              `• состояние: ${pc.iceConnectionState}\n` +
+              (iceErrorsRef.current.length ? `• ошибки TURN:\n  ${iceErrorsRef.current.slice(0, 6).join("\n  ")}\n` : "") +
+              `\n` +
               summary,
             );
           } catch (e) { console.error("[CallScreen] diag failed", e); }
