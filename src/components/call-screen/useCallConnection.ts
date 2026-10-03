@@ -31,6 +31,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const [diagText, setDiagText] = useState<string>("");
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
+  const iceErrorsRef = useRef<string[]>([]);
   const localStreamRef = useRef<MediaStream | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -333,6 +334,13 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
       console.log("[CallScreen] iceServers count =", (cfg.iceServers || []).length);
       pc = new RTCPeerConnection(cfg);
       pcRef.current = pc;
+      iceErrorsRef.current = [];
+      pc.addEventListener("icecandidateerror", (ev) => {
+        const e = ev as RTCPeerConnectionIceErrorEvent;
+        if (!e.url || !/^turns?:/.test(e.url)) return;
+        const line = `${e.url.replace(/^(turns?:[^?]+).*/, "$1")} → ${e.errorCode || 0}${e.errorText ? " " + e.errorText : ""}`;
+        if (!iceErrorsRef.current.includes(line)) iceErrorsRef.current.push(line);
+      });
 
       try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -794,7 +802,9 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
             `• мои адреса: ${myLocal} (relay: ${myRelay})\n` +
             `• адреса собеседника: ${peerCands} (relay: ${peerRelay})\n` +
             `• отправлено аудио: ${audioSent} б\n` +
-            `• пары: всего ${pairs.length}, ок ${nSucceeded}, идёт ${nInProgress}, провал ${nFailed}\n\n` +
+            `• пары: всего ${pairs.length}, ок ${nSucceeded}, идёт ${nInProgress}, провал ${nFailed}\n` +
+            (iceErrorsRef.current.length ? `• ошибки TURN:\n  ${iceErrorsRef.current.slice(0, 6).join("\n  ")}\n` : "") +
+            `\n` +
             cause,
           );
         }
