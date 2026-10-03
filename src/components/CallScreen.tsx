@@ -28,6 +28,10 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller }: CallS
     status,
     quality,
     route,
+    sharing,
+    lowData,
+    toggleScreenShare,
+    toggleLowData,
     connectionWarning,
     endReason,
     diagText,
@@ -175,6 +179,10 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller }: CallS
           toggleSpeaker={toggleSpeaker}
           switchCamera={switchCamera}
           hangup={hangup}
+          sharing={sharing}
+          lowData={lowData}
+          toggleScreenShare={toggleScreenShare}
+          toggleLowData={toggleLowData}
         />
       </div>
 

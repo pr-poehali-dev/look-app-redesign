@@ -26,6 +26,10 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [status, setStatus] = useState<CallStatus>("connecting");
   const [quality, setQuality] = useState<CallQuality>("unknown");
+  const [sharing, setSharing] = useState(false);
+  const [lowData, setLowData] = useState(false);
+  const lowDataRef = useRef(false);
+  const screenTrackRef = useRef<MediaStreamTrack | null>(null);
   const [route, setRoute] = useState<"p2p" | "relay" | null>(null);
   const [connectionWarning, setConnectionWarning] = useState(false);
   const [endReason, setEndReason] = useState<string>("");
@@ -701,7 +705,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         setQuality(q);
         // Адаптация видео под качество сети — чтобы связь не рвалась на плохом инете.
         if (mode === "video") {
-          const level = q === "poor" ? "low" : q === "fair" ? "mid" : "high";
+          const level = lowDataRef.current ? "low" : q === "poor" ? "low" : q === "fair" ? "mid" : "high";
           if (level !== lastVideoLevelRef.current) {
             lastVideoLevelRef.current = level;
             tuneVideoSenders(pc, level);
@@ -978,6 +982,53 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
     }
   };
 
+  const stopScreenShare = async () => {
+    const screen = screenTrackRef.current;
+    screenTrackRef.current = null;
+    screen?.stop();
+    setSharing(false);
+    const pc = pcRef.current;
+    const cam = localStreamRef.current?.getVideoTracks()[0];
+    const sender = pc?.getSenders().find((x) => x.track?.kind === "video");
+    if (sender && cam) await sender.replaceTrack(cam).catch((e) => console.warn("[CallScreen] restore camera track failed", e));
+    if (localVideoRef.current && localStreamRef.current) {
+      localVideoRef.current.srcObject = localStreamRef.current;
+      localVideoRef.current.play().catch(() => {});
+    }
+  };
+
+  const toggleScreenShare = async () => {
+    if (mode !== "video" || !pcRef.current) return;
+    if (screenTrackRef.current) {
+      await stopScreenShare();
+      return;
+    }
+    try {
+      const display = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      const track = display.getVideoTracks()[0];
+      if (!track) return;
+      const sender = pcRef.current.getSenders().find((x) => x.track?.kind === "video");
+      if (!sender) { track.stop(); return; }
+      await sender.replaceTrack(track);
+      screenTrackRef.current = track;
+      setSharing(true);
+      track.onended = () => { if (screenTrackRef.current === track) stopScreenShare(); };
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = display;
+        localVideoRef.current.play().catch(() => {});
+      }
+    } catch (e) {
+      console.warn("[CallScreen] screen share failed", e);
+    }
+  };
+
+  const toggleLowData = () => {
+    const next = !lowDataRef.current;
+    lowDataRef.current = next;
+    setLowData(next);
+    if (mode === "video") tuneVideoSenders(pcRef.current, next ? "low" : "high");
+  };
+
   const toggleMute = () => {
     localStreamRef.current?.getAudioTracks().forEach((t) => { t.enabled = muted; });
     setMuted((v) => !v);
@@ -1020,6 +1071,10 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
     status,
     quality,
     route,
+    sharing,
+    lowData,
+    toggleScreenShare,
+    toggleLowData,
     connectionWarning,
     endReason,
     diagText,

@@ -10,6 +10,10 @@ interface CallControlsProps {
   toggleSpeaker: () => void;
   switchCamera: () => void;
   hangup: () => void;
+  sharing?: boolean;
+  lowData?: boolean;
+  toggleScreenShare?: () => void;
+  toggleLowData?: () => void;
 }
 
 const CallControls = ({
@@ -22,7 +26,12 @@ const CallControls = ({
   toggleSpeaker,
   switchCamera,
   hangup,
+  sharing = false,
+  lowData = false,
+  toggleScreenShare,
+  toggleLowData,
 }: CallControlsProps) => {
+  const canShare = typeof navigator !== "undefined" && !!navigator.mediaDevices?.getDisplayMedia;
   return (
     <div
       className="relative z-20 px-8"
@@ -65,6 +74,25 @@ const CallControls = ({
               <Icon name="MoreHorizontal" size={22} className="text-white" />
             </div>
             <span className="text-white/60 text-xs">Ещё</span>
+          </button>
+        )}
+      </div>
+
+      <div className="flex items-center justify-center gap-6 mb-6">
+        {mode === "video" && canShare && toggleScreenShare && (
+          <button onClick={toggleScreenShare} className="flex flex-col items-center gap-2">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${sharing ? "bg-white" : "bg-white/20"}`}>
+              <Icon name={sharing ? "ScreenShareOff" : "ScreenShare"} size={20} className={sharing ? "text-black" : "text-white"} />
+            </div>
+            <span className="text-white/60 text-xs">{sharing ? "Остановить" : "Экран"}</span>
+          </button>
+        )}
+        {toggleLowData && (
+          <button onClick={toggleLowData} className="flex flex-col items-center gap-2">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${lowData ? "bg-white" : "bg-white/20"}`}>
+              <Icon name="Gauge" size={20} className={lowData ? "text-black" : "text-white"} />
+            </div>
+            <span className="text-white/60 text-xs">{lowData ? "Экономия вкл" : "Экономия"}</span>
           </button>
         )}
       </div>
