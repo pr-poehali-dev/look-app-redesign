@@ -318,12 +318,12 @@ const ProfilePage = () => {
   }, [user?.handle]);
   const [viewingStory, setViewingStory] = useState<number | null>(null);
   const [storyOrigin, setStoryOrigin] = useState<DOMRect | null>(null);
-  const [mediaViewer, setMediaViewer] = useState<{ tab: "video" | "image"; index: number; onlyReposts?: boolean } | null>(null);
+  const [mediaViewer, setMediaViewer] = useState<{ tab: "video" | "image"; id: number; onlyReposts?: boolean } | null>(null);
   const [avatarLoading, setAvatarLoading] = useState(false);
 
   useEffect(() => {
     if (mediaViewer === null) return;
-    const liveItems = stories.filter(s => s.type === mediaViewer.tab && (!mediaViewer.onlyReposts || s.is_repost));
+    const liveItems = stories.filter(s => s.type === mediaViewer.tab && (mediaViewer.onlyReposts ? s.is_repost : !s.is_repost));
     if (liveItems.length === 0) setMediaViewer(null);
   }, [stories, mediaViewer]);
 
@@ -400,11 +400,13 @@ const ProfilePage = () => {
         />
       )}
       {mediaViewer !== null && (() => {
-        const liveItems = stories.filter(s => s.type === mediaViewer.tab && (!mediaViewer.onlyReposts || s.is_repost));
+        const liveItems = stories.filter(s => s.type === mediaViewer.tab && (mediaViewer.onlyReposts ? s.is_repost : !s.is_repost));
         if (liveItems.length === 0) return null;
-        const safeIndex = Math.min(Math.max(mediaViewer.index, 0), liveItems.length - 1);
+        const foundIndex = liveItems.findIndex(s => s.id === mediaViewer.id);
+        const safeIndex = foundIndex >= 0 ? foundIndex : 0;
         return (
           <MediaViewer
+            key={`${mediaViewer.tab}-${mediaViewer.onlyReposts ? "r" : "o"}-${mediaViewer.id}`}
             items={liveItems}
             startIndex={safeIndex}
             isRepostView={!!mediaViewer.onlyReposts}
@@ -721,8 +723,8 @@ const ProfilePage = () => {
             </div>
           ) : (
             <div className="grid grid-cols-3 md:grid-cols-4 gap-1 bg-gray-200 p-1">
-              {videos.map((item, i) => (
-                <div key={item.id} className="relative aspect-square overflow-hidden cursor-pointer" style={{ background: "linear-gradient(135deg, #0a2e1a 0%, #1a1a1a 100%)" }} onClick={() => setMediaViewer({ tab: "video", index: i })}>
+              {videos.map((item) => (
+                <div key={item.id} className="relative aspect-square overflow-hidden cursor-pointer" style={{ background: "linear-gradient(135deg, #0a2e1a 0%, #1a1a1a 100%)" }} onClick={() => setMediaViewer({ tab: "video", id: item.id })}>
                   {(item.thumb || item.thumbnail) ? (
                     <img src={item.thumb || item.thumbnail} alt="" className="w-full h-full object-cover rounded-md" />
                   ) : (item.url ? (
@@ -769,8 +771,8 @@ const ProfilePage = () => {
             </div>
           ) : (
             <div className="grid grid-cols-3 md:grid-cols-4 gap-1 bg-gray-200 p-1">
-              {photos.map((item, i) => (
-                <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200 cursor-pointer" onClick={() => setMediaViewer({ tab: "image", index: i })}>
+              {photos.map((item) => (
+                <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200 cursor-pointer" onClick={() => setMediaViewer({ tab: "image", id: item.id })}>
                   <img src={item.url} alt="" className="w-full h-full object-cover rounded-md" />
                 </div>
               ))}
@@ -790,12 +792,12 @@ const ProfilePage = () => {
             </div>
           ) : (
             <div className="grid grid-cols-3 md:grid-cols-4 gap-1 bg-gray-200 p-1">
-              {reposts.map((item, i) => (
+              {reposts.map((item) => (
                 <div
                   key={item.id}
                   className="relative aspect-square overflow-hidden cursor-pointer"
                   style={{ background: "linear-gradient(135deg, #0a2e1a 0%, #1a1a1a 100%)" }}
-                  onClick={() => setMediaViewer({ tab: item.type, index: i, onlyReposts: true })}
+                  onClick={() => setMediaViewer({ tab: item.type, id: item.id, onlyReposts: true })}
                 >
                   {(item.thumb || item.thumbnail) ? (
                     <img src={item.thumb || item.thumbnail} alt="" className="w-full h-full object-cover rounded-md" />
