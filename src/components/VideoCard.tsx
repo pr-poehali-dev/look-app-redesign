@@ -188,6 +188,11 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
     const url = video.image;
     if (!url) return;
     setDownloading(true);
+    fetch("https://functions.poehali.dev/4ceed9c1-422c-484e-806e-b3cc8af8b9ec?action=download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-User-Id": user?.id ? String(user.id) : "" },
+      body: JSON.stringify({ target_type: video.isVideo ? "video" : "post", target_id: String(video.id) }),
+    }).catch(() => {});
     const ext = ((url.split("?")[0].split(".").pop()) || (video.isVideo ? "mp4" : "jpg")).slice(0, 5);
     const safeName = (video.author || video.handle || "look").replace(/[^a-z0-9_-]/gi, "_");
     const fileName = `${safeName}-${video.id}.${ext}`;

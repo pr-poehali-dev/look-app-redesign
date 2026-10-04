@@ -83,6 +83,30 @@
         "saved": false
       },
       "expectedStatus": 200
+    },
+    {
+      "name": "Count with views and downloads",
+      "method": "GET",
+      "path": "/?action=count&target_type=video&target_ids=1,2",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "downloads": {},
+        "views": {}
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Register download",
+      "method": "POST",
+      "path": "/?action=download",
+      "headers": {
+        "X-User-Id": "test-user-1"
+      },
+      "body": {
+        "target_type": "video",
+        "target_id": "test-1"
+      },
+      "expectedStatus": 200
     }
   ]
 }

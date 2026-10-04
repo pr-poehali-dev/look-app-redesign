@@ -8,10 +8,12 @@ interface Counts {
   comments: Record<string, number>;
   likes: Record<string, number>;
   saves: Record<string, number>;
+  downloads: Record<string, number>;
+  views: Record<string, number>;
 }
 
 export const useBulkCounts = (targetType: BulkTarget, ids: Array<string | number>) => {
-  const [counts, setCounts] = useState<Counts>({ comments: {}, likes: {}, saves: {} });
+  const [counts, setCounts] = useState<Counts>({ comments: {}, likes: {}, saves: {}, downloads: {}, views: {} });
   const key = ids.join(",");
 
   useEffect(() => {
@@ -30,6 +32,8 @@ export const useBulkCounts = (targetType: BulkTarget, ids: Array<string | number
           comments: data.comments || {},
           likes: data.likes || {},
           saves: data.saves || {},
+          downloads: data.downloads || {},
+          views: data.views || {},
         });
       })
       .catch(() => {});

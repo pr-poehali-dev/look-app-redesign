@@ -115,6 +115,19 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return _resp(200, {'count': count})
 
+        if action == 'download' and method == 'POST':
+            body = json.loads(event.get('body') or '{}')
+            target_type = _esc((body.get('target_type') or '').strip())[:20]
+            target_id = _esc(str(body.get('target_id') or '').strip())[:100]
+            if not target_type or not target_id:
+                return _resp(400, {'error': 'target_type and target_id required'})
+            safe_user = _esc(user_id)
+            cur.execute(
+                f"INSERT INTO {schema}.downloads (target_type, target_id, user_id) VALUES ('{target_type}', '{target_id}', '{safe_user}')"
+            )
+            conn.commit()
+            return _resp(200, {'ok': True})
+
         if action == 'count' and method == 'GET':
             target_type = _esc(params.get('target_type', ''))[:20]
             ids_raw = (params.get('target_ids') or '').strip()
@@ -136,10 +149,23 @@ def handler(event: dict, context) -> dict:
                 f"SELECT target_id, COUNT(*) FROM {schema}.saves WHERE target_type = '{target_type}' AND target_id IN ({in_list}) GROUP BY target_id"
             )
             s_rows = cur.fetchall()
+            cur.execute(
+                f"SELECT target_id, COUNT(*) FROM {schema}.downloads WHERE target_type = '{target_type}' AND target_id IN ({in_list}) GROUP BY target_id"
+            )
+            d_rows = cur.fetchall()
+            v_rows = []
+            int_ids = [i for i in ids if i.isdigit()]
+            if target_type == 'video' and int_ids:
+                cur.execute(
+                    f"SELECT video_id, COUNT(*) FROM {schema}.video_views WHERE video_id IN ({', '.join(int_ids)}) GROUP BY video_id"
+                )
+                v_rows = cur.fetchall()
             return _resp(200, {
                 'comments': {r[0]: r[1] for r in c_rows},
                 'likes': {r[0]: r[1] for r in l_rows},
                 'saves': {r[0]: r[1] for r in s_rows},
+                'downloads': {r[0]: r[1] for r in d_rows},
+                'views': {str(r[0]): r[1] for r in v_rows},
             })
 
         if method == 'GET':

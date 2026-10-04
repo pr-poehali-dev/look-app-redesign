@@ -89,7 +89,7 @@ interface Story {
   label: string;
 }
 
-interface MediaCounts { likes: Record<string, number>; comments: Record<string, number>; saves: Record<string, number> }
+interface MediaCounts { likes: Record<string, number>; comments: Record<string, number>; saves: Record<string, number>; downloads: Record<string, number>; views: Record<string, number> }
 
 const StatItem = ({ icon, value, label }: { icon: string; value: number; label: string }) => (
   <div className="flex flex-col items-center gap-1 min-w-[56px]">
@@ -133,10 +133,12 @@ const MediaViewer = ({ items, startIndex, onClose, onDelete, isRepostView, count
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-6">
-        <div className="flex items-center justify-center gap-6 pb-2">
+        <div className="flex items-center justify-center gap-4 pb-2">
+          <StatItem icon="Eye" value={counts?.views[String(item.id)] || 0} label="Просмотры" />
           <StatItem icon="Heart" value={counts?.likes[String(item.id)] || 0} label="Лайки" />
           <StatItem icon="MessageCircle" value={counts?.comments[String(item.id)] || 0} label="Комментарии" />
           <StatItem icon="Bookmark" value={counts?.saves[String(item.id)] || 0} label="Сохранения" />
+          <StatItem icon="Download" value={counts?.downloads[String(item.id)] || 0} label="Скачивания" />
         </div>
         <button
           onClick={() => setConfirmDelete(true)}
