@@ -89,7 +89,17 @@ interface Story {
   label: string;
 }
 
-const MediaViewer = ({ items, startIndex, onClose, onDelete, isRepostView }: { items: Story[]; startIndex: number; onClose: () => void; onDelete: (id: number) => void; isRepostView?: boolean }) => {
+interface MediaCounts { likes: Record<string, number>; comments: Record<string, number>; saves: Record<string, number> }
+
+const StatItem = ({ icon, value, label }: { icon: string; value: number; label: string }) => (
+  <div className="flex flex-col items-center gap-1 min-w-[56px]">
+    <Icon name={icon} fallback="Circle" size={22} className="text-white" />
+    <span className="text-white font-bold text-sm leading-none">{value}</span>
+    <span className="text-white/60 text-[10px] leading-none">{label}</span>
+  </div>
+);
+
+const MediaViewer = ({ items, startIndex, onClose, onDelete, isRepostView, counts }: { items: Story[]; startIndex: number; onClose: () => void; onDelete: (id: number) => void; isRepostView?: boolean; counts?: MediaCounts }) => {
   const [index, setIndex] = useState(startIndex);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleted, setDeleted] = useState(false);
@@ -122,15 +132,21 @@ const MediaViewer = ({ items, startIndex, onClose, onDelete, isRepostView }: { i
         <span className="w-10" />
       </div>
 
-      {/* Delete/unrepost button — внизу, явная кнопка */}
-      <button
-        onClick={() => setConfirmDelete(true)}
-        className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center gap-2 px-4 pt-4 pb-10 bg-gradient-to-t from-black/70 to-transparent text-red-400 font-semibold text-sm hover:text-red-300 transition-colors cursor-pointer"
-        style={{ touchAction: "manipulation" }}
-      >
-        <Icon name={isRepostView ? "Repeat2" : "Trash2"} fallback="Trash2" size={20} />
-        {isRepostView ? "Убрать репост" : "Удалить"}
-      </button>
+      <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-6">
+        <div className="flex items-center justify-center gap-6 pb-2">
+          <StatItem icon="Heart" value={counts?.likes[String(item.id)] || 0} label="Лайки" />
+          <StatItem icon="MessageCircle" value={counts?.comments[String(item.id)] || 0} label="Комментарии" />
+          <StatItem icon="Bookmark" value={counts?.saves[String(item.id)] || 0} label="Сохранения" />
+        </div>
+        <button
+          onClick={() => setConfirmDelete(true)}
+          className="pointer-events-auto w-full flex items-center justify-center gap-2 px-4 pt-2 pb-8 text-red-400 font-semibold text-sm hover:text-red-300 transition-colors cursor-pointer"
+          style={{ touchAction: "manipulation" }}
+        >
+          <Icon name={isRepostView ? "Repeat2" : "Trash2"} fallback="Trash2" size={20} />
+          {isRepostView ? "Убрать репост" : "Удалить"}
+        </button>
+      </div>
 
       {/* Confirm delete */}
       {confirmDelete && (
@@ -254,7 +270,9 @@ const ProfilePage = () => {
   const followersCount = useFollowerCount(user?.handle || "");
   const [followersList, setFollowersList] = useState<UserItem[]>([]);
   const videoIds = useMemo(() => stories.filter(s => s.type === "video").map(s => s.id), [stories]);
-  const { likes: bulkLikes } = useBulkCounts("video", videoIds);
+  const allIds = useMemo(() => stories.map(s => s.id), [stories]);
+  const bulkAll = useBulkCounts("video", allIds);
+  const bulkLikes = bulkAll.likes;
   const totalLikes = useMemo(
     () => videoIds.reduce((sum, id) => sum + (bulkLikes[String(id)] || 0), 0),
     [videoIds, bulkLikes]
@@ -373,6 +391,7 @@ const ProfilePage = () => {
             items={liveItems}
             startIndex={safeIndex}
             isRepostView={!!mediaViewer.onlyReposts}
+            counts={bulkAll}
             onClose={() => setMediaViewer(null)}
             onDelete={(id) => {
               removeMedia(id);
