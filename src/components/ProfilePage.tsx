@@ -273,7 +273,22 @@ const ProfilePage = () => {
   const [followersList, setFollowersList] = useState<UserItem[]>([]);
   const videoIds = useMemo(() => stories.filter(s => s.type === "video").map(s => s.id), [stories]);
   const allIds = useMemo(() => stories.map(s => s.id), [stories]);
-  const bulkAll = useBulkCounts("video", allIds);
+  const bulkVideo = useBulkCounts("video", allIds);
+  const bulkPost = useBulkCounts("post", allIds);
+  const bulkAll = useMemo(() => {
+    const sum = (a: Record<string, number>, b: Record<string, number>) => {
+      const r: Record<string, number> = { ...a };
+      Object.keys(b).forEach(k => { r[k] = (r[k] || 0) + b[k]; });
+      return r;
+    };
+    return {
+      likes: sum(bulkVideo.likes, bulkPost.likes),
+      comments: sum(bulkVideo.comments, bulkPost.comments),
+      saves: sum(bulkVideo.saves, bulkPost.saves),
+      downloads: sum(bulkVideo.downloads, bulkPost.downloads),
+      views: sum(bulkVideo.views, bulkPost.views),
+    };
+  }, [bulkVideo, bulkPost]);
   const bulkLikes = bulkAll.likes;
   const totalLikes = useMemo(
     () => videoIds.reduce((sum, id) => sum + (bulkLikes[String(id)] || 0), 0),
