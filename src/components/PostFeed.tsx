@@ -12,6 +12,8 @@ import SearchOverlay from "./post-feed/SearchOverlay";
 import { Post, GET_PHOTOS_URL, formatTime, parseServerDate } from "./post-feed/PostFeedTypes";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
 import { useFollowingList } from "@/hooks/useFollowing";
+import { detectCity, normCity } from "@/lib/city";
+import { toast } from "sonner";
 
 type FeedScope = "recommend" | "following" | "nearby" | "trending" | "articles";
 type ViewMode = "masonry" | "feed";
@@ -27,7 +29,7 @@ const SCOPES: { id: FeedScope; label: string }[] = [
 const PostFeed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, token, updateUser } = useAuth();
   const { addMedia, removedIds, mediaVersion } = useUserMedia();
   const myStoryInputRef = useRef<HTMLInputElement>(null);
   const followingHandles = useFollowingList();
@@ -37,6 +39,32 @@ const PostFeed = () => {
     return (localStorage.getItem("feed_view_mode") as ViewMode) || "masonry";
   });
   const [showSearch, setShowSearch] = useState(false);
+  const [detecting, setDetecting] = useState(false);
+  const [cityInput, setCityInput] = useState("");
+  const myCity = normCity(user?.city);
+
+  const saveCity = async (city: string) => {
+    const clean = city.trim();
+    if (!clean || !token) return;
+    try {
+      const res = await fetch("https://functions.poehali.dev/075d6280-020a-48ce-a5e4-64eb3291a01e", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_profile", token, city: clean }),
+      });
+      const raw = await res.json();
+      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+      if (data.user) updateUser(data.user);
+      else toast.error(data.error || "Не удалось сохранить город");
+    } catch { toast.error("Не удалось сохранить город"); }
+  };
+
+  const autoDetect = async () => {
+    setDetecting(true);
+    try { await saveCity(await detectCity()); }
+    catch { toast.error("Не удалось определить город. Введи его вручную"); }
+    setDetecting(false);
+  };
   const [searchOpenedPost, setSearchOpenedPost] = useState<Post | null>(null);
 
   useEffect(() => {
@@ -74,6 +102,7 @@ const PostFeed = () => {
         templateId: v.template_id || null,
         hasProducts: !!v.has_products,
         views: typeof v.views === "number" ? v.views : undefined,
+        city: v.city || null,
         isVerified: !!v.is_verified,
         isAd: !!v.is_ad,
         adLabel: v.ad_label || null,
@@ -136,7 +165,10 @@ const PostFeed = () => {
       return visiblePosts.filter(p => set.has((p.handle || "").toLowerCase())).sort(byNew);
     }
     if (scope === "nearby") {
-      return visiblePosts.filter(p => (p.handle || "").toLowerCase() !== myHandle).sort(byNew);
+      if (!myCity) return [];
+      return visiblePosts
+        .filter(p => normCity(p.city) === myCity && (p.handle || "").toLowerCase() !== myHandle)
+        .sort(byNew);
     }
     if (scope === "trending") {
       const weekMs = 7 * 24 * 60 * 60 * 1000;
@@ -158,7 +190,7 @@ const PostFeed = () => {
         return fb - fa || byNew(a, b);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scope, visiblePosts, followingHandles.join(","), myHandle]);
+  }, [scope, visiblePosts, followingHandles.join(","), myHandle, myCity]);
 
   const seenHandles = new Set<string>();
   const storyUsers = scopedPosts.filter(p => {
@@ -269,7 +301,45 @@ const PostFeed = () => {
         <div className="flex-shrink-0 w-1" aria-hidden="true" />
       </div>
 
-      {scope === "articles" ? (
+      {scope === "nearby" && (!myCity || scopedPosts.length === 0) ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-8 text-center" style={{ paddingTop: 156 }}>
+          <Icon name="MapPin" size={44} className="text-white/40" />
+          {!myCity ? (
+            <>
+              <p className="text-white/80 text-sm">Укажите город, и я покажу публикации авторов рядом с вами</p>
+              <button
+                onClick={autoDetect}
+                disabled={detecting || !user}
+                className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold disabled:opacity-60"
+              >
+                {detecting ? "Определяю..." : "Определить мой город"}
+              </button>
+              <div className="flex items-center gap-2 w-full max-w-xs">
+                <input
+                  value={cityInput}
+                  onChange={(e) => setCityInput(e.target.value)}
+                  placeholder="Или введите город"
+                  maxLength={80}
+                  className="flex-1 min-w-0 px-3 py-2 rounded-full bg-white/10 text-white placeholder-white/40 text-sm outline-none"
+                />
+                <button
+                  onClick={() => saveCity(cityInput)}
+                  disabled={!cityInput.trim() || !user}
+                  className="px-4 py-2 rounded-full bg-white/20 text-white text-sm font-semibold disabled:opacity-40"
+                >
+                  Готово
+                </button>
+              </div>
+              {!user && <p className="text-white/40 text-xs">Войдите в аккаунт, чтобы сохранить город</p>}
+            </>
+          ) : (
+            <>
+              <p className="text-white/80 text-sm">В городе «{user?.city}» пока нет публикаций других авторов</p>
+              <p className="text-white/40 text-xs">Они появятся, когда авторы укажут этот город в своём профиле</p>
+            </>
+          )}
+        </div>
+      ) : scope === "articles" ? (
         <div className="absolute inset-0">
           <ArticlesFeed topPad={156} />
         </div>

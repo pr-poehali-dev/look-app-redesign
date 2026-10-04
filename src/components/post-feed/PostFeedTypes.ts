@@ -17,6 +17,7 @@ export interface Post {
   comments: number;
   time: string;
   location?: string;
+  city?: string | null;
   createdAt?: number;
   isVideo?: boolean;
   templateId?: string | null;

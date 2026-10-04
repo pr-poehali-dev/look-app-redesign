@@ -230,6 +230,17 @@ def handler(event: dict, context) -> dict:
                     watch_stats[cat] = watch_stats.get(cat, 0.0) + signal
             except Exception:
                 watch_stats = {}
+        author_city = {}
+        try:
+            owner_ids = list({r[14] for r in rows if r[14]})
+            if owner_ids:
+                cur.execute(
+                    f"SELECT id, city FROM {schema}.app_users WHERE city IS NOT NULL AND id = ANY(%s)",
+                    (owner_ids,)
+                )
+                author_city = {row[0]: row[1] for row in cur.fetchall()}
+        except Exception:
+            author_city = {}
     finally:
         cur.close()
         conn.close()
@@ -337,6 +348,7 @@ def handler(event: dict, context) -> dict:
             'ad_label': r[20],
             'reposted_by': r[21],
             'reposted_by_avatar': r[22],
+            'city': author_city.get(r[14]),
         })
 
     # Фиксируем показы рекламы (счётчик показов для рекламодателя)

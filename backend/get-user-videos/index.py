@@ -137,14 +137,14 @@ def handler(event: dict, context) -> dict:
             if not token: return err('Нет токена', 401)
             conn = get_conn(); cur = conn.cursor()
             try:
-                cur.execute("SELECT id,name,handle,email,avatar,phone,gender,links,COALESCE(banned,FALSE) FROM app_users WHERE token=%s", (token,))
+                cur.execute("SELECT id,name,handle,email,avatar,phone,gender,links,COALESCE(banned,FALSE),city FROM app_users WHERE token=%s", (token,))
                 row = cur.fetchone()
             finally:
                 cur.close(); conn.close()
             if not row: return err('Токен недействителен', 401)
             if row[8]: return err('Аккаунт заблокирован. Обратитесь в поддержку: support@look.com.ru', 403)
             links_val = row[7] if row[7] is not None else []
-            return ok({'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'email': row[3], 'avatar': row[4], 'phone': row[5], 'gender': row[6], 'links': links_val}})
+            return ok({'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'email': row[3], 'avatar': row[4], 'phone': row[5], 'gender': row[6], 'links': links_val, 'city': row[9]}})
 
         if action == 'qr_create':
             code = secrets.token_urlsafe(16)
@@ -168,7 +168,7 @@ def handler(event: dict, context) -> dict:
                     return ok({'status': 'not_found'})
                 status, uid, tok, created_at = row
                 if status == 'approved' and uid and tok:
-                    cur.execute("SELECT id,name,handle,email,avatar,phone,gender,links FROM app_users WHERE id=%s", (uid,))
+                    cur.execute("SELECT id,name,handle,email,avatar,phone,gender,links,city FROM app_users WHERE id=%s", (uid,))
                     u = cur.fetchone()
                     cur.execute("UPDATE qr_login_sessions SET status='used' WHERE code=%s", (code,))
                     conn.commit()
@@ -177,7 +177,7 @@ def handler(event: dict, context) -> dict:
                     return ok({
                         'status': 'approved',
                         'token': tok,
-                        'user': {'id': u[0], 'name': u[1], 'handle': u[2], 'email': u[3], 'avatar': u[4], 'phone': u[5], 'gender': u[6], 'links': links_val}
+                        'user': {'id': u[0], 'name': u[1], 'handle': u[2], 'email': u[3], 'avatar': u[4], 'phone': u[5], 'gender': u[6], 'links': links_val, 'city': u[8]}
                     })
                 return ok({'status': status})
             finally:
@@ -286,6 +286,9 @@ def handler(event: dict, context) -> dict:
                 if gender and gender not in ('male', 'female', 'other', ''):
                     return err('Некорректный пол')
                 updates.append('gender=%s'); values.append(gender or None)
+            if 'city' in body:
+                city = (body.get('city') or '').strip()[:80]
+                updates.append('city=%s'); values.append(city or None)
             phone_final = None
             if 'phone' in body:
                 phone_raw = (body.get('phone') or '').strip()
@@ -336,13 +339,13 @@ def handler(event: dict, context) -> dict:
                         return err('Этот номер уже используется другим аккаунтом')
                 values.append(uid)
                 cur.execute(f"UPDATE app_users SET {', '.join(updates)} WHERE id=%s", tuple(values))
-                cur.execute("SELECT id,name,handle,email,avatar,phone,gender,links FROM app_users WHERE id=%s", (uid,))
+                cur.execute("SELECT id,name,handle,email,avatar,phone,gender,links,city FROM app_users WHERE id=%s", (uid,))
                 r = cur.fetchone()
                 conn.commit()
             finally:
                 cur.close(); conn.close()
             links_val = r[7] if r[7] is not None else []
-            return ok({'user': {'id': r[0], 'name': r[1], 'handle': r[2], 'email': r[3], 'avatar': r[4], 'phone': r[5], 'gender': r[6], 'links': links_val}})
+            return ok({'user': {'id': r[0], 'name': r[1], 'handle': r[2], 'email': r[3], 'avatar': r[4], 'phone': r[5], 'gender': r[6], 'links': links_val, 'city': r[8]}})
 
         if action == 'update_avatar':
             token = body.get('token') or ''

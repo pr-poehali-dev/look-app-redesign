@@ -10,6 +10,7 @@ export interface AppUser {
   avatar: string | null;
   phone?: string | null;
   gender?: string | null;
+  city?: string | null;
   links?: ProfileLink[];
   is_verified?: boolean;
 }

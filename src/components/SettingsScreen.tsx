@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import Icon from "@/components/ui/icon";
+import { detectCity } from "@/lib/city";
 import UserAvatar from "@/components/ui/user-avatar";
 import { useAuth } from "@/context/AuthContext";
 import { SavedItem, useSavedFolders, DEFAULT_FOLDER } from "@/hooks/useSaved";
@@ -421,6 +422,8 @@ const EditProfileScreen = ({ onBack }: { onBack: () => void }) => {
   const [handle, setHandle] = useState<string>(user?.handle || "");
   const [gender, setGender] = useState<string>(user?.gender || "");
   const [email, setEmail] = useState<string>(user?.email || "");
+  const [city, setCity] = useState<string>(user?.city || "");
+  const [detectingCity, setDetectingCity] = useState(false);
   const [phone, setPhone] = useState<string>(() => {
     const p = user?.phone || "";
     return p.startsWith("+7") ? p.slice(2).trim() : p;
@@ -473,6 +476,7 @@ const EditProfileScreen = ({ onBack }: { onBack: () => void }) => {
         handle: handle.trim(),
         email: email.trim(),
         gender,
+        city: city.trim(),
         links: links.filter(l => l.url.trim()),
       };
       if (phoneClean) body.phone = phoneFull;
@@ -582,6 +586,36 @@ const EditProfileScreen = ({ onBack }: { onBack: () => void }) => {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Город */}
+        <div className="px-4 pt-5">
+          <label className="text-black text-base">Город</label>
+          <div className="mt-2 flex items-stretch gap-2">
+            <input
+              value={city}
+              onChange={e => setCity(e.target.value)}
+              placeholder="Например, Москва"
+              maxLength={80}
+              className="flex-1 min-w-0 px-3 py-3 bg-gray-50 text-black text-base rounded-md outline-none"
+            />
+            <button
+              type="button"
+              disabled={detectingCity}
+              onClick={async () => {
+                setDetectingCity(true);
+                setError("");
+                try { setCity(await detectCity()); }
+                catch { setError("Не удалось определить город. Введи его вручную"); }
+                setDetectingCity(false);
+              }}
+              className="px-3 rounded-md bg-gray-700 text-white text-sm flex items-center gap-1 disabled:opacity-60"
+            >
+              <Icon name="MapPin" size={16} className="text-white" />
+              {detectingCity ? "..." : "Определить"}
+            </button>
+          </div>
+          <p className="text-gray-400 text-xs mt-1">Нужен для вкладки «Рядом» в ленте</p>
         </div>
 
         {/* Email */}
