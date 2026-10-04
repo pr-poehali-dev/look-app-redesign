@@ -439,7 +439,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
           const playPromise = remoteAudioRef.current.play();
           if (playPromise) playPromise.catch((err) => console.warn("[CallScreen] audio play failed", err));
         }
-        setStatus("connected");
+        if (pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") setStatus("connected");
       };
 
       pc.onicecandidate = (e) => {
