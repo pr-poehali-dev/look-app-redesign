@@ -9,7 +9,7 @@ import NoteViewer from "./post-feed/NoteViewer";
 import MasonryFeed from "./post-feed/MasonryFeed";
 import ArticlesFeed from "./post-feed/ArticlesFeed";
 import SearchOverlay from "./post-feed/SearchOverlay";
-import { Post, Story, MOCK_POSTS, GET_PHOTOS_URL, formatTime, parseServerDate } from "./post-feed/PostFeedTypes";
+import { Post, GET_PHOTOS_URL, formatTime, parseServerDate } from "./post-feed/PostFeedTypes";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
 import { useFollowingList } from "@/hooks/useFollowing";
 
@@ -23,13 +23,6 @@ const SCOPES: { id: FeedScope; label: string }[] = [
   { id: "articles", label: "Статьи" },
   { id: "nearby", label: "Рядом" },
 ];
-
-// Простая детерминированная псевдослучайность для сортировки «Рядом» (без реальной геолокации)
-function hashStr(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) { h = (h << 5) - h + s.charCodeAt(i); h |= 0; }
-  return Math.abs(h);
-}
 
 const PostFeed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -100,7 +93,7 @@ const PostFeed = () => {
         const dbPosts: Post[] = (imgData.videos || []).map((v) => mapPost(v, false));
         const dbVideoPosts: Post[] = (vidData.videos || []).map((v) => mapPost(v, true));
         const seen = new Set<string>();
-        const deduped = [...dbPosts, ...dbVideoPosts, ...MOCK_POSTS].filter(p => {
+        const deduped = [...dbPosts, ...dbVideoPosts].filter(p => {
           if (!p.image) return true;
           if (seen.has(p.image)) return false;
           seen.add(p.image);
@@ -108,7 +101,7 @@ const PostFeed = () => {
         });
         setPosts(deduped);
       })
-      .catch(() => setPosts(MOCK_POSTS))
+      .catch(() => setPosts([]))
       .finally(() => setLoading(false));
   }, [user, mediaVersion]);
 
@@ -122,57 +115,62 @@ const PostFeed = () => {
     c.scrollTo({ top: c.scrollTop + dir * c.clientHeight * 0.85, behavior: "smooth" });
   };
 
-  const counts = useBulkCounts("post", posts.map(p => p.id));
-  const postsWithCounts = posts.map(p => ({
-    ...p,
-    comments: counts.comments[String(p.id)] ?? p.comments,
-    likes: counts.likes[String(p.id)] ?? p.likes,
-  }));
+  const imageCounts = useBulkCounts("post", posts.filter(p => !p.isVideo).map(p => p.id));
+  const videoCounts = useBulkCounts("video", posts.filter(p => p.isVideo).map(p => p.id));
+  const postsWithCounts = posts.map(p => {
+    const c = p.isVideo ? videoCounts : imageCounts;
+    return {
+      ...p,
+      comments: c.comments[String(p.id)] ?? p.comments,
+      likes: c.likes[String(p.id)] ?? p.likes,
+      views: c.views[String(p.id)] ?? p.views,
+    };
+  });
 
-  const storySource = (postsWithCounts.length > 0 ? postsWithCounts : MOCK_POSTS)
-    .filter(p => !removedIds.has(p.id));
-  // Группируем по уникальному автору (handle) — в ряду сторис каждый автор показан один раз
-  const seenHandles = new Set<string>();
-  const storyUsers = storySource.filter(p => {
-    const key = (p.handle || p.author || "").toLowerCase().trim();
-    if (!key || seenHandles.has(key)) return false;
-    seenHandles.add(key);
-    return true;
-  }).slice(0, 12);
-  // При открытии показываем ВСЕ истории выбранного пользователя
-  const storiesByHandle = (handle: string): StoryViewerItem[] =>
-    storySource
-      .filter(p => (p.handle || p.author || "").toLowerCase().trim() === handle.toLowerCase().trim())
-      .map(p => ({ id: p.id, label: p.handle, avatar: p.avatar, image: p.image, isVideo: p.isVideo }));
-
-  // Фильтрация по вкладке: Подписки / Рекомендации / Рядом
-  const visiblePosts = storySource.filter(p => !removedIds.has(p.id));
+  const visiblePosts = postsWithCounts.filter(p => !removedIds.has(p.id));
+  const myHandle = (user?.handle || "").toLowerCase();
   const scopedPosts = useMemo(() => {
+    const byNew = (a: Post, b: Post) => (b.createdAt ?? 0) - (a.createdAt ?? 0);
     if (scope === "following") {
       const set = new Set(followingHandles.map(h => h.toLowerCase()));
-      // Фото и видео подписанных авторов вместе, от новых к старым
-      return visiblePosts
-        .filter(p => set.has((p.handle || "").toLowerCase()))
-        .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+      return visiblePosts.filter(p => set.has((p.handle || "").toLowerCase())).sort(byNew);
     }
     if (scope === "nearby") {
-      return [...visiblePosts].sort((a, b) => hashStr(String(a.id)) - hashStr(String(b.id)));
+      return visiblePosts.filter(p => (p.handle || "").toLowerCase() !== myHandle).sort(byNew);
     }
     if (scope === "trending") {
-      // Популярность = лайки + просмотры/10, с бонусом за свежесть (последние 7 дней)
       const weekMs = 7 * 24 * 60 * 60 * 1000;
       const now = Date.now();
       const score = (p: Post) => {
-        const base = p.likes + (p.views || 0) / 10;
+        const base = p.likes * 3 + p.comments * 5 + (p.views || 0) / 10;
         const age = p.createdAt ? now - p.createdAt : weekMs;
         const freshBonus = age < weekMs ? (1 - age / weekMs) * base * 0.5 : 0;
         return base + freshBonus;
       };
       return [...visiblePosts].sort((a, b) => score(b) - score(a));
     }
-    return visiblePosts;
+    const followed = new Set(followingHandles.map(h => h.toLowerCase()));
+    return visiblePosts
+      .filter(p => (p.handle || "").toLowerCase() !== myHandle)
+      .sort((a, b) => {
+        const fa = followed.has((a.handle || "").toLowerCase()) ? 1 : 0;
+        const fb = followed.has((b.handle || "").toLowerCase()) ? 1 : 0;
+        return fb - fa || byNew(a, b);
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scope, visiblePosts, followingHandles.join(",")]);
+  }, [scope, visiblePosts, followingHandles.join(","), myHandle]);
+
+  const seenHandles = new Set<string>();
+  const storyUsers = scopedPosts.filter(p => {
+    const key = (p.handle || p.author || "").toLowerCase().trim();
+    if (!key || seenHandles.has(key)) return false;
+    seenHandles.add(key);
+    return true;
+  }).slice(0, 12);
+  const storiesByHandle = (handle: string): StoryViewerItem[] =>
+    visiblePosts
+      .filter(p => (p.handle || p.author || "").toLowerCase().trim() === handle.toLowerCase().trim())
+      .map(p => ({ id: p.id, label: p.handle, avatar: p.avatar, image: p.image, isVideo: p.isVideo }));
 
   return (
     <div className="relative h-full bg-black">
