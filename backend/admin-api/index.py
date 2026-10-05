@@ -264,6 +264,30 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         return {'statusCode': 200, 'headers': _cors(),
                 'body': json.dumps({'ok': True})}
 
+    if action == 'mobile_api_list':
+        _q(cur, "SELECT name, function_id, enabled, created_at FROM {S}.mobile_api_services ORDER BY enabled DESC, name")
+        items = [{'name': r['name'], 'function_id': r['function_id'], 'enabled': r['enabled'],
+                  'created_at': r['created_at'].isoformat() if r['created_at'] else None} for r in cur.fetchall()]
+        _q(cur, "SELECT value FROM {S}.app_settings WHERE key = 'mobile_api_new_default'")
+        d = cur.fetchone()
+        return {'statusCode': 200, 'headers': _cors(),
+                'body': json.dumps({'items': items, 'new_default': (d['value'] if d else 'allow')}, ensure_ascii=False)}
+
+    if action == 'mobile_api_set':
+        name = (body.get('name') or '').strip()
+        _q(cur, "UPDATE {S}.mobile_api_services SET enabled = %s WHERE name = %s", (bool(body.get('enabled')), name))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
+
+    if action == 'mobile_api_set_default':
+        val = 'allow' if body.get('value') == 'allow' else 'deny'
+        _q(cur, """
+            INSERT INTO {S}.app_settings (key, value, updated_at) VALUES ('mobile_api_new_default', %s, NOW())
+            ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+        """, (val,))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
+
     # ============ DASHBOARD ============
     if action == 'stats':
         result = {}

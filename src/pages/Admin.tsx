@@ -4,7 +4,7 @@ import Icon from "@/components/ui/icon";
 const API = "https://functions.poehali.dev/c578b52c-b9b6-47b3-9bcf-b6ab8405c4d7";
 const TOKEN_KEY = "admin_token_v1";
 
-type Section = "dashboard" | "users" | "videos" | "photos" | "comments" | "chats" | "products" | "reports" | "streams" | "broadcast" | "email_stats" | "support" | "privacy" | "terms";
+type Section = "dashboard" | "users" | "videos" | "photos" | "comments" | "chats" | "products" | "reports" | "streams" | "broadcast" | "email_stats" | "support" | "mobile_api" | "privacy" | "terms";
 
 interface Stats {
   users_total: number; users_today: number; users_week: number;
@@ -43,6 +43,7 @@ const SECTIONS: { id: Section; label: string; icon: string }[] = [
   { id: "broadcast", label: "Рассылки", icon: "Send" },
   { id: "email_stats", label: "Метрики писем", icon: "Mail" },
   { id: "support", label: "Поддержка", icon: "LifeBuoy" },
+  { id: "mobile_api", label: "API приложения", icon: "Smartphone" },
   { id: "privacy", label: "Политика конф.", icon: "ShieldCheck" },
   { id: "terms", label: "Условия использ.", icon: "FileText" },
 ];
@@ -116,6 +117,7 @@ export default function Admin() {
           {section === "broadcast" && <Broadcast token={token!} />}
           {section === "email_stats" && <EmailStats />}
           {section === "support" && <SupportAdmin />}
+          {section === "mobile_api" && <MobileApiAccess token={token!} />}
           {section === "privacy" && <DocEditor token={token!} settingKey="privacy_policy" title="Политика конфиденциальности" />}
           {section === "terms" && <DocEditor token={token!} settingKey="terms_of_use" title="Условия использования" />}
         </div>
@@ -1484,6 +1486,117 @@ function Broadcast({ token }: { token: string }) {
         ))}
         {list.length === 0 && <p className="p-4 text-white/40 text-sm">Рассылок пока не было</p>}
       </div>
+    </div>
+  );
+}
+
+interface MobileApiItem { name: string; function_id: string; enabled: boolean; created_at: string | null }
+
+function MobileApiAccess({ token }: { token: string }) {
+  const [items, setItems] = useState<MobileApiItem[]>([]);
+  const [newDefault, setNewDefault] = useState<"allow" | "deny">("allow");
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const d = await api("mobile_api_list", {}, token);
+      setItems(d.items || []);
+      setNewDefault(d.new_default === "deny" ? "deny" : "allow");
+    } catch (e) {
+      alert("Ошибка загрузки: " + (e instanceof Error ? e.message : "неизвестная"));
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const toggle = async (it: MobileApiItem) => {
+    const enabled = !it.enabled;
+    setItems(prev => prev.map(x => x.name === it.name ? { ...x, enabled } : x));
+    try {
+      await api("mobile_api_set", { name: it.name, enabled }, token);
+    } catch (e) {
+      setItems(prev => prev.map(x => x.name === it.name ? { ...x, enabled: it.enabled } : x));
+      alert("Не удалось сохранить: " + (e instanceof Error ? e.message : "неизвестная"));
+    }
+  };
+
+  const changeDefault = async (value: "allow" | "deny") => {
+    const prev = newDefault;
+    setNewDefault(value);
+    try {
+      await api("mobile_api_set_default", { value }, token);
+    } catch (e) {
+      setNewDefault(prev);
+      alert("Не удалось сохранить: " + (e instanceof Error ? e.message : "неизвестная"));
+    }
+  };
+
+  const q = search.trim().toLowerCase();
+  const shown = items.filter(i => !q || i.name.toLowerCase().includes(q));
+  const enabledCount = items.filter(i => i.enabled).length;
+
+  return (
+    <div className="space-y-5 pb-24 max-w-3xl">
+      <div>
+        <h2 className="text-2xl font-bold">API приложения</h2>
+        <p className="text-xs text-white/40 mt-1">
+          Выберите, какие части сайта доступны мобильному приложению. Включено: {enabledCount} из {items.length}.
+        </p>
+      </div>
+
+      <div className="rounded-xl bg-zinc-900 border border-white/10 p-4 space-y-3">
+        <p className="font-semibold text-sm">Новые функции сайта</p>
+        <p className="text-xs text-white/40">Что делать, когда приложение впервые обращается к функции, которой нет в списке ниже.</p>
+        <div className="flex gap-2">
+          {([
+            { v: "allow", l: "Открывать автоматически" },
+            { v: "deny", l: "Закрывать, включу вручную" },
+          ] as const).map(o => (
+            <button
+              key={o.v}
+              onClick={() => changeDefault(o.v)}
+              className={`px-3 py-2 rounded-lg text-sm font-semibold ${newDefault === o.v ? "bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white" : "bg-white/5 text-white/60 hover:bg-white/10"}`}
+            >
+              {o.l}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <input
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        placeholder="Поиск по названию"
+        className="w-full px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white placeholder:text-white/30 text-sm"
+      />
+
+      {loading ? (
+        <p className="text-white/50">Загрузка...</p>
+      ) : (
+        <div className="rounded-xl bg-zinc-900 border border-white/10 divide-y divide-white/5">
+          {shown.map(it => (
+            <div key={it.name} className="flex items-center gap-3 px-4 py-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold truncate">{it.name}</p>
+                <p className="text-[11px] text-white/30 truncate">{it.function_id}</p>
+              </div>
+              <span className={`text-xs ${it.enabled ? "text-emerald-400" : "text-white/40"}`}>{it.enabled ? "Доступна" : "Закрыта"}</span>
+              <button
+                onClick={() => toggle(it)}
+                aria-label={it.enabled ? "Закрыть доступ" : "Открыть доступ"}
+                className={`relative w-11 h-6 rounded-full transition-colors ${it.enabled ? "bg-emerald-500" : "bg-white/15"}`}
+              >
+                <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ${it.enabled ? "left-[22px]" : "left-0.5"}`} />
+              </button>
+            </div>
+          ))}
+          {shown.length === 0 && <p className="px-4 py-6 text-sm text-white/40 text-center">Ничего не найдено</p>}
+        </div>
+      )}
     </div>
   );
 }

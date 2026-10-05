@@ -7,7 +7,9 @@ import urllib.error
 import re
 import urllib.parse
 
-from routes import ROUTES, BLOCKED_IDS
+import psycopg2
+
+from routes import ROUTES
 
 API_VERSION = 'v1'
 FUNCTIONS_BASE = 'https://functions.poehali.dev/'
@@ -48,11 +50,40 @@ def handler(event: dict, context) -> dict:
     if not hmac.compare_digest(given.encode(), expected.encode()):
         return _resp(401, {'error': 'Неверный ключ API'})
 
-    target = ROUTES.get(service)
-    if not target and UUID_RE.match(service):
-        if service.lower() in BLOCKED_IDS:
-            return _resp(403, {'error': 'Эта служба недоступна для приложения'})
-        target = FUNCTIONS_BASE + service.lower()
+    target = None
+    is_id = bool(UUID_RE.match(service))
+    schema = os.environ.get('MAIN_DB_SCHEMA', 'public')
+    try:
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        conn.autocommit = True
+        cur = conn.cursor()
+        try:
+            cur.execute(
+                f"SELECT function_id, enabled FROM {schema}.mobile_api_services WHERE name = %s OR function_id = %s",
+                (service, service.lower())
+            )
+            row = cur.fetchone()
+            if row:
+                if not row[1]:
+                    return _resp(403, {'error': 'Эта служба недоступна для приложения'})
+                target = FUNCTIONS_BASE + row[0]
+            elif is_id:
+                cur.execute(f"SELECT value FROM {schema}.app_settings WHERE key = 'mobile_api_new_default'")
+                d = cur.fetchone()
+                allow = (d[0] if d else 'allow') == 'allow'
+                cur.execute(
+                    f"INSERT INTO {schema}.mobile_api_services (name, function_id, enabled) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING",
+                    (service.lower(), service.lower(), allow)
+                )
+                if not allow:
+                    return _resp(403, {'error': 'Эта служба недоступна для приложения'})
+                target = FUNCTIONS_BASE + service.lower()
+        finally:
+            cur.close()
+            conn.close()
+    except Exception:
+        target = ROUTES.get(service)
+
     if not target:
         return _resp(404, {'error': 'Неизвестная служба', 'services': sorted(ROUTES.keys())})
 
