@@ -15,8 +15,31 @@ ROUTES = {
     "signals": "https://functions.poehali.dev/25a02f3d-0647-4142-999d-f84cb6302dd5",
     "support": "https://functions.poehali.dev/c799ab49-0e91-4b94-8ec4-4325db5e1c73",
     "session": "https://functions.poehali.dev/aa92a65b-92cc-4c07-a255-6e18811805bd",
+    "legacy-otp-request": "https://functions.poehali.dev/37ce1591-438c-4426-870f-1031b2c57d22",
+    "legacy-otp-verify": "https://functions.poehali.dev/b9c5bff7-0a7d-43c6-9e65-4d6365a68447",
     "password-reset": "https://functions.poehali.dev/050dfa15-1d92-4aaf-9b87-55d04c9affa7",
     "ice-servers": "https://functions.poehali.dev/53c7b2af-c5ea-4c37-bc28-154737d35d87",
     "admin": "https://functions.poehali.dev/c578b52c-b9b6-47b3-9bcf-b6ab8405c4d7",
     "analytics": "https://functions.poehali.dev/7b5c6c18-7098-4f9b-bf3c-e6ac50574c06"
 }
+
+BLOCKED_IDS = [
+    "03134b9c-4f0f-4e39-af7a-a52bb56b1f3a",
+    "36158ddd-3a04-4aa2-af12-0c3d09f9dbe9",
+    "57318c7a-4812-45ac-8609-2790c021545e",
+    "61ce0917-98cb-4caa-9e74-773c816f46f0",
+    "6a6e5bbb-2af4-4e5f-ba91-38e17c2420a4",
+    "9a112661-17f2-4932-8dbe-4088a7665239",
+    "9d18d13e-1ce1-4aa7-ae13-3e4be57e44b4",
+    "9ebae380-9dc6-4e3f-b5cb-d636b6ca77f2",
+    "be1dc659-71d3-414a-9029-c3bc7de92bf2",
+    "be575f5c-eb60-4522-ad3e-1b6527c85abb",
+    "cb9f8edd-ee1d-436d-95cb-e07d3b4655b0",
+    "cc5c1904-8f26-4310-b400-904296563b8d",
+    "cdec7597-3577-4618-8457-a10be712c302",
+    "d1cfb246-8b1e-4e41-8905-1966589c1420",
+    "d43a0739-b87d-4876-83c9-76ad7ded193f",
+    "d60ef7bd-d96d-4388-9c4a-637a822e9313",
+    "e4135c0e-d218-4ce3-bb17-1834be6fcfd0",
+    "eb443a8e-b2e9-45c0-a29d-b16c903ace99"
+]

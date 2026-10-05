@@ -7,7 +7,7 @@ import urllib.error
 import re
 import urllib.parse
 
-from routes import ROUTES
+from routes import ROUTES, BLOCKED_IDS
 
 API_VERSION = 'v1'
 FUNCTIONS_BASE = 'https://functions.poehali.dev/'
@@ -50,6 +50,8 @@ def handler(event: dict, context) -> dict:
 
     target = ROUTES.get(service)
     if not target and UUID_RE.match(service):
+        if service.lower() in BLOCKED_IDS:
+            return _resp(403, {'error': 'Эта служба недоступна для приложения'})
         target = FUNCTIONS_BASE + service.lower()
     if not target:
         return _resp(404, {'error': 'Неизвестная служба', 'services': sorted(ROUTES.keys())})
