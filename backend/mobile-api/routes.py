@@ -1,0 +1,22 @@
+ROUTES = {
+    "auth": "https://functions.poehali.dev/075d6280-020a-48ce-a5e4-64eb3291a01e",
+    "feed": "https://functions.poehali.dev/f58115ec-de09-405d-a2db-08fe1cd958e1",
+    "upload": "https://functions.poehali.dev/78967386-1bfb-4070-9bb3-549cc5c00de6",
+    "upload-chunked": "https://functions.poehali.dev/25a6b99d-32f3-45a4-baf7-a088013ca292",
+    "comments": "https://functions.poehali.dev/4ceed9c1-422c-484e-806e-b3cc8af8b9ec",
+    "follows": "https://functions.poehali.dev/791bdb8d-0cb7-40b2-8a0c-e4a84b213fbc",
+    "chat": "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c",
+    "notifications": "https://functions.poehali.dev/8ae7d03e-5a18-4ff2-87f1-69f512fbacc3",
+    "cart": "https://functions.poehali.dev/32fdb3d3-b4f4-4dda-ac97-b0b038649b0f",
+    "products": "https://functions.poehali.dev/c4d3aa37-b7c2-4047-880a-ab17127da315",
+    "reviews": "https://functions.poehali.dev/624a62b6-f281-4c64-8f3d-7fc562265b8e",
+    "articles": "https://functions.poehali.dev/8a82c5d6-f598-4faf-a1ff-9e418c1823d8",
+    "streams": "https://functions.poehali.dev/54ce632b-903a-4de7-8f5f-e81fa2f42053",
+    "signals": "https://functions.poehali.dev/25a02f3d-0647-4142-999d-f84cb6302dd5",
+    "support": "https://functions.poehali.dev/c799ab49-0e91-4b94-8ec4-4325db5e1c73",
+    "session": "https://functions.poehali.dev/aa92a65b-92cc-4c07-a255-6e18811805bd",
+    "password-reset": "https://functions.poehali.dev/050dfa15-1d92-4aaf-9b87-55d04c9affa7",
+    "ice-servers": "https://functions.poehali.dev/53c7b2af-c5ea-4c37-bc28-154737d35d87",
+    "admin": "https://functions.poehali.dev/c578b52c-b9b6-47b3-9bcf-b6ab8405c4d7",
+    "analytics": "https://functions.poehali.dev/7b5c6c18-7098-4f9b-bf3c-e6ac50574c06"
+}

@@ -1,0 +1,6 @@
+{
+  "tests": [
+    {"name": "OPTIONS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+    {"name": "Service list", "method": "GET", "path": "/", "expectedStatus": 200, "expectedBody": {"version": "v1"}, "bodyMatcher": "partial"}
+  ]
+}
