@@ -41,6 +41,7 @@ const PostFeed = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [detecting, setDetecting] = useState(false);
   const [cityInput, setCityInput] = useState("");
+  const [editingCity, setEditingCity] = useState(false);
   const myCity = normCity(user?.city);
 
   const saveCity = async (city: string) => {
@@ -54,7 +55,7 @@ const PostFeed = () => {
       });
       const raw = await res.json();
       const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-      if (data.user) updateUser(data.user);
+      if (data.user) { updateUser(data.user); setEditingCity(false); setCityInput(""); }
       else toast.error(data.error || "Не удалось сохранить город");
     } catch { toast.error("Не удалось сохранить город"); }
   };
@@ -301,12 +302,12 @@ const PostFeed = () => {
         <div className="flex-shrink-0 w-1" aria-hidden="true" />
       </div>
 
-      {scope === "nearby" && (!myCity || scopedPosts.length === 0) ? (
+      {scope === "nearby" && (!myCity || editingCity || scopedPosts.length === 0) ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-8 text-center" style={{ paddingTop: 156 }}>
           <Icon name="MapPin" size={44} className="text-white/40" />
-          {!myCity ? (
+          {!myCity || editingCity ? (
             <>
-              <p className="text-white/80 text-sm">Укажите город, и я покажу публикации авторов рядом с вами</p>
+              <p className="text-white/80 text-sm">{editingCity ? "Выберите другой город" : "Укажите город, и я покажу публикации авторов рядом с вами"}</p>
               <button
                 onClick={autoDetect}
                 disabled={detecting || !user}
@@ -330,12 +331,16 @@ const PostFeed = () => {
                   Готово
                 </button>
               </div>
+              {editingCity && (
+                <button onClick={() => { setEditingCity(false); setCityInput(""); }} className="text-white/50 text-xs">Отмена</button>
+              )}
               {!user && <p className="text-white/40 text-xs">Войдите в аккаунт, чтобы сохранить город</p>}
             </>
           ) : (
             <>
               <p className="text-white/80 text-sm">В городе «{user?.city}» пока нет публикаций других авторов</p>
               <p className="text-white/40 text-xs">Они появятся, когда авторы укажут этот город в своём профиле</p>
+              <button onClick={() => setEditingCity(true)} className="px-4 py-2 rounded-full bg-white/15 text-white text-sm font-semibold">Сменить город</button>
             </>
           )}
         </div>
@@ -374,6 +379,16 @@ const PostFeed = () => {
             )}
           </div>
         </div>
+      )}
+
+      {scope === "nearby" && myCity && !editingCity && scopedPosts.length > 0 && (
+        <button
+          onClick={() => setEditingCity(true)}
+          className="absolute left-3 bottom-24 md:bottom-6 z-40 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 backdrop-blur-md text-white text-xs font-semibold"
+        >
+          <Icon name="MapPin" size={14} className="text-white" />
+          {user?.city} · сменить
+        </button>
       )}
 
       {/* Desktop nav arrows — только в режиме полноэкранной ленты */}
