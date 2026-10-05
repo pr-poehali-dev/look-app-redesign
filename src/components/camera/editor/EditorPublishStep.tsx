@@ -85,6 +85,8 @@ const EditorPublishStep = ({
   products,
   setProducts,
   userId,
+  isAd,
+  setIsAd,
 }: Props) => {
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [addTab, setAddTab] = useState<"mine" | "partner" | "new">("mine");

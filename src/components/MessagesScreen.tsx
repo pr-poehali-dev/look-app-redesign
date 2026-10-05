@@ -192,8 +192,6 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
     };
     setChats(prev => prev.some(c => String(c.id) === String(chat.id)) ? prev : [chat, ...prev]);
     setOpenChat(chat);
-    setShowNewChat(false);
-    setNewChatName("");
   };
 
   const startCall = async (u: { id: string; name: string }, mode: "audio" | "video") => {

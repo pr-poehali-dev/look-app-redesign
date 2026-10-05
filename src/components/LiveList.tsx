@@ -146,7 +146,7 @@ const WatchStream = ({ channel, onBack }: { channel: LiveChannel; onBack: () => 
                 setChat(prev => [...prev.slice(-40), {
                   id: Date.now() + Math.random(),
                   name: (p.author ? "★ " : "") + (p.name || "Зритель"),
-                  text: p.text,
+                  text: p.text as string,
                   color: p.author ? "#fe2c55" : (p.color || "#61d4f0"),
                 }]);
               }

@@ -120,8 +120,8 @@ const PostFeed = () => {
       .then(([rawImages, rawVideos]) => {
         const imgData = typeof rawImages.body === 'string' ? JSON.parse(rawImages.body) : rawImages;
         const vidData = typeof rawVideos.body === 'string' ? JSON.parse(rawVideos.body) : rawVideos;
-        const dbPosts: Post[] = (imgData.videos || []).map((v) => mapPost(v, false));
-        const dbVideoPosts: Post[] = (vidData.videos || []).map((v) => mapPost(v, true));
+        const dbPosts: Post[] = (imgData.videos || []).map((v: any) => mapPost(v, false));
+        const dbVideoPosts: Post[] = (vidData.videos || []).map((v: any) => mapPost(v, true));
         const seen = new Set<string>();
         const deduped = [...dbPosts, ...dbVideoPosts].filter(p => {
           if (!p.image) return true;
@@ -273,7 +273,7 @@ const PostFeed = () => {
           style={{ touchAction: "manipulation" }}
         >
           <div className="w-[62px] h-[62px] rounded-full border-2 border-white/20 flex items-center justify-center relative overflow-hidden">
-            <UserAvatar src={user?.avatar} name={user?.name || user?.username} alt="Ваша история" />
+            <UserAvatar src={user?.avatar} name={user?.name || user?.handle} alt="Ваша история" />
 
             <div className="absolute bottom-0 right-0 w-5 h-5 bg-[#0095f6] rounded-full flex items-center justify-center border-2 border-black">
               <Icon name="Plus" size={11} className="text-white" />
