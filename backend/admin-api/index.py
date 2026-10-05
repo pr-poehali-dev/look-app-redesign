@@ -279,6 +279,28 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         conn.commit()
         return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
 
+    if action == 'mobile_api_keys_list':
+        _q(cur, "SELECT id, label, key_hint, revoked, created_at, last_used_at FROM {S}.mobile_api_keys ORDER BY revoked, id DESC")
+        keys = [{'id': r['id'], 'label': r['label'], 'hint': r['key_hint'], 'revoked': r['revoked'],
+                 'created_at': r['created_at'].isoformat() if r['created_at'] else None,
+                 'last_used_at': r['last_used_at'].isoformat() if r['last_used_at'] else None} for r in cur.fetchall()]
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'keys': keys}, ensure_ascii=False)}
+
+    if action == 'mobile_api_key_create':
+        import secrets as _sec
+        import hashlib as _hl
+        label = (body.get('label') or '').strip()[:80] or 'Мобильное приложение'
+        raw = 'lk_' + _sec.token_urlsafe(32)
+        _q(cur, "INSERT INTO {S}.mobile_api_keys (label, key_hash, key_hint) VALUES (%s, %s, %s)",
+           (label, _hl.sha256(raw.encode()).hexdigest(), raw[:7] + '…' + raw[-4:]))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'key': raw})}
+
+    if action == 'mobile_api_key_revoke':
+        _q(cur, "UPDATE {S}.mobile_api_keys SET revoked = TRUE WHERE id = %s", (_safe_int(body.get('id')),))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
+
     if action == 'mobile_api_set_default':
         val = 'allow' if body.get('value') == 'allow' else 'deny'
         _q(cur, """

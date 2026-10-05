@@ -1,6 +1,7 @@
 import os
 import json
 import hmac
+import hashlib
 import base64
 import urllib.request
 import urllib.error
@@ -43,16 +44,32 @@ def handler(event: dict, context) -> dict:
     if not service:
         return _resp(200, {'api': 'look-mobile', 'version': API_VERSION, 'services': sorted(ROUTES.keys()), 'note': 'Любую другую функцию сайта можно вызвать, передав её идентификатор в service'})
 
-    expected = os.environ.get('MOBILE_API_KEY', '')
-    if not expected:
-        return _resp(503, {'error': 'API не настроен: нет ключа доступа'})
     given = headers.get('x-api-key', '')
-    if not hmac.compare_digest(given.encode(), expected.encode()):
+    schema = os.environ.get('MAIN_DB_SCHEMA', 'public')
+    expected = os.environ.get('MOBILE_API_KEY', '')
+    key_ok = bool(expected and given and hmac.compare_digest(given.encode(), expected.encode()))
+    if not key_ok and given:
+        try:
+            kconn = psycopg2.connect(os.environ['DATABASE_URL'])
+            kconn.autocommit = True
+            kcur = kconn.cursor()
+            try:
+                digest = hashlib.sha256(given.encode()).hexdigest()
+                kcur.execute(
+                    f"UPDATE {schema}.mobile_api_keys SET last_used_at = NOW() WHERE key_hash = %s AND revoked = FALSE RETURNING id",
+                    (digest,)
+                )
+                key_ok = kcur.fetchone() is not None
+            finally:
+                kcur.close()
+                kconn.close()
+        except Exception:
+            key_ok = False
+    if not key_ok:
         return _resp(401, {'error': 'Неверный ключ API'})
 
     target = None
     is_id = bool(UUID_RE.match(service))
-    schema = os.environ.get('MAIN_DB_SCHEMA', 'public')
     try:
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
         conn.autocommit = True

@@ -1492,6 +1492,114 @@ function Broadcast({ token }: { token: string }) {
 
 interface MobileApiItem { name: string; function_id: string; enabled: boolean; created_at: string | null }
 
+interface MobileApiKey { id: number; label: string; hint: string; revoked: boolean; created_at: string | null; last_used_at: string | null }
+
+function MobileApiKeys({ token }: { token: string }) {
+  const [keys, setKeys] = useState<MobileApiKey[]>([]);
+  const [label, setLabel] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [fresh, setFresh] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const d = await api("mobile_api_keys_list", {}, token);
+      setKeys(d.keys || []);
+    } catch (e) {
+      alert("Ошибка загрузки ключей: " + (e instanceof Error ? e.message : "неизвестная"));
+    }
+  }, [token]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const create = async () => {
+    setBusy(true);
+    try {
+      const d = await api("mobile_api_key_create", { label }, token);
+      setFresh(d.key || "");
+      setCopied(false);
+      setLabel("");
+      load();
+    } catch (e) {
+      alert("Не удалось создать ключ: " + (e instanceof Error ? e.message : "неизвестная"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const revoke = async (k: MobileApiKey) => {
+    if (!confirm(`Отозвать ключ «${k.label}»? Приложение с этим ключом перестанет работать.`)) return;
+    try {
+      await api("mobile_api_key_revoke", { id: k.id }, token);
+      load();
+    } catch (e) {
+      alert("Не удалось отозвать: " + (e instanceof Error ? e.message : "неизвестная"));
+    }
+  };
+
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(fresh); setCopied(true); } catch { /* ignore */ }
+  };
+
+  const fmt = (v: string | null) => v ? new Date(v).toLocaleString("ru-RU") : "—";
+
+  return (
+    <div className="rounded-xl bg-zinc-900 border border-white/10 p-4 space-y-3">
+      <p className="font-semibold text-sm">Ключи доступа приложения</p>
+      <p className="text-xs text-white/40">Ключ передаётся приложению в заголовке X-Api-Key. Для каждого приложения или подрядчика лучше создавать свой ключ, чтобы отозвать его отдельно.</p>
+
+      <div className="flex gap-2">
+        <input
+          value={label}
+          onChange={e => setLabel(e.target.value)}
+          placeholder="Название, например iOS-приложение"
+          maxLength={80}
+          className="flex-1 min-w-0 px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-white placeholder:text-white/30 text-sm"
+        />
+        <button
+          onClick={create}
+          disabled={busy}
+          className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-semibold text-sm disabled:opacity-50 flex items-center gap-2"
+        >
+          <Icon name="KeyRound" size={16} />
+          Создать ключ
+        </button>
+      </div>
+
+      {fresh && (
+        <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3 space-y-2">
+          <p className="text-xs text-emerald-300">Скопируйте ключ сейчас. Позже он не будет показан, останется только его начало и конец.</p>
+          <div className="flex gap-2 items-center">
+            <code className="flex-1 min-w-0 break-all text-xs bg-black/50 rounded px-2 py-2 text-white">{fresh}</code>
+            <button onClick={copy} className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-semibold whitespace-nowrap">
+              {copied ? "Скопировано ✓" : "Копировать"}
+            </button>
+          </div>
+          <button onClick={() => setFresh("")} className="text-xs text-white/50">Скрыть</button>
+        </div>
+      )}
+
+      {keys.length > 0 && (
+        <div className="divide-y divide-white/5 rounded-lg bg-black/20">
+          {keys.map(k => (
+            <div key={k.id} className="flex items-center gap-3 px-3 py-2.5">
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-semibold truncate ${k.revoked ? "text-white/30 line-through" : ""}`}>{k.label}</p>
+                <p className="text-[11px] text-white/30">{k.hint} · создан {fmt(k.created_at)} · использован {fmt(k.last_used_at)}</p>
+              </div>
+              {k.revoked ? (
+                <span className="text-xs text-white/40">Отозван</span>
+              ) : (
+                <button onClick={() => revoke(k)} className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-red-300 text-xs font-semibold">Отозвать</button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MobileApiAccess({ token }: { token: string }) {
   const [items, setItems] = useState<MobileApiItem[]>([]);
   const [newDefault, setNewDefault] = useState<"allow" | "deny">("allow");
@@ -1547,6 +1655,8 @@ function MobileApiAccess({ token }: { token: string }) {
           Выберите, какие части сайта доступны мобильному приложению. Включено: {enabledCount} из {items.length}.
         </p>
       </div>
+
+      <MobileApiKeys token={token} />
 
       <div className="rounded-xl bg-zinc-900 border border-white/10 p-4 space-y-3">
         <p className="font-semibold text-sm">Новые функции сайта</p>

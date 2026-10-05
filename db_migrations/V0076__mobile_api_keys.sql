@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS t_p96441965_look_app_redesign.mobile_api_keys (
+  id SERIAL PRIMARY KEY,
+  label VARCHAR(80) NOT NULL DEFAULT '',
+  key_hash VARCHAR(64) NOT NULL UNIQUE,
+  key_hint VARCHAR(16) NOT NULL,
+  revoked BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  last_used_at TIMESTAMP NULL
+);
