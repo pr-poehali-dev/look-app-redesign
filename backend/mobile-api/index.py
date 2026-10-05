@@ -4,11 +4,14 @@ import hmac
 import base64
 import urllib.request
 import urllib.error
+import re
 import urllib.parse
 
 from routes import ROUTES
 
 API_VERSION = 'v1'
+FUNCTIONS_BASE = 'https://functions.poehali.dev/'
+UUID_RE = re.compile(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
 FORWARD_HEADERS = ['content-type', 'x-authorization', 'x-admin-token', 'x-user-id', 'x-auth-token', 'x-session-id', 'x-cookie']
 CORS = {
     'Access-Control-Allow-Origin': '*',
@@ -36,7 +39,7 @@ def handler(event: dict, context) -> dict:
     service = params.pop('service', '')
 
     if not service:
-        return _resp(200, {'api': 'look-mobile', 'version': API_VERSION, 'services': sorted(ROUTES.keys())})
+        return _resp(200, {'api': 'look-mobile', 'version': API_VERSION, 'services': sorted(ROUTES.keys()), 'note': 'Любую другую функцию сайта можно вызвать, передав её идентификатор в service'})
 
     expected = os.environ.get('MOBILE_API_KEY', '')
     if not expected:
@@ -46,6 +49,8 @@ def handler(event: dict, context) -> dict:
         return _resp(401, {'error': 'Неверный ключ API'})
 
     target = ROUTES.get(service)
+    if not target and UUID_RE.match(service):
+        target = FUNCTIONS_BASE + service.lower()
     if not target:
         return _resp(404, {'error': 'Неизвестная служба', 'services': sorted(ROUTES.keys())})
 
