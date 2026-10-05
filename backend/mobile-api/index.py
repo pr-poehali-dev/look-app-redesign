@@ -68,6 +68,9 @@ def handler(event: dict, context) -> dict:
     if not key_ok:
         return _resp(401, {'error': 'Неверный ключ API'})
 
+    if service == '__ping':
+        return _resp(200, {'ok': True})
+
     target = None
     is_id = bool(UUID_RE.match(service))
     try:

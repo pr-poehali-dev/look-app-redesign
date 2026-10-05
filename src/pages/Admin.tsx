@@ -1500,6 +1500,28 @@ function MobileApiKeys({ token }: { token: string }) {
   const [busy, setBusy] = useState(false);
   const [fresh, setFresh] = useState("");
   const [copied, setCopied] = useState(false);
+  const [testKey, setTestKey] = useState("");
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const checkKey = async () => {
+    const k = testKey.trim();
+    if (!k) return;
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await fetch("https://functions.poehali.dev/d70b12c7-c9c6-492b-87e4-86c2ae20324e?service=__ping", {
+        headers: { "X-Api-Key": k },
+      });
+      if (res.ok) setTestResult({ ok: true, text: "Ключ принят. Приложение сможет подключиться." });
+      else if (res.status === 401) setTestResult({ ok: false, text: "Ключ не подошёл. Проверьте, что скопировали его целиком, или создайте новый." });
+      else setTestResult({ ok: false, text: `Шлюз ответил ошибкой (${res.status}). Попробуйте позже.` });
+    } catch {
+      setTestResult({ ok: false, text: "Не удалось связаться со шлюзом. Проверьте интернет." });
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const load = useCallback(async () => {
     try {
@@ -1578,6 +1600,29 @@ function MobileApiKeys({ token }: { token: string }) {
           <button onClick={() => setFresh("")} className="text-xs text-white/50">Скрыть</button>
         </div>
       )}
+
+      <div className="rounded-lg bg-black/20 p-3 space-y-2">
+        <p className="text-xs font-semibold text-white/70">Проверить ключ</p>
+        <div className="flex gap-2">
+          <input
+            value={testKey}
+            onChange={e => { setTestKey(e.target.value); setTestResult(null); }}
+            placeholder="Вставьте ключ, в том числе из секрета MOBILE_API_KEY"
+            autoComplete="off"
+            className="flex-1 min-w-0 px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-white placeholder:text-white/30 text-sm"
+          />
+          <button
+            onClick={checkKey}
+            disabled={testing || !testKey.trim()}
+            className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm font-semibold disabled:opacity-40 whitespace-nowrap"
+          >
+            {testing ? "Проверяю..." : "Проверить"}
+          </button>
+        </div>
+        {testResult && (
+          <p className={`text-xs ${testResult.ok ? "text-emerald-400" : "text-red-400"}`}>{testResult.text}</p>
+        )}
+      </div>
 
       {keys.length > 0 && (
         <div className="divide-y divide-white/5 rounded-lg bg-black/20">
