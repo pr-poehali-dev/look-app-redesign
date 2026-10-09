@@ -1,0 +1,2 @@
+UPDATE t_p96441965_look_app_redesign.videos SET category = 'travel' WHERE category = 'feed' AND id IN (368, 390, 397);
+UPDATE t_p96441965_look_app_redesign.videos SET category = 'career' WHERE category = 'feed' AND id IN (425, 426);
