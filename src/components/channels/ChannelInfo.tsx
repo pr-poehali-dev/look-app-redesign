@@ -30,6 +30,8 @@ const ChannelInfo = ({ channel, onClose, onChanged }: Props) => {
   const [img, setImg] = useState(channel.img || "");
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [target, setTarget] = useState<Member | null>(null);
+  const [busy, setBusy] = useState(false);
   const isAdmin = !!channel.is_admin;
 
   const headers = {
@@ -38,13 +40,42 @@ const ChannelInfo = ({ channel, onClose, onChanged }: Props) => {
     "X-User-Name": encodeURIComponent(user?.name || ""),
   };
 
-  useEffect(() => {
+  const loadMembers = () =>
     fetch(`${API}?module=community&action=members&community_id=${channel.id}`, { headers })
       .then((r) => r.json())
       .then((raw) => setMembers(parse(raw).members || []))
       .catch(() => setMembers([]))
       .finally(() => setLoading(false));
+
+  useEffect(() => {
+    loadMembers();
   }, [channel.id]);
+
+  const myRole = members.find((m) => m.id === user?.id)?.role;
+  const isOwner = myRole === "owner" || channel.creator_id === user?.id;
+
+  const runAction = async (action: "promote" | "demote" | "kick") => {
+    if (!target) return;
+    if (action === "kick" && !confirm(`Удалить ${target.name} из канала?`)) return;
+    setBusy(true);
+    const body: Record<string, unknown> = { action, community_id: channel.id, user_id: target.id };
+    if (action === "promote") {
+      body.permissions = {
+        can_invite: true, can_pin: true, can_remove_messages: true,
+        can_ban: true, can_change_info: true, can_add_admins: false,
+      };
+    }
+    const res = await fetch(`${API}?module=community`, { method: "POST", headers, body: JSON.stringify(body) });
+    const data = parse(await res.json());
+    setBusy(false);
+    if (!data.ok) {
+      alert("Не удалось выполнить действие");
+      return;
+    }
+    setTarget(null);
+    await loadMembers();
+    onChanged({ members: members.length - (action === "kick" ? 1 : 0) });
+  };
 
   const pickPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -132,7 +163,11 @@ const ChannelInfo = ({ channel, onClose, onChanged }: Props) => {
         ) : (
           <div className="flex flex-col">
             {members.map((m) => (
-              <div key={m.id} className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
+              <div
+                key={m.id}
+                onClick={() => { if (isAdmin && m.role !== "owner" && m.id !== user?.id) setTarget(m); }}
+                className="flex items-center gap-3 px-4 py-3 border-b border-white/5"
+              >
                 <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white font-bold">
                   {(m.name || "?").charAt(0).toUpperCase()}
                 </div>
@@ -143,11 +178,38 @@ const ChannelInfo = ({ channel, onClose, onChanged }: Props) => {
                 {ROLE_LABELS[m.role] && (
                   <span className="text-[#fe2c55] text-xs font-semibold">{ROLE_LABELS[m.role]}</span>
                 )}
+                {isAdmin && m.role !== "owner" && m.id !== user?.id && (
+                  <Icon name="MoreVertical" size={16} className="text-white/30" />
+                )}
               </div>
             ))}
           </div>
         )}
       </div>
+      {target && (
+        <div className="absolute inset-0 z-50 bg-black/60 flex items-end" onClick={() => setTarget(null)}>
+          <div className="w-full bg-zinc-900 rounded-t-2xl pb-8" onClick={(e) => e.stopPropagation()}>
+            <p className="px-5 py-4 text-white font-bold text-sm border-b border-white/10 truncate">{target.name}</p>
+            {target.role === "admin" ? (
+              isOwner && (
+                <button disabled={busy} onClick={() => runAction("demote")} className="w-full text-left px-5 py-4 text-white text-sm flex items-center gap-3 disabled:opacity-50">
+                  <Icon name="ShieldOff" size={18} /> Снять с админов
+                </button>
+              )
+            ) : (
+              <button disabled={busy} onClick={() => runAction("promote")} className="w-full text-left px-5 py-4 text-white text-sm flex items-center gap-3 disabled:opacity-50">
+                <Icon name="ShieldCheck" size={18} /> Назначить админом
+              </button>
+            )}
+            {(target.role !== "admin" || isOwner) && (
+              <button disabled={busy} onClick={() => runAction("kick")} className="w-full text-left px-5 py-4 text-[#fe2c55] text-sm flex items-center gap-3 disabled:opacity-50">
+                <Icon name="UserMinus" size={18} /> Удалить из канала
+              </button>
+            )}
+            <button onClick={() => setTarget(null)} className="w-full text-left px-5 py-4 text-white/50 text-sm">Отмена</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
