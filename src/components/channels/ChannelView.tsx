@@ -289,6 +289,11 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
             {channel.joined ? "Отписаться" : "Подписаться"}
           </button>
         )}
+        {channel.creator_id === user?.id && (
+          <button onClick={deleteChannel} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0" title="Удалить канал">
+            <Icon name="Trash2" size={17} className="text-[#fe2c55]" />
+          </button>
+        )}
         {canPost && (
           <div className="relative">
             <button onClick={() => setMenu(v => !v)}><Icon name="MoreVertical" size={20} className="text-white/70" /></button>
