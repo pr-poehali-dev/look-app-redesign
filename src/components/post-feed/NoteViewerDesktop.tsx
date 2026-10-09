@@ -5,6 +5,7 @@ import { Post, formatLikes } from "./PostFeedTypes";
 import { useComments, CommentItem } from "@/hooks/useComments";
 import { useLikes } from "@/hooks/useLikes";
 import { useSavedItem } from "@/hooks/useSaved";
+import { useMutedAuthor } from "@/hooks/useMutedAuthors";
 import { useFollowing } from "@/hooks/useFollowing";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
@@ -27,15 +28,15 @@ const CommentRow = ({
       <UserAvatar name={c.name} alt={c.name} />
     </div>
     <div className="min-w-0 flex-1">
-      <p className="text-[13px] text-neutral-500 truncate">{c.name}</p>
-      <p className="text-[14px] text-neutral-900 leading-snug break-words">{c.text}</p>
-      <div className="flex items-center gap-4 mt-1 text-[12px] text-neutral-400">
+      <p className="text-[13px] nv-muted truncate">{c.name}</p>
+      <p className="text-[14px] leading-snug break-words">{c.text}</p>
+      <div className="flex items-center gap-4 mt-1 text-[12px] nv-muted">
         <span>{c.time}</span>
-        <button onClick={() => onLike(c.id)} className="flex items-center gap-1 hover:text-neutral-700">
+        <button onClick={() => onLike(c.id)} className="flex items-center gap-1">
           <Icon name="Heart" size={13} className={c.liked ? "text-[#fe2c55] fill-[#fe2c55]" : ""} />
           {c.likes > 0 && <span>{c.likes}</span>}
         </button>
-        <button onClick={() => onReply(c)} className="hover:text-neutral-700">Ответить</button>
+        <button onClick={() => onReply(c)}>Ответить</button>
       </div>
     </div>
   </div>
@@ -51,6 +52,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
   });
   const { following, toggle: toggleFollow, isSelf } = useFollowing(post.handle);
   const { comments, count: commentCount, send, toggleLike: toggleCommentLike } = useComments("post", post.id, true, post.comments || 0);
+  const { muted, toggle: toggleMute } = useMutedAuthor(post.handle);
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<CommentItem | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -103,7 +105,10 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
     { icon: "Bookmark", label: saved ? "Убрать из сохранённых" : "Сохранить", action: () => toggleSaved(), active: saved },
     { icon: "Layers", label: "Добавить на доску", action: () => setShowAddToBoard(true) },
     { icon: "User", label: "Перейти в профиль", action: () => openProfile() },
-    { icon: "BellOff", label: "Выключить уведомления", action: () => {} },
+    { icon: muted ? "Bell" : "BellOff", label: muted ? "Включить уведомления" : "Выключить уведомления", action: () => {
+      const nowMuted = toggleMute();
+      toast.success(nowMuted ? `Уведомления от @${post.handle} выключены` : `Уведомления от @${post.handle} включены`);
+    } },
     { icon: "Link", label: "Скопировать ссылку", action: () => { copyLink(); } },
     { icon: "Share2", label: "Поделиться", action: () => setShowShare(true) },
     { icon: "Flag", label: "Пожаловаться", action: () => setShowReport(true) },
@@ -119,17 +124,17 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
     >
       <button
         onClick={onClose}
-        className="absolute top-6 left-6 w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+        className="absolute top-6 left-6 w-10 h-10 rounded-full nv-closebtn flex items-center justify-center"
         aria-label="Закрыть"
       >
-        <Icon name="X" size={20} className="text-white" />
+        <Icon name="X" size={20} />
       </button>
 
       <div
-        className="flex w-[min(1100px,92vw)] h-[min(88vh,820px)] rounded-2xl overflow-hidden bg-white shadow-2xl"
+        className="flex w-[min(1100px,92vw)] h-[min(88vh,820px)] rounded-2xl overflow-hidden nv-panel shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex-1 min-w-0 bg-black flex items-center justify-center">
+        <div className="flex-1 min-w-0 nv-media flex items-center justify-center">
           {post.isVideo ? (
             <video
               src={post.image}
@@ -144,8 +149,8 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
           )}
         </div>
 
-        <div className="w-[400px] flex-shrink-0 flex flex-col bg-white text-neutral-900">
-          <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-neutral-100">
+        <div className="w-[400px] flex-shrink-0 flex flex-col nv-panel">
+          <div className="flex items-center justify-between gap-3 px-5 py-4 border-b nv-border">
             <button onClick={openProfile} className="flex items-center gap-3 min-w-0 text-left">
               <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
                 <UserAvatar src={post.avatar} name={post.author || post.handle} alt={post.author} />
@@ -157,7 +162,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
                 <button
                   onClick={toggleFollow}
                   className={`px-5 py-2 rounded-full text-sm font-semibold transition-colors ${
-                    following ? "bg-neutral-100 text-neutral-700 hover:bg-neutral-200" : "bg-[#fe2c55] text-white hover:bg-[#e8294d]"
+                    following ? "nv-soft" : "nv-red"
                   }`}
                 >
                   {following ? "Вы подписаны" : "Подписаться"}
@@ -165,27 +170,27 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
               )}
               <button
                 onClick={() => setShowMenu((v) => !v)}
-                className="p-2 rounded-full hover:bg-neutral-100 transition-colors"
+                className="p-2 rounded-full nv-hover transition-colors"
                 title="Ещё действия"
               >
-                <Icon name="MoreHorizontal" size={20} className="text-neutral-700" />
+                <Icon name="MoreHorizontal" size={20} />
               </button>
               {showMenu && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
-                  <div className="absolute right-0 top-full mt-1 z-20 w-[280px] rounded-xl bg-white shadow-2xl border border-neutral-100 overflow-hidden">
+                  <div className="absolute right-0 top-full mt-1 z-20 w-[280px] rounded-xl nv-panel nv-pop overflow-hidden">
                     {menuItems.map((item) => (
                       <button
                         key={item.label}
                         onClick={() => { setShowMenu(false); item.action(); }}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-50 border-b border-neutral-100 last:border-0"
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left nv-hover border-b nv-border last:border-0"
                       >
                         <Icon
                           name={item.icon}
                           size={18}
-                          className={item.icon === "Flag" ? "text-[#fe2c55]" : item.active ? "text-[#fe2c55] fill-[#fe2c55]" : "text-neutral-700"}
+                          className={item.icon === "Flag" ? "text-[#fe2c55]" : item.active ? "text-[#fe2c55] fill-[#fe2c55]" : ""}
                         />
-                        <span className={`text-sm font-medium ${item.icon === "Flag" ? "text-[#fe2c55]" : "text-neutral-900"}`}>{item.label}</span>
+                        <span className={`text-sm font-medium ${item.icon === "Flag" ? "text-[#fe2c55]" : ""}`}>{item.label}</span>
                       </button>
                     ))}
                   </div>
@@ -197,16 +202,16 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
           <div className="flex-1 overflow-y-auto px-5 py-4" style={{ scrollbarWidth: "thin" }}>
             {post.caption && <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">{post.caption}</p>}
             {post.hashtags?.length > 0 && (
-              <p className="mt-2 text-[14px] text-[#2b6cb0] break-words">
+              <p className="mt-2 text-[14px] nv-tag break-words">
                 {post.hashtags.map((h) => `#${h}`).join(" ")}
               </p>
             )}
-            <p className="mt-3 text-[12px] text-neutral-400">{post.time}</p>
+            <p className="mt-3 text-[12px] nv-muted">{post.time}</p>
 
-            <div className="mt-5 pt-4 border-t border-neutral-100">
-              <p className="text-[13px] text-neutral-500">Комментарии: {commentCount}</p>
+            <div className="mt-5 pt-4 border-t nv-border">
+              <p className="text-[13px] nv-muted">Комментарии: {commentCount}</p>
               {topLevel.length === 0 && (
-                <p className="text-center text-sm text-neutral-400 py-10">Пока нет комментариев. Будьте первым!</p>
+                <p className="text-center text-sm nv-muted py-10">Пока нет комментариев. Будьте первым!</p>
               )}
               {topLevel.map((c) => (
                 <div key={c.id}>
@@ -219,11 +224,11 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
             </div>
           </div>
 
-          <div className="border-t border-neutral-100 px-5 py-3 flex-shrink-0">
+          <div className="border-t nv-border px-5 py-3 flex-shrink-0">
             {replyTo && (
-              <div className="flex items-center justify-between text-xs text-neutral-500 mb-2">
+              <div className="flex items-center justify-between text-xs nv-muted mb-2">
                 <span>Ответ для {replyTo.name}</span>
-                <button onClick={() => { setReplyTo(null); setText(""); }} className="hover:text-neutral-800">
+                <button onClick={() => { setReplyTo(null); setText(""); }} >
                   <Icon name="X" size={14} />
                 </button>
               </div>
@@ -236,24 +241,24 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
                 onKeyDown={(e) => e.key === "Enter" && submit()}
                 placeholder={user ? "Оставить комментарий" : "Войдите, чтобы комментировать"}
                 disabled={!user}
-                className="flex-1 min-w-0 h-10 px-4 rounded-full bg-neutral-100 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none disabled:opacity-60"
+                className="flex-1 min-w-0 h-10 px-4 rounded-full nv-soft text-sm placeholder:opacity-60 outline-none disabled:opacity-60"
               />
               {text.trim() ? (
                 <button onClick={submit} className="text-[#fe2c55] text-sm font-semibold flex-shrink-0">
                   Отправить
                 </button>
               ) : (
-                <div className="flex items-center gap-4 flex-shrink-0 text-neutral-700">
+                <div className="flex items-center gap-4 flex-shrink-0">
                   <button onClick={toggleLike} className="flex items-center gap-1.5 active:scale-90 transition-transform">
-                    <Icon name="Heart" size={26} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-neutral-800"} />
+                    <Icon name="Heart" size={26} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : ""} />
                     <span className="text-sm">{formatLikes(likes)}</span>
                   </button>
                   <button onClick={() => inputRef.current?.focus()} className="flex items-center gap-1.5 active:scale-90 transition-transform">
-                    <Icon name="MessageDots" size={26} className="text-neutral-800" />
+                    <Icon name="MessageDots" size={26} />
                     <span className="text-sm">{commentCount}</span>
                   </button>
                   <button onClick={() => setShowShare(true)} className="active:scale-90 transition-transform">
-                    <Icon name="ShareForward" size={26} className="text-neutral-800" />
+                    <Icon name="ShareForward" size={26} />
                   </button>
                 </div>
               )}
@@ -264,11 +269,11 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
 
       {showShare && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={(e) => { e.stopPropagation(); setShowShare(false); }}>
-          <div className="w-[360px] rounded-2xl bg-white p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-[360px] rounded-2xl nv-panel nv-pop p-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
-              <span className="font-bold text-base text-neutral-900">Поделиться</span>
+              <span className="font-bold text-base">Поделиться</span>
               <button onClick={() => setShowShare(false)}>
-                <Icon name="X" size={20} className="text-neutral-500" />
+                <Icon name="X" size={20} className="nv-muted" />
               </button>
             </div>
             <div className="grid grid-cols-4 gap-4">
@@ -277,7 +282,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: opt.color + "22", border: `1.5px solid ${opt.color}55` }}>
                     <Icon name={opt.icon} size={24} style={{ color: opt.color }} />
                   </div>
-                  <span className="text-neutral-600 text-xs">{opt.label}</span>
+                  <span className="nv-muted text-xs">{opt.label}</span>
                 </a>
               ))}
             </div>

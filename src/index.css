@@ -1006,3 +1006,46 @@ html.theme-light [style*="--look-accent"] svg {
     color: #fe2c55 !important;
   }
 }
+
+/* === Окно поста на ПК: цвета следуют теме (светлая / тёмная) === */
+.nv-panel {
+  background-color: var(--look-bg) !important;
+  color: var(--look-fg) !important;
+}
+.nv-muted {
+  color: color-mix(in srgb, var(--look-fg) 62%, transparent) !important;
+}
+.nv-border {
+  border-color: color-mix(in srgb, var(--look-fg) 16%, transparent) !important;
+}
+.nv-soft {
+  background-color: color-mix(in srgb, var(--look-fg) 12%, transparent) !important;
+  color: var(--look-fg) !important;
+}
+.nv-hover:hover {
+  background-color: color-mix(in srgb, var(--look-fg) 12%, transparent) !important;
+}
+.nv-media {
+  background-color: #000 !important;
+}
+.nv-red {
+  background-color: #fe2c55 !important;
+  color: #fff !important;
+}
+.nv-red:hover {
+  background-color: #e8294d !important;
+}
+.nv-closebtn {
+  background-color: rgba(0, 0, 0, 0.55) !important;
+  color: #fff !important;
+}
+.nv-tag {
+  color: #61d4f0 !important;
+}
+html.theme-light .nv-tag {
+  color: #0b5cad !important;
+}
+.nv-pop {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  border: 1px solid color-mix(in srgb, var(--look-fg) 18%, transparent);
+}

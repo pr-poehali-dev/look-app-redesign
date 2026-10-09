@@ -7,6 +7,7 @@ import { useComments } from "@/hooks/useComments";
 import { useLikes } from "@/hooks/useLikes";
 import { useSavedItem } from "@/hooks/useSaved";
 import { useFollowing } from "@/hooks/useFollowing";
+import { useMutedAuthor } from "@/hooks/useMutedAuthors";
 import { useAuth } from "@/context/AuthContext";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { useProductsByVideos, trackProductClick } from "@/hooks/useProducts";
@@ -23,6 +24,7 @@ const PostCard = ({ post }: { post: Post }) => {
     handle: post.handle,
   });
   const { following, toggle: toggleFollow, isSelf } = useFollowing(post.handle);
+  const { muted, toggle: toggleMute } = useMutedAuthor(post.handle);
   const { repostMedia, isReposted } = useUserMedia();
   const [reposting, setReposting] = useState(false);
   const [repostResult, setRepostResult] = useState<"added" | "removed" | null>(null);
@@ -287,7 +289,7 @@ const PostCard = ({ post }: { post: Post }) => {
               { icon: "Bookmark", label: saved ? "Убрать из сохранённых" : "Сохранить", action: () => { toggleSaved(); setShowMenu(false); }, active: saved },
               { icon: "Layers", label: "Добавить на доску", action: () => { setShowMenu(false); setShowAddToBoard(true); } },
               { icon: "User", label: "Перейти в профиль", action: () => { setShowMenu(false); window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: post.handle } })); } },
-              { icon: "BellOff", label: "Выключить уведомления", action: () => setShowMenu(false) },
+              { icon: muted ? "Bell" : "BellOff", label: muted ? "Включить уведомления" : "Выключить уведомления", action: () => { const nowMuted = toggleMute(); toast.success(nowMuted ? `Уведомления от @${post.handle} выключены` : `Уведомления от @${post.handle} включены`); setShowMenu(false); } },
               { icon: "Link", label: "Скопировать ссылку", action: () => { navigator.clipboard.writeText(window.location.href).catch(() => {}); setShowMenu(false); } },
               { icon: "Share2", label: "Поделиться", action: () => { setShowMenu(false); setShowShare(true); } },
               { icon: "Flag", label: "Пожаловаться", action: () => { setShowMenu(false); setShowReport(true); } },
