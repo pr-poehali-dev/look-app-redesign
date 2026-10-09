@@ -17,6 +17,8 @@ export const FEED_CATEGORIES: FeedCategory[] = [
   { id: "gaming", label: "Игры", match: ["gaming"] },
   { id: "travel", label: "Путешествия", match: ["travel"] },
   { id: "fitness", label: "Фитнес", match: ["fitness"] },
+  { id: "animals", label: "Животные", match: ["animals"] },
+  { id: "nature", label: "Природа", match: ["nature"] },
   { id: "videos", label: "Видеозаписи", match: [] },
 ];
 
