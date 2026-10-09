@@ -15,6 +15,7 @@ import { useFollowingList } from "@/hooks/useFollowing";
 import { detectCity, normCity } from "@/lib/city";
 import { toast } from "sonner";
 import { FEED_CATEGORIES } from "@/lib/feedCategories";
+import CategoryBar from "./post-feed/CategoryBar";
 
 type FeedScope = "recommend" | "following" | "nearby" | "trending" | "articles";
 type ViewMode = "masonry" | "feed";
@@ -314,22 +315,11 @@ const PostFeed = () => {
       </div>
 
       {scope !== "articles" && (
-        <div
-          className={`media-overlay-text absolute top-[156px] left-0 right-0 z-20 ${viewMode === "masonry" ? "" : "md:max-w-[620px] md:mx-auto"} bg-black/85 backdrop-blur-md flex items-center gap-1.5 px-3 py-2 overflow-x-auto border-b border-white/8`}
-          style={{ scrollbarWidth: "none" }}
-        >
-          {FEED_CATEGORIES.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => setCategoryId(c.id)}
-              className={`px-3.5 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-colors ${
-                categoryId === c.id ? "bg-white text-black" : "bg-white/10 text-white/70"
-              }`}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
+        <CategoryBar
+          value={categoryId}
+          onChange={setCategoryId}
+          className={`media-overlay-text absolute top-[156px] left-0 right-0 z-20 ${viewMode === "masonry" ? "" : "md:max-w-[620px] md:mx-auto"} bg-black/85 backdrop-blur-md border-b border-white/8`}
+        />
       )}
 
       {scope === "nearby" && (!myCity || editingCity || scopedPosts.length === 0) ? (
