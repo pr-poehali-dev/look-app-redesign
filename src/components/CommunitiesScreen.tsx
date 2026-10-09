@@ -20,6 +20,7 @@ interface Community {
   joined: boolean;
   is_admin?: boolean;
   creator_id?: string;
+  kind?: string;
 }
 
 interface Props {
@@ -51,7 +52,7 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
       .then(r => r.json())
       .then(raw => {
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-        setCommunities(data.communities || []);
+        setCommunities((data.communities || []).filter((c: Community) => c.kind !== "channel"));
       })
       .catch(() => {})
       .finally(() => setLoading(false));

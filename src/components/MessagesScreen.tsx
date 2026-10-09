@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import ChatRoom from "./ChatRoom";
 import CommunitiesScreen from "./CommunitiesScreen";
+import ChannelsScreen from "./ChannelsScreen";
 import CallScreen from "./CallScreen";
 import CallHistoryScreen from "./CallHistoryScreen";
 import { useAuth } from "@/context/AuthContext";
@@ -26,7 +27,7 @@ export interface Chat {
 
 const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
-type Tab = "chats" | "communities" | "calls";
+type Tab = "chats" | "communities" | "channels" | "calls";
 
 interface MessagesScreenProps {
   initialCommunityId?: string | null;
@@ -229,6 +230,7 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
       onInitialConsumed={onCommunityConsumed}
     />
   );
+  if (tab === "channels") return <ChannelsScreen onBack={() => setTab("chats")} />;
   if (tab === "calls") return (
     <CallHistoryScreen
       onBack={() => setTab("chats")}
@@ -276,6 +278,13 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
           >
             <Icon name="Users" size={15} className="text-white" />
             Сообщества
+          </button>
+          <button
+            onClick={() => setTab("channels")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] hover:opacity-90 active:scale-95 transition-all cursor-pointer text-white text-sm font-medium"
+          >
+            <Icon name="Megaphone" size={15} className="text-white" />
+            Каналы
           </button>
         </div>
       </div>
