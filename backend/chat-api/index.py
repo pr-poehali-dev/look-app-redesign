@@ -1088,13 +1088,18 @@ def handler(event: dict, context) -> dict:
                         conn.commit()
                         return {'statusCode': 400, 'headers': headers,
                                 'body': json.dumps({'error': 'community_id required'})}
-                    cur.execute("SELECT creator_id FROM communities WHERE id = %s", (com_id,))
+                    cur.execute("SELECT creator_id, kind FROM communities WHERE id = %s", (com_id,))
                     row = cur.fetchone()
                     if not row:
                         conn.commit()
                         return {'statusCode': 404, 'headers': headers,
                                 'body': json.dumps({'error': 'not found'})}
-                    if row[0] != user_id:
+                    upd_admin = False
+                    if row[1] == 'channel':
+                        cur.execute("SELECT role FROM community_members WHERE community_id = %s AND user_id = %s", (com_id, user_id))
+                        umr = cur.fetchone()
+                        upd_admin = bool(umr and umr[0] in ('owner', 'admin'))
+                    if row[0] != user_id and not upd_admin:
                         conn.commit()
                         return {'statusCode': 403, 'headers': headers,
                                 'body': json.dumps({'error': 'only creator can edit'})}

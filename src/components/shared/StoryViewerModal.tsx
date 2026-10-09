@@ -106,7 +106,7 @@ const StoryViewerModal = ({ items, startIndex, onClose, originRect }: Props) => 
   if (!item) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999]">
+    <div className="fixed inset-0 z-[10050]">
       <div
         className="absolute inset-0 bg-black transition-opacity duration-300"
         style={{ opacity: opened ? 1 : 0 }}

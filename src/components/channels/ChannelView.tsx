@@ -5,6 +5,7 @@ import { uploadChatMedia } from "@/lib/chatMediaUpload";
 import PollMessage from "@/components/community/PollMessage";
 import PollsPanel from "@/components/community/PollsPanel";
 import { Channel } from "./types";
+import ChannelInfo from "./ChannelInfo";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 const REACTIONS = ["👍", "❤️", "🔥", "😂", "😮", "😢"];
@@ -272,20 +273,22 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
     else alert("Удалить канал может только создатель или админ");
   };
 
+  const [showInfo, setShowInfo] = useState(false);
   const canPost = !!channel.is_admin;
   const canSee = channel.joined || channel.is_admin || channel.type === "open";
 
   return (
     <div className="h-full bg-black flex flex-col overflow-hidden relative">
+      {showInfo && <ChannelInfo channel={channel} onClose={() => setShowInfo(false)} onChanged={onChanged} />}
       <div className="flex items-center gap-3 px-3 pt-14 pb-3 border-b border-white/8">
         <button onClick={onBack}><Icon name="ChevronLeft" size={24} className="text-white" /></button>
         <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center flex-shrink-0">
           {channel.img ? <img src={channel.img} className="w-full h-full object-cover" alt="" /> : <Icon name="Megaphone" size={18} className="text-white" />}
         </div>
-        <div className="flex-1 min-w-0">
+        <button onClick={() => setShowInfo(true)} className="flex-1 min-w-0 text-left">
           <p className="text-white font-bold text-sm truncate">{channel.name}</p>
           <p className="text-white/40 text-xs">{channel.members} подписчиков</p>
-        </div>
+        </button>
         {!canPost && (
           <button
             onClick={toggleSub}
