@@ -8,6 +8,8 @@ import { useSavedItem } from "@/hooks/useSaved";
 import { useFollowing } from "@/hooks/useFollowing";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import ReportButton from "@/components/ReportButton";
+import AddToBoardSheet from "@/components/products/AddToBoardSheet";
 
 const CommentRow = ({
   c,
@@ -52,6 +54,10 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<CommentItem | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [showAddToBoard, setShowAddToBoard] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -77,15 +83,31 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
     inputRef.current?.focus();
   };
 
-  const share = async () => {
-    const url = `${window.location.origin}/?post=${post.id}`;
+  const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(window.location.href);
       toast.success("Ссылка скопирована");
     } catch {
       toast.error("Не удалось скопировать ссылку");
     }
   };
+
+  const shareOptions = [
+    { icon: "MessageCircle", label: "Telegram", color: "#229ED9", href: `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`@${post.handle}: ${post.caption}`)}` },
+    { icon: "Send", label: "WhatsApp", color: "#25D366", href: `https://wa.me/?text=${encodeURIComponent(`@${post.handle}: ${post.caption}\n${window.location.href}`)}` },
+    { icon: "Share2", label: "VK", color: "#0077FF", href: `https://vk.com/share.php?url=${encodeURIComponent(window.location.href)}` },
+    { icon: "MessageSquare", label: "МАКС", color: "#7C66FC", href: `https://max.ru/share?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`@${post.handle}: ${post.caption}`)}` },
+  ];
+
+  const menuItems = [
+    { icon: "Bookmark", label: saved ? "Убрать из сохранённых" : "Сохранить", action: () => toggleSaved(), active: saved },
+    { icon: "Layers", label: "Добавить на доску", action: () => setShowAddToBoard(true) },
+    { icon: "User", label: "Перейти в профиль", action: () => openProfile() },
+    { icon: "BellOff", label: "Выключить уведомления", action: () => {} },
+    { icon: "Link", label: "Скопировать ссылку", action: () => { copyLink(); } },
+    { icon: "Share2", label: "Поделиться", action: () => setShowShare(true) },
+    { icon: "Flag", label: "Пожаловаться", action: () => setShowReport(true) },
+  ];
 
   const openProfile = () =>
     window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: post.handle } }));
@@ -130,16 +152,46 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
               </div>
               <span className="text-[15px] font-semibold truncate">{post.author || post.handle}</span>
             </button>
-            {!isSelf && (
+            <div className="flex items-center gap-2 flex-shrink-0 relative">
+              {!isSelf && (
+                <button
+                  onClick={toggleFollow}
+                  className={`px-5 py-2 rounded-full text-sm font-semibold transition-colors ${
+                    following ? "bg-neutral-100 text-neutral-700 hover:bg-neutral-200" : "bg-[#fe2c55] text-white hover:bg-[#e8294d]"
+                  }`}
+                >
+                  {following ? "Вы подписаны" : "Подписаться"}
+                </button>
+              )}
               <button
-                onClick={toggleFollow}
-                className={`px-5 py-2 rounded-full text-sm font-semibold flex-shrink-0 transition-colors ${
-                  following ? "bg-neutral-100 text-neutral-700 hover:bg-neutral-200" : "bg-[#fe2c55] text-white hover:bg-[#e8294d]"
-                }`}
+                onClick={() => setShowMenu((v) => !v)}
+                className="p-2 rounded-full hover:bg-neutral-100 transition-colors"
+                title="Ещё действия"
               >
-                {following ? "Вы подписаны" : "Подписаться"}
+                <Icon name="MoreHorizontal" size={20} className="text-neutral-700" />
               </button>
-            )}
+              {showMenu && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
+                  <div className="absolute right-0 top-full mt-1 z-20 w-[280px] rounded-xl bg-white shadow-2xl border border-neutral-100 overflow-hidden">
+                    {menuItems.map((item) => (
+                      <button
+                        key={item.label}
+                        onClick={() => { setShowMenu(false); item.action(); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-50 border-b border-neutral-100 last:border-0"
+                      >
+                        <Icon
+                          name={item.icon}
+                          size={18}
+                          className={item.icon === "Flag" ? "text-[#fe2c55]" : item.active ? "text-[#fe2c55] fill-[#fe2c55]" : "text-neutral-700"}
+                        />
+                        <span className={`text-sm font-medium ${item.icon === "Flag" ? "text-[#fe2c55]" : "text-neutral-900"}`}>{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto px-5 py-4" style={{ scrollbarWidth: "thin" }}>
@@ -192,19 +244,16 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
                 </button>
               ) : (
                 <div className="flex items-center gap-4 flex-shrink-0 text-neutral-700">
-                  <button onClick={toggleLike} className="flex items-center gap-1.5 hover:text-neutral-900">
-                    <Icon name="Heart" size={22} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : ""} />
+                  <button onClick={toggleLike} className="flex items-center gap-1.5 active:scale-90 transition-transform">
+                    <Icon name="Heart" size={26} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-neutral-800"} />
                     <span className="text-sm">{formatLikes(likes)}</span>
                   </button>
-                  <button onClick={toggleSaved} className="flex items-center gap-1.5 hover:text-neutral-900">
-                    <Icon name="Star" size={22} className={saved ? "text-amber-400 fill-amber-400" : ""} />
-                  </button>
-                  <button onClick={() => inputRef.current?.focus()} className="flex items-center gap-1.5 hover:text-neutral-900">
-                    <Icon name="MessageCircle" size={22} />
+                  <button onClick={() => inputRef.current?.focus()} className="flex items-center gap-1.5 active:scale-90 transition-transform">
+                    <Icon name="MessageDots" size={26} className="text-neutral-800" />
                     <span className="text-sm">{commentCount}</span>
                   </button>
-                  <button onClick={share} className="hover:text-neutral-900">
-                    <Icon name="Share2" size={22} />
+                  <button onClick={() => setShowShare(true)} className="active:scale-90 transition-transform">
+                    <Icon name="ShareForward" size={26} className="text-neutral-800" />
                   </button>
                 </div>
               )}
@@ -212,6 +261,41 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
           </div>
         </div>
       </div>
+
+      {showShare && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={(e) => { e.stopPropagation(); setShowShare(false); }}>
+          <div className="w-[360px] rounded-2xl bg-white p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <span className="font-bold text-base text-neutral-900">Поделиться</span>
+              <button onClick={() => setShowShare(false)}>
+                <Icon name="X" size={20} className="text-neutral-500" />
+              </button>
+            </div>
+            <div className="grid grid-cols-4 gap-4">
+              {shareOptions.map((opt) => (
+                <a key={opt.label} href={opt.href} target="_blank" rel="noreferrer" className="flex flex-col items-center gap-2" onClick={() => setShowShare(false)}>
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: opt.color + "22", border: `1.5px solid ${opt.color}55` }}>
+                    <Icon name={opt.icon} size={24} style={{ color: opt.color }} />
+                  </div>
+                  <span className="text-neutral-600 text-xs">{opt.label}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ReportButton targetType="post" targetId={post.id} variant="controlled" open={showReport} onOpenChange={setShowReport} />
+
+      {showAddToBoard && (
+        <AddToBoardSheet
+          itemType="post"
+          itemId={post.id}
+          image={post.image}
+          title={post.caption}
+          onClose={() => setShowAddToBoard(false)}
+        />
+      )}
     </div>
   );
 };
