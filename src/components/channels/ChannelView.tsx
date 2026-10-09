@@ -264,7 +264,7 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
       body: JSON.stringify({ action: "delete", community_id: channel.id }),
     });
     if (parse(await res.json()).ok) onDeleted();
-    else alert("Удалить канал может только создатель");
+    else alert("Удалить канал может только создатель или админ");
   };
 
   const canPost = !!channel.is_admin;
@@ -289,7 +289,7 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
             {channel.joined ? "Отписаться" : "Подписаться"}
           </button>
         )}
-        {channel.creator_id === user?.id && (
+        {canPost && (
           <button onClick={deleteChannel} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0" title="Удалить канал">
             <Icon name="Trash2" size={17} className="text-[#fe2c55]" />
           </button>
@@ -302,11 +302,6 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
                 <button onClick={shareLink} className="w-full text-left px-4 py-3 text-white text-sm flex items-center gap-2 hover:bg-white/5">
                   <Icon name="Link" size={15} /> Ссылка-приглашение
                 </button>
-                {channel.creator_id === user?.id && (
-                  <button onClick={deleteChannel} className="w-full text-left px-4 py-3 text-[#fe2c55] text-sm flex items-center gap-2 hover:bg-white/5">
-                    <Icon name="Trash2" size={15} /> Удалить канал
-                  </button>
-                )}
               </div>
             )}
           </div>
