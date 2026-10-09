@@ -14,6 +14,7 @@ import { useBulkCounts } from "@/hooks/useBulkCounts";
 import { useFollowingList } from "@/hooks/useFollowing";
 import { detectCity, normCity } from "@/lib/city";
 import { toast } from "sonner";
+import { FEED_CATEGORIES } from "@/lib/feedCategories";
 
 type FeedScope = "recommend" | "following" | "nearby" | "trending" | "articles";
 type ViewMode = "masonry" | "feed";
@@ -39,6 +40,7 @@ const PostFeed = () => {
     return (localStorage.getItem("feed_view_mode") as ViewMode) || "masonry";
   });
   const [showSearch, setShowSearch] = useState(false);
+  const [categoryId, setCategoryId] = useState("recommend");
   const [detecting, setDetecting] = useState(false);
   const [cityInput, setCityInput] = useState("");
   const [editingCity, setEditingCity] = useState(false);
@@ -100,6 +102,7 @@ const PostFeed = () => {
         time: formatTime(v.created_at),
         createdAt,
         isVideo,
+        category: v.category || null,
         templateId: v.template_id || null,
         hasProducts: !!v.has_products,
         views: typeof v.views === "number" ? v.views : undefined,
@@ -193,6 +196,14 @@ const PostFeed = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope, visiblePosts, followingHandles.join(","), myHandle, myCity]);
 
+  const activeCategory = FEED_CATEGORIES.find(c => c.id === categoryId);
+  const categoryPosts = useMemo(() => {
+    if (!activeCategory || activeCategory.id === "recommend") return scopedPosts;
+    if (activeCategory.id === "videos") return scopedPosts.filter(p => p.isVideo);
+    return scopedPosts.filter(p => activeCategory.match.includes((p.category || "").toLowerCase()));
+  }, [scopedPosts, activeCategory]);
+  const headerH = scope === "articles" ? 156 : 200;
+
   const seenHandles = new Set<string>();
   const storyUsers = scopedPosts.filter(p => {
     const key = (p.handle || p.author || "").toLowerCase().trim();
@@ -219,7 +230,7 @@ const PostFeed = () => {
 
       {showSearch && (
         <SearchOverlay
-          posts={scopedPosts}
+          posts={categoryPosts}
           onClose={() => setShowSearch(false)}
           onOpenPost={(p) => { setShowSearch(false); setSearchOpenedPost(p); }}
         />
@@ -302,8 +313,27 @@ const PostFeed = () => {
         <div className="flex-shrink-0 w-1" aria-hidden="true" />
       </div>
 
+      {scope !== "articles" && (
+        <div
+          className={`media-overlay-text absolute top-[156px] left-0 right-0 z-20 ${viewMode === "masonry" ? "" : "md:max-w-[620px] md:mx-auto"} bg-black/85 backdrop-blur-md flex items-center gap-1.5 px-3 py-2 overflow-x-auto border-b border-white/8`}
+          style={{ scrollbarWidth: "none" }}
+        >
+          {FEED_CATEGORIES.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => setCategoryId(c.id)}
+              className={`px-3.5 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-colors ${
+                categoryId === c.id ? "bg-white text-black" : "bg-white/10 text-white/70"
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {scope === "nearby" && (!myCity || editingCity || scopedPosts.length === 0) ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-8 text-center" style={{ paddingTop: 156 }}>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-8 text-center" style={{ paddingTop: headerH }}>
           <Icon name="MapPin" size={44} className="text-white/40" />
           {!myCity || editingCity ? (
             <>
@@ -346,11 +376,11 @@ const PostFeed = () => {
         </div>
       ) : scope === "articles" ? (
         <div className="absolute inset-0">
-          <ArticlesFeed topPad={156} />
+          <ArticlesFeed topPad={headerH} />
         </div>
       ) : viewMode === "masonry" ? (
         <div className="absolute inset-0">
-          <MasonryFeed posts={scopedPosts} loading={loading} topPad={156} />
+          <MasonryFeed posts={categoryPosts} loading={loading} topPad={headerH} />
         </div>
       ) : (
         /* Posts — прокрутка с привязкой, под фиксированной панелью сторис */
@@ -361,17 +391,17 @@ const PostFeed = () => {
         >
           <div className="md:max-w-[620px] md:mx-auto">
             {/* Резерв под фиксированную панель сторис */}
-            <div className="h-[156px] flex-shrink-0" aria-hidden />
+            <div className="flex-shrink-0" style={{ height: headerH }} aria-hidden />
             {loading ? (
               <div className="flex items-center justify-center py-20">
                 <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
               </div>
             ) : (
-              scopedPosts.map((post) => (
+              categoryPosts.map((post) => (
                 <div
                   key={post.id}
-                  className="snap-start snap-always flex flex-col scroll-mt-[156px]"
-                  style={{ height: "calc(100% - 156px)", minHeight: "calc(100% - 156px)" }}
+                  className="snap-start snap-always flex flex-col "
+                  style={{ height: `calc(100% - ${headerH}px)`, minHeight: `calc(100% - ${headerH}px)`, scrollMarginTop: headerH }}
                 >
                   <PostCard post={post} />
                 </div>

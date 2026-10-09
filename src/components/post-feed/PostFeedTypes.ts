@@ -20,6 +20,7 @@ export interface Post {
   city?: string | null;
   createdAt?: number;
   isVideo?: boolean;
+  category?: string | null;
   templateId?: string | null;
   hasProducts?: boolean;
   views?: number;
