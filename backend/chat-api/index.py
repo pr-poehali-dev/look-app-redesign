@@ -782,6 +782,7 @@ def handler(event: dict, context) -> dict:
                     # Список забаненных (для админов это нужно)
                     cur.execute(
                         "SELECT user_id, user_name, banned_at, reason FROM community_bans WHERE community_id = %s "
+                        "AND COALESCE(banned_by, '') != '__unbanned__' "
                         "ORDER BY banned_at DESC",
                         (com_id,)
                     )
@@ -868,6 +869,15 @@ def handler(event: dict, context) -> dict:
                     com_type = row[0]
                     com_name_for_chat = row[1]
 
+                    cur.execute(
+                        "SELECT 1 FROM community_bans WHERE community_id = %s AND user_id = %s "
+                        "AND COALESCE(banned_by, '') != '__unbanned__'",
+                        (com_id, user_id)
+                    )
+                    if cur.fetchone():
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers, 'body': json.dumps({'error': 'banned'})}
+
                     if com_type == 'closed':
                         cur.execute(
                             "INSERT INTO community_join_requests (community_id, user_id, user_name) "
@@ -881,7 +891,8 @@ def handler(event: dict, context) -> dict:
 
                     cur.execute(
                         "INSERT INTO community_members (community_id, user_id, user_name) VALUES (%s, %s, %s) "
-                        "ON CONFLICT DO NOTHING",
+                        "ON CONFLICT (community_id, user_id) DO UPDATE SET role = 'member' "
+                        "WHERE community_members.role = 'left'",
                         (com_id, user_id, user_name)
                     )
                     cur.execute(

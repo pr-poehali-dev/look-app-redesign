@@ -196,6 +196,7 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
       body: JSON.stringify({ action, community_id: channel.id }),
     });
     const data = parse(await res.json());
+    if (data.error === "banned") { alert("Вы заблокированы в этом канале"); return; }
     if (data.pending) { alert("Заявка отправлена. Админ её рассмотрит."); return; }
     if (data.ok) onChanged({ joined: !channel.joined, members: channel.members + (channel.joined ? -1 : 1) });
   };

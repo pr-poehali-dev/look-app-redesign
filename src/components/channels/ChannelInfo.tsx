@@ -43,7 +43,7 @@ const ChannelInfo = ({ channel, onClose, onChanged }: Props) => {
   const loadMembers = () =>
     fetch(`${API}?module=community&action=members&community_id=${channel.id}`, { headers })
       .then((r) => r.json())
-      .then((raw) => setMembers(parse(raw).members || []))
+      .then((raw) => { const d = parse(raw); setMembers(d.members || []); setBanned(d.banned || []); })
       .catch(() => setMembers([]))
       .finally(() => setLoading(false));
 
@@ -51,12 +51,22 @@ const ChannelInfo = ({ channel, onClose, onChanged }: Props) => {
     loadMembers();
   }, [channel.id]);
 
+  const [banned, setBanned] = useState<{ id: string; name: string }[]>([]);
   const myRole = members.find((m) => m.id === user?.id)?.role;
   const isOwner = myRole === "owner" || channel.creator_id === user?.id;
 
-  const runAction = async (action: "promote" | "demote" | "kick") => {
+  const unban = async (id: string) => {
+    const res = await fetch(`${API}?module=community`, {
+      method: "POST", headers,
+      body: JSON.stringify({ action: "unban", community_id: channel.id, user_id: id }),
+    });
+    if (parse(await res.json()).ok) loadMembers();
+  };
+
+  const runAction = async (action: "promote" | "demote" | "kick" | "ban") => {
     if (!target) return;
     if (action === "kick" && !confirm(`Удалить ${target.name} из канала?`)) return;
+    if (action === "ban" && !confirm(`Заблокировать ${target.name}? Он не сможет подписаться снова.`)) return;
     setBusy(true);
     const body: Record<string, unknown> = { action, community_id: channel.id, user_id: target.id };
     if (action === "promote") {
@@ -74,7 +84,7 @@ const ChannelInfo = ({ channel, onClose, onChanged }: Props) => {
     }
     setTarget(null);
     await loadMembers();
-    onChanged({ members: members.length - (action === "kick" ? 1 : 0) });
+    onChanged({ members: members.length - (action === "kick" || action === "ban" ? 1 : 0) });
   };
 
   const pickPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,6 +195,18 @@ const ChannelInfo = ({ channel, onClose, onChanged }: Props) => {
             ))}
           </div>
         )}
+
+        {isAdmin && banned.length > 0 && (
+          <>
+            <p className="px-4 pt-6 pb-2 text-white/40 text-xs uppercase tracking-wide">Заблокированные: {banned.length}</p>
+            {banned.map((b) => (
+              <div key={b.id} className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
+                <p className="flex-1 text-white/70 text-sm truncate">{b.name}</p>
+                <button onClick={() => unban(b.id)} className="px-3 py-1.5 rounded-full bg-white/10 text-white text-xs font-semibold">Разблокировать</button>
+              </div>
+            ))}
+          </>
+        )}
       </div>
       {target && (
         <div className="absolute inset-0 z-50 bg-black/60 flex items-end" onClick={() => setTarget(null)}>
@@ -204,6 +226,11 @@ const ChannelInfo = ({ channel, onClose, onChanged }: Props) => {
             {(target.role !== "admin" || isOwner) && (
               <button disabled={busy} onClick={() => runAction("kick")} className="w-full text-left px-5 py-4 text-[#fe2c55] text-sm flex items-center gap-3 disabled:opacity-50">
                 <Icon name="UserMinus" size={18} /> Удалить из канала
+              </button>
+            )}
+            {(target.role !== "admin" || isOwner) && (
+              <button disabled={busy} onClick={() => runAction("ban")} className="w-full text-left px-5 py-4 text-[#fe2c55] text-sm flex items-center gap-3 disabled:opacity-50">
+                <Icon name="Ban" size={18} /> Заблокировать
               </button>
             )}
             <button onClick={() => setTarget(null)} className="w-full text-left px-5 py-4 text-white/50 text-sm">Отмена</button>
