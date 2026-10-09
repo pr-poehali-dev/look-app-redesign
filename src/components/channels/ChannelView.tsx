@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
 import { uploadChatMedia } from "@/lib/chatMediaUpload";
+import PollMessage from "@/components/community/PollMessage";
+import PollsPanel from "@/components/community/PollsPanel";
 import { Channel } from "./types";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
@@ -50,6 +52,9 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
   const [commentText, setCommentText] = useState("");
   const [reactFor, setReactFor] = useState<number | null>(null);
   const [menu, setMenu] = useState(false);
+  const [showPolls, setShowPolls] = useState(false);
+  const [pinned, setPinned] = useState<{ message_id: number; type: string; content: string } | null>(null);
+  const videoRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const viewedRef = useRef<Set<number>>(new Set());
@@ -90,6 +95,32 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [channel.id, user?.id]);
 
+  const loadPinned = useCallback(() => {
+    fetch(`${API}?module=community`, {
+      method: "POST", headers,
+      body: JSON.stringify({ action: "get_pinned", community_id: channel.id }),
+    })
+      .then(r => r.json())
+      .then(raw => setPinned(parse(raw).pinned || null))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [channel.id, user?.id]);
+
+  useEffect(() => { loadPinned(); }, [loadPinned]);
+
+  const togglePin = async (post: Post) => {
+    const isPinned = pinned?.message_id === post.id;
+    await fetch(`${API}?module=community`, {
+      method: "POST", headers,
+      body: JSON.stringify(isPinned
+        ? { action: "unpin_message", community_id: channel.id }
+        : { action: "pin_message", community_id: channel.id, message_id: post.id }),
+    }).catch(() => {});
+    loadPinned();
+  };
+
+  const scrollToPost = (id: number) => document.getElementById(`post-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+
   useEffect(() => {
     loadPosts(true);
     const t = setInterval(() => loadPosts(false), 6000);
@@ -108,7 +139,7 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [posts, channel.joined]);
 
-  const publish = async (content: string, type: "text" | "image") => {
+  const publish = async (content: string, type: "text" | "image" | "video") => {
     if (!content.trim() || sending) return;
     setSending(true);
     try {
@@ -141,6 +172,19 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
       await publish(url, "image");
     } catch {
       alert("Не удалось загрузить фото");
+    }
+  };
+
+  const handleVideo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const ext = (file.name.split(".").pop() || "mp4").toLowerCase();
+      const url = await uploadChatMedia(file, ext, file.type || "video/mp4");
+      await publish(url, "video");
+    } catch {
+      alert("Не удалось загрузить видео");
     }
   };
 
@@ -264,6 +308,15 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
         )}
       </div>
 
+      {pinned && (
+        <button onClick={() => scrollToPost(pinned.message_id)} className="flex items-center gap-2 px-4 py-2 bg-white/5 border-b border-white/8 text-left">
+          <Icon name="Pin" size={14} className="text-[#fe2c55] flex-shrink-0" />
+          <span className="text-white/70 text-xs truncate">
+            {pinned.type === "image" ? "Фото" : pinned.type === "video" ? "Видео" : pinned.type === "poll" ? "Опрос" : pinned.content}
+          </span>
+        </button>
+      )}
+
       <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-3" style={{ scrollbarWidth: "none" }}>
         {!canSee ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center gap-2 px-6">
@@ -277,14 +330,27 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
         ) : posts.map(post => {
           const st = stats[post.id];
           return (
-            <div key={post.id} className="bg-[#161616] rounded-2xl overflow-hidden border border-white/8">
+            <div key={post.id} id={`post-${post.id}`} className="flex-shrink-0 bg-[#161616] rounded-2xl overflow-hidden border border-white/8">
               {post.type === "image" && <img src={post.content} className="w-full max-h-96 object-cover" alt="" />}
-              {post.type !== "image" && (
+              {post.type === "video" && <video src={post.content} controls playsInline preload="metadata" className="w-full max-h-96 bg-black" />}
+              {post.type === "poll" && (() => {
+                let pid = 0;
+                try { pid = JSON.parse(post.content).poll_id; } catch { pid = 0; }
+                return pid ? <div className="p-2"><PollMessage pollId={pid} communityId={channel.id} isMe={false} time={post.time} /></div> : <p className="text-white text-sm px-4 pt-3">Опрос</p>;
+              })()}
+              {!["image", "video", "poll"].includes(post.type) && (
                 <p className="text-white text-sm px-4 pt-3 whitespace-pre-wrap break-words">{post.content}</p>
               )}
               <div className="flex items-center justify-between px-4 py-2 text-white/40 text-xs">
                 <span className="flex items-center gap-1"><Icon name="Eye" size={12} />{st?.views ?? 0}</span>
-                <span>{post.time}</span>
+                <span className="flex items-center gap-3">
+                  {canPost && (
+                    <button onClick={() => togglePin(post)} className={pinned?.message_id === post.id ? "text-[#fe2c55]" : "text-white/40"} title="Закрепить">
+                      <Icon name="Pin" size={13} />
+                    </button>
+                  )}
+                  {post.time}
+                </span>
               </div>
               <div className="flex flex-wrap items-center gap-1.5 px-3 pb-3 relative">
                 {Object.entries(st?.reactions || {}).filter(([, n]) => n > 0).map(([emoji, n]) => (
@@ -320,8 +386,15 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
       {canPost && (
         <div className="flex items-end gap-2 px-3 pb-24 pt-3 border-t border-white/8 bg-black">
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImage} />
-          <button onClick={() => fileRef.current?.click()} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 mb-0.5">
+          <input ref={videoRef} type="file" accept="video/*" className="hidden" onChange={handleVideo} />
+          <button onClick={() => fileRef.current?.click()} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 mb-0.5" title="Фото">
             <Icon name="Image" size={18} className="text-white/70" />
+          </button>
+          <button onClick={() => videoRef.current?.click()} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 mb-0.5" title="Видео">
+            <Icon name="Video" size={18} className="text-white/70" />
+          </button>
+          <button onClick={() => setShowPolls(true)} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 mb-0.5" title="Опрос">
+            <Icon name="BarChart3" size={18} className="text-white/70" />
           </button>
           <textarea
             value={text}
@@ -338,6 +411,14 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
             <Icon name="Send" size={17} className="text-white" />
           </button>
         </div>
+      )}
+
+      {showPolls && (
+        <PollsPanel
+          communityId={channel.id}
+          isAdmin={canPost}
+          onClose={() => { setShowPolls(false); setTimeout(() => loadPosts(false), 400); }}
+        />
       )}
 
       {openComments && (

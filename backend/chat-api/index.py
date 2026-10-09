@@ -1135,7 +1135,7 @@ def handler(event: dict, context) -> dict:
                         return {'statusCode': 404, 'headers': headers,
                                 'body': json.dumps({'error': 'invite invalid'})}
                     com_id = inv[0]
-                    cur.execute("SELECT id, name FROM communities WHERE id = %s AND is_hidden = FALSE", (com_id,))
+                    cur.execute("SELECT id, name, kind FROM communities WHERE id = %s AND is_hidden = FALSE", (com_id,))
                     com = cur.fetchone()
                     if not com:
                         conn.commit()
@@ -1157,7 +1157,7 @@ def handler(event: dict, context) -> dict:
                     )
                     conn.commit()
                     return {'statusCode': 200, 'headers': headers,
-                            'body': json.dumps({'ok': True, 'community_id': com_id, 'name': com[1]})}
+                            'body': json.dumps({'ok': True, 'community_id': com_id, 'name': com[1], 'kind': com[2]})}
 
                 elif post_action == 'poll_create':
                     com_id = body.get('community_id')

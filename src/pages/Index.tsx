@@ -45,6 +45,7 @@ const Index = () => {
   const [showLive, setShowLive] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [pendingCommunityId, setPendingCommunityId] = useState<string | null>(initialCommunityFromUrl);
+  const [pendingKind, setPendingKind] = useState<string>("community");
   const [profileHandle, setProfileHandle] = useState<string | null>(null);
   const [pendingDirectHandle, setPendingDirectHandle] = useState<string | null>(null);
   const { totalUnread } = useUnread();
@@ -146,6 +147,7 @@ const Index = () => {
         const raw = await res.json();
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
         if (!cancelled && data.ok && data.community_id) {
+          setPendingKind(data.kind || "community");
           setPendingCommunityId(data.community_id);
           setActiveTab("messages");
         } else if (!cancelled) {
@@ -405,6 +407,7 @@ const Index = () => {
           {activeTab === "messages" && (
             <MessagesScreen
               initialCommunityId={pendingCommunityId}
+              initialKind={pendingKind}
               onCommunityConsumed={() => setPendingCommunityId(null)}
               initialDirectHandle={pendingDirectHandle}
               onDirectConsumed={() => setPendingDirectHandle(null)}

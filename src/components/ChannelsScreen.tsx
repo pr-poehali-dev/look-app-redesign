@@ -8,9 +8,11 @@ const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c"
 
 interface Props {
   onBack: () => void;
+  initialChannelId?: string | null;
+  onInitialConsumed?: () => void;
 }
 
-const ChannelsScreen = ({ onBack }: Props) => {
+const ChannelsScreen = ({ onBack, initialChannelId, onInitialConsumed }: Props) => {
   const { user } = useAuth();
   const [channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +22,7 @@ const ChannelsScreen = ({ onBack }: Props) => {
   const [desc, setDesc] = useState("");
   const [type, setType] = useState<"open" | "closed">("open");
   const [creating, setCreating] = useState(false);
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(initialChannelId || null);
 
   const headers = {
     "Content-Type": "application/json",
@@ -41,6 +43,7 @@ const ChannelsScreen = ({ onBack }: Props) => {
   };
 
   useEffect(() => { load(); }, [user]);
+  useEffect(() => { if (initialChannelId) onInitialConsumed?.(); }, []);
 
   const create = async () => {
     if (!name.trim() || !user) return;

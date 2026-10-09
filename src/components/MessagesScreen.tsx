@@ -31,13 +31,14 @@ type Tab = "chats" | "communities" | "channels" | "calls";
 
 interface MessagesScreenProps {
   initialCommunityId?: string | null;
+  initialKind?: string;
   onCommunityConsumed?: () => void;
   initialDirectHandle?: string | null;
   onDirectConsumed?: () => void;
 }
 
-const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirectHandle, onDirectConsumed }: MessagesScreenProps = {}) => {
-  const [tab, setTab] = useState<Tab>(initialCommunityId ? "communities" : "chats");
+const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, initialDirectHandle, onDirectConsumed }: MessagesScreenProps = {}) => {
+  const [tab, setTab] = useState<Tab>(initialCommunityId ? (initialKind === "channel" ? "channels" : "communities") : "chats");
   const [openChat, setOpenChat] = useState<Chat | null>(null);
   const [search, setSearch] = useState("");
   const [chats, setChats] = useState<Chat[]>([]);
@@ -230,7 +231,7 @@ const MessagesScreen = ({ initialCommunityId, onCommunityConsumed, initialDirect
       onInitialConsumed={onCommunityConsumed}
     />
   );
-  if (tab === "channels") return <ChannelsScreen onBack={() => setTab("chats")} />;
+  if (tab === "channels") return <ChannelsScreen onBack={() => setTab("chats")} initialChannelId={initialKind === "channel" ? initialCommunityId : null} onInitialConsumed={onCommunityConsumed} />;
   if (tab === "calls") return (
     <CallHistoryScreen
       onBack={() => setTab("chats")}
