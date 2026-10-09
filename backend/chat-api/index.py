@@ -606,6 +606,20 @@ def handler(event: dict, context) -> dict:
                     return {'statusCode': 400, 'headers': headers,
                             'body': json.dumps({'error': 'chat_id required'})}
 
+                if str(chat_id).startswith('com_'):
+                    cur.execute(
+                        "SELECT c.kind, c.creator_id, "
+                        "(SELECT role FROM community_members WHERE community_id = c.id AND user_id = %s) "
+                        "FROM communities c WHERE c.id = %s",
+                        (user_id, chat_id)
+                    )
+                    kr = cur.fetchone()
+                    if kr and kr[0] == 'channel' and msg_type != 'system':
+                        if not (kr[1] == user_id or kr[2] in ('owner', 'admin')):
+                            conn.commit()
+                            return {'statusCode': 403, 'headers': headers,
+                                    'body': json.dumps({'error': 'only admins can post in channel'})}
+
                 # Создаём чат, при наличии — сохраняем имя/аватар собеседника
                 if peer_name_explicit or peer_avatar_explicit:
                     cur.execute(
@@ -684,11 +698,11 @@ def handler(event: dict, context) -> dict:
                         "SELECT c.id, c.name, c.description, c.type, c.category, c.img, c.creator_id, "
                         "COUNT(DISTINCT CASE WHEN cm.role != 'left' THEN cm.user_id END) as member_count, "
                         "MAX(CASE WHEN cm.user_id = %s AND cm.role != 'left' THEN 1 ELSE 0 END) as is_member, "
-                        "MAX(CASE WHEN cm.user_id = %s THEN cm.role ELSE NULL END) as my_role "
+                        "MAX(CASE WHEN cm.user_id = %s THEN cm.role ELSE NULL END) as my_role, c.kind "
                         "FROM communities c "
                         "LEFT JOIN community_members cm ON cm.community_id = c.id "
                         "WHERE c.creator_id <> 'system' AND COALESCE(c.is_hidden, FALSE) = FALSE "
-                        "GROUP BY c.id, c.name, c.description, c.type, c.category, c.img, c.creator_id "
+                        "GROUP BY c.id, c.name, c.description, c.type, c.category, c.img, c.creator_id, c.kind "
                         "ORDER BY c.created_at DESC",
                         (user_id, user_id)
                     )
@@ -697,13 +711,47 @@ def handler(event: dict, context) -> dict:
                         {'id': r[0], 'name': r[1], 'description': r[2], 'type': r[3],
                          'category': r[4], 'img': r[5], 'creator_id': r[6],
                          'members': r[7], 'joined': bool(r[8]),
-                         'my_role': r[9] or '',
+                         'my_role': r[9] or '', 'kind': r[10] or 'community',
                          'is_admin': (r[6] == user_id) or (r[9] in ('owner', 'admin'))}
                         for r in rows
                     ]
                     conn.commit()
                     return {'statusCode': 200, 'headers': headers,
                             'body': json.dumps({'communities': communities})}
+
+                elif action == 'channel_stats':
+                    ids = [int(x) for x in (params.get('ids') or '').split(',') if x.strip().isdigit()][:100]
+                    stats = {}
+                    if ids:
+                        idl = ','.join(str(i) for i in ids)
+                        cur.execute(f"SELECT message_id, COUNT(*) FROM channel_post_views WHERE message_id IN ({idl}) GROUP BY message_id")
+                        views = {r[0]: r[1] for r in cur.fetchall()}
+                        cur.execute(f"SELECT message_id, emoji, COUNT(*) FROM channel_post_reactions WHERE message_id IN ({idl}) GROUP BY message_id, emoji")
+                        reacts = {}
+                        for r in cur.fetchall():
+                            reacts.setdefault(r[0], {})[r[1]] = r[2]
+                        cur.execute(f"SELECT message_id, emoji FROM channel_post_reactions WHERE message_id IN ({idl}) AND user_id = %s", (user_id,))
+                        mine = {r[0]: r[1] for r in cur.fetchall()}
+                        cur.execute(f"SELECT message_id, COUNT(*) FROM channel_post_comments WHERE message_id IN ({idl}) GROUP BY message_id")
+                        comm = {r[0]: r[1] for r in cur.fetchall()}
+                        for i in ids:
+                            stats[str(i)] = {'views': views.get(i, 0), 'reactions': reacts.get(i, {}), 'my_reaction': mine.get(i, ''), 'comments': comm.get(i, 0)}
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'stats': stats})}
+
+                elif action == 'channel_comments':
+                    mid = params.get('message_id')
+                    if not mid or not str(mid).isdigit():
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'message_id required'})}
+                    cur.execute(
+                        "SELECT id, user_id, user_name, content, created_at FROM channel_post_comments "
+                        "WHERE message_id = %s ORDER BY created_at ASC LIMIT 200", (int(mid),)
+                    )
+                    items = [{'id': r[0], 'user_id': r[1], 'user_name': r[2], 'content': r[3],
+                              'time': _fmt_time(r[4])} for r in cur.fetchall()]
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'comments': items})}
 
                 elif action == 'members':
                     com_id = params.get('community_id')
@@ -745,7 +793,52 @@ def handler(event: dict, context) -> dict:
                 body = json.loads(event.get('body') or '{}')
                 post_action = body.get('action')
 
-                if post_action == 'join':
+                if post_action == 'channel_view':
+                    ids = [int(x) for x in (body.get('message_ids') or []) if str(x).isdigit() and int(x) > 0][:100]
+                    for i in ids:
+                        cur.execute(
+                            "INSERT INTO channel_post_views (message_id, user_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                            (i, user_id)
+                        )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True})}
+
+                elif post_action == 'channel_react':
+                    mid = body.get('message_id')
+                    emoji = (body.get('emoji') or '').strip()[:8]
+                    if not mid or user_id in ('anon', ''):
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'message_id required'})}
+                    cur.execute("SELECT emoji FROM channel_post_reactions WHERE message_id = %s AND user_id = %s", (int(mid), user_id))
+                    prev = cur.fetchone()
+                    if not emoji or (prev and prev[0] == emoji):
+                        cur.execute("DELETE FROM channel_post_reactions WHERE message_id = %s AND user_id = %s", (int(mid), user_id))
+                    else:
+                        cur.execute(
+                            "INSERT INTO channel_post_reactions (message_id, user_id, emoji) VALUES (%s, %s, %s) "
+                            "ON CONFLICT (message_id, user_id) DO UPDATE SET emoji = EXCLUDED.emoji, created_at = NOW()",
+                            (int(mid), user_id, emoji)
+                        )
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True})}
+
+                elif post_action == 'channel_comment':
+                    mid = body.get('message_id')
+                    text = (body.get('content') or '').strip()[:1000]
+                    if not mid or not text or user_id in ('anon', ''):
+                        conn.commit()
+                        return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'message_id and content required'})}
+                    cur.execute(
+                        "INSERT INTO channel_post_comments (message_id, user_id, user_name, content) "
+                        "VALUES (%s, %s, %s, %s) RETURNING id, created_at",
+                        (int(mid), user_id, user_name, text)
+                    )
+                    r = cur.fetchone()
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers,
+                            'body': json.dumps({'ok': True, 'comment': {'id': r[0], 'user_id': user_id, 'user_name': user_name, 'content': text, 'time': _fmt_time(r[1])}})}
+
+                elif post_action == 'join':
                     com_id = body.get('community_id')
                     cur.execute("SELECT type, name FROM communities WHERE id = %s AND COALESCE(is_hidden, FALSE) = FALSE", (com_id,))
                     row = cur.fetchone()
@@ -1049,6 +1142,7 @@ def handler(event: dict, context) -> dict:
                     com_category = body.get('category') or 'Другое'
                     if com_type not in ('open', 'closed'):
                         com_type = 'open'
+                    com_kind = 'channel' if body.get('kind') == 'channel' else 'community'
                     if not com_name:
                         conn.commit()
                         return {'statusCode': 400, 'headers': headers,
@@ -1059,9 +1153,9 @@ def handler(event: dict, context) -> dict:
                                 'body': json.dumps({'error': 'login required'})}
                     new_id = 'com_' + str(_uuid.uuid4())[:8]
                     cur.execute(
-                        "INSERT INTO communities (id, name, description, type, category, creator_id) "
-                        "VALUES (%s, %s, %s, %s, %s, %s)",
-                        (new_id, com_name, com_desc, com_type, com_category, user_id)
+                        "INSERT INTO communities (id, name, description, type, category, creator_id, kind) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                        (new_id, com_name, com_desc, com_type, com_category, user_id, com_kind)
                     )
                     cur.execute(
                         "INSERT INTO community_members "
