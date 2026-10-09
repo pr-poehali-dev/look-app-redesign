@@ -199,8 +199,11 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
     if (data.ok) onChanged({ joined: !channel.joined, members: channel.members + (channel.joined ? -1 : 1) });
   };
 
+  const canInteract = channel.joined || !!channel.is_admin;
+
   const react = async (post: Post, emoji: string) => {
     setReactFor(null);
+    if (!canInteract) { alert("Подпишись на канал, чтобы ставить реакции"); return; }
     const cur = stats[post.id] || { views: 0, reactions: {}, my_reaction: "", comments: 0 };
     const next = { ...cur.reactions };
     if (cur.my_reaction) next[cur.my_reaction] = Math.max(0, (next[cur.my_reaction] || 1) - 1);
@@ -224,11 +227,13 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
 
   const sendComment = async () => {
     if (!openComments || !commentText.trim()) return;
+    if (!canInteract) { alert("Подпишись на канал, чтобы комментировать"); return; }
     const res = await fetch(`${API}?module=community`, {
       method: "POST", headers,
       body: JSON.stringify({ action: "channel_comment", message_id: openComments.id, content: commentText }),
     });
     const data = parse(await res.json());
+    if (data.error === "subscribe required") { alert("Подпишись на канал, чтобы комментировать"); return; }
     if (data.comment) {
       setComments(prev => [...prev, data.comment]);
       setCommentText("");
@@ -436,6 +441,12 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
               </div>
             ))}
           </div>
+          {!canInteract ? (
+            <div className="flex items-center justify-between gap-3 px-4 pb-24 pt-3 border-t border-white/8">
+              <p className="text-white/50 text-sm">Комментировать могут только подписчики</p>
+              <button onClick={toggleSub} className="px-3 py-1.5 rounded-full bg-[#fe2c55] text-white text-xs font-bold flex-shrink-0">Подписаться</button>
+            </div>
+          ) : (
           <div className="flex items-center gap-2 px-3 pb-24 pt-3 border-t border-white/8">
             <input
               value={commentText}
@@ -448,6 +459,7 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
               <Icon name="Send" size={17} className="text-white" />
             </button>
           </div>
+          )}
         </div>
       )}
     </div>

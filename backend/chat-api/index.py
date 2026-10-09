@@ -809,6 +809,16 @@ def handler(event: dict, context) -> dict:
                     if not mid or user_id in ('anon', ''):
                         conn.commit()
                         return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'message_id required'})}
+                    cur.execute(
+                        "SELECT cm.role FROM sa_messages m "
+                        "JOIN community_members cm ON cm.community_id = m.chat_id AND cm.user_id = %s "
+                        "WHERE m.id = %s",
+                        (user_id, int(mid))
+                    )
+                    mem = cur.fetchone()
+                    if not mem or mem[0] == 'left':
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers, 'body': json.dumps({'error': 'subscribe required'})}
                     cur.execute("SELECT emoji FROM channel_post_reactions WHERE message_id = %s AND user_id = %s", (int(mid), user_id))
                     prev = cur.fetchone()
                     if not emoji or (prev and prev[0] == emoji):
@@ -828,6 +838,16 @@ def handler(event: dict, context) -> dict:
                     if not mid or not text or user_id in ('anon', ''):
                         conn.commit()
                         return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'message_id and content required'})}
+                    cur.execute(
+                        "SELECT cm.role FROM sa_messages m "
+                        "JOIN community_members cm ON cm.community_id = m.chat_id AND cm.user_id = %s "
+                        "WHERE m.id = %s",
+                        (user_id, int(mid))
+                    )
+                    mem = cur.fetchone()
+                    if not mem or mem[0] == 'left':
+                        conn.commit()
+                        return {'statusCode': 403, 'headers': headers, 'body': json.dumps({'error': 'subscribe required'})}
                     cur.execute(
                         "INSERT INTO channel_post_comments (message_id, user_id, user_name, content) "
                         "VALUES (%s, %s, %s, %s) RETURNING id, created_at",
