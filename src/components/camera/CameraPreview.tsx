@@ -241,6 +241,57 @@ const CameraPreview = ({
               />
             </div>
 
+            {/* Destination picker */}
+            <div>
+              <p className="text-white/60 text-xs mb-2 font-medium">Куда публиковать?</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onDestinationChange("home")}
+                  className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl border transition-all ${destination === "home" ? "bg-[#fe2c55]/20 border-[#fe2c55]" : "bg-white/5 border-white/10"}`}
+                >
+                  <Icon name="Play" size={20} className={destination === "home" ? "text-[#fe2c55]" : "text-white/50"} />
+                  <span className={`text-xs font-semibold ${destination === "home" ? "text-[#fe2c55]" : "text-white/50"}`}>Главная</span>
+                  <span className="text-white/30 text-[10px]">Видеолента</span>
+                </button>
+                <button
+                  onClick={() => onDestinationChange("feed")}
+                  className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl border transition-all ${destination === "feed" ? "bg-[#0095f6]/20 border-[#0095f6]" : "bg-white/5 border-white/10"}`}
+                >
+                  <Icon name="LayoutList" size={20} className={destination === "feed" ? "text-[#0095f6]" : "text-white/50"} />
+                  <span className={`text-xs font-semibold ${destination === "feed" ? "text-[#0095f6]" : "text-white/50"}`}>Лента</span>
+                  <span className="text-white/30 text-[10px]">Фото и посты</span>
+                </button>
+              </div>
+            </div>
+
+            {(uploadedMedia.type === "video" || destination === "feed") && (
+              <div>
+                <p className="text-white/60 text-xs mb-2 font-medium">{destination === "feed" ? "Тема для Ленты" : "Категория"}</p>
+                <button
+                  onClick={onToggleCategoryPicker}
+                  className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-white/10 border border-white/15"
+                >
+                  <span className="text-white text-sm font-medium">
+                    {VIDEO_CATEGORIES.find(c => c.id === selectedCategory)?.label}
+                  </span>
+                  <Icon name="ChevronDown" size={16} className="text-white/50" />
+                </button>
+                {showCategoryPicker && (
+                  <div className="mt-1 bg-zinc-900 rounded-xl border border-white/10 overflow-hidden max-h-40 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
+                    {VIDEO_CATEGORIES.map(cat => (
+                      <button
+                        key={cat.id}
+                        onClick={() => onCategoryChange(cat.id)}
+                        className={`w-full text-left px-4 py-2.5 text-sm border-b border-white/5 last:border-0 ${selectedCategory === cat.id ? "text-[#8b5cf6] font-semibold" : "text-white/80"}`}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Кнопка «Ещё» */}
             <button
               onClick={() => setShowMore(v => !v)}
@@ -308,57 +359,6 @@ const CameraPreview = ({
                     );
                   })()}
                 </div>
-
-                {/* Destination picker */}
-                <div>
-                  <p className="text-white/60 text-xs mb-2 font-medium">Куда публиковать?</p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => onDestinationChange("home")}
-                      className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl border transition-all ${destination === "home" ? "bg-[#fe2c55]/20 border-[#fe2c55]" : "bg-white/5 border-white/10"}`}
-                    >
-                      <Icon name="Play" size={20} className={destination === "home" ? "text-[#fe2c55]" : "text-white/50"} />
-                      <span className={`text-xs font-semibold ${destination === "home" ? "text-[#fe2c55]" : "text-white/50"}`}>Главная</span>
-                      <span className="text-white/30 text-[10px]">Видеолента</span>
-                    </button>
-                    <button
-                      onClick={() => onDestinationChange("feed")}
-                      className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl border transition-all ${destination === "feed" ? "bg-[#0095f6]/20 border-[#0095f6]" : "bg-white/5 border-white/10"}`}
-                    >
-                      <Icon name="LayoutList" size={20} className={destination === "feed" ? "text-[#0095f6]" : "text-white/50"} />
-                      <span className={`text-xs font-semibold ${destination === "feed" ? "text-[#0095f6]" : "text-white/50"}`}>Лента</span>
-                      <span className="text-white/30 text-[10px]">Фото и посты</span>
-                    </button>
-                  </div>
-                </div>
-
-                {(uploadedMedia.type === "video" && destination === "home" || destination === "feed") && (
-                  <div>
-                    <p className="text-white/60 text-xs mb-2 font-medium">{destination === "feed" ? "Тема для Ленты" : "Категория"}</p>
-                    <button
-                      onClick={onToggleCategoryPicker}
-                      className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-white/10 border border-white/15"
-                    >
-                      <span className="text-white text-sm font-medium">
-                        {VIDEO_CATEGORIES.find(c => c.id === selectedCategory)?.label}
-                      </span>
-                      <Icon name="ChevronDown" size={16} className="text-white/50" />
-                    </button>
-                    {showCategoryPicker && (
-                      <div className="mt-1 bg-zinc-900 rounded-xl border border-white/10 overflow-hidden max-h-40 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-                        {VIDEO_CATEGORIES.map(cat => (
-                          <button
-                            key={cat.id}
-                            onClick={() => onCategoryChange(cat.id)}
-                            className={`w-full text-left px-4 py-2.5 text-sm border-b border-white/5 last:border-0 ${selectedCategory === cat.id ? "text-[#8b5cf6] font-semibold" : "text-white/80"}`}
-                          >
-                            {cat.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
 
                 {/* Реклама / спонсорская публикация */}
                 <button
