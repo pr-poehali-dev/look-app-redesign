@@ -1049,3 +1049,13 @@ html.theme-light .nv-tag {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
   border: 1px solid color-mix(in srgb, var(--look-fg) 18%, transparent);
 }
+.nv-icon,
+.nv-icon * {
+  color: var(--look-fg) !important;
+  stroke: var(--look-fg) !important;
+}
+.nv-icon-active,
+.nv-icon-active * {
+  color: #fe2c55 !important;
+  stroke: #fe2c55 !important;
+}

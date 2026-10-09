@@ -33,7 +33,7 @@ const CommentRow = ({
       <div className="flex items-center gap-4 mt-1 text-[12px] nv-muted">
         <span>{c.time}</span>
         <button onClick={() => onLike(c.id)} className="flex items-center gap-1">
-          <Icon name="Heart" size={13} className={c.liked ? "text-[#fe2c55] fill-[#fe2c55]" : ""} />
+          <Icon name="Heart" size={13} className={c.liked ? "nv-icon-active fill-[#fe2c55]" : "nv-icon"} />
           {c.likes > 0 && <span>{c.likes}</span>}
         </button>
         <button onClick={() => onReply(c)}>Ответить</button>
@@ -173,7 +173,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
                 className="p-2 rounded-full nv-hover transition-colors"
                 title="Ещё действия"
               >
-                <Icon name="MoreHorizontal" size={20} />
+                <Icon name="MoreHorizontal" size={20} className="nv-icon" />
               </button>
               {showMenu && (
                 <>
@@ -188,7 +188,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
                         <Icon
                           name={item.icon}
                           size={18}
-                          className={item.icon === "Flag" ? "text-[#fe2c55]" : item.active ? "text-[#fe2c55] fill-[#fe2c55]" : ""}
+                          className={item.icon === "Flag" || item.active ? "nv-icon-active" : "nv-icon"}
                         />
                         <span className={`text-sm font-medium ${item.icon === "Flag" ? "text-[#fe2c55]" : ""}`}>{item.label}</span>
                       </button>
@@ -229,7 +229,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
               <div className="flex items-center justify-between text-xs nv-muted mb-2">
                 <span>Ответ для {replyTo.name}</span>
                 <button onClick={() => { setReplyTo(null); setText(""); }} >
-                  <Icon name="X" size={14} />
+                  <Icon name="X" size={14} className="nv-icon" />
                 </button>
               </div>
             )}
@@ -250,15 +250,15 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
               ) : (
                 <div className="flex items-center gap-4 flex-shrink-0">
                   <button onClick={toggleLike} className="flex items-center gap-1.5 active:scale-90 transition-transform">
-                    <Icon name="Heart" size={26} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : ""} />
+                    <Icon name="Heart" size={26} className={liked ? "nv-icon-active fill-[#fe2c55]" : "nv-icon"} />
                     <span className="text-sm">{formatLikes(likes)}</span>
                   </button>
                   <button onClick={() => inputRef.current?.focus()} className="flex items-center gap-1.5 active:scale-90 transition-transform">
-                    <Icon name="MessageDots" size={26} />
+                    <Icon name="MessageDots" size={26} className="nv-icon" />
                     <span className="text-sm">{commentCount}</span>
                   </button>
                   <button onClick={() => setShowShare(true)} className="active:scale-90 transition-transform">
-                    <Icon name="ShareForward" size={26} />
+                    <Icon name="ShareForward" size={26} className="nv-icon" />
                   </button>
                 </div>
               )}
@@ -273,7 +273,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
             <div className="flex items-center justify-between mb-5">
               <span className="font-bold text-base">Поделиться</span>
               <button onClick={() => setShowShare(false)}>
-                <Icon name="X" size={20} className="nv-muted" />
+                <Icon name="X" size={20} className="nv-icon" />
               </button>
             </div>
             <div className="grid grid-cols-4 gap-4">
