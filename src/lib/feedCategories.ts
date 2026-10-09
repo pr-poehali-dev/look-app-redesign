@@ -5,7 +5,7 @@ export interface FeedCategory {
 }
 
 export const FEED_CATEGORIES: FeedCategory[] = [
-  { id: "recommend", label: "Рекомендации", match: [] },
+  { id: "recommend", label: "Все", match: [] },
   { id: "fashion", label: "Мода", match: ["fashion", "style"] },
   { id: "food", label: "Еда", match: ["food"] },
   { id: "makeup", label: "Макияж", match: ["makeup", "beauty"] },

@@ -113,7 +113,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
       const reg = await uploadFileDirect(
         file,
         {
-          category: destination === "home" ? selectedCategory : "feed",
+          category: destination === "home" || selectedCategory !== "humor" ? selectedCategory : "feed",
           description,
           hashtags,
           author: user?.name || "Пользователь",

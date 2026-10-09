@@ -332,9 +332,9 @@ const CameraPreview = ({
                   </div>
                 </div>
 
-                {uploadedMedia.type === "video" && destination === "home" && (
+                {(uploadedMedia.type === "video" && destination === "home" || destination === "feed") && (
                   <div>
-                    <p className="text-white/60 text-xs mb-2 font-medium">Категория</p>
+                    <p className="text-white/60 text-xs mb-2 font-medium">{destination === "feed" ? "Тема для Ленты" : "Категория"}</p>
                     <button
                       onClick={onToggleCategoryPicker}
                       className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-white/10 border border-white/15"

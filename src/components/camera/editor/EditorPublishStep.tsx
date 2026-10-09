@@ -191,9 +191,8 @@ const EditorPublishStep = ({
         </div>
 
         {/* Category */}
-        {destination !== "feed" && (
-          <div>
-            <p className="text-white/60 text-xs font-semibold uppercase mb-2">Категория для Главной</p>
+        <div>
+            <p className="text-white/60 text-xs font-semibold uppercase mb-2">{destination === "feed" ? "Тема для Ленты" : "Категория для Главной"}</p>
             <div className="flex flex-wrap gap-2">
               {VIDEO_CATEGORIES.map((c) => (
                 <button
@@ -204,7 +203,6 @@ const EditorPublishStep = ({
               ))}
             </div>
           </div>
-        )}
 
         {/* Description */}
         <div>

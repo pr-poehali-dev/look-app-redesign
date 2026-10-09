@@ -63,6 +63,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
   const [tab, setTab] = useState<Tab>("templates");
   const [destination, setDestination] = useState<"home" | "feed" | "both">("both");
   const [category, setCategory] = useState("humor");
+  const [categoryTouched, setCategoryTouched] = useState(false);
   const [description, setDescription] = useState("");
   const [hashtags, setHashtags] = useState("");
   const [isAd, setIsAd] = useState(false);
@@ -599,8 +600,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
       }
 
       const finalCategory =
-        destination === "feed" ? "feed"
-        : destination === "home" ? category
+        destination === "feed" ? (categoryTouched ? category : "feed")
         : category;
 
       setPublishProgress({ stage: "upload", percent: 0 });
@@ -680,8 +680,8 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
         transform={transform}
         destination={destination}
         setDestination={setDestination}
-        category={category}
-        setCategory={setCategory}
+        category={destination === "feed" && !categoryTouched ? "" : category}
+        setCategory={(v) => { setCategory(v); setCategoryTouched(true); }}
         description={description}
         setDescription={setDescription}
         hashtags={hashtags}
