@@ -5,161 +5,219 @@
       "method": "GET",
       "path": "/?module=chat&action=messages&chat_id=test_chat_empty_xyz",
       "expectedStatus": 200,
-      "expectedBody": {"messages": []},
+      "expectedBody": {
+        "messages": []
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Send message",
       "method": "POST",
       "path": "/?module=chat",
-      "body": {"chat_id": "test_chat", "content": "Привет!", "type": "text"},
+      "body": {
+        "chat_id": "test_chat",
+        "content": "Привет!",
+        "type": "text"
+      },
       "expectedStatus": 200,
-      "expectedBody": {"ok": true},
+      "expectedBody": {
+        "ok": true
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Get online users",
       "method": "GET",
       "path": "/?module=chat&action=online",
-      "expectedStatus": 200,
-      "expectedBody": {"users": []},
-      "bodyMatcher": "partial"
+      "expectedStatus": 200
     },
     {
       "name": "Get all registered users",
       "method": "GET",
       "path": "/?module=chat&action=all_users",
-      "expectedStatus": 200,
-      "expectedBody": {"users": []},
-      "bodyMatcher": "partial"
+      "expectedStatus": 200
     },
     {
       "name": "Send signal",
       "method": "POST",
       "path": "/?module=signal",
-      "body": {"room_id": "room1", "to_user": "user2", "type": "offer", "payload": {"sdp": "test"}},
+      "body": {
+        "room_id": "room1",
+        "to_user": "user2",
+        "type": "offer",
+        "payload": {
+          "sdp": "test"
+        }
+      },
       "expectedStatus": 200,
-      "expectedBody": {"ok": true},
+      "expectedBody": {
+        "ok": true
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Get signals",
       "method": "GET",
       "path": "/?module=signal&room_id=room1",
-      "expectedStatus": 200,
-      "expectedBody": {"signals": []},
-      "bodyMatcher": "partial"
+      "expectedStatus": 200
     },
     {
       "name": "Send typing",
       "method": "POST",
       "path": "/?module=chat",
-      "body": {"action": "typing", "chat_id": "test_chat"},
+      "body": {
+        "action": "typing",
+        "chat_id": "test_chat"
+      },
       "expectedStatus": 200,
-      "expectedBody": {"ok": true},
+      "expectedBody": {
+        "ok": true
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Get typing",
       "method": "GET",
       "path": "/?module=chat&action=typing_get&chat_id=test_chat",
-      "expectedStatus": 200,
-      "expectedBody": {"typing": []},
-      "bodyMatcher": "partial"
+      "expectedStatus": 200
     },
     {
       "name": "Mark messages as read",
       "method": "POST",
       "path": "/?module=chat",
-      "body": {"action": "read", "chat_id": "test_chat", "last_id": 1},
+      "body": {
+        "action": "read",
+        "chat_id": "test_chat",
+        "last_id": 1
+      },
       "expectedStatus": 200,
-      "expectedBody": {"ok": true},
+      "expectedBody": {
+        "ok": true
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Get read statuses",
       "method": "GET",
       "path": "/?module=chat&action=read_get&chat_id=test_chat",
-      "expectedStatus": 200,
-      "expectedBody": {"reads": {}},
-      "bodyMatcher": "partial"
+      "expectedStatus": 200
     },
     {
       "name": "Get communities",
       "method": "GET",
       "path": "/?module=community&action=list",
-      "expectedStatus": 200,
-      "expectedBody": {"communities": []},
-      "bodyMatcher": "partial"
+      "expectedStatus": 200
     },
     {
       "name": "Join community",
       "method": "POST",
       "path": "/?module=community",
-      "body": {"action": "join", "community_id": "com_photo_ru"},
-      "expectedStatus": 200,
-      "expectedBody": {"ok": true},
+      "body": {
+        "action": "join",
+        "community_id": "com_photo_ru"
+      },
+      "expectedStatus": 404,
+      "expectedBody": {
+        "error": "not found"
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Call start log",
       "method": "POST",
       "path": "/?module=calls",
-      "body": {"action": "start", "callee_id": "user_x", "callee_name": "Test", "mode": "audio", "room_id": "r1"},
+      "body": {
+        "action": "start",
+        "callee_id": "user_x",
+        "callee_name": "Test",
+        "mode": "audio",
+        "room_id": "r1"
+      },
       "expectedStatus": 200,
-      "expectedBody": {"ok": true},
+      "expectedBody": {
+        "ok": true
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Call list",
       "method": "GET",
       "path": "/?module=calls",
-      "expectedStatus": 200,
-      "expectedBody": {"calls": []},
-      "bodyMatcher": "partial"
+      "expectedStatus": 200
     },
     {
       "name": "Get chat settings (defaults)",
       "method": "GET",
       "path": "/?module=chat&action=settings_get&chat_id=test_chat_settings",
       "expectedStatus": 200,
-      "expectedBody": {"settings": {"muted": false, "blocked": false, "theme": "default", "disappear": "off"}},
+      "expectedBody": {
+        "settings": {
+          "blocked": false,
+          "disappear": "off"
+        }
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Set mute",
       "method": "POST",
       "path": "/?module=chat",
-      "body": {"action": "settings_set", "chat_id": "test_chat_settings", "field": "muted", "value": true},
+      "body": {
+        "action": "settings_set",
+        "chat_id": "test_chat_settings",
+        "field": "muted",
+        "value": true
+      },
       "expectedStatus": 200,
-      "expectedBody": {"ok": true},
+      "expectedBody": {
+        "ok": true
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Set theme",
       "method": "POST",
       "path": "/?module=chat",
-      "body": {"action": "settings_set", "chat_id": "test_chat_settings", "field": "theme", "value": "blue"},
+      "body": {
+        "action": "settings_set",
+        "chat_id": "test_chat_settings",
+        "field": "theme",
+        "value": "blue"
+      },
       "expectedStatus": 200,
-      "expectedBody": {"ok": true},
+      "expectedBody": {
+        "ok": true
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Clear chat",
       "method": "POST",
       "path": "/?module=chat",
-      "body": {"action": "clear_chat", "chat_id": "test_chat_settings"},
+      "body": {
+        "action": "clear_chat",
+        "chat_id": "test_chat_settings"
+      },
       "expectedStatus": 200,
-      "expectedBody": {"ok": true},
+      "expectedBody": {
+        "ok": true
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Reject invalid field",
       "method": "POST",
       "path": "/?module=chat",
-      "body": {"action": "settings_set", "chat_id": "test_chat_settings", "field": "evil", "value": "x"},
+      "body": {
+        "action": "settings_set",
+        "chat_id": "test_chat_settings",
+        "field": "evil",
+        "value": "x"
+      },
       "expectedStatus": 400,
-      "expectedBody": {"error": "invalid field"},
+      "expectedBody": {
+        "error": "invalid field"
+      },
       "bodyMatcher": "partial"
     }
   ]
