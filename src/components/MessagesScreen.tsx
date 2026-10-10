@@ -45,7 +45,7 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
   const [search, setSearch] = useState("");
   const [chats, setChats] = useState<Chat[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchUsers, setSearchUsers] = useState<{ id: string; name: string; avatar: string; handle: string; phone: string; online: boolean }[]>([]);
+  const [searchUsers, setSearchUsers] = useState<{ id: string; name: string; avatar: string; handle: string; phone: string; online: boolean; seen_ago?: number | null }[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [activeCall, setActiveCall] = useState<{ user: { id: string; name: string }; mode: "audio" | "video" } | null>(null);
   const { user } = useAuth();
@@ -359,7 +359,10 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-semibold text-sm truncate">{u.name}</p>
-                    <p className="text-white/40 text-xs truncate">{u.handle ? `@${u.handle}` : (u.phone || "")}</p>
+                    <p className="text-white/40 text-xs truncate">
+                      {u.handle ? `@${u.handle}` : (u.phone || "")}
+                      <span className={`ml-2 ${u.online ? "text-green-400" : ""}`}>{u.online ? "в сети" : formatSeen(u.seen_ago)}</span>
+                    </p>
                   </div>
                   <Icon name="MessageCircle" size={16} className="text-white/30 flex-shrink-0" />
                 </button>
