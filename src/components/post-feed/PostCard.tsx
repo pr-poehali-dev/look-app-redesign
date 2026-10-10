@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
+import LinkifiedText from "@/components/ui/linkified-text";
 import UserAvatar from "@/components/ui/user-avatar";
 import { Post, formatLikes } from "./PostFeedTypes";
 import { useComments } from "@/hooks/useComments";
@@ -228,7 +229,7 @@ const PostCard = ({ post }: { post: Post }) => {
         <div className="px-3 pb-1">
           <span className="text-white font-semibold text-[13px] mr-1.5">{post.handle}</span>
           <span className="text-white text-[13px]">
-            {expanded ? post.caption : post.caption.slice(0, 90) + (post.caption.length > 90 ? "…" : "")}
+            <LinkifiedText text={expanded ? post.caption : post.caption.slice(0, 90) + (post.caption.length > 90 ? "…" : "")} />
           </span>
           {post.caption.length > 90 && !expanded && (
             <button onClick={() => setExpanded(true)} className="text-white/40 text-[13px] ml-1">ещё</button>

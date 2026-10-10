@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
+import LinkifiedText from "@/components/ui/linkified-text";
 import UserAvatar from "@/components/ui/user-avatar";
 import { Post, formatLikes } from "./PostFeedTypes";
 import { useComments, CommentItem } from "@/hooks/useComments";
@@ -200,7 +201,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
           </div>
 
           <div className="flex-1 overflow-y-auto px-5 py-4" style={{ scrollbarWidth: "thin" }}>
-            {post.caption && <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">{post.caption}</p>}
+            {post.caption && <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words"><LinkifiedText text={post.caption} /></p>}
             {post.hashtags?.length > 0 && (
               <p className="mt-2 text-[14px] nv-tag break-words">
                 {post.hashtags.map((h) => `#${h}`).join(" ")}
