@@ -399,7 +399,12 @@ function Users({ token }: { token: string }) {
                   {u.is_verified && <Icon name="BadgeCheck" size={13} className="text-[#61d4f0]" />}
                   {u.banned && <span className="px-1.5 py-0.5 rounded bg-[#fe2c55]/20 text-[#fe2c55] text-[10px] font-semibold">Заблокирован</span>}
                 </p>
-                <p className="text-white/50 text-xs truncate">{u.email} · {u.id}</p>
+                <p className="text-white/50 text-xs truncate flex items-center gap-1">
+                  <span title={u.email_verified ? "Email подтверждён" : "Email не подтверждён"} className="flex-shrink-0">
+                    <Icon name={u.email_verified ? "MailCheck" : "MailQuestion"} size={13} className={u.email_verified ? "text-emerald-400" : "text-white/30"} />
+                  </span>
+                  <span className="truncate">{u.email} · {u.id}</span>
+                </p>
               </div>
               <button
                 onClick={() => toggleVerify(u)}
