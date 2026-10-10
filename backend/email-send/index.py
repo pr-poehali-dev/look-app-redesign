@@ -257,7 +257,7 @@ def handler(event: dict, context) -> dict:
                 return err('Ссылка уже использована', 400)
             if expires_at < datetime.utcnow():
                 return err('Срок действия ссылки истёк', 400)
-            cur.execute("UPDATE app_users SET email_verified=TRUE WHERE id=%s", (user_id,))
+            cur.execute("UPDATE app_users SET email_verified=TRUE, is_verified=TRUE WHERE id=%s", (user_id,))
             cur.execute("UPDATE email_verify_tokens SET used=TRUE WHERE token=%s", (token,))
             conn.commit()
             return ok({'verified': True, 'email': email})
