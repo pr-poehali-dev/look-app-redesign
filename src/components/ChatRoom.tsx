@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
+import LinkifiedText from "@/components/ui/linkified-text";
 import UserAvatar from "@/components/ui/user-avatar";
 import { Chat } from "./MessagesScreen";
 import CallScreen from "./CallScreen";
@@ -1052,7 +1053,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     }
     return (
       <div className={`px-4 py-2.5 rounded-2xl max-w-[78%] ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
-        <p className="text-white text-sm leading-snug">{msg.content}</p>
+        <p className="text-white text-sm leading-snug break-words"><LinkifiedText text={msg.content} className={isMe ? "text-white font-semibold underline underline-offset-2 break-all" : undefined} /></p>
         <div className={`flex items-center gap-1.5 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
           <DisappearBadge msg={msg} />
           <span className="text-white/40 text-[10px]">{msg.time}</span>
