@@ -1,5 +1,6 @@
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
+import LinkifiedText from "@/components/ui/linkified-text";
 import UserAvatar from "@/components/ui/user-avatar";
 import { useComments } from "@/hooks/useComments";
 
@@ -46,7 +47,7 @@ const GuestComments = ({ videoId, initialCount = 0, onClose, onLogin }: GuestCom
                   <span className="text-sm font-semibold text-white">{c.name}</span>
                   <span className="text-xs text-white/30">{c.time}</span>
                 </div>
-                <p className="break-words text-sm text-white/80">{c.text}</p>
+                <p className="break-words text-sm text-white/80"><LinkifiedText text={c.text} /></p>
               </div>
               <div className="mt-1 flex flex-shrink-0 flex-col items-center gap-0.5 p-1">
                 <Icon name="Heart" size={14} className="text-white/40" />

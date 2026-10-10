@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
+import LinkifiedText from "@/components/ui/linkified-text";
 import GuestComments from "@/components/landing/GuestComments";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
 
@@ -255,7 +256,7 @@ const LandingFeed = ({ category, initialVideoId, onLocked, onLogin }: LandingFee
                     </button>
                   </div>
                   {v.description && (
-                    <p className="mt-2 line-clamp-2 text-sm text-white/90">{v.description}</p>
+                    <p className="mt-2 line-clamp-2 text-sm text-white/90"><LinkifiedText text={v.description} /></p>
                   )}
                   <p className="mt-2 flex items-center gap-2 text-xs text-white/85">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
