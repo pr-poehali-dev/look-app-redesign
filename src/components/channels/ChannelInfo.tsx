@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
+import LinkifiedText from "@/components/ui/linkified-text";
 import { useAuth } from "@/context/AuthContext";
 import { Channel } from "./types";
 
@@ -160,7 +161,7 @@ const ChannelInfo = ({ channel, onClose, onChanged }: Props) => {
           ) : (
             <>
               <p className="text-white font-bold text-lg">{channel.name}</p>
-              {channel.description && <p className="text-white/60 text-sm text-center">{channel.description}</p>}
+              {channel.description && <p className="text-white/60 text-sm text-center break-words"><LinkifiedText text={channel.description} /></p>}
             </>
           )}
         </div>

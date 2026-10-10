@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
+import LinkifiedText from "@/components/ui/linkified-text";
 import { useAuth } from "@/context/AuthContext";
 import ChatRoom from "./ChatRoom";
 import GroupCallScreen from "./GroupCallScreen";
@@ -353,7 +354,7 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
                   <span className="text-white/40 text-xs">{com.members >= 1000 ? (com.members / 1000).toFixed(1) + "K" : com.members}</span>
                 </div>
               </div>
-              <p className="text-white/50 text-xs mb-3 leading-snug">{com.description}</p>
+              <p className="text-white/50 text-xs mb-3 leading-snug break-words"><LinkifiedText text={com.description} /></p>
 
               <div className="flex gap-2">
                 {com.is_admin ? (
