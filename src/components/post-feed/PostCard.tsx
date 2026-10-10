@@ -254,7 +254,7 @@ const PostCard = ({ post }: { post: Post }) => {
             {previewComments.map((c) => (
               <p key={c.id} className="text-[13px] leading-snug">
                 <span className="text-white font-semibold mr-1.5">{c.name}</span>
-                <span className="text-white/70">{c.text}</span>
+                <span className="text-white/70"><LinkifiedText text={c.text} /></span>
               </p>
             ))}
           </div>
@@ -339,7 +339,7 @@ const PostCard = ({ post }: { post: Post }) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <span className="text-white font-semibold text-sm mr-2">{c.name}</span>
-                    <span className="text-white/80 text-sm break-words">{c.text}</span>
+                    <span className="text-white/80 text-sm break-words"><LinkifiedText text={c.text} /></span>
                     <div className="flex items-center gap-3 mt-1">
                       <span className="text-white/30 text-xs">{c.time}</span>
                       <button type="button" onClick={() => startReply(c.id, c.name)} className="text-white/40 text-xs font-semibold">

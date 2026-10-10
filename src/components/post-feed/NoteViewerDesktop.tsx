@@ -30,7 +30,7 @@ const CommentRow = ({
     </div>
     <div className="min-w-0 flex-1">
       <p className="text-[13px] nv-muted truncate">{c.name}</p>
-      <p className="text-[14px] leading-snug break-words">{c.text}</p>
+      <p className="text-[14px] leading-snug break-words"><LinkifiedText text={c.text} /></p>
       <div className="flex items-center gap-4 mt-1 text-[12px] nv-muted">
         <span>{c.time}</span>
         <button onClick={() => onLike(c.id)} className="flex items-center gap-1">

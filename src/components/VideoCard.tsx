@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
+import LinkifiedText from "@/components/ui/linkified-text";
 import UserAvatar from "@/components/ui/user-avatar";
 import { useComments } from "@/hooks/useComments";
 import { useLikes } from "@/hooks/useLikes";
@@ -552,7 +553,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
                 {parts.map((part, i) =>
                   part.startsWith('#')
                     ? <span key={i} className="text-[#61d4f0] font-medium">{part}</span>
-                    : part
+                    : <LinkifiedText key={i} text={part} />
                 )}
               </p>
               {isLong && (
@@ -1078,7 +1079,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
                       <span className="text-white font-semibold text-sm">{c.name}</span>
                       <span className="text-white/30 text-xs">{c.time}</span>
                     </div>
-                    <p className="text-white/80 text-sm break-words">{c.text}</p>
+                    <p className="text-white/80 text-sm break-words"><LinkifiedText text={c.text} /></p>
                     <button
                       type="button"
                       onClick={() => startReply(c.id, c.name)}
