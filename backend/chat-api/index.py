@@ -147,7 +147,7 @@ def handler(event: dict, context) -> dict:
                 elif action == 'online':
                     cur.execute(
                         "SELECT id, name FROM sa_users "
-                        "WHERE online_at > NOW() - INTERVAL '30 seconds'"
+                        "WHERE online_at > NOW() - INTERVAL '60 seconds'"
                     )
                     users = [{'id': r[0], 'name': r[1]} for r in cur.fetchall()]
                     conn.commit()
@@ -157,7 +157,8 @@ def handler(event: dict, context) -> dict:
                 elif action == 'all_users':
                     cur.execute(
                         "SELECT au.id, au.name, au.avatar, au.handle, au.phone, "
-                        "COALESCE(su.online_at > NOW() - INTERVAL '30 seconds', false) AS online "
+                        "COALESCE(su.online_at > NOW() - INTERVAL '60 seconds', false) AS online, "
+                        "EXTRACT(EPOCH FROM (NOW() - su.online_at)) AS seen_ago "
                         "FROM app_users au "
                         "LEFT JOIN sa_users su ON su.id = au.id "
                         "WHERE au.id != %s "
@@ -165,7 +166,7 @@ def handler(event: dict, context) -> dict:
                         (user_id,)
                     )
                     users = [
-                        {'id': r[0], 'name': r[1], 'avatar': r[2] or '', 'handle': r[3] or '', 'phone': r[4] or '', 'online': bool(r[5])}
+                        {'id': r[0], 'name': r[1], 'avatar': r[2] or '', 'handle': r[3] or '', 'phone': r[4] or '', 'online': bool(r[5]), 'seen_ago': int(r[6]) if r[6] is not None else None}
                         for r in cur.fetchall()
                     ]
                     conn.commit()
@@ -231,7 +232,7 @@ def handler(event: dict, context) -> dict:
                     cur.execute(
                         "SELECT c.id, c.type, c.name, c.avatar, "
                         "m.user_name, m.type, m.content, m.created_at, "
-                        "u.online_at > NOW() - INTERVAL '30 seconds', "
+                        "u.online_at > NOW() - INTERVAL '60 seconds', "
                         "t.name, "
                         "au.name, au.avatar, "
                         "(SELECT COUNT(*) FROM sa_messages sm "
@@ -760,7 +761,7 @@ def handler(event: dict, context) -> dict:
                         return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'community_id required'})}
                     cur.execute(
                         "SELECT cm.user_id, cm.user_name, cm.role, "
-                        "u.online_at > NOW() - INTERVAL '30 seconds' as online, "
+                        "u.online_at > NOW() - INTERVAL '60 seconds' as online, "
                         "COALESCE(cm.can_invite, FALSE), COALESCE(cm.can_pin, FALSE), "
                         "COALESCE(cm.can_remove_messages, FALSE), COALESCE(cm.can_ban, FALSE), "
                         "COALESCE(cm.can_change_info, FALSE), COALESCE(cm.can_add_admins, FALSE), "

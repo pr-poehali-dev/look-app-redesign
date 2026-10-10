@@ -82,6 +82,20 @@ const Index = () => {
   }, [canGoBack]);
 
   useEffect(() => {
+    if (!user?.id) return;
+    const ping = () => {
+      if (document.visibilityState !== "visible") return;
+      fetch(`${CHAT_API}?module=chat&action=online`, {
+        headers: { "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name || "") },
+      }).catch(() => {});
+    };
+    ping();
+    const id = setInterval(ping, 30000);
+    document.addEventListener("visibilitychange", ping);
+    return () => { clearInterval(id); document.removeEventListener("visibilitychange", ping); };
+  }, [user?.id]);
+
+  useEffect(() => {
     const onOpen = (e: Event) => {
       const detail = (e as CustomEvent).detail as { handle?: string };
       if (detail?.handle) setProfileHandle(detail.handle);
