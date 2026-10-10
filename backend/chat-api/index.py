@@ -243,7 +243,8 @@ def handler(event: dict, context) -> dict:
                         "  AND sm.id > COALESCE("
                         "    (SELECT cleared_until_id FROM chat_settings "
                         "      WHERE chat_id = c.id AND user_id = %s), 0)"
-                        ") AS unread_count "
+                        ") AS unread_count, "
+                        "EXTRACT(EPOCH FROM (NOW() - u.online_at)) AS seen_ago "
                         "FROM sa_chats c "
                         "JOIN sa_chat_members cm ON cm.chat_id = c.id AND cm.user_id = %s "
                         "AND (c.name IS NULL OR c.name != '__merged__') "
@@ -326,6 +327,7 @@ def handler(event: dict, context) -> dict:
                             'id': r[0], 'type': r[1], 'name': display_name,
                             'avatar': display_avatar, 'lastMsg': last_msg, 'time': time_str,
                             'online': bool(r[8]),
+                            'seen_ago': int(r[13]) if len(r) > 13 and r[13] is not None else None,
                             'typing': r[9] or '',
                             'unread': int(r[12]) if r[12] else 0
                         })

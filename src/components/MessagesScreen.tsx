@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
+import { formatSeen } from "@/utils/formatSeen";
 import UserAvatar from "@/components/ui/user-avatar";
 import ChatRoom from "./ChatRoom";
 import CommunitiesScreen from "./CommunitiesScreen";
@@ -18,6 +19,7 @@ export interface Chat {
   time: string;
   unread: number;
   online: boolean;
+  seenAgo?: number | null;
   members?: number;
   avatars?: string[];
   typing?: string;
@@ -57,8 +59,9 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
       .then(r => r.json())
       .then(raw => {
         const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
-        const dbChats: Chat[] = (data.chats || []).map((c: Chat) => ({
+        const dbChats: Chat[] = (data.chats || []).map((c: Chat & { seen_ago?: number | null }) => ({
           ...c,
+          seenAgo: c.seen_ago ?? null,
           avatar: c.avatar || "",
           unread: c.unread || 0,
         }));
@@ -405,6 +408,11 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
                   <div className="flex items-center gap-1">
                     <span className="text-white font-semibold text-sm">{chat.name}</span>
                     {chat.type === "group" && <Icon name="Users" size={11} className="text-white/30" />}
+                    {chat.type === "personal" && (
+                      <span className={`text-[10px] ml-1 ${chat.online ? "text-green-400" : "text-white/30"}`}>
+                        {chat.online ? "в сети" : formatSeen(chat.seenAgo)}
+                      </span>
+                    )}
                   </div>
                   <span className="text-white/30 text-xs">{chat.time}</span>
                 </div>
