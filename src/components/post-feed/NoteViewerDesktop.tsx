@@ -210,7 +210,19 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
             <p className="mt-3 text-[12px] nv-muted">{post.time}</p>
 
             <div className="mt-5 pt-4 border-t nv-border">
-              <p className="text-[13px] nv-muted">Комментарии: {commentCount}</p>
+              <div className="flex items-center gap-3">
+                <p className="text-[13px] nv-muted">Комментарии: {commentCount}</p>
+                <button
+                  onClick={() => {
+                    onClose();
+                    window.dispatchEvent(new CustomEvent("open-direct-message", { detail: { handle: post.handle } }));
+                  }}
+                  className="flex items-center gap-1 text-[#61d4f0]"
+                >
+                  <Icon name="MessageCircle" size={12} />
+                  <span className="text-[13px] font-medium">Перейти в чат</span>
+                </button>
+              </div>
               {topLevel.length === 0 && (
                 <p className="text-center text-sm nv-muted py-10">Пока нет комментариев. Будьте первым!</p>
               )}

@@ -80,7 +80,7 @@ def handler(event: dict, context) -> dict:
                 cur.execute("SELECT id FROM app_users WHERE email=%s", (email,))
                 if cur.fetchone():
                     return err('Такой email уже занят')
-                cur.execute("SELECT id FROM app_users WHERE handle=%s", (handle,))
+                cur.execute("SELECT id FROM app_users WHERE lower(handle)=lower(%s) LIMIT 1", (handle,))
                 if cur.fetchone():
                     return err('Такой никнейм уже занят')
                 cur.execute("SELECT id FROM app_users WHERE phone=%s", (phone,))
@@ -223,7 +223,7 @@ def handler(event: dict, context) -> dict:
                 return err('handle обязателен')
             conn = get_conn(); cur = conn.cursor()
             try:
-                cur.execute("SELECT id,name,handle,avatar,gender FROM app_users WHERE handle=%s", (handle,))
+                cur.execute("SELECT id,name,handle,avatar,gender FROM app_users WHERE lower(handle)=lower(%s) LIMIT 1", (handle,))
                 row = cur.fetchone()
             finally:
                 cur.close(); conn.close()
