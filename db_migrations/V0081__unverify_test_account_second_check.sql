@@ -1,0 +1,1 @@
+UPDATE app_users SET email_verified = FALSE WHERE id = 'u_259dd4c92c95a437' AND lower(email) = 'alexei.carmalyga@yandex.ru';
