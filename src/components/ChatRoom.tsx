@@ -1207,8 +1207,11 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     }
     const d = Math.floor(h / 24);
     if (d === 1) return "был(а) вчера";
-    if (d < 30) return `был(а) ${d} дн. назад`;
-    return "был(а) давно";
+    if (d < 7) return `был(а) ${d} дн. назад`;
+    const dt = new Date(Date.now() - sec * 1000);
+    const months = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+    const sameYear = dt.getFullYear() === new Date().getFullYear();
+    return `был(а) ${dt.getDate()} ${months[dt.getMonth()]}${sameYear ? "" : " " + dt.getFullYear()}`;
   };
   const statusText = displayOnline ? "в сети" : (!isGroup && peerInfo ? formatSeen(peerInfo.seenAgo) : "был(а) недавно");
 
