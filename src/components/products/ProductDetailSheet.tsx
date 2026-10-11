@@ -36,6 +36,14 @@ const ProductDetailSheet = ({ product: p, videoId, onClose }: Props) => {
     }
   };
 
+  const isExternal = !!p.product_url && /^https?:\/\//i.test(p.product_url);
+
+  const goExternal = () => {
+    if (!p.product_url) return;
+    trackProductClick(p.id, videoId, user?.id, "external");
+    window.open(p.product_url, "_blank", "noopener,noreferrer");
+  };
+
   const openShop = () => {
     if (!p.owner_handle) return;
     onClose();
@@ -130,19 +138,6 @@ const ProductDetailSheet = ({ product: p, videoId, onClose }: Props) => {
             Отзывы о товаре
           </button>
 
-          {p.product_url && (
-            <a
-              href={p.product_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => trackProductClick(p.id, videoId, user?.id)}
-              className="flex items-center gap-2 text-white/60 text-sm w-fit"
-            >
-              <Icon name="ExternalLink" size={15} />
-              Страница товара
-            </a>
-          )}
-
           {p.owner_handle && !p.is_partner && !isOwn && (
             <button
               onClick={writeToSeller}
@@ -154,21 +149,34 @@ const ProductDetailSheet = ({ product: p, videoId, onClose }: Props) => {
           )}
 
           <div className="flex gap-2 pt-1">
-            <button
-              onClick={() => add(false)}
-              disabled={busy || p.in_stock === false}
-              className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50 flex-shrink-0"
-              title="В корзину"
-            >
-              <Icon name="ShoppingCart" size={20} className="text-white" />
-            </button>
-            <button
-              onClick={() => add(true)}
-              disabled={busy || p.in_stock === false}
-              className="flex-1 h-12 rounded-full bg-[#fe2c55] text-white text-sm font-bold active:scale-95 transition-transform disabled:opacity-50"
-            >
-              {busy ? "Подождите..." : "Купить сейчас"}
-            </button>
+            {!isExternal && (
+              <button
+                onClick={() => add(false)}
+                disabled={busy || p.in_stock === false}
+                className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50 flex-shrink-0"
+                title="В корзину"
+              >
+                <Icon name="ShoppingCart" size={20} className="text-white" />
+              </button>
+            )}
+            {isExternal ? (
+              <button
+                onClick={goExternal}
+                disabled={p.in_stock === false}
+                className="flex-1 h-12 rounded-full bg-[#fe2c55] text-white text-sm font-bold active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <Icon name="ExternalLink" size={17} />
+                Купить на сайте продавца
+              </button>
+            ) : (
+              <button
+                onClick={() => add(true)}
+                disabled={busy || p.in_stock === false}
+                className="flex-1 h-12 rounded-full bg-[#fe2c55] text-white text-sm font-bold active:scale-95 transition-transform disabled:opacity-50"
+              >
+                {busy ? "Подождите..." : "Купить сейчас"}
+              </button>
+            )}
           </div>
         </div>
       </div>

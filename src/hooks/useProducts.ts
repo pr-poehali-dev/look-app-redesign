@@ -96,13 +96,46 @@ export const getPendingReferral = (productId: number): string | null => {
   }
 };
 
-export const trackProductClick = (productId: number, videoId?: number, userId?: string) => {
+const SOURCE_KEY = "look_traffic_source";
+
+/** Запоминает внешний источник захода (?utm_source=...) на время сессии. */
+export const captureTrafficSource = () => {
+  try {
+    const url = new URL(window.location.href);
+    const utm = url.searchParams.get("utm_source");
+    if (utm) sessionStorage.setItem(SOURCE_KEY, `utm:${utm.slice(0, 40)}`);
+    else if (!sessionStorage.getItem(SOURCE_KEY) && document.referrer) {
+      const host = new URL(document.referrer).hostname;
+      if (host && host !== window.location.hostname) sessionStorage.setItem(SOURCE_KEY, `site:${host.slice(0, 50)}`);
+    }
+  } catch { /* ignore */ }
+};
+
+const getTrafficSource = (): string | undefined => {
+  try { return sessionStorage.getItem(SOURCE_KEY) || undefined; } catch { return undefined; }
+};
+
+export const trackProductClick = (productId: number, videoId?: number, userId?: string, kind: "view" | "external" = "view") => {
   const ref = getPendingReferral(productId) || undefined;
   fetch(`${PRODUCTS_URL}?action=click`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(userId ? { "X-User-Id": userId } : {}) },
-    body: JSON.stringify({ product_id: productId, video_id: videoId, ref }),
+    body: JSON.stringify({ product_id: productId, video_id: videoId, ref, kind, source: getTrafficSource() }),
   }).catch(() => {});
+};
+
+export interface ProductClickStat { views: number; external: number; sources: Record<string, number> }
+
+export const useProductClickStats = (userId?: string | null) => {
+  const [stats, setStats] = useState<Record<string, ProductClickStat>>({});
+  useEffect(() => {
+    if (!userId) return;
+    fetch(`${PRODUCTS_URL}?action=click_stats`, { headers: { "X-User-Id": userId } })
+      .then(parseBody)
+      .then((d) => setStats(d.stats || {}))
+      .catch(() => {});
+  }, [userId]);
+  return stats;
 };
 
 /** Загружает фото товара файлом (base64) и возвращает готовый CDN-URL. */

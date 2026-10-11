@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
-import { useMyProducts, uploadProductImage } from "@/hooks/useProducts";
+import { useMyProducts, uploadProductImage, useProductClickStats } from "@/hooks/useProducts";
 import type { Product } from "@/hooks/useProducts";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -49,6 +49,7 @@ const emptyForm: FormState = {
 const ShopScreen = ({ onBack }: { onBack: () => void }) => {
   const { user } = useAuth();
   const { products, loading, create, update, toggleVisibility, remove } = useMyProducts(user?.id);
+  const clickStats = useProductClickStats(user?.id);
   const [editing, setEditing] = useState<FormState | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -183,7 +184,7 @@ const ShopScreen = ({ onBack }: { onBack: () => void }) => {
           <input
             value={editing.productUrl}
             onChange={(e) => setEditing({ ...editing, productUrl: e.target.value })}
-            placeholder="Ссылка на товар (необязательно)"
+            placeholder="Ссылка на товар на другом сайте, https://… (необязательно)"
             className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none"
           />
           <button
@@ -252,6 +253,21 @@ const ShopScreen = ({ onBack }: { onBack: () => void }) => {
                     </span>
                   </div>
                   <p className="text-gray-500 text-xs">{p.price.toLocaleString("ru-RU")} ₽</p>
+                  {clickStats[String(p.id)] && (
+                    <p className="text-gray-400 text-[11px] mt-0.5">
+                      Просмотров: {clickStats[String(p.id)].views}
+                      {p.product_url ? ` · Переходов на сайт: ${clickStats[String(p.id)].external}` : ""}
+                    </p>
+                  )}
+                  {p.product_url && clickStats[String(p.id)]?.external > 0 && (
+                    <p className="text-gray-400 text-[10px] leading-snug">
+                      {Object.entries(clickStats[String(p.id)].sources)
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 4)
+                        .map(([src, n]) => `${src === "referral" ? "по реф. ссылке" : src === "direct" ? "напрямую" : src.replace(/^(utm|site):/, "")}: ${n}`)
+                        .join(" · ")}
+                    </p>
+                  )}
                   {p.moderation_note && p.status === "blocked" && (
                     <p className="text-red-500 text-[11px] mt-0.5">Причина: {p.moderation_note}</p>
                   )}

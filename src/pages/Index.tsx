@@ -13,7 +13,7 @@ import UserProfileModal from "@/components/UserProfileModal";
 import { SupportScreen, LegalScreen } from "@/components/SettingsScreen";
 import { useUnread } from "@/context/UnreadContext";
 import { useAuth } from "@/context/AuthContext";
-import { setPendingReferral, fetchProductById, Product } from "@/hooks/useProducts";
+import { setPendingReferral, fetchProductById, captureTrafficSource, Product } from "@/hooks/useProducts";
 import ProductDetailSheet from "@/components/products/ProductDetailSheet";
 import { toast } from "sonner";
 
@@ -141,6 +141,7 @@ const Index = () => {
   // Партнёрская ссылка ?product=<id>&ref=<code> — запоминаем, чтобы засчитать переход/покупку рекомендателю
   useEffect(() => {
     if (typeof window === "undefined") return;
+    captureTrafficSource();
     const url = new URL(window.location.href);
     const productId = url.searchParams.get("product");
     const ref = url.searchParams.get("ref");

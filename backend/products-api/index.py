@@ -26,6 +26,15 @@ PRODUCT_FIELDS_WITH_OWNER = (
 )
 
 
+def _clean_url(raw):
+    u = (raw or '').strip()[:2000]
+    if not u:
+        return ''
+    if not u.lower().startswith(('http://', 'https://')):
+        return None
+    return u
+
+
 def _resp(status, payload):
     return {'statusCode': status, 'headers': {**CORS, 'Content-Type': 'application/json'}, 'body': json.dumps(payload)}
 
@@ -258,7 +267,9 @@ def handler(event: dict, context) -> dict:
             description = (body.get('description') or '').strip()[:2000]
             image = (body.get('image') or '').strip()
             promo_code = (body.get('promo_code') or '').strip()[:50]
-            product_url = (body.get('product_url') or '').strip()
+            product_url = _clean_url(body.get('product_url'))
+            if product_url is None:
+                return _resp(400, {'error': 'product_url must start with http:// or https://'})
             category = (body.get('category') or 'other').strip()[:50]
             in_stock = bool(body.get('in_stock', True))
             video_id = body.get('video_id') or 0
@@ -292,8 +303,13 @@ def handler(event: dict, context) -> dict:
                 ('product_url', 'product_url'), ('category', 'category'), ('in_stock', 'in_stock'),
             ]:
                 if key in body:
+                    val = body[key]
+                    if key == 'product_url':
+                        val = _clean_url(val)
+                        if val is None:
+                            return _resp(400, {'error': 'product_url must start with http:// or https://'})
                     fields.append(f"{col} = %s")
-                    values.append(body[key])
+                    values.append(val)
             if not fields:
                 return _resp(400, {'error': 'nothing to update'})
             fields.append("status = 'pending'")
@@ -363,9 +379,13 @@ def handler(event: dict, context) -> dict:
             ref_code = (body.get('ref') or '').strip()[:40]
             if not product_id:
                 return _resp(400, {'error': 'product_id required'})
+            kind = 'external' if body.get('kind') == 'external' else 'view'
+            raw_source = (body.get('source') or '').strip().lower()[:60]
+            source = 'referral' if ref_code else (raw_source or 'direct')
             cur.execute(
-                f"INSERT INTO {schema}.product_clicks (product_id, video_id, user_id) VALUES (%s, %s, %s)",
-                (product_id, video_id, user_id or None)
+                f"INSERT INTO {schema}.product_clicks (product_id, video_id, user_id, kind, source, ref_code) "
+                f"VALUES (%s, %s, %s, %s, %s, %s)",
+                (product_id, video_id, user_id or None, kind, source, ref_code or None)
             )
             if ref_code:
                 cur.execute(
@@ -382,6 +402,26 @@ def handler(event: dict, context) -> dict:
                     )
             conn.commit()
             return _resp(200, {'ok': True})
+
+        # --- Статистика переходов по своим товарам: просмотры и переходы на внешний сайт по источникам ---
+        if method == 'GET' and action == 'click_stats':
+            if not user_id:
+                return _resp(401, {'error': 'X-User-Id required'})
+            cur.execute(
+                f"SELECT c.product_id, c.kind, COALESCE(c.source, 'direct'), COUNT(*) "
+                f"FROM {schema}.product_clicks c JOIN {schema}.products p ON p.id = c.product_id "
+                f"WHERE p.owner_user_id = %s GROUP BY c.product_id, c.kind, COALESCE(c.source, 'direct')",
+                (user_id,)
+            )
+            stats: dict = {}
+            for pid, kind, src, cnt in cur.fetchall():
+                st = stats.setdefault(str(pid), {'views': 0, 'external': 0, 'sources': {}})
+                if kind == 'external':
+                    st['external'] += int(cnt)
+                    st['sources'][src] = st['sources'].get(src, 0) + int(cnt)
+                else:
+                    st['views'] += int(cnt)
+            return _resp(200, {'stats': stats})
 
         # --- Получить/создать свою партнёрскую ссылку на товар (доступно любому пользователю) ---
         if method == 'POST' and action == 'generate_referral':

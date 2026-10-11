@@ -19,6 +19,12 @@
       "expectedStatus": 404
     },
     {
+      "name": "GET click_stats без X-User-Id -> 401",
+      "method": "GET",
+      "path": "/?action=click_stats",
+      "expectedStatus": 401
+    },
+    {
       "name": "GET by_video без video_ids -> 400",
       "method": "GET",
       "path": "/?action=by_video",
