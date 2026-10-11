@@ -6,7 +6,7 @@ import { getAuthor } from "@/data/authors";
 import { useFollowing, useFollowerCount } from "@/hooks/useFollowing";
 import { useShopProducts } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
-import ProductMasonryCard from "@/components/products/ProductMasonryCard";
+import ShopProductsGrid from "@/components/products/ShopProductsGrid";
 import { useUserBoards } from "@/hooks/useBoards";
 import BoardDetailScreen from "@/components/profile/BoardDetailScreen";
 import StoryViewerModal, { StoryViewerItem } from "@/components/shared/StoryViewerModal";
@@ -328,11 +328,7 @@ const UserProfileModal = ({ handle, initialTab = "media", onClose }: Props) => {
                 <p className="text-gray-400 text-sm">В магазине пока нет товаров</p>
               </div>
             ) : (
-              <div className="columns-2 gap-3 p-3 bg-white">
-                {shopProducts.map((p) => (
-                  <ProductMasonryCard key={p.id} p={p} onAdd={handleAddToCart} adding={addingId === p.id} hideOwner />
-                ))}
-              </div>
+              <ShopProductsGrid products={shopProducts} onAdd={handleAddToCart} addingId={addingId} />
             )
           ) : tab === "boards" ? (
             boardsLoading && userBoards.length === 0 ? (
