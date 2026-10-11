@@ -12,6 +12,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import Landing from "./components/Landing";
 import AutoTranslator from "./components/AutoTranslator";
 import Icon from "@/components/ui/icon";
+import OfflineBanner from "@/components/OfflineBanner";
 
 const Index = lazy(() => import("./pages/Index"));
 const Admin = lazy(() => import("./pages/Admin"));
@@ -38,7 +39,17 @@ interface IncomingCall {
   sigId: number;
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 3,
+      retryDelay: (n) => Math.min(1000 * 2 ** n, 8000),
+      networkMode: "offlineFirst",
+      staleTime: 30000,
+      refetchOnReconnect: true,
+    },
+  },
+});
 
 const AppContent = () => {
   const { user, token, loading } = useAuth();
@@ -458,6 +469,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AutoTranslator />
+      <OfflineBanner />
       <ThemeProvider>
         <AuthProvider>
           <Suspense fallback={<ScreenFallback />}>

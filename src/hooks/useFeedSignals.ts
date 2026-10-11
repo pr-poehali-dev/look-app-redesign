@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getGuestId } from "@/lib/guestId";
 
 const SIGNALS_URL = "https://functions.poehali.dev/25a02f3d-0647-4142-999d-f84cb6302dd5";

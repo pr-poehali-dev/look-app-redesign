@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { SfuClient, RemoteStream } from '@/lib/webrtc';
+import { SfuClient } from '@/lib/webrtc';
 import { HQ_AUDIO_CONSTRAINTS, applyAudioTrackTuning } from '@/lib/audioConstraints';
 
 type Options = {

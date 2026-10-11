@@ -734,7 +734,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         let pairBytes = 0;
         const local: Record<string, { type: string; proto: string }> = {};
         let myRelay = 0, myLocal = 0, peerRelay = 0, peerCands = 0;
-        const pairs: { r: RTCStatsReport extends infer T ? Record<string, unknown> : never }[] = [];
+        const pairs: { r: Record<string, unknown> }[] = [];
         stats.forEach((r) => {
           if (r.type === "local-candidate") {
             local[r.id] = { type: r.candidateType, proto: r.protocol };

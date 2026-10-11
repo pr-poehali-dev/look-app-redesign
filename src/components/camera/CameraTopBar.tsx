@@ -25,7 +25,6 @@ const CameraTopBar = ({
   recording,
   recordSeconds,
   selectedTrack,
-  showMusicPanel,
   mode,
   timerRef,
   onClose,

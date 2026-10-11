@@ -39,7 +39,7 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState<"open" | "closed">("open");
   const [newDesc, setNewDesc] = useState("");
-  const [newCategory, setNewCategory] = useState("Другое");
+  const [newCategory] = useState("Другое");
   const [creating, setCreating] = useState(false);
   const [openChat, setOpenChat] = useState<Chat | null>(null);
   const [groupCall, setGroupCall] = useState<{ communityId: string; name: string; mode: "audio" | "video" } | null>(null);
@@ -166,30 +166,6 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
       alert("Не удалось создать сообщество. Проверь интернет.");
     } finally {
       setCreating(false);
-    }
-  };
-
-  const handleDelete = async (com: Community) => {
-    if (!user) return;
-    if (!confirm(`Удалить сообщество «${com.name}»? Это действие нельзя отменить.`)) return;
-    try {
-      const res = await fetch(`${API}?module=community`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
-        body: JSON.stringify({ action: "delete", community_id: com.id }),
-      });
-      const raw = await res.json();
-      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-      if (data.ok) {
-        setCommunities(prev => prev.filter(c => c.id !== com.id));
-      } else {
-        alert(data.error === "only creator can delete"
-          ? "Удалить сообщество может только создатель"
-          : "Не удалось удалить сообщество");
-      }
-    } catch (e) {
-      console.error("[Communities] delete failed", e);
-      alert("Не удалось удалить сообщество. Проверь интернет.");
     }
   };
 
