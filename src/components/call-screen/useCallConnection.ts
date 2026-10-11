@@ -198,7 +198,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         answerAppliedRef.current = false;
       }
     } else if (sig.type === "ice") {
-      if (pc.signalingState === "closed") return;
+      if ((pc.signalingState as string) === "closed") return;
       const cand = sig.payload as RTCIceCandidateInit;
       if (!remoteSetRef.current) {
         pendingIceRef.current.push(cand);
@@ -206,7 +206,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch (e) { console.warn("[CallScreen] ICE add failed", e); }
       }
     } else if (sig.type === "ice_batch") {
-      if (pc.signalingState === "closed") return;
+      if ((pc.signalingState as string) === "closed") return;
       const cands = (sig.payload as RTCIceCandidateInit[]) || [];
       for (const cand of cands) {
         if (!remoteSetRef.current) {
@@ -595,7 +595,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   useEffect(() => {
     if (status === "connected" || status === "ended") return;
     const warnTimer = setTimeout(async () => {
-      if (status !== "connected") {
+      if ((status as string) !== "connected") {
         setConnectionWarning(true);
         // Диагностика: какие ICE-кандидаты собрались, какая пара выбрана
         const pc = pcRef.current;

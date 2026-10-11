@@ -82,7 +82,7 @@ export function useSfuCall({ userId, token, roomId, mode, enabled }: Options) {
           token,
           roomId,
           onPeerJoined: (peerId) => {
-            setPeers((p) => ({ ...p, [peerId]: { peerId, ...(p[peerId] || {}) } }));
+            setPeers((p) => ({ ...p, [peerId]: { ...(p[peerId] || {}), peerId } }));
           },
           onPeerLeft: (peerId) => {
             setPeers((p) => {

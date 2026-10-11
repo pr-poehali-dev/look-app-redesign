@@ -57,7 +57,7 @@ const CallHeader = ({ name, avatar, mode, status, quality, route, connectionWarn
           quality === "good" ? "text-green-400" : quality === "fair" ? "text-yellow-400" : "text-red-400"
         }`}>
           <div className="flex items-end gap-0.5 h-3">
-            <div className={`w-1 h-1 rounded-sm ${quality !== "unknown" ? "bg-current" : "bg-current/30"}`} />
+            <div className={`w-1 h-1 rounded-sm ${(quality as string) !== "unknown" ? "bg-current" : "bg-current/30"}`} />
             <div className={`w-1 h-2 rounded-sm ${quality === "fair" || quality === "good" ? "bg-current" : "bg-current/30"}`} />
             <div className={`w-1 h-3 rounded-sm ${quality === "good" ? "bg-current" : "bg-current/30"}`} />
           </div>

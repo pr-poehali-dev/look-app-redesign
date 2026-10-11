@@ -89,7 +89,7 @@ export const tuneAudioSenders = async (pc: RTCPeerConnection | null | undefined)
         enc.maxBitrate = isMobile() ? 16000 : 24000;
         enc.priority = 'high';
         enc.networkPriority = 'high';
-        enc.adaptivePtime = true;
+        (enc as RTCRtpEncodingParameters & { adaptivePtime?: boolean }).adaptivePtime = true;
       });
       await sender.setParameters(params).catch(() => {});
     }
