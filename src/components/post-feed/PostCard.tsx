@@ -11,11 +11,13 @@ import { useFollowing } from "@/hooks/useFollowing";
 import { useMutedAuthor } from "@/hooks/useMutedAuthors";
 import { useAuth } from "@/context/AuthContext";
 import { useUserMedia } from "@/context/UserMediaContext";
-import { useProductsByVideos, trackProductClick } from "@/hooks/useProducts";
+import { useProductsByVideos, trackProductClick, Product } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 import ReportButton from "@/components/ReportButton";
 import AddToBoardSheet from "@/components/products/AddToBoardSheet";
+import PostProductStrip from "@/components/products/PostProductStrip";
+import ProductDetailSheet from "@/components/products/ProductDetailSheet";
 
 const PostCard = ({ post }: { post: Post }) => {
   const { user } = useAuth();
@@ -37,6 +39,7 @@ const PostCard = ({ post }: { post: Post }) => {
   const [showAddToBoard, setShowAddToBoard] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showProducts, setShowProducts] = useState(false);
+  const [detailProduct, setDetailProduct] = useState<Product | null>(null);
   const [addingProductId, setAddingProductId] = useState<number | null>(null);
   const [commentText, setCommentText] = useState("");
   const [copied, setCopied] = useState(false);
@@ -224,6 +227,8 @@ const PostCard = ({ post }: { post: Post }) => {
         <div className="px-3 pb-1">
           <span className="text-white font-semibold text-[13px]">{formatLikes(likes)} отметок «Нравится»</span>
         </div>
+
+        {post.hasProducts && <PostProductStrip postId={post.id} products={products} className="px-3 pb-2" />}
 
         {/* Caption */}
         <div className="px-3 pb-1">
@@ -478,10 +483,10 @@ const PostCard = ({ post }: { post: Post }) => {
                 {products.map((p) => (
                   <div key={p.id} className="flex flex-col gap-2 bg-white/5 rounded-2xl p-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 flex-shrink-0">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 flex-shrink-0 cursor-pointer" onClick={() => setDetailProduct(p)}>
                         {p.image && <img src={p.image} alt={p.title} className="w-full h-full object-cover" />}
                       </div>
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setDetailProduct(p)}>
                         <p className="text-white text-sm font-semibold truncate">{p.title}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-[#fe2c55] font-bold text-sm">{p.price.toLocaleString("ru-RU")} ₽</span>
@@ -536,6 +541,8 @@ const PostCard = ({ post }: { post: Post }) => {
         </div>,
         document.body
       )}
+
+      {detailProduct && <ProductDetailSheet product={detailProduct} videoId={post.id} onClose={() => setDetailProduct(null)} />}
 
       {showAddToBoard && (
         <AddToBoardSheet

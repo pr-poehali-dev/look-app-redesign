@@ -12,6 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import ReportButton from "@/components/ReportButton";
 import AddToBoardSheet from "@/components/products/AddToBoardSheet";
+import PostProductStrip from "@/components/products/PostProductStrip";
 
 const CommentRow = ({
   c,
@@ -207,6 +208,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
                 {post.hashtags.map((h) => `#${h}`).join(" ")}
               </p>
             )}
+            {post.hasProducts && <PostProductStrip postId={post.id} className="mt-3" />}
             <p className="mt-3 text-[12px] nv-muted">{post.time}</p>
 
             <div className="mt-5 pt-4 border-t nv-border">

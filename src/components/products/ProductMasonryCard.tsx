@@ -4,6 +4,7 @@ import { Product, generateReferralLink } from "@/hooks/useProducts";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import ReviewsSheet, { Stars } from "./ReviewsSheet";
+import ProductDetailSheet from "./ProductDetailSheet";
 
 interface Props {
   p: Product;
@@ -15,6 +16,7 @@ interface Props {
 
 const ProductMasonryCard = ({ p, onAdd, adding, hideOwner, rating }: Props) => {
   const [showReviews, setShowReviews] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
   const [liked, setLiked] = useState(false);
   const { user } = useAuth();
   const [gettingLink, setGettingLink] = useState(false);
@@ -49,7 +51,7 @@ const ProductMasonryCard = ({ p, onAdd, adding, hideOwner, rating }: Props) => {
   return (
     <div className="mb-3 break-inside-avoid rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-sm">
       <div className="relative bg-gray-100">
-        {p.image && <img src={p.image} alt={p.title} className="w-full h-auto object-cover block" loading="lazy" />}
+        {p.image && <img src={p.image} alt={p.title} onClick={() => setShowDetail(true)} className="w-full h-auto object-cover block cursor-pointer" loading="lazy" />}
 
         {p.promo_code && (
           <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur text-white text-[10px] font-bold">
@@ -71,7 +73,7 @@ const ProductMasonryCard = ({ p, onAdd, adding, hideOwner, rating }: Props) => {
       </div>
 
       <div className="p-2.5 flex flex-col gap-1.5">
-        <p className="text-black text-[13px] leading-snug font-medium line-clamp-2">{p.title}</p>
+        <p onClick={() => setShowDetail(true)} className="text-black text-[13px] leading-snug font-medium line-clamp-2 cursor-pointer">{p.title}</p>
 
         <div className="flex items-baseline gap-1.5">
           <span className="text-[#fe2c55] text-base font-bold">{p.price.toLocaleString("ru-RU")} ₽</span>
@@ -112,6 +114,7 @@ const ProductMasonryCard = ({ p, onAdd, adding, hideOwner, rating }: Props) => {
           <span className="text-[11px] font-medium">Партнёрская ссылка</span>
         </button>
       </div>
+      {showDetail && <ProductDetailSheet product={p} onClose={() => setShowDetail(false)} />}
       {showReviews && <ReviewsSheet productId={p.id} title={p.title} onClose={() => setShowReviews(false)} />}
     </div>
   );

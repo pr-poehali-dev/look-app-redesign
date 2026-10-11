@@ -4,7 +4,8 @@ import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { Post, formatLikes } from "./PostFeedTypes";
 import { useLikes } from "@/hooks/useLikes";
-import { useProductsByVideos, trackProductClick } from "@/hooks/useProducts";
+import ProductDetailSheet from "@/components/products/ProductDetailSheet";
+import { useProductsByVideos, trackProductClick, Product } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
@@ -27,6 +28,7 @@ const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
   const { user } = useAuth();
   const { addToCart } = useCart();
   const [showProducts, setShowProducts] = useState(false);
+  const [detailProduct, setDetailProduct] = useState<Product | null>(null);
   const [addingProductId, setAddingProductId] = useState<number | null>(null);
 
   const productVideoIds = post.hasProducts ? [post.id] : [];
@@ -115,10 +117,10 @@ const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
               <div className="flex flex-col gap-3">
                 {products.map((p) => (
                   <div key={p.id} className="flex items-center gap-3 bg-white/5 rounded-2xl p-3">
-                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 flex-shrink-0">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 flex-shrink-0 cursor-pointer" onClick={() => setDetailProduct(p)}>
                       {p.image && <img src={p.image} alt={p.title} className="w-full h-full object-cover" />}
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setDetailProduct(p)}>
                       <p className="text-white text-sm font-semibold truncate">{p.title}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-[#fe2c55] font-bold text-sm">{p.price.toLocaleString("ru-RU")} ₽</span>
@@ -149,6 +151,7 @@ const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
         </div>,
         document.body
       )}
+      {detailProduct && <ProductDetailSheet product={detailProduct} videoId={post.id} onClose={() => setDetailProduct(null)} />}
     </div>
   );
 };
