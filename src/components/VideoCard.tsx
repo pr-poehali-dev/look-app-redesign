@@ -503,7 +503,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
 
       {/* Bottom left info — внутри видео */}
-      <div className="absolute bottom-28 md:bottom-20 left-4 z-10" style={{ right: '80px' }}>
+      <div className={`absolute bottom-28 md:bottom-20 left-4 z-10 transition-opacity duration-200 hover:opacity-100 active:opacity-100 ${expanded ? "opacity-100" : "opacity-60"}`} style={{ right: '80px' }}>
         {video.repostedBy && (
           <button
             onClick={() => window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: video.repostedBy } }))}
