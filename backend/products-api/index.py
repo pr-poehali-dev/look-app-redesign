@@ -138,6 +138,22 @@ def handler(event: dict, context) -> dict:
 
             return _resp(200, {'products': result})
 
+        # --- Один активный товар по id — для открытия по ссылке ---
+        if method == 'GET' and action == 'one':
+            pid = (params.get('id') or '').strip()
+            if not pid.isdigit():
+                return _resp(400, {'error': 'id required'})
+            cur.execute(
+                f"SELECT {PRODUCT_FIELDS_WITH_OWNER} FROM {schema}.products p "
+                f"LEFT JOIN {schema}.app_users u ON u.id = p.owner_user_id "
+                f"WHERE p.id = %s AND p.status = 'active'",
+                (int(pid),)
+            )
+            row = cur.fetchone()
+            if not row:
+                return _resp(404, {'error': 'not found'})
+            return _resp(200, {'product': _row_to_product_with_owner(row)})
+
         # --- Хотспоты (координаты меток) конкретного видео — для отображения точек поверх кадра ---
         if method == 'GET' and action == 'hotspots':
             video_id = params.get('video_id')

@@ -134,7 +134,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     ? rawChatId
     : `dm_${[MY_ID, rawChatId].sort().join("_")}`;
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(chat.draft || "");
   const [call, setCall] = useState<"audio" | "video" | null>(null);
   const [recording, setRecording] = useState(false);
   const [recSecs, setRecSecs] = useState(0);

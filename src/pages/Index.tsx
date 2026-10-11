@@ -13,7 +13,9 @@ import UserProfileModal from "@/components/UserProfileModal";
 import { SupportScreen, LegalScreen } from "@/components/SettingsScreen";
 import { useUnread } from "@/context/UnreadContext";
 import { useAuth } from "@/context/AuthContext";
-import { setPendingReferral } from "@/hooks/useProducts";
+import { setPendingReferral, fetchProductById, Product } from "@/hooks/useProducts";
+import ProductDetailSheet from "@/components/products/ProductDetailSheet";
+import { toast } from "sonner";
 
 const TABS = [
   { id: "home", icon: "Home", label: "Главная" },
@@ -47,6 +49,8 @@ const Index = () => {
   const [pendingCommunityId, setPendingCommunityId] = useState<string | null>(initialCommunityFromUrl);
   const [pendingKind, setPendingKind] = useState<string>("community");
   const [profileHandle, setProfileHandle] = useState<string | null>(null);
+  const [pendingDirectDraft, setPendingDirectDraft] = useState<string | null>(null);
+  const [linkedProduct, setLinkedProduct] = useState<Product | null>(null);
   const [profileTab, setProfileTab] = useState<"media" | "shop">("media");
   const [pendingDirectHandle, setPendingDirectHandle] = useState<string | null>(null);
   const { totalUnread } = useUnread();
@@ -105,8 +109,9 @@ const Index = () => {
       }
     };
     const onMessage = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { handle?: string };
+      const detail = (e as CustomEvent).detail as { handle?: string; draft?: string };
       setProfileHandle(null);
+      setPendingDirectDraft(detail?.draft || null);
       if (detail?.handle) setPendingDirectHandle(detail.handle);
       setActiveTab("messages");
     };
@@ -139,11 +144,15 @@ const Index = () => {
     const url = new URL(window.location.href);
     const productId = url.searchParams.get("product");
     const ref = url.searchParams.get("ref");
-    if (productId && ref) {
-      setPendingReferral(Number(productId), ref);
+    if (productId && /^\d+$/.test(productId)) {
+      if (ref) setPendingReferral(Number(productId), ref);
       url.searchParams.delete("product");
       url.searchParams.delete("ref");
       window.history.replaceState({}, "", url.toString());
+      fetchProductById(Number(productId)).then((prod) => {
+        if (prod) setLinkedProduct(prod);
+        else toast.error("Товар не найден или снят с продажи");
+      });
     }
   }, []);
 
@@ -428,7 +437,8 @@ const Index = () => {
               initialKind={pendingKind}
               onCommunityConsumed={() => setPendingCommunityId(null)}
               initialDirectHandle={pendingDirectHandle}
-              onDirectConsumed={() => setPendingDirectHandle(null)}
+              initialDraft={pendingDirectDraft}
+              onDirectConsumed={() => { setPendingDirectHandle(null); setPendingDirectDraft(null); }}
             />
           )}
           {activeTab === "profile" && <ProfilePage />}
@@ -500,6 +510,7 @@ const Index = () => {
           </div>
         </div>
       </div>
+      {linkedProduct && <ProductDetailSheet product={linkedProduct} onClose={() => setLinkedProduct(null)} />}
       {profileHandle && (
         <UserProfileModal key={`${profileHandle}-${profileTab}`} handle={profileHandle} initialTab={profileTab} onClose={() => setProfileHandle(null)} />
       )}

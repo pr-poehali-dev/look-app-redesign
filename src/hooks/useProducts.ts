@@ -311,3 +311,14 @@ export const useMyReferrals = (userId?: string | null) => {
 
   return { referrals, loading, refresh };
 };
+export const fetchProductById = async (id: number): Promise<Product | null> => {
+  try {
+    const res = await fetch(`${PRODUCTS_URL}?action=one&id=${id}`);
+    const data = await parseBody(res);
+    return data.product || null;
+  } catch {
+    return null;
+  }
+};
+
+export const buildProductLink = (id: number) => `${window.location.origin}/?product=${id}`;

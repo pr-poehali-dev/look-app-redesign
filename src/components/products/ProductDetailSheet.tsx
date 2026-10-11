@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
-import { Product, trackProductClick } from "@/hooks/useProducts";
+import { Product, trackProductClick, buildProductLink } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
@@ -49,7 +49,8 @@ const ProductDetailSheet = ({ product: p, videoId, onClose }: Props) => {
       return;
     }
     onClose();
-    window.dispatchEvent(new CustomEvent("open-direct-message", { detail: { handle: p.owner_handle } }));
+    const draft = `Здравствуйте! Интересует товар «${p.title}»\n${buildProductLink(p.id)}`;
+    window.dispatchEvent(new CustomEvent("open-direct-message", { detail: { handle: p.owner_handle, draft } }));
   };
 
   const isOwn = !!user && p.owner_user_id === user.id;

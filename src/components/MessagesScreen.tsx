@@ -25,6 +25,7 @@ export interface Chat {
   typing?: string;
   peerId?: string;
   peerHandle?: string;
+  draft?: string;
 }
 
 const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
@@ -36,10 +37,11 @@ interface MessagesScreenProps {
   initialKind?: string;
   onCommunityConsumed?: () => void;
   initialDirectHandle?: string | null;
+  initialDraft?: string | null;
   onDirectConsumed?: () => void;
 }
 
-const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, initialDirectHandle, onDirectConsumed }: MessagesScreenProps = {}) => {
+const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, initialDirectHandle, initialDraft, onDirectConsumed }: MessagesScreenProps = {}) => {
   const [tab, setTab] = useState<Tab>(initialCommunityId ? (initialKind === "channel" ? "channels" : "communities") : "chats");
   const [openChat, setOpenChat] = useState<Chat | null>(null);
   const [search, setSearch] = useState("");
@@ -158,7 +160,7 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
       // 4) Если такой чат уже есть в списке — открываем его (актуальные имя/аватар из БД)
       const existing = chats.find((c) => String(c.id) === chatId);
       if (existing) {
-        setOpenChat({ ...existing, name: name || existing.name, avatar: avatar || existing.avatar, peerId, peerHandle: cleanHandle });
+        setOpenChat({ ...existing, name: name || existing.name, avatar: avatar || existing.avatar, peerId, peerHandle: cleanHandle, draft: initialDraft || undefined });
         onDirectConsumed?.();
         return;
       }
@@ -174,6 +176,7 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
         online: false,
         peerId,
         peerHandle: cleanHandle,
+        draft: initialDraft || undefined,
       };
       setChats((prev) => (prev.some((c) => String(c.id) === String(chat.id)) ? prev : [chat, ...prev]));
       setOpenChat(chat);
