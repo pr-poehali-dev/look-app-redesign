@@ -1,3 +1,4 @@
+import { canQueue, outboxAdd, outboxFlush, outboxForChat } from "@/lib/chatOutbox";
 import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { formatSeen } from "@/utils/formatSeen";
@@ -158,6 +159,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const videoNoteTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [showAttach, setShowAttach] = useState(false);
   const [sending, setSending] = useState(false);
+  const [, setPendingIds] = useState<Set<number>>(new Set());
   const bottomRef = useRef<HTMLDivElement>(null);
   const recTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -514,6 +516,36 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoNoteFacing]);
 
+  useEffect(() => {
+    const queued = outboxForChat(String(chatId));
+    if (queued.length) {
+      setMessages((p) => [
+        ...p,
+        ...queued
+          .filter((q) => !p.some((m) => m.id === q.tempId))
+          .map((q) => ({ id: q.tempId, user_id: q.userId, user_name: q.userName, type: q.type as Message["type"], content: q.content, time: q.time })),
+      ]);
+      setPendingIds((p) => new Set([...p, ...queued.map((q) => q.tempId)]));
+    }
+    const flush = () =>
+      outboxFlush(String(chatId), (item, data) => {
+        setMessages((p) => p.map((m) => (m.id === item.tempId ? { ...m, id: data.id, time: data.time || m.time } : m)));
+        setPendingIds((p) => {
+          const n = new Set(p);
+          n.delete(item.tempId);
+          return n;
+        });
+        if (data.id > lastIdRef.current) lastIdRef.current = data.id;
+      });
+    flush();
+    window.addEventListener("online", flush);
+    const t = setInterval(flush, 10000);
+    return () => {
+      window.removeEventListener("online", flush);
+      clearInterval(t);
+    };
+  }, [chatId]);
+
   const sendMsg = async (content: string, type: Message["type"] = "text"): Promise<number | null> => {
     if (sending) return null;
     setSending(true);
@@ -522,21 +554,22 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     const tempId = -Date.now();
     setMessages((p) => [...p, { id: tempId, user_id: MY_ID, user_name: MY_NAME, type, content, time }]);
     let finalId: number | null = null;
+    const reqHeaders = { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) };
+    const reqBody = {
+      action: "send",
+      chat_id: chatId,
+      content,
+      type,
+      peer_id: chat.peerId || undefined,
+      peer_name: chat.type === "personal" ? chat.name : undefined,
+      peer_avatar: chat.type === "personal" ? chat.avatar : undefined,
+    };
     try {
+      if (typeof navigator !== "undefined" && !navigator.onLine) throw new TypeError("offline");
       const res = await fetch(`${API}?module=chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-User-Id": MY_ID, "X-User-Name": encodeURIComponent(MY_NAME) },
-        body: JSON.stringify({
-          action: "send",
-          chat_id: chatId,
-          content,
-          type,
-          // Передаём данные собеседника, чтобы backend смог корректно сохранить имя/аватар чата
-          // и добавить нужного user_id в участники (актуально для чатов, открытых из профиля)
-          peer_id: chat.peerId || undefined,
-          peer_name: chat.type === "personal" ? chat.name : undefined,
-          peer_avatar: chat.type === "personal" ? chat.avatar : undefined,
-        }),
+        headers: reqHeaders,
+        body: JSON.stringify(reqBody),
       });
       console.log("[ChatRoom] send response status", res.status);
       const raw = await res.json();
@@ -555,7 +588,15 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       }
     } catch (e) {
       console.error("[ChatRoom] send error", e);
-      setMessages((p) => p.filter(m => m.id !== tempId));
+      if (canQueue(type)) {
+        outboxAdd({
+          tempId, chatId: String(chatId), url: `${API}?module=chat`, headers: reqHeaders,
+          body: reqBody, type, content, userId: MY_ID, userName: MY_NAME, time,
+        });
+        setPendingIds((p) => new Set(p).add(tempId));
+      } else {
+        setMessages((p) => p.filter(m => m.id !== tempId));
+      }
     }
     setSending(false);
     return finalId;
