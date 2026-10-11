@@ -42,6 +42,18 @@ const ProductDetailSheet = ({ product: p, videoId, onClose }: Props) => {
     window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: p.owner_handle, tab: "shop" } }));
   };
 
+  const writeToSeller = () => {
+    if (!p.owner_handle) return;
+    if (!user) {
+      toast.error("Войди в аккаунт, чтобы написать продавцу");
+      return;
+    }
+    onClose();
+    window.dispatchEvent(new CustomEvent("open-direct-message", { detail: { handle: p.owner_handle } }));
+  };
+
+  const isOwn = !!user && p.owner_user_id === user.id;
+
   const discount = p.old_price && p.old_price > p.price ? Math.round((1 - p.price / p.old_price) * 100) : 0;
 
   return createPortal(
@@ -128,6 +140,16 @@ const ProductDetailSheet = ({ product: p, videoId, onClose }: Props) => {
               <Icon name="ExternalLink" size={15} />
               Страница товара
             </a>
+          )}
+
+          {p.owner_handle && !p.is_partner && !isOwn && (
+            <button
+              onClick={writeToSeller}
+              className="flex items-center justify-center gap-2 h-11 rounded-full bg-white/10 text-white text-sm font-semibold active:scale-95 transition-transform"
+            >
+              <Icon name="MessageCircle" size={17} />
+              Написать продавцу
+            </button>
           )}
 
           <div className="flex gap-2 pt-1">
