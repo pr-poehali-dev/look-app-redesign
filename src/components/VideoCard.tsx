@@ -385,8 +385,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   return (
     <div className="media-overlay-text look-card-root relative w-full h-full flex-shrink-0 snap-start overflow-hidden bg-black md:bg-transparent md:overflow-visible md:flex md:items-stretch md:justify-center">
       {/* Video + info column */}
-      <div className="video-round-frame relative w-full h-full md:flex-none md:h-full md:w-auto md:aspect-[9/16] md:overflow-hidden md:rounded-2xl md:flex md:flex-col md:bg-black">
-      <div className="absolute inset-0 md:relative md:inset-auto md:flex-1 md:min-h-0">
+      <div className="video-round-frame relative w-full h-full md:flex-none md:h-full md:w-auto md:aspect-[9/16] md:overflow-hidden md:rounded-2xl">
       {isVideo ? (
         <>
           {preloadLevel === "none" ? (
@@ -404,7 +403,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
               ref={videoRef}
               src={video.image}
               poster={video.thumbnail || undefined}
-              className="absolute inset-0 w-full h-full object-cover md:object-contain md:rounded-2xl"
+              className="absolute inset-0 w-full h-full object-cover md:rounded-2xl"
               loop
               muted={muted}
               autoPlay={isActive}
@@ -501,11 +500,10 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           className="absolute inset-0 w-full h-full object-cover pointer-events-none md:rounded-2xl"
         />
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none md:hidden" />
-      </div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
 
-      {/* Подпись: на телефоне поверх видео, на компьютере отдельной полосой под видео */}
-      <div className="absolute bottom-28 left-4 z-10 md:static md:flex-shrink-0 md:px-4 md:pt-2 md:pb-3 md:bg-black" style={{ right: '80px' }}>
+      {/* Bottom left info — внутри видео */}
+      <div className="absolute bottom-28 md:bottom-20 left-4 z-10" style={{ right: '80px' }}>
         {video.repostedBy && (
           <button
             onClick={() => window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: video.repostedBy } }))}
