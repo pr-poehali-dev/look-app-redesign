@@ -128,6 +128,10 @@ def handler(event: dict, context) -> dict:
                     return err('Неверный email или пароль', 401)
                 if banned:
                     return err('Аккаунт заблокирован. Обратитесь в поддержку: support@look.com.ru', 403)
+                if not token:
+                    token = secrets.token_hex(32)
+                    cur.execute("UPDATE app_users SET token=%s WHERE id=%s", (token, uid))
+                    conn.commit()
             finally:
                 cur.close(); conn.close()
             return ok({'token': token, 'user': {'id': uid, 'name': name, 'handle': handle, 'email': em, 'avatar': avatar, 'phone': phone}})
