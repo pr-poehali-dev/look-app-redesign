@@ -13,6 +13,7 @@ import StoryViewerModal, { StoryViewerItem } from "@/components/shared/StoryView
 
 interface Props {
   handle: string;
+  initialTab?: "media" | "shop";
   onClose: () => void;
 }
 
@@ -26,11 +27,11 @@ const GENDER_LABELS: Record<string, string> = {
   ж: "Женский",
 };
 
-const UserProfileModal = ({ handle, onClose }: Props) => {
+const UserProfileModal = ({ handle, initialTab = "media", onClose }: Props) => {
   const data = getAuthor(handle);
   const { following, toggle: toggleFollow, isSelf } = useFollowing(handle);
   const realFollowers = useFollowerCount(handle);
-  const [tab, setTab] = useState<"media" | "shop" | "boards" | "files" | "links">("media");
+  const [tab, setTab] = useState<"media" | "shop" | "boards" | "files" | "links">(initialTab);
   const [openedItem, setOpenedItem] = useState<number | null>(null);
   const [openedOrigin, setOpenedOrigin] = useState<DOMRect | null>(null);
   const [openedBoardId, setOpenedBoardId] = useState<number | null>(null);
@@ -276,7 +277,7 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
             >
               Медиа
             </button>
-            {shopProducts.length > 0 && (
+            {(shopProducts.length > 0 || initialTab === "shop") && (
               <button
                 onClick={() => setTab("shop")}
                 className={`flex-1 py-3 text-sm font-medium border-b-2 transition-all flex items-center justify-center gap-1 ${
@@ -284,7 +285,7 @@ const UserProfileModal = ({ handle, onClose }: Props) => {
                 }`}
               >
                 <Icon name="Store" size={14} />
-                Магазин
+                Магазин{shopProducts.length > 0 ? ` · ${shopProducts.length}` : ""}
               </button>
             )}
             {userBoards.length > 0 && (

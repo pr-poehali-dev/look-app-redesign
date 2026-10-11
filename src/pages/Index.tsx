@@ -47,6 +47,7 @@ const Index = () => {
   const [pendingCommunityId, setPendingCommunityId] = useState<string | null>(initialCommunityFromUrl);
   const [pendingKind, setPendingKind] = useState<string>("community");
   const [profileHandle, setProfileHandle] = useState<string | null>(null);
+  const [profileTab, setProfileTab] = useState<"media" | "shop">("media");
   const [pendingDirectHandle, setPendingDirectHandle] = useState<string | null>(null);
   const { totalUnread } = useUnread();
 
@@ -97,8 +98,11 @@ const Index = () => {
 
   useEffect(() => {
     const onOpen = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { handle?: string };
-      if (detail?.handle) setProfileHandle(detail.handle);
+      const detail = (e as CustomEvent).detail as { handle?: string; tab?: "media" | "shop" };
+      if (detail?.handle) {
+        setProfileTab(detail.tab === "shop" ? "shop" : "media");
+        setProfileHandle(detail.handle);
+      }
     };
     const onMessage = (e: Event) => {
       const detail = (e as CustomEvent).detail as { handle?: string };
@@ -497,7 +501,7 @@ const Index = () => {
         </div>
       </div>
       {profileHandle && (
-        <UserProfileModal handle={profileHandle} onClose={() => setProfileHandle(null)} />
+        <UserProfileModal key={`${profileHandle}-${profileTab}`} handle={profileHandle} initialTab={profileTab} onClose={() => setProfileHandle(null)} />
       )}
      </div>
     </div>

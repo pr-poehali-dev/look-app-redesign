@@ -524,7 +524,7 @@ const PostCard = ({ post }: { post: Post }) => {
                       <button
                         onClick={() => {
                           setShowProducts(false);
-                          window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: p.owner_handle } }));
+                          window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: p.owner_handle, tab: "shop" } }));
                         }}
                         className="flex items-center gap-1.5 self-start pl-1 text-white/60 active:text-white/90 transition-colors"
                       >

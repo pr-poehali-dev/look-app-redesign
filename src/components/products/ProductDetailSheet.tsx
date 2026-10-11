@@ -39,7 +39,7 @@ const ProductDetailSheet = ({ product: p, videoId, onClose }: Props) => {
   const openShop = () => {
     if (!p.owner_handle) return;
     onClose();
-    window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: p.owner_handle } }));
+    window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: p.owner_handle, tab: "shop" } }));
   };
 
   const discount = p.old_price && p.old_price > p.price ? Math.round((1 - p.price / p.old_price) * 100) : 0;
