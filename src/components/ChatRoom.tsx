@@ -560,6 +560,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       chat_id: chatId,
       content,
       type,
+      client_msg_id: `${MY_ID}-${tempId}`,
       peer_id: chat.peerId || undefined,
       peer_name: chat.type === "personal" ? chat.name : undefined,
       peer_avatar: chat.type === "personal" ? chat.avatar : undefined,

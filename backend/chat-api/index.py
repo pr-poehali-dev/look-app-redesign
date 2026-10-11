@@ -678,12 +678,29 @@ def handler(event: dict, context) -> dict:
                 interval = _DISAPPEAR_INTERVALS.get(disappear_val or '')
                 expires_at = (datetime.datetime.now(datetime.timezone.utc) + interval) if interval else None
 
-                cur.execute(
-                    "INSERT INTO sa_messages (chat_id, user_id, user_name, type, content, expires_at) "
-                    "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id, created_at",
-                    (chat_id, user_id, user_name, msg_type, content, expires_at)
-                )
-                row = cur.fetchone()
+                client_msg_id = (str(body.get('client_msg_id') or '').strip()[:64]) or None
+                row = None
+                if client_msg_id:
+                    cur.execute(
+                        "SELECT id, created_at FROM sa_messages WHERE user_id = %s AND client_msg_id = %s",
+                        (user_id, client_msg_id)
+                    )
+                    row = cur.fetchone()
+                if not row:
+                    cur.execute(
+                        "INSERT INTO sa_messages (chat_id, user_id, user_name, type, content, expires_at, client_msg_id) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s) "
+                        "ON CONFLICT (user_id, client_msg_id) WHERE client_msg_id IS NOT NULL DO NOTHING "
+                        "RETURNING id, created_at",
+                        (chat_id, user_id, user_name, msg_type, content, expires_at, client_msg_id)
+                    )
+                    row = cur.fetchone()
+                    if not row:
+                        cur.execute(
+                            "SELECT id, created_at FROM sa_messages WHERE user_id = %s AND client_msg_id = %s",
+                            (user_id, client_msg_id)
+                        )
+                        row = cur.fetchone()
                 conn.commit()
                 return {'statusCode': 200, 'headers': headers,
                         'body': json.dumps({'id': row[0], 'time': _fmt_time(row[1]), 'ok': True})}
