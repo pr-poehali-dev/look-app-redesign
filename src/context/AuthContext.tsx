@@ -13,6 +13,8 @@ export interface AppUser {
   city?: string | null;
   links?: ProfileLink[];
   is_verified?: boolean;
+  is_adult?: boolean | null;
+  birth_set?: boolean;
 }
 
 interface AuthContextType {
@@ -20,7 +22,7 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<string | null>;
-  register: (name: string, handle: string, email: string, password: string, phone: string) => Promise<string | null>;
+  register: (name: string, handle: string, email: string, password: string, phone: string, birthDate: string, consent: boolean) => Promise<string | null>;
   loginWithSession: (user: AppUser, token: string) => void;
   logout: () => void;
   updateUser: (u: Partial<AppUser>) => void;
@@ -93,11 +95,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return null;
   };
 
-  const register = async (name: string, handle: string, email: string, password: string, phone: string): Promise<string | null> => {
+  const register = async (name: string, handle: string, email: string, password: string, phone: string, birthDate: string, consent: boolean): Promise<string | null> => {
     const res = await fetch(AUTH_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "register", name, handle, email, password, phone, origin: window.location.origin }),
+      body: JSON.stringify({ action: "register", name, handle, email, password, phone, birth_date: birthDate, consent, origin: window.location.origin }),
     });
     const raw = await res.json();
     const data = parseBody(raw);

@@ -36,6 +36,9 @@ export const toVideo = (v: any): VideoData => ({
   isVerified: !!v.is_verified,
   isAd: !!v.is_ad,
   adLabel: v.ad_label || null,
+  ageRating: v.age_rating || null,
+  adErid: v.ad_erid || null,
+  adAdvertiser: v.ad_advertiser || null,
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -60,6 +63,9 @@ export const toPost = (v: any): Post => {
     isVerified: !!v.is_verified,
     isAd: !!v.is_ad,
     adLabel: v.ad_label || null,
+  ageRating: v.age_rating || null,
+  adErid: v.ad_erid || null,
+  adAdvertiser: v.ad_advertiser || null,
   };
 };
 
@@ -67,13 +73,16 @@ const MediaDeepLink = () => {
   const [target, setTarget] = useState(readParam);
   const [item, setItem] = useState<VideoData | Post | null>(null);
   const [failed, setFailed] = useState(false);
+  const [ageBlocked, setAgeBlocked] = useState(false);
+  const uid = localStorage.getItem("user_id");
 
   useEffect(() => {
     if (!target) return;
-    fetch(`${GET_PHOTOS_URL}?id=${target.id}`)
+    fetch(`${GET_PHOTOS_URL}?id=${target.id}${uid ? `&user_id=${encodeURIComponent(uid)}` : ""}`)
       .then((r) => r.json())
       .then((raw) => {
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+        if (data.error === "age_restricted") { setAgeBlocked(true); return; }
         if (!data.video) { setFailed(true); return; }
         setItem(target.kind === "video" ? toVideo(data.video) : toPost(data.video));
       })
@@ -95,10 +104,15 @@ const MediaDeepLink = () => {
       <div className="relative w-full h-full max-w-[520px]">
         {item && target.kind === "video" && <VideoCard video={item as VideoData} isActive preloadLevel="full" />}
         {item && target.kind === "post" && <PostCard post={item as Post} />}
-        {!item && !failed && (
+        {!item && !failed && !ageBlocked && (
           <div className="w-full h-full flex items-center justify-center">
             <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-[#22e0a1] animate-spin" />
           </div>
+        )}
+        {ageBlocked && (
+          <p className="text-white/70 text-sm text-center pt-40 px-8">
+            Контент 18+. Войдите в аккаунт и подтвердите дату рождения, чтобы посмотреть
+          </p>
         )}
         {failed && <p className="text-white/70 text-sm text-center pt-40">Публикация недоступна или удалена</p>}
         <button

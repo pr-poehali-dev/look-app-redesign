@@ -27,6 +27,15 @@ def handler(event: dict, context) -> dict:
     cur = conn.cursor()
     try:
         schema = os.environ['MAIN_DB_SCHEMA']
+        is_adult = False
+        if user_id:
+            cur.execute(f"SELECT birth_date FROM {schema}.app_users WHERE id = %s", (user_id,))
+            br = cur.fetchone()
+            if br and br[0]:
+                import datetime as _dt
+                _t = _dt.date.today()
+                is_adult = (_t.year - br[0].year - ((_t.month, _t.day) < (br[0].month, br[0].day))) >= 18
+        age_cond = "" if is_adult else "AND v.age_rating <> '18+' "
         base_select = (
             f"SELECT v.id, v.url, v.author, v.handle, v.description, v.hashtags, "
             f"v.category, v.type, v.likes, v.comments, v.shares, v.created_at, "
@@ -35,23 +44,25 @@ def handler(event: dict, context) -> dict:
             f"COALESCE((SELECT COUNT(*) FROM {schema}.video_views vv WHERE vv.video_id = v.id), 0) AS views, "
             f"COALESCE(au.is_verified, FALSE) AS is_verified, "
             f"COALESCE(v.is_ad, FALSE) AS is_ad, v.ad_label, "
-            f"NULL::text AS reposted_by, NULL::text AS reposted_by_avatar, NULL::text AS reposted_by_id "
+            f"NULL::text AS reposted_by, NULL::text AS reposted_by_avatar, NULL::text AS reposted_by_id, v.age_rating, v.ad_erid, v.ad_advertiser "
             f"FROM {schema}.videos v "
             f"LEFT JOIN {schema}.legacy_posts lp ON lp.migrated_to_video_id = v.id "
             f"LEFT JOIN {schema}.legacy_users lu ON lu.id = lp.user_id "
             f"LEFT JOIN {schema}.app_users au ON au.id = v.user_id "
             f"WHERE v.type = %s AND (v.hidden IS NULL OR v.hidden = FALSE) "
-        )
+        ) + age_cond
 
         single_id = (params.get('id') or '').strip()
         if single_id.isdigit():
             cur.execute(
-                base_select.replace("WHERE v.type = %s AND", "WHERE v.id = %s AND") + "LIMIT 1",
+                base_select.replace(age_cond, "", 1).replace("WHERE v.type = %s AND", "WHERE v.id = %s AND") + "LIMIT 1",
                 (int(single_id),)
             )
             r = cur.fetchone()
             if not r:
                 return {'statusCode': 404, 'headers': {'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'not found'})}
+            if r[24] == '18+' and not is_adult:
+                return {'statusCode': 403, 'headers': {'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'age_restricted', 'age_rating': '18+'})}
             avatar = r[1] if r[7] == 'image' else r[12]
             item = {
                 'id': r[0], 'url': r[1], 'author': r[2], 'handle': r[3], 'description': r[4],
@@ -60,6 +71,7 @@ def handler(event: dict, context) -> dict:
                 'created_at': r[11].isoformat() if r[11] else None, 'thumbnail': r[13],
                 'template_id': r[15], 'has_products': bool(r[16]), 'views': int(r[17]),
                 'is_verified': bool(r[18]), 'is_ad': bool(r[19]), 'ad_label': r[20],
+                'age_rating': r[24], 'ad_erid': r[25], 'ad_advertiser': r[26],
             }
             return {'statusCode': 200, 'headers': {'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'video': item})}
 
@@ -88,7 +100,7 @@ def handler(event: dict, context) -> dict:
             f"COALESCE((SELECT COUNT(*) FROM {schema}.video_views vv WHERE vv.video_id = v.id), 0) AS views, "
             f"COALESCE(au.is_verified, FALSE) AS is_verified, "
             f"COALESCE(v.is_ad, FALSE) AS is_ad, v.ad_label, "
-            f"ru.handle AS reposted_by, ru.avatar AS reposted_by_avatar, ru.id AS reposted_by_id "
+            f"ru.handle AS reposted_by, ru.avatar AS reposted_by_avatar, ru.id AS reposted_by_id, v.age_rating, v.ad_erid, v.ad_advertiser "
             f"FROM {schema}.reposts r "
             f"JOIN {schema}.videos v ON v.id = r.original_video_id "
             f"LEFT JOIN {schema}.app_users ru ON ru.id = r.user_id "
@@ -96,7 +108,7 @@ def handler(event: dict, context) -> dict:
             f"LEFT JOIN {schema}.legacy_users lu ON lu.id = lp.user_id "
             f"LEFT JOIN {schema}.app_users au ON au.id = v.user_id "
             f"WHERE v.type = %s AND (v.hidden IS NULL OR v.hidden = FALSE) "
-        )
+        ) + age_cond
         try:
             if category and category != 'all':
                 cur.execute(repost_select + "AND v.category = %s ORDER BY r.created_at DESC LIMIT 40", (media_type, category))
@@ -366,6 +378,9 @@ def handler(event: dict, context) -> dict:
             'is_verified': bool(r[18]),
             'is_ad': is_ad,
             'ad_label': r[20],
+            'age_rating': r[24],
+            'ad_erid': r[25],
+            'ad_advertiser': r[26],
             'reposted_by': r[21],
             'reposted_by_avatar': r[22],
             'city': author_city.get(r[14]),

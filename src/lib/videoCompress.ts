@@ -228,6 +228,9 @@ export interface DirectUploadMeta {
   templateId?: string | null;
   products?: UploadProductMeta[];
   isAd?: boolean;
+  ageRating?: string;
+  adErid?: string;
+  adAdvertiser?: string;
 }
 
 async function blobToBase64(blob: Blob): Promise<string> {
@@ -345,6 +348,9 @@ export async function uploadFileDirect(
       template_id: meta.templateId || null,
       products: meta.products || [],
       is_ad: !!meta.isAd,
+      age_rating: meta.ageRating || "12+",
+      ad_erid: meta.isAd ? (meta.adErid || "") : "",
+      ad_advertiser: meta.isAd ? (meta.adAdvertiser || "") : "",
     },
   });
   const finalUrl = finish.url as string | undefined;

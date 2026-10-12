@@ -1,3 +1,5 @@
+import { PublishCompliance, DEFAULT_COMPLIANCE } from "@/components/camera/ComplianceFields";
+import { toast } from "sonner";
 import { useState, useRef, useEffect } from "react";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
@@ -58,6 +60,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
   const [hashtags, setHashtags] = useState("");
   const [description, setDescription] = useState("");
   const [isAd, setIsAd] = useState(false);
+  const [compliance, setCompliance] = useState<PublishCompliance>(DEFAULT_COMPLIANCE);
   const [showLive, setShowLive] = useState(false);
   const [editingPhoto, setEditingPhoto] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -88,6 +91,10 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
   const handlePublish = async () => {
     const original = mediaFileRef.current;
     if (!original) return;
+    if (isAd && compliance.adErid.trim().length < 5) {
+      toast.error("Для рекламы укажи токен ERID — без него публикация запрещена законом");
+      return;
+    }
     setPublishing(true);
     try {
       let file = original;
@@ -120,6 +127,9 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
           handle: user?.handle || user?.name || "user",
           user_id: user?.id || "anonymous",
           isAd,
+          ageRating: compliance.ageRating,
+          adErid: compliance.adErid,
+          adAdvertiser: compliance.adAdvertiser,
         },
         (p) => setPublishProgress({ stage: "upload", percent: p }),
       );
@@ -370,7 +380,9 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
         onDescriptionChange={setDescription}
         isAd={isAd}
         onIsAdChange={setIsAd}
-        onCloseMedia={() => { setUploadedMedia(null); setPublished(false); setHashtags(""); setDescription(""); setIsAd(false); }}
+        compliance={compliance}
+        onComplianceChange={setCompliance}
+        onCloseMedia={() => { setUploadedMedia(null); setPublished(false); setHashtags(""); setDescription(""); setIsAd(false); setCompliance(DEFAULT_COMPLIANCE); }}
         onEditPhoto={() => setEditingPhoto(true)}
         onPublish={handlePublish}
         onCategoryChange={(id) => { setSelectedCategory(id); setShowCategoryPicker(false); }}

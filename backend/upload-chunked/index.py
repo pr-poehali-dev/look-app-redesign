@@ -119,19 +119,26 @@ def handler(event: dict, context) -> dict:
             cur = conn.cursor()
             try:
                 is_ad = bool(meta.get('is_ad'))
+                age_rating = meta.get('age_rating') if meta.get('age_rating') in ('0+', '6+', '12+', '16+', '18+') else '12+'
+                ad_erid = (meta.get('ad_erid') or '').strip()[:100] or None
+                ad_advertiser = (meta.get('ad_advertiser') or '').strip()[:200] or None
+                if is_ad and not ad_erid:
+                    return {'statusCode': 400, 'headers': _cors(),
+                            'body': json.dumps({'error': 'Для рекламы нужен токен ERID (маркировка по 38-ФЗ)'})}
                 ad_label = (meta.get('ad_label') or '').strip()[:60] or ('Реклама' if is_ad else None)
                 cur.execute("SELECT word FROM moderation_words")
                 low = f"{meta.get('description', '')} {meta.get('hashtags', '')}".lower().replace('ё', 'е')
                 flagged = any(w[0].lower().replace('ё', 'е') in low for w in cur.fetchall())
                 cur.execute(
-                    "INSERT INTO videos (url, thumbnail, author, handle, description, hashtags, category, type, user_id, template_id, is_ad, ad_label, hidden, hidden_reason) "
-                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+                    "INSERT INTO videos (url, thumbnail, author, handle, description, hashtags, category, type, user_id, template_id, is_ad, ad_label, hidden, hidden_reason, age_rating, ad_erid, ad_advertiser) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
                     (cdn_url, thumb_url,
                      meta.get('author', 'Я'), meta.get('handle', 'user'),
                      meta.get('description', ''), meta.get('hashtags', ''),
                      meta.get('category', 'humor'), media_type,
                      meta.get('user_id', 'anonymous'), meta.get('template_id'),
-                     is_ad, ad_label, flagged, 'auto_words' if flagged else None),
+                     is_ad, ad_label, flagged, 'auto_words' if flagged else None,
+                     age_rating, ad_erid if is_ad else None, ad_advertiser if is_ad else None),
                 )
                 video_id = cur.fetchone()[0]
                 if flagged:

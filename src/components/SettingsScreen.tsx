@@ -1032,6 +1032,76 @@ const SupportScreen = ({ onBack }: { onBack: () => void }) => {
 };
 
 // Main Settings
+const DeleteAccountScreen = ({ onBack }: { onBack: () => void }) => {
+  const { token, logout } = useAuth();
+  const [password, setPassword] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch(AUTH_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete_account", token, password }),
+      });
+      const raw = await res.json();
+      const data = typeof raw?.body === "string" ? JSON.parse(raw.body) : raw;
+      if (data.error) { setError(data.error); setLoading(false); return; }
+      logout();
+    } catch {
+      setError("Не удалось удалить аккаунт. Попробуйте позже");
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-gray-100 flex flex-col">
+      <div className="flex items-center gap-2 px-4 py-3 bg-white border-b border-gray-100">
+        <button onClick={onBack} className="p-1"><Icon name="ChevronLeft" size={24} className="text-black" /></button>
+        <span className="flex-1 text-center text-black font-bold text-lg pr-7">Удаление аккаунта</span>
+      </div>
+      <div className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-4">
+        <div className="bg-white rounded-2xl p-4 flex flex-col gap-2">
+          <p className="text-black text-sm font-semibold">Что будет удалено безвозвратно</p>
+          <ul className="text-gray-600 text-sm list-disc pl-5 flex flex-col gap-1">
+            <li>Профиль, email, телефон, дата рождения</li>
+            <li>Все ваши публикации, фото и видео</li>
+            <li>Комментарии, лайки, подписки, коллекции</li>
+            <li>Сообщения, товары, статьи и заказы</li>
+          </ul>
+          <p className="text-gray-400 text-xs">Восстановить данные после удаления невозможно. По запросу об удалении данных можно также написать на support@look.com.ru</p>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Пароль для подтверждения</label>
+          <input
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            type="password"
+            placeholder="Ваш пароль"
+            className="w-full px-4 py-3 rounded-xl bg-white text-black text-sm outline-none focus:ring-2 focus:ring-[#8b5cf6]/30"
+          />
+        </div>
+        <label className="flex items-start gap-2.5 cursor-pointer">
+          <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#fe2c55]" />
+          <span className="text-xs text-gray-600 leading-snug">Я понимаю, что аккаунт и все данные будут удалены без возможности восстановления</span>
+        </label>
+        {error && <p className="text-[#fe2c55] text-sm">{error}</p>}
+        <button
+          onClick={submit}
+          disabled={!password || !confirmed || loading}
+          className="w-full py-3.5 rounded-xl bg-[#fe2c55] text-white font-bold text-base disabled:opacity-40"
+        >
+          {loading ? "Удаляем..." : "Удалить аккаунт навсегда"}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   const { user, logout } = useAuth();
   const lsGet = (k: string, def: string) => { try { return localStorage.getItem(k) ?? def; } catch { return def; } };
@@ -1113,6 +1183,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   if (screen === "support") return <SupportScreen onBack={() => setScreen(null)} />;
   if (screen === "terms") return <LegalScreen onBack={() => setScreen(null)} title="Условия использования" settingKey="terms_of_use" fallback="Используя приложение Look, вы соглашаетесь с нашими условиями использования." />;
   if (screen === "privacy") return <LegalScreen onBack={() => setScreen(null)} title="Политика конфиденциальности" settingKey="privacy_policy" fallback="Мы уважаем вашу конфиденциальность." />;
+  if (screen === "delete_account") return <DeleteAccountScreen onBack={() => setScreen(null)} />;
   if (screen === "subscription") return <SubscriptionScreen onBack={() => setScreen(null)} />;
 
   const Toggle = ({ value, onChange }: { value: boolean; onChange: () => void }) => (
@@ -1177,6 +1248,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
         <Row icon="Ban" label="Заблокированные" onPress={() => setScreen("blocked")} />
         <Row icon="QrCode" label="Мой QR-код" onPress={() => setScreen("qr")} />
         <Row icon="ScanLine" label="Сканировать QR" onPress={() => setScreen("scan_qr")} />
+        <Row icon="Trash2" label="Удалить аккаунт и данные" onPress={() => setScreen("delete_account")} />
       </div>
 
       <SectionHeader title="Privacy" />

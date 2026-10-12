@@ -39,6 +39,9 @@ export interface VideoData {
   isVerified?: boolean;
   isAd?: boolean;
   adLabel?: string | null;
+  ageRating?: string | null;
+  adErid?: string | null;
+  adAdvertiser?: string | null;
   repostedBy?: string | null;
 }
 
@@ -540,6 +543,11 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
               {video.adLabel || "Реклама"}
             </span>
           )}
+          {video.ageRating && (
+            <span className="px-1.5 py-0.5 rounded border border-white/30 text-white/70 text-[10px] font-semibold">
+              {video.ageRating}
+            </span>
+          )}
           {isSelf ? null : !following ? (
             <button
               onClick={toggleFollow}
@@ -579,6 +587,11 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             </div>
           );
         })()}
+        {video.isAd && video.adErid && (
+          <p className="text-white/50 text-[11px] mb-2 break-all">
+            Реклама{video.adAdvertiser ? ` · ${video.adAdvertiser}` : ""} · erid: {video.adErid}
+          </p>
+        )}
         <div className="flex items-center gap-2 flex-wrap">
           <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center animate-spin" style={{ animationDuration: "3s" }}>
             <Icon name="Music" size={10} className="text-white" />

@@ -102,7 +102,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
     const isNewCategory = activeCategory === "new";
     const uidParam = user?.id ? `&user_id=${encodeURIComponent(String(user.id))}` : "";
     const url = activeCategory && activeCategory !== "all" && !isSubsCategory && !isNewCategory
-      ? `${GET_VIDEOS_URL}?type=video&category=${activeCategory}`
+      ? `${GET_VIDEOS_URL}?type=video&category=${activeCategory}${uidParam}`
       : `${GET_VIDEOS_URL}?type=video&t=${mediaVersion}${isNewCategory ? "" : uidParam}`;
     fetch(url)
       .then(r => r.json())
@@ -142,6 +142,9 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
           isVerified: !!v.is_verified,
           isAd: !!v.is_ad,
           adLabel: v.ad_label || null,
+          ageRating: v.age_rating || null,
+          adErid: v.ad_erid || null,
+          adAdvertiser: v.ad_advertiser || null,
           repostedBy: v.reposted_by || null,
         });
         }));

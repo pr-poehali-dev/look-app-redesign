@@ -111,6 +111,9 @@ const PostFeed = () => {
         isVerified: !!v.is_verified,
         isAd: !!v.is_ad,
         adLabel: v.ad_label || null,
+        ageRating: v.age_rating || null,
+        adErid: v.ad_erid || null,
+        adAdvertiser: v.ad_advertiser || null,
         repostedBy: v.reposted_by || null,
         repostedByAvatar: v.reposted_by_avatar || null,
       };

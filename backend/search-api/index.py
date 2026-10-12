@@ -113,7 +113,16 @@ def handler(event: dict, context) -> dict:
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
     fuzzy = False
+    adult = False
     try:
+        uid = (params.get('user_id') or '').strip()
+        if uid:
+            cur.execute(f"SELECT birth_date FROM {schema}.app_users WHERE id = %s", (uid,))
+            br = cur.fetchone()
+            if br and br[0]:
+                import datetime
+                t = datetime.date.today()
+                adult = (t.year - br[0].year - ((t.month, t.day) < (br[0].month, br[0].day))) >= 18
         if kind == 'log':
             qn = ' '.join(q.lower().split())[:60]
             if len(qn) >= 2 and not qn.startswith('-'):
@@ -173,7 +182,7 @@ def handler(event: dict, context) -> dict:
             rows, fuzzy = run_search(
                 cur, f"{schema}.videos", ['description', 'hashtags', 'author', 'handle'],
                 "id, url, thumbnail, author, handle, description, likes, comments, created_at, type, user_id",
-                f"type = '{media}' AND (hidden IS NULL OR hidden = FALSE)", p,
+                f"type = '{media}' AND (hidden IS NULL OR hidden = FALSE)" + ("" if adult else " AND age_rating <> '18+'"), p,
                 "created_at DESC", "likes DESC NULLS LAST, created_at DESC", sort, period, 'created_at')
             items = [{'id': r[0], 'url': r[1], 'thumbnail': r[2], 'author': r[3], 'handle': r[4],
                       'description': r[5], 'likes': str(r[6]), 'comments': str(r[7]),

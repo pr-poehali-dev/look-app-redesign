@@ -40,6 +40,23 @@ def verify_firebase_scrypt(password: str, salt_b64: str, expected_hash_b64: str)
     except Exception as e:
         print(f'firebase scrypt verify error: {e}')
         return False
+CONSENT_VERSION = '2026-10'
+
+def parse_birth(raw):
+    import datetime
+    try:
+        d = datetime.date.fromisoformat((raw or '').strip())
+    except Exception:
+        return None
+    if d > datetime.date.today() or d.year < 1900:
+        return None
+    return d
+
+def calc_age(d):
+    import datetime
+    t = datetime.date.today()
+    return t.year - d.year - ((t.month, t.day) < (d.month, d.day))
+
 def get_s3(): return boto3.client('s3', endpoint_url='https://bucket.poehali.dev',
     aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
     aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
@@ -68,6 +85,13 @@ def handler(event: dict, context) -> dict:
                 phone = '+' + phone.lstrip('+')
             if not all([name, handle, email, password, phone]):
                 return err('Заполни все поля')
+            if not body.get('consent'):
+                return err('Нужно принять условия и дать согласие на обработку персональных данных')
+            birth = parse_birth(body.get('birth_date'))
+            if not birth:
+                return err('Укажи дату рождения')
+            if calc_age(birth) < 14:
+                return err('Регистрация доступна с 14 лет')
             if len(password) < 6:
                 return err('Пароль минимум 6 символов')
             if not re.match(r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$', email):
@@ -88,8 +112,8 @@ def handler(event: dict, context) -> dict:
                     return err('Такой номер телефона уже занят')
                 uid = 'u_' + secrets.token_hex(8)
                 token = secrets.token_hex(32)
-                cur.execute("INSERT INTO app_users (id,name,handle,email,password_hash,token,phone) VALUES (%s,%s,%s,%s,%s,%s,%s)",
-                    (uid, name, handle, email, hash_pw(password), token, phone))
+                cur.execute("INSERT INTO app_users (id,name,handle,email,password_hash,token,phone,birth_date,consent_at,consent_version) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,NOW(),%s)",
+                    (uid, name, handle, email, hash_pw(password), token, phone, birth, CONSENT_VERSION))
                 conn.commit()
             finally:
                 cur.close(); conn.close()
@@ -103,7 +127,7 @@ def handler(event: dict, context) -> dict:
                 urllib.request.urlopen(req, timeout=10)
             except Exception as e:
                 print(f'verify_send error: {e}')
-            return ok({'token': token, 'user': {'id': uid, 'name': name, 'handle': handle, 'email': email, 'avatar': None, 'phone': phone}, 'verify_sent': True})
+            return ok({'token': token, 'user': {'id': uid, 'name': name, 'handle': handle, 'email': email, 'avatar': None, 'phone': phone, 'is_adult': calc_age(birth) >= 18}, 'verify_sent': True})
 
         if action == 'login':
             email = ''.join((body.get('email') or '').split()).lower()
@@ -112,12 +136,12 @@ def handler(event: dict, context) -> dict:
                 return err('Введи email и пароль')
             conn = get_conn(); cur = conn.cursor()
             try:
-                cur.execute("SELECT id,name,handle,email,avatar,token,password_hash,firebase_hash,firebase_salt,phone,COALESCE(banned,FALSE) FROM app_users WHERE email=%s",
+                cur.execute("SELECT id,name,handle,email,avatar,token,password_hash,firebase_hash,firebase_salt,phone,COALESCE(banned,FALSE),birth_date FROM app_users WHERE email=%s",
                     (email,))
                 row = cur.fetchone()
                 if not row:
                     return err('Неверный email или пароль', 401)
-                uid, name, handle, em, avatar, token, pw_hash, fb_hash, fb_salt, phone, banned = row
+                uid, name, handle, em, avatar, token, pw_hash, fb_hash, fb_salt, phone, banned, birth_db = row
                 if pw_hash == hash_pw(password):
                     pass
                 elif fb_hash and fb_salt and verify_firebase_scrypt(password, fb_salt, fb_hash):
@@ -134,21 +158,21 @@ def handler(event: dict, context) -> dict:
                     conn.commit()
             finally:
                 cur.close(); conn.close()
-            return ok({'token': token, 'user': {'id': uid, 'name': name, 'handle': handle, 'email': em, 'avatar': avatar, 'phone': phone}})
+            return ok({'token': token, 'user': {'id': uid, 'name': name, 'handle': handle, 'email': em, 'avatar': avatar, 'phone': phone, 'is_adult': (calc_age(birth_db) >= 18) if birth_db else None}})
 
         if action == 'me':
             token = body.get('token') or ''
             if not token: return err('Нет токена', 401)
             conn = get_conn(); cur = conn.cursor()
             try:
-                cur.execute("SELECT id,name,handle,email,avatar,phone,gender,links,COALESCE(banned,FALSE),city FROM app_users WHERE token=%s", (token,))
+                cur.execute("SELECT id,name,handle,email,avatar,phone,gender,links,COALESCE(banned,FALSE),city,birth_date FROM app_users WHERE token=%s", (token,))
                 row = cur.fetchone()
             finally:
                 cur.close(); conn.close()
             if not row: return err('Токен недействителен', 401)
             if row[8]: return err('Аккаунт заблокирован. Обратитесь в поддержку: support@look.com.ru', 403)
             links_val = row[7] if row[7] is not None else []
-            return ok({'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'email': row[3], 'avatar': row[4], 'phone': row[5], 'gender': row[6], 'links': links_val, 'city': row[9]}})
+            return ok({'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'email': row[3], 'avatar': row[4], 'phone': row[5], 'gender': row[6], 'links': links_val, 'city': row[9], 'is_adult': (calc_age(row[10]) >= 18) if row[10] else None, 'birth_set': bool(row[10])}})
 
         if action == 'qr_create':
             code = secrets.token_urlsafe(16)
@@ -431,6 +455,99 @@ def handler(event: dict, context) -> dict:
             return ok({'ok': True, 'reposted': True})
 
         # смена категории видео
+        if action == 'set_birth_date':
+            token = body.get('token') or ''
+            birth = parse_birth(body.get('birth_date'))
+            if not token:
+                return err('Нет токена', 401)
+            if not birth:
+                return err('Укажи корректную дату рождения')
+            if calc_age(birth) < 14:
+                return err('Сервис доступен с 14 лет')
+            conn = get_conn(); cur = conn.cursor()
+            try:
+                cur.execute("SELECT id, birth_date FROM app_users WHERE token=%s", (token,))
+                row = cur.fetchone()
+                if not row:
+                    return err('Токен недействителен', 401)
+                if row[1] is not None:
+                    return err('Дата рождения уже указана. Для изменения обратитесь в поддержку', 403)
+                cur.execute("UPDATE app_users SET birth_date=%s, consent_at=COALESCE(consent_at, NOW()), consent_version=COALESCE(consent_version, %s) WHERE id=%s",
+                            (birth, CONSENT_VERSION, row[0]))
+                conn.commit()
+            finally:
+                cur.close(); conn.close()
+            return ok({'ok': True, 'is_adult': calc_age(birth) >= 18})
+
+        if action == 'delete_account':
+            token = body.get('token') or ''
+            password = body.get('password') or ''
+            if not token or not password:
+                return err('Введи пароль для подтверждения')
+            conn = get_conn(); cur = conn.cursor()
+            try:
+                cur.execute("SELECT id, password_hash FROM app_users WHERE token=%s", (token,))
+                row = cur.fetchone()
+                if not row:
+                    return err('Токен недействителен', 401)
+                uid, pw_hash = row
+                if pw_hash != hash_pw(password):
+                    return err('Неверный пароль', 403)
+
+                cur.execute("SELECT id, url, thumbnail FROM videos WHERE user_id=%s", (uid,))
+                vids = cur.fetchall()
+                vid_ids = [v[0] for v in vids]
+                s3 = get_s3()
+                for v in vids:
+                    for u in (v[1], v[2]):
+                        if u and '/bucket/' in u:
+                            try:
+                                s3.delete_object(Bucket='files', Key=u.split('/bucket/')[-1])
+                            except Exception:
+                                pass
+
+                def run(sql, args):
+                    cur.execute("SAVEPOINT sp")
+                    try:
+                        cur.execute(sql, args)
+                        cur.execute("RELEASE SAVEPOINT sp")
+                    except Exception as e:
+                        cur.execute("ROLLBACK TO SAVEPOINT sp")
+                        print(f'delete_account skip: {e}')
+
+                if vid_ids:
+                    ids_txt = [str(i) for i in vid_ids]
+                    run("DELETE FROM reposts WHERE original_video_id = ANY(%s)", (vid_ids,))
+                    run("DELETE FROM products WHERE video_id = ANY(%s)", (vid_ids,))
+                    run("DELETE FROM comments WHERE target_type IN ('video','post') AND target_id = ANY(%s)", (ids_txt,))
+                    run("DELETE FROM likes WHERE target_type IN ('video','post') AND target_id = ANY(%s)", (ids_txt,))
+                    run("DELETE FROM saves WHERE target_type IN ('video','post') AND target_id = ANY(%s)", (ids_txt,))
+                    run("DELETE FROM video_views WHERE video_id = ANY(%s)", (vid_ids,))
+                    run("DELETE FROM videos WHERE id = ANY(%s)", (vid_ids,))
+
+                for tbl, col in [
+                    ('ad_impressions_log', 'user_id'), ('articles', 'owner_user_id'), ('boards', 'owner_user_id'),
+                    ('cart_items', 'user_id'), ('channel_post_comments', 'user_id'), ('channel_post_reactions', 'user_id'),
+                    ('channel_post_views', 'user_id'), ('chat_settings', 'user_id'), ('comments', 'user_id'),
+                    ('community_bans', 'user_id'), ('community_join_requests', 'user_id'), ('community_members', 'user_id'),
+                    ('community_poll_votes', 'user_id'), ('community_polls', 'author_id'), ('downloads', 'user_id'),
+                    ('email_verify_tokens', 'user_id'), ('follows', 'follower_id'), ('likes', 'user_id'),
+                    ('live_streams', 'user_id'), ('notifications', 'user_id'), ('orders', 'user_id'),
+                    ('password_reset_tokens', 'user_id'), ('product_clicks', 'user_id'), ('product_reviews', 'user_id'),
+                    ('products', 'owner_user_id'), ('qr_login_sessions', 'user_id'), ('reposts', 'user_id'),
+                    ('sa_chat_members', 'user_id'), ('sa_message_reads', 'user_id'), ('sa_messages', 'user_id'),
+                    ('saves', 'user_id'), ('support_tickets', 'user_id'), ('template_usage', 'user_id'),
+                    ('user_hidden_authors', 'user_id'), ('user_video_feedback', 'user_id'), ('video_views', 'user_id'),
+                ]:
+                    run(f"DELETE FROM {tbl} WHERE {col} = %s", (uid,))
+                run("DELETE FROM follows WHERE target_handle = (SELECT handle FROM app_users WHERE id = %s)", (uid,))
+                run("DELETE FROM app_users WHERE id = %s", (uid,))
+                run("INSERT INTO account_removal_log (user_id, source) VALUES (%s, 'self')", (uid,))
+                conn.commit()
+            finally:
+                cur.close(); conn.close()
+            return ok({'ok': True})
+
         if action == 'update_category':
             video_id = body.get('id')
             new_category = (body.get('category') or '').strip()

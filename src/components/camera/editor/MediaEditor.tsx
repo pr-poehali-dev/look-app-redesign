@@ -1,3 +1,5 @@
+import { toast } from "sonner";
+import { PublishCompliance, DEFAULT_COMPLIANCE } from "@/components/camera/ComplianceFields";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
@@ -67,6 +69,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
   const [description, setDescription] = useState("");
   const [hashtags, setHashtags] = useState("");
   const [isAd, setIsAd] = useState(false);
+  const [compliance, setCompliance] = useState<PublishCompliance>(DEFAULT_COMPLIANCE);
   const [publishing, setPublishing] = useState(false);
   const [publishProgress, setPublishProgress] = useState<{ stage: "compress" | "upload" | "save"; percent: number } | null>(null);
   const [step, setStep] = useState<"edit" | "publish">("edit");
@@ -535,6 +538,10 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
 
   const handlePublish = async () => {
     if (clips.length === 0 || !active) return;
+    if (isAd && compliance.adErid.trim().length < 5) {
+      toast.error("Для рекламы укажи токен ERID — без него публикация запрещена законом");
+      return;
+    }
     setPublishing(true);
     try {
       // Одиночное фото без второго клипа — публикуем статичным кадром, иначе рендерим видео
@@ -620,6 +627,9 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
             promo_code: p.promoCode, product_url: p.productUrl, image: p.image,
           })),
           isAd,
+          ageRating: compliance.ageRating,
+          adErid: compliance.adErid,
+          adAdvertiser: compliance.adAdvertiser,
         },
         (p) => setPublishProgress({ stage: "upload", percent: p }),
       );
@@ -695,6 +705,8 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
         userId={user?.id}
         isAd={isAd}
         setIsAd={setIsAd}
+        compliance={compliance}
+        onComplianceChange={setCompliance}
       />
     );
   }

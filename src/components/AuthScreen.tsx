@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
+import { LegalScreen } from "@/components/SettingsScreen";
 import { useAuth } from "@/context/AuthContext";
 
 interface AuthScreenProps {
@@ -15,6 +16,9 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [consent, setConsent] = useState(false);
+  const [legalDoc, setLegalDoc] = useState<"terms" | "privacy" | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -49,7 +53,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
     if (mode === "login") {
       err = await login(email.trim(), password);
     } else {
-      err = await register(name.trim(), handle.trim(), email.trim(), password, phone.trim());
+      err = await register(name.trim(), handle.trim(), email.trim(), password, phone.trim(), birthDate, consent);
     }
     if (err) setError(err);
     setLoading(false);
@@ -73,9 +77,18 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
   const phoneValid = phoneDigits.length === 11;
   const emailRe = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
   const emailValid = emailRe.test(email.trim());
+  const today = new Date().toISOString().slice(0, 10);
+  const ageYears = (() => {
+    if (!birthDate) return null;
+    const b = new Date(birthDate);
+    if (Number.isNaN(b.getTime()) || birthDate > today) return null;
+    const n = new Date();
+    return n.getFullYear() - b.getFullYear() - ((n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) ? 1 : 0);
+  })();
+  const birthOk = ageYears !== null && ageYears >= 14;
   const isValid = mode === "login"
     ? email.trim() && password
-    : name.trim() && handle.trim() && emailValid && password.length >= 6 && phoneValid;
+    : name.trim() && handle.trim() && emailValid && password.length >= 6 && phoneValid && !!birthDate && birthOk && consent;
 
   return (
     <div className="fixed inset-0 bg-black overflow-y-auto" style={{ maxWidth: 480, margin: "0 auto" }}>
@@ -158,6 +171,21 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
                 <p className="text-[11px] text-gray-400">По номеру тебя смогут найти друзья из контактов</p>
               )}
             </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Дата рождения <span className="text-[#fe2c55]">*</span></label>
+              <input
+                value={birthDate}
+                onChange={e => setBirthDate(e.target.value)}
+                type="date"
+                max={today}
+                className="w-full px-4 py-3 rounded-xl bg-gray-100 text-black text-sm outline-none focus:ring-2 focus:ring-[#8b5cf6]/30"
+              />
+              {birthDate && !birthOk ? (
+                <p className="text-[11px] text-[#fe2c55]">Регистрация доступна с 14 лет</p>
+              ) : (
+                <p className="text-[11px] text-gray-400">Нужна для возрастных ограничений контента</p>
+              )}
+            </div>
           </>
         )}
 
@@ -200,6 +228,23 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
           )}
         </div>
 
+        {mode === "register" && (
+          <label className="flex items-start gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={e => setConsent(e.target.checked)}
+              className="mt-0.5 w-4 h-4 accent-[#fe2c55] flex-shrink-0"
+            />
+            <span className="text-xs text-gray-500 leading-snug">
+              Принимаю{" "}
+              <button type="button" onClick={() => setLegalDoc("terms")} className="text-[#8b5cf6] font-semibold">условия использования</button>
+              {" "}и даю согласие на обработку персональных данных в соответствии с{" "}
+              <button type="button" onClick={() => setLegalDoc("privacy")} className="text-[#8b5cf6] font-semibold">политикой конфиденциальности</button>
+            </span>
+          </label>
+        )}
+
         {error && (
           <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
             <Icon name="AlertCircle" size={16} className="text-red-500 flex-shrink-0" />
@@ -233,6 +278,17 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
         )}
 
       </div>
+
+      {legalDoc && (
+        <div className="fixed inset-0 z-[9999] bg-gray-100">
+          <LegalScreen
+            onBack={() => setLegalDoc(null)}
+            title={legalDoc === "terms" ? "Условия использования" : "Политика конфиденциальности"}
+            settingKey={legalDoc === "terms" ? "terms_of_use" : "privacy_policy"}
+            fallback={legalDoc === "terms" ? "Используя приложение Look, вы соглашаетесь с нашими условиями использования." : "Мы уважаем вашу конфиденциальность."}
+          />
+        </div>
+      )}
 
       {showForgot && (
         <div className="fixed inset-0 z-[9999] bg-black/60 flex items-end sm:items-center justify-center" onClick={() => setShowForgot(false)}>

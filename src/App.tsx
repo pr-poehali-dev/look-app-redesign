@@ -15,6 +15,7 @@ import Icon from "@/components/ui/icon";
 import OfflineBanner from "@/components/OfflineBanner";
 
 const Index = lazy(() => import("./pages/Index"));
+import AgeGate from "./components/AgeGate";
 const MediaDeepLink = lazy(() => import("./components/MediaDeepLink"));
 const ArticleDeepLink = lazy(() => import("./components/profile/ArticleDeepLink"));
 const Admin = lazy(() => import("./pages/Admin"));
@@ -405,6 +406,7 @@ const AppContent = () => {
     <UserMediaProvider userId={user.id} token={token}>
       <UnreadProvider>
       <ThumbnailWorker />
+      <AgeGate />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<><Index /><ArticleDeepLink /><MediaDeepLink /></>} />

@@ -27,6 +27,9 @@ export interface Post {
   isVerified?: boolean;
   isAd?: boolean;
   adLabel?: string | null;
+  ageRating?: string | null;
+  adErid?: string | null;
+  adAdvertiser?: string | null;
   repostedBy?: string | null;
   repostedByAvatar?: string | null;
 }

@@ -1,3 +1,4 @@
+import ComplianceFields, { PublishCompliance } from "@/components/camera/ComplianceFields";
 import { useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Clip } from "./editorTypes";
@@ -70,6 +71,8 @@ interface Props {
   userId?: string;
   isAd: boolean;
   setIsAd: (v: boolean) => void;
+  compliance: PublishCompliance;
+  onComplianceChange: (v: PublishCompliance) => void;
 }
 
 const EditorPublishStep = ({
@@ -93,6 +96,8 @@ const EditorPublishStep = ({
   userId,
   isAd,
   setIsAd,
+  compliance,
+  onComplianceChange,
 }: Props) => {
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [addTab, setAddTab] = useState<"mine" | "partner" | "new">("mine");
@@ -227,22 +232,7 @@ const EditorPublishStep = ({
           />
         </div>
 
-        {/* Реклама / спонсорская публикация */}
-        <button
-          onClick={() => setIsAd(!isAd)}
-          className="w-full flex items-center justify-between bg-white/5 border border-white/10 rounded-xl px-3 py-3"
-        >
-          <div className="flex items-center gap-2.5">
-            <Icon name="Megaphone" size={16} className="text-white/70" />
-            <div className="text-left">
-              <p className="text-white text-sm font-medium">Это реклама</p>
-              <p className="text-white/40 text-xs">Публикация будет помечена как «Реклама» в ленте</p>
-            </div>
-          </div>
-          <div className={`w-10 h-6 rounded-full flex items-center px-0.5 transition-colors flex-shrink-0 ${isAd ? "bg-[#fe2c55]" : "bg-white/15"}`}>
-            <div className={`w-5 h-5 rounded-full bg-white transition-transform ${isAd ? "translate-x-4" : "translate-x-0"}`} />
-          </div>
-        </button>
+        <ComplianceFields isAd={isAd} setIsAd={setIsAd} value={compliance} onChange={onComplianceChange} />
 
         {/* Товары в кадре */}
         <div>

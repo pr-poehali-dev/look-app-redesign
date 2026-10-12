@@ -5,6 +5,7 @@ import UserAvatar from "@/components/ui/user-avatar";
 import { Post } from "./PostFeedTypes";
 import { Product } from "@/hooks/useProducts";
 import { Reader } from "@/components/profile/ArticlesScreen";
+import { useAuth } from "@/context/AuthContext";
 import { toPost } from "@/components/MediaDeepLink";
 import SearchVideoViewer from "./SearchVideoViewer";
 import UserProfileModal from "@/components/UserProfileModal";
@@ -46,6 +47,7 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
   const [videoHits, setVideoHits] = useState<VideoHit[]>([]);
   const [people, setPeople] = useState<PersonHit[]>([]);
   const [popularQueries, setPopularQueries] = useState<string[]>([]);
+  const { user } = useAuth();
   const [postHits, setPostHits] = useState<Post[]>([]);
   const [sort, setSort] = useState<"new" | "popular">("new");
   const [period, setPeriod] = useState<"all" | "day" | "week" | "month">("all");
@@ -90,7 +92,7 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
     setExtraLoading(true);
     const timeout = setTimeout(() => {
       const load = (kind: string) =>
-        fetch(`${SEARCH_URL}?kind=${kind}&sort=${sort}&period=${period}&q=${encodeURIComponent(q)}`)
+        fetch(`${SEARCH_URL}?kind=${kind}&sort=${sort}&period=${period}&q=${encodeURIComponent(q)}${user?.id ? `&user_id=${encodeURIComponent(String(user.id))}` : ""}`)
           .then((r) => r.json())
           .then((raw) => (typeof raw.body === "string" ? JSON.parse(raw.body) : raw))
           .catch(() => ({ items: [] }));
@@ -105,7 +107,7 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
       });
     }, 300);
     return () => { cancelled = true; clearTimeout(timeout); };
-  }, [query, sort, period]);
+  }, [query, sort, period, user?.id]);
 
   useEffect(() => {
     const q = query.trim();

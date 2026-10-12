@@ -142,6 +142,11 @@ const PostCard = ({ post }: { post: Post }) => {
                   {post.adLabel || "Реклама"}
                 </span>
               )}
+              {post.ageRating && (
+                <span className="px-1.5 py-0.5 rounded border border-white/25 text-white/60 text-[10px] font-semibold">
+                  {post.ageRating}
+                </span>
+              )}
               {isSelf ? null : !following ? (
                 <button
                   onClick={toggleFollow}
@@ -238,6 +243,11 @@ const PostCard = ({ post }: { post: Post }) => {
           )}
           {post.caption.length > 90 && expanded && (
             <button onClick={() => setExpanded(false)} className="text-white/40 text-[13px] ml-1">свернуть</button>
+          )}
+          {post.isAd && post.adErid && (
+            <p className="text-white/40 text-[11px] mt-1 break-all">
+              Реклама{post.adAdvertiser ? ` · ${post.adAdvertiser}` : ""} · erid: {post.adErid}
+            </p>
           )}
         </div>
 
