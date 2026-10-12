@@ -1977,7 +1977,7 @@ def handler(event: dict, context) -> dict:
                 mime = body.get('mime', 'audio/webm;codecs=opus')
                 audio_bytes = base64.b64decode(audio_b64)
 
-                yandex_key = os.environ.get('YANDEX_SPEECHKIT_KEY_V2') or os.environ.get('YANDEX_STT_API_KEY') or os.environ.get('YANDEX_SPEECHKIT_API_KEY')
+                yandex_key = os.environ.get('YANDEX_SPEECHKIT_KEY_V3') or os.environ.get('YANDEX_SPEECHKIT_KEY_V2') or os.environ.get('YANDEX_STT_API_KEY') or os.environ.get('YANDEX_SPEECHKIT_API_KEY')
                 errors = []
                 text = None
 
