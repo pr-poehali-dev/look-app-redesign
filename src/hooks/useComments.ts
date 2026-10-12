@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
+import { promptAuth } from "@/lib/promptAuth";
 import { useAuth } from "@/context/AuthContext";
-import { toast } from "sonner";
 import { getGuestId } from "@/lib/guestId";
 import { fetchCommentCount } from "@/lib/likesBatch";
 
@@ -90,7 +90,7 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
   }, [initialCount]);
 
   const send = useCallback(async (text: string, authorName?: string, parentId?: number | string | null) => {
-    if (!user) { toast("Зарегистрируйтесь, чтобы выполнять действия"); return; }
+    if (!user) { promptAuth(); return; }
     const trimmed = text.trim();
     if (!trimmed || !targetId) return;
     const finalName = authorName || userName;
@@ -142,7 +142,7 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
   }, [targetType, targetId, userId, userName, user]);
 
   const toggleLike = useCallback(async (commentId: number | string) => {
-    if (!user) { toast("Зарегистрируйтесь, чтобы выполнять действия"); return; }
+    if (!user) { promptAuth(); return; }
     setComments(prev => prev.map(c => c.id === commentId
       ? { ...c, liked: !c.liked, likes: c.likes + (c.liked ? -1 : 1) }
       : c));

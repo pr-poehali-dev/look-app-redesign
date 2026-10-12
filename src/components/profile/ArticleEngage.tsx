@@ -1,10 +1,10 @@
 import { useMemo, useRef, useState } from "react";
+import { promptAuth } from "@/lib/promptAuth";
 import Icon from "@/components/ui/icon";
 import { useLikes } from "@/hooks/useLikes";
 import { useComments, CommentItem } from "@/hooks/useComments";
 import { useSavedItem } from "@/hooks/useSaved";
 import { useAuth } from "@/context/AuthContext";
-import { toast } from "sonner";
 import ArticleShareSheet from "@/components/profile/ArticleShareSheet";
 
 const EMOJIS = ["😀", "😍", "🔥", "👏", "😮", "😢", "🙏", "👍", "❤️", "🏔️", "🌊", "📸"];
@@ -20,7 +20,7 @@ interface Props {
 const ArticleEngage = ({ articleId, title, cover, authorName, authorHandle }: Props) => {
   const { user } = useAuth();
   const guest = !user;
-  const needAuth = () => toast("Зарегистрируйтесь, чтобы ставить лайки, комментировать и сохранять");
+  const needAuth = () => promptAuth();
   const likes = useLikes("article", articleId);
   const { comments, count, send, toggleLike } = useComments("article", articleId, true);
   const payload = useMemo(() => ({ image: cover || "", title, handle: authorHandle || undefined }), [cover, title, authorHandle]);

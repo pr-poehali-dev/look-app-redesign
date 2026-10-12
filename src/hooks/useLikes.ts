@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import { promptAuth } from "@/lib/promptAuth";
 import { useAuth } from "@/context/AuthContext";
-import { toast } from "sonner";
 import { getGuestId } from "@/lib/guestId";
 import { fetchLikeCount } from "@/lib/likesBatch";
 
@@ -54,7 +54,7 @@ export const useLikes = (targetType: LikeTargetType, targetId: string | number, 
   }, [targetType, targetId, userId, key]);
 
   const toggle = useCallback(async () => {
-    if (!user) { toast("Зарегистрируйтесь, чтобы выполнять действия"); return; }
+    if (!user) { promptAuth(); return; }
     if (!targetId || inFlight.current) return;
     inFlight.current = true;
     const prev = likeCache.get(key) || { count, liked };

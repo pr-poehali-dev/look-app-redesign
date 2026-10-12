@@ -96,6 +96,11 @@ const AppContent = () => {
   const [verifyState, setVerifyState] = useState<"loading" | "ok" | "error">("loading");
   const [verifyError, setVerifyError] = useState<string>("");
   const [authMode, setAuthMode] = useState<"landing" | "login" | "register">("landing");
+  useEffect(() => {
+    const onOpenAuth = (e: Event) => setAuthMode(((e as CustomEvent).detail?.mode) || "login");
+    window.addEventListener("open-auth", onOpenAuth);
+    return () => window.removeEventListener("open-auth", onOpenAuth);
+  }, []);
 
   useEffect(() => {
     if (!verifyToken) return;

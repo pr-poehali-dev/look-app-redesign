@@ -1,16 +1,16 @@
 import { useMemo, useState } from "react";
+import { promptAuth } from "@/lib/promptAuth";
 import Icon from "@/components/ui/icon";
 import { Article } from "@/hooks/useArticles";
 import { useLikes } from "@/hooks/useLikes";
 import { useComments } from "@/hooks/useComments";
 import { useSavedItem } from "@/hooks/useSaved";
 import { useAuth } from "@/context/AuthContext";
-import { toast } from "sonner";
 import ArticleShareSheet from "@/components/profile/ArticleShareSheet";
 
 const ArticleCard = ({ a, onOpen }: { a: Article; onOpen: () => void }) => {
   const { user } = useAuth();
-  const needAuth = () => toast("Зарегистрируйтесь, чтобы ставить лайки и сохранять");
+  const needAuth = () => promptAuth();
   const likes = useLikes("article", a.id);
   const { count: commentCount } = useComments("article", a.id, false);
   const payload = useMemo(() => ({ image: a.cover_image || "", title: a.title, handle: a.author_handle || undefined }), [a]);

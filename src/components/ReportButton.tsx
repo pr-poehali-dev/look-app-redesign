@@ -1,6 +1,6 @@
 import { useState } from "react";
+import { promptAuth } from "@/lib/promptAuth";
 import Icon from "@/components/ui/icon";
-import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
 const ADMIN_API = "https://functions.poehali.dev/c578b52c-b9b6-47b3-9bcf-b6ab8405c4d7";
@@ -34,7 +34,7 @@ export default function ReportButton({ targetType, targetId, className, variant 
   const [openState, setOpenState] = useState(false);
   const open = variant === "controlled" ? !!openProp : openState;
   const setOpen = (v: boolean) => {
-    if (v && !user) { toast("Зарегистрируйтесь, чтобы выполнять действия"); if (variant === "controlled") onOpenChange?.(false); return; }
+    if (v && !user) { promptAuth(); if (variant === "controlled") onOpenChange?.(false); return; }
     if (variant === "controlled") onOpenChange?.(v);
     else setOpenState(v);
   };

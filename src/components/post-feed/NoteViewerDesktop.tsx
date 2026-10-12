@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { promptAuth } from "@/lib/promptAuth";
 import Icon from "@/components/ui/icon";
 import LinkifiedText from "@/components/ui/linkified-text";
 import UserAvatar from "@/components/ui/user-avatar";
@@ -57,7 +58,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
   const { comments, count: commentCount, send, toggleLike: toggleCommentLike } = useComments("post", post.id, true, post.comments || 0);
   const { muted, toggle: rawToggleMute } = useMutedAuthor(post.handle);
   const authUser = user;
-  const needAuth = () => { toast("Зарегистрируйтесь, чтобы выполнять действия"); };
+  const needAuth = () => { promptAuth(); };
   const toggleFollow = () => { if (!authUser) return needAuth(); rawToggleFollow(); };
   const toggleMute = () => { if (!authUser) { needAuth(); return muted; } return rawToggleMute(); };
   const [text, setText] = useState("");

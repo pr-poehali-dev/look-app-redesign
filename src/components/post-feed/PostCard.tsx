@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { promptAuth } from "@/lib/promptAuth";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import LinkifiedText from "@/components/ui/linkified-text";
@@ -45,7 +46,7 @@ const PostCard = ({ post }: { post: Post }) => {
 
   const { liked, count: likes, toggle: rawHandleLike } = useLikes("post", post.id, post.likes);
   const guest = !user;
-  const needAuth = () => { toast("Зарегистрируйтесь, чтобы выполнять действия"); };
+  const needAuth = () => { promptAuth(); };
   const handleLike = () => { if (guest) return needAuth(); rawHandleLike(); };
   const toggleSaved = () => { if (guest) return needAuth(); rawToggleSaved(); };
   const toggleFollow = () => { if (guest) return needAuth(); rawToggleFollow(); };
@@ -97,14 +98,14 @@ const PostCard = ({ post }: { post: Post }) => {
   };
 
   const startReply = (id: number | string, name: string) => {
-    if (!user) { toast("Зарегистрируйтесь, чтобы выполнять действия"); return; }
+    if (!user) { promptAuth(); return; }
     setReplyingTo({ id, name });
     setCommentText(`@${name} `);
     commentInputRef.current?.focus();
   };
 
   const goToChat = () => {
-    if (!user) { toast("Зарегистрируйтесь, чтобы выполнять действия"); return; }
+    if (!user) { promptAuth(); return; }
     window.dispatchEvent(new CustomEvent("open-direct-message", { detail: { handle: post.handle } }));
   };
 
@@ -373,7 +374,7 @@ const PostCard = ({ post }: { post: Post }) => {
                   <input
                     ref={commentInputRef}
                     readOnly={!user}
-                    onFocus={() => { if (!user) { commentInputRef.current?.blur(); toast("Зарегистрируйтесь, чтобы выполнять действия"); } }}
+                    onFocus={() => { if (!user) { commentInputRef.current?.blur(); promptAuth(); } }}
                     value={commentText}
                     onChange={e => setCommentText(e.target.value)}
                     placeholder="Написать комментарий..."

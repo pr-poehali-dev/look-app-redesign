@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
+import { promptAuth } from "@/lib/promptAuth";
 import { useAuth } from "@/context/AuthContext";
-import { toast } from "sonner";
 import { getGuestId } from "@/lib/guestId";
 
 const COMMENTS_URL = "https://functions.poehali.dev/4ceed9c1-422c-484e-806e-b3cc8af8b9ec";
@@ -91,7 +91,7 @@ export const useSavedItem = (type: SavedItemType, id: number | string, payload: 
   }, [type, id]);
 
   const toggle = useCallback(() => {
-    if (!user) { toast("Зарегистрируйтесь, чтобы выполнять действия"); return; }
+    if (!user) { promptAuth(); return; }
     const all = readAll();
     const k = keyOf(type, id);
     const exists = all.find(it => keyOf(it.type, it.id) === k);

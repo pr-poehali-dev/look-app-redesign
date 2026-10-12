@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { promptAuth } from "@/lib/promptAuth";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import LinkifiedText from "@/components/ui/linkified-text";
@@ -188,7 +189,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
   const handleDownload = async () => {
     if (downloading) return;
-    if (!user) { toast("Зарегистрируйтесь, чтобы выполнять действия"); return; }
+    if (!user) { promptAuth(); return; }
     const url = video.image;
     if (!url) return;
     setDownloading(true);
@@ -273,7 +274,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const { comments: allComments, count: commentCount, send: rawSend, toggleLike: rawToggleCommentLike } = useComments("video", video.id, showComments, initialCommentCount);
   const { liked, count: likeCount, toggle: rawToggleLike } = useLikes("video", video.id, initialLikeCount);
   const guest = !user;
-  const needAuth = () => { toast("Зарегистрируйтесь, чтобы выполнять действия"); };
+  const needAuth = () => { promptAuth(); };
   const toggleLike = () => { if (guest) return needAuth(); rawToggleLike(); };
   const toggleSaved = () => { if (guest) return needAuth(); rawToggleSaved(); };
   const toggleFollow = () => { if (guest) return needAuth(); rawToggleFollow(); };
@@ -385,7 +386,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   };
 
   const startReply = (id: number | string, name: string) => {
-    if (!user) { toast("Зарегистрируйтесь, чтобы выполнять действия"); return; }
+    if (!user) { promptAuth(); return; }
     setReplyingTo({ id, name });
     setCommentText(`@${name} `);
     commentInputRef.current?.focus();
@@ -755,7 +756,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             <button
               onClick={() => {
                 setShowMore(false);
-                if (!user) { toast("Зарегистрируйтесь, чтобы выполнять действия"); return; }
+                if (!user) { promptAuth(); return; }
                 setShowAddToBoard(true);
               }}
               className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3"
@@ -849,7 +850,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
             {/* Жалоба */}
             <button
-              onClick={() => { setShowMore(false); if (!user) { toast("Зарегистрируйтесь, чтобы выполнять действия"); return; } setShowReport(true); }}
+              onClick={() => { setShowMore(false); if (!user) { promptAuth(); return; } setShowReport(true); }}
               className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3"
             >
               <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
@@ -1134,7 +1135,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
                   <input
                     ref={commentInputRef}
                     readOnly={!user}
-                    onFocus={() => { if (!user) { commentInputRef.current?.blur(); toast("Зарегистрируйтесь, чтобы выполнять действия"); } }}
+                    onFocus={() => { if (!user) { commentInputRef.current?.blur(); promptAuth(); } }}
                     value={commentText}
                     onChange={e => setCommentText(e.target.value)}
                     placeholder="Написать комментарий..."
