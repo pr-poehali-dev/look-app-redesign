@@ -31,7 +31,7 @@ const PostProductStrip = ({ postId, products: given, className = "" }: Props) =>
             <div className="flex-1 min-w-0">
               <p className="text-white text-xs font-medium line-clamp-2 leading-snug">{p.title}</p>
               <div className="flex items-baseline gap-1.5 mt-1">
-                <span className="text-[#fe2c55] text-sm font-bold">{p.price.toLocaleString("ru-RU")} ₽</span>
+                <span className="text-[#fe2c55] text-sm font-bold">{p.price > 0 ? `${p.price.toLocaleString("ru-RU")} ₽` : "Бесплатно"}</span>
                 {p.old_price && p.old_price > p.price && (
                   <span className="text-white/40 text-[10px] line-through">{p.old_price.toLocaleString("ru-RU")}</span>
                 )}

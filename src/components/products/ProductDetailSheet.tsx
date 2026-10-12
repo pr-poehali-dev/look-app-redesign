@@ -97,7 +97,7 @@ const ProductDetailSheet = ({ product: p, videoId, onClose }: Props) => {
 
         <div className="px-4 pt-4 pb-6 flex flex-col gap-3">
           <div className="flex items-baseline gap-2">
-            <span className="text-[#fe2c55] text-2xl font-extrabold">{p.price.toLocaleString("ru-RU")} ₽</span>
+            <span className="text-[#fe2c55] text-2xl font-extrabold">{p.price > 0 ? `${p.price.toLocaleString("ru-RU")} ₽` : "Бесплатно"}</span>
             {discount > 0 && p.old_price && (
               <span className="text-white/40 text-sm line-through">{p.old_price.toLocaleString("ru-RU")} ₽</span>
             )}
