@@ -35,7 +35,7 @@ def _yandex_recognize(api_key: str, audio_bytes: bytes) -> str:
         params={'lang': 'ru-RU', 'format': 'lpcm', 'sampleRateHertz': '16000'},
         headers={'Authorization': f'Api-Key {api_key}'},
         data=audio_bytes,
-        timeout=25,
+        timeout=(3, 25),
     )
     if resp.status_code != 200:
         raise Exception(f'yandex stt {resp.status_code}: {resp.text[:300]}')
