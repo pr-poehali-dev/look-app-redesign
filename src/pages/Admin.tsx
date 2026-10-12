@@ -1332,7 +1332,7 @@ function Compliance({ token }: { token: string }) {
   const [noBirth, setNoBirth] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     setLoading(true);
     api("compliance_report", {}, token)
       .then((d) => {
@@ -1342,7 +1342,16 @@ function Compliance({ token }: { token: string }) {
       .finally(() => setLoading(false));
   }, [token]);
 
+  useEffect(() => { load(); }, [load]);
+
   const noErid = ads.filter((a) => !a.ad_erid).length;
+  const visibleNoErid = ads.filter((a) => !a.ad_erid && !a.hidden).length;
+
+  const hideNoErid = async () => {
+    if (!confirm(`Скрыть из ленты рекламные публикации без ERID: ${visibleNoErid}?`)) return;
+    await api("ads_hide_no_erid", {}, token);
+    load();
+  };
 
   return (
     <div className="space-y-4">
@@ -1371,6 +1380,14 @@ function Compliance({ token }: { token: string }) {
       <div className="bg-zinc-900 border border-white/10 rounded-2xl p-4 space-y-3">
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-semibold">Реклама и ERID</h3>
+          {visibleNoErid > 0 && (
+            <button
+              onClick={hideNoErid}
+              className="px-3 py-1.5 rounded-lg bg-[#fe2c55] text-white text-xs font-medium"
+            >
+              Скрыть без ERID ({visibleNoErid})
+            </button>
+          )}
           <button
             onClick={() => downloadCsv("ads.csv", [["ID", "Автор", "Рекламодатель", "ERID", "Возраст", "Скрыто", "Дата", "Описание"], ...ads.map((a) => [a.id, a.handle, a.ad_advertiser || "", a.ad_erid || "", a.age_rating, a.hidden ? "да" : "нет", a.created_at?.slice(0, 16), a.description || ""])])}
             disabled={ads.length === 0}
@@ -1390,6 +1407,7 @@ function Compliance({ token }: { token: string }) {
                   <p className="truncate">@{a.handle} · {a.ad_advertiser || "рекламодатель не указан"}</p>
                   <p className="text-xs text-white/40 truncate">{a.description || "—"}</p>
                 </div>
+                {a.hidden && <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0 bg-orange-500/20 text-orange-300">Скрыто</span>}
                 <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 break-all ${a.ad_erid ? "bg-emerald-500/20 text-emerald-300" : "bg-[#fe2c55]/20 text-[#fe2c55]"}`}>
                   {a.ad_erid ? `erid: ${a.ad_erid}` : "нет ERID"}
                 </span>

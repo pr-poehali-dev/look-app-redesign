@@ -995,6 +995,13 @@ def _route(cur, conn, action: str, body: dict) -> dict:
                                     'with_consent': with_consent, 'no_birth': no_birth},
                                    default=str, ensure_ascii=False)}
 
+    if action == 'ads_hide_no_erid':
+        _q(cur, "UPDATE {S}.videos SET hidden = TRUE, hidden_reason = 'no_erid' "
+                "WHERE is_ad = TRUE AND (ad_erid IS NULL OR ad_erid = '') AND (hidden IS NULL OR hidden = FALSE)")
+        n = cur.rowcount
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True, 'hidden': n})}
+
     if action == 'mod_words_list':
         _q(cur, "SELECT id, word FROM {S}.moderation_words ORDER BY word")
         return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'words': cur.fetchall()}, ensure_ascii=False)}
