@@ -29,20 +29,26 @@ _DISAPPEAR_INTERVALS = {
 
 
 def _yandex_recognize(api_key: str, audio_bytes: bytes) -> str:
-    """Распознаёт речь из PCM16 моно 16кГц аудио через Yandex SpeechKit STT."""
-    resp = requests.post(
-        'https://stt.api.cloud.yandex.net/speech/v1/stt:recognize',
-        params={'lang': 'ru-RU', 'format': 'lpcm', 'sampleRateHertz': '16000'},
-        headers={'Authorization': f'Api-Key {api_key}'},
-        data=audio_bytes,
-        timeout=(3, 25),
-    )
-    if resp.status_code != 200:
-        raise Exception(f'yandex stt {resp.status_code}: {resp.text[:300]}')
-    data = resp.json()
-    if data.get('error_code'):
-        raise Exception(f"yandex stt {data.get('error_code')}: {data.get('error_message', '')}")
-    return (data.get('result') or '').strip()
+    """Распознаёт речь из PCM16 моно 16кГц аудио через Yandex SpeechKit STT (с повтором при сбое)."""
+    last = None
+    for attempt in range(2):
+        resp = requests.post(
+            'https://stt.api.cloud.yandex.net/speech/v1/stt:recognize',
+            params={'lang': 'ru-RU', 'format': 'lpcm', 'sampleRateHertz': '16000', 'topic': 'general'},
+            headers={'Authorization': f'Api-Key {api_key}'},
+            data=audio_bytes,
+            timeout=(3, 12),
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get('error_code'):
+                raise Exception(f"yandex stt {data.get('error_code')}: {data.get('error_message', '')}")
+            return (data.get('result') or '').strip()
+        last = f'yandex stt {resp.status_code}: {resp.text[:300]}'
+        print('[transcribe]', last, 'bytes', len(audio_bytes))
+        if resp.status_code < 500:
+            break
+    raise Exception(last)
 
 
 SEED_COMMUNITIES = [
