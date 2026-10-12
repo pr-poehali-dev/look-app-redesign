@@ -289,7 +289,7 @@ const PostCard = ({ post }: { post: Post }) => {
         <div className="fixed inset-0 z-[9999] flex flex-col justify-end md:flex-row md:justify-end md:items-center md:bg-black/40" onClick={() => setShowMenu(false)}>
           <div className="sheet-theme rounded-t-3xl overflow-hidden pb-8 md:rounded-2xl md:pb-0 md:mr-6 md:w-[300px] md:shadow-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             {[
-              { icon: "Bookmark", label: saved ? "Убрать из сохранённых" : "Сохранить", action: () => { toggleSaved(); setShowMenu(false); }, active: saved },
+              { icon: "Bookmark", label: saved ? "Убрать из коллекции" : "Сохранить в коллекцию", action: () => { toggleSaved(); setShowMenu(false); }, active: saved },
               { icon: "Layers", label: "Добавить на доску", action: () => { setShowMenu(false); if (guest) return needAuth(); setShowAddToBoard(true); } },
               { icon: "User", label: "Перейти в профиль", action: () => { setShowMenu(false); window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: post.handle } })); } },
               { icon: muted ? "Bell" : "BellOff", label: muted ? "Включить уведомления" : "Выключить уведомления", action: () => { const nowMuted = toggleMute(); toast.success(nowMuted ? `Уведомления от @${post.handle} выключены` : `Уведомления от @${post.handle} включены`); setShowMenu(false); } },

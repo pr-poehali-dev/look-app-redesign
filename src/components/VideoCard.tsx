@@ -695,7 +695,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         </button>
 
         {/* Bookmark */}
-        <button onClick={toggleSaved} className="flex flex-col items-center gap-1" title="Сохранить в закладки">
+        <button onClick={toggleSaved} className="flex flex-col items-center gap-1" title="Сохранить в коллекцию">
           <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
             <Icon
               name="Bookmark"

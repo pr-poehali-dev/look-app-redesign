@@ -105,7 +105,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
   ];
 
   const menuItems = [
-    { icon: "Bookmark", label: saved ? "Убрать из сохранённых" : "Сохранить", action: () => toggleSaved(), active: saved },
+    { icon: "Bookmark", label: saved ? "Убрать из коллекции" : "Сохранить в коллекцию", action: () => toggleSaved(), active: saved },
     { icon: "Layers", label: "Добавить на доску", action: () => { if (!authUser) return needAuth(); setShowAddToBoard(true); } },
     { icon: "User", label: "Перейти в профиль", action: () => openProfile() },
     { icon: muted ? "Bell" : "BellOff", label: muted ? "Включить уведомления" : "Выключить уведомления", action: () => {
