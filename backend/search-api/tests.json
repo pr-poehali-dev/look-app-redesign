@@ -1,0 +1,5 @@
+{"tests": [
+{"name": "Search videos", "method": "GET", "path": "/?q=a&kind=video", "expectedStatus": 200},
+{"name": "Search people", "method": "GET", "path": "/?q=a&kind=people", "expectedStatus": 200},
+{"name": "Empty query", "method": "GET", "path": "/", "expectedStatus": 200}
+]}

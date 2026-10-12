@@ -16,7 +16,7 @@ const readParam = (): { kind: Kind; id: number } | null => {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toVideo = (v: any): VideoData => ({
+export const toVideo = (v: any): VideoData => ({
   id: v.id + 10000,
   dbId: v.id,
   image: v.url,

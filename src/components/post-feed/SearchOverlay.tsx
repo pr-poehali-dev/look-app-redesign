@@ -4,6 +4,13 @@ import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { Post } from "./PostFeedTypes";
 import { Product } from "@/hooks/useProducts";
+import SearchVideoViewer from "./SearchVideoViewer";
+import UserProfileModal from "@/components/UserProfileModal";
+
+const SEARCH_URL = "https://functions.poehali.dev/7f681f12-fcd3-45e4-aa45-38fccd3d0760";
+
+interface VideoHit { id: number; url: string; thumbnail: string | null; author: string; handle: string; description: string; likes: string }
+interface PersonHit { id: string; name: string; handle: string; avatar: string | null; is_verified: boolean }
 
 const PRODUCTS_URL = "https://functions.poehali.dev/c4d3aa37-b7c2-4047-880a-ab17127da315";
 
@@ -32,7 +39,12 @@ interface Props {
 const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>(readRecent);
-  const [resultTab, setResultTab] = useState<"posts" | "products">("posts");
+  const [resultTab, setResultTab] = useState<"posts" | "videos" | "people" | "products">("posts");
+  const [videoHits, setVideoHits] = useState<VideoHit[]>([]);
+  const [people, setPeople] = useState<PersonHit[]>([]);
+  const [extraLoading, setExtraLoading] = useState(false);
+  const [openVideoId, setOpenVideoId] = useState<number | null>(null);
+  const [openHandle, setOpenHandle] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -55,6 +67,27 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
         })
         .catch(() => { if (!cancelled) setProducts([]); })
         .finally(() => { if (!cancelled) setProductsLoading(false); });
+    }, 300);
+    return () => { cancelled = true; clearTimeout(timeout); };
+  }, [query]);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) { setVideoHits([]); setPeople([]); return; }
+    let cancelled = false;
+    setExtraLoading(true);
+    const timeout = setTimeout(() => {
+      const load = (kind: string) =>
+        fetch(`${SEARCH_URL}?kind=${kind}&q=${encodeURIComponent(q)}`)
+          .then((r) => r.json())
+          .then((raw) => (typeof raw.body === "string" ? JSON.parse(raw.body) : raw).items || [])
+          .catch(() => []);
+      Promise.all([load("video"), load("people")]).then(([v, p]) => {
+        if (cancelled) return;
+        setVideoHits(v);
+        setPeople(p);
+        setExtraLoading(false);
+      });
     }, 300);
     return () => { cancelled = true; clearTimeout(timeout); };
   }, [query]);
@@ -94,7 +127,7 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && commitSearch(query)}
-            placeholder="Поиск по постам, тегам, авторам"
+            placeholder="Поиск по постам, видео, людям"
             className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/40 min-w-0"
           />
           {query && (
@@ -117,6 +150,18 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
                 Посты {results.length > 0 ? `(${results.length})` : ""}
               </button>
               <button
+                onClick={() => setResultTab("videos")}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold ${resultTab === "videos" ? "bg-white text-black" : "bg-white/10 text-white/60"}`}
+              >
+                Видео {videoHits.length > 0 ? `(${videoHits.length})` : ""}
+              </button>
+              <button
+                onClick={() => setResultTab("people")}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold ${resultTab === "people" ? "bg-white text-black" : "bg-white/10 text-white/60"}`}
+              >
+                Люди {people.length > 0 ? `(${people.length})` : ""}
+              </button>
+              <button
                 onClick={() => setResultTab("products")}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 ${resultTab === "products" ? "bg-white text-black" : "bg-white/10 text-white/60"}`}
               >
@@ -125,7 +170,66 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
               </button>
             </div>
 
-            {resultTab === "posts" ? (
+            {resultTab === "videos" ? (
+              extraLoading && videoHits.length === 0 ? (
+                <div className="flex justify-center py-16">
+                  <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                </div>
+              ) : videoHits.length > 0 ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {videoHits.map((v) => (
+                    <button
+                      key={v.id}
+                      onClick={() => { commitSearch(query); setOpenVideoId(v.id); }}
+                      className="rounded-2xl overflow-hidden bg-white/5 text-left active:opacity-90"
+                    >
+                      <div className="relative aspect-[3/4] bg-white/10">
+                        {v.thumbnail && <img src={v.thumbnail} alt={v.description} className="w-full h-full object-cover" loading="lazy" />}
+                        <Icon name="Play" size={18} className="absolute bottom-2 left-2 text-white" />
+                      </div>
+                      <div className="p-2">
+                        <p className="text-white text-[12px] leading-snug line-clamp-2">{v.description || "Видео"}</p>
+                        <span className="text-white/40 text-[10px]">@{v.handle}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 gap-2">
+                  <Icon name="Video" size={32} className="text-white/20" />
+                  <p className="text-white/40 text-sm">Видео не найдены</p>
+                </div>
+              )
+            ) : resultTab === "people" ? (
+              extraLoading && people.length === 0 ? (
+                <div className="flex justify-center py-16">
+                  <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                </div>
+              ) : people.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {people.map((u) => (
+                    <button
+                      key={u.id}
+                      onClick={() => { commitSearch(query); setOpenHandle(u.handle); }}
+                      className="flex items-center gap-3 text-left"
+                    >
+                      <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
+                        <UserAvatar src={u.avatar || ""} name={u.name || u.handle} alt={u.name} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-white text-sm font-medium truncate">{u.name}</p>
+                        <p className="text-white/40 text-xs truncate">@{u.handle}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 gap-2">
+                  <Icon name="UserX" size={32} className="text-white/20" />
+                  <p className="text-white/40 text-sm">Люди не найдены</p>
+                </div>
+              )
+            ) : resultTab === "posts" ? (
               results.length > 0 ? (
                 <div className="flex gap-2 items-start">
                   {[0, 1].map((col) => (
@@ -248,6 +352,8 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
           </>
         )}
       </div>
+      {openVideoId !== null && <SearchVideoViewer id={openVideoId} onClose={() => setOpenVideoId(null)} />}
+      {openHandle && <UserProfileModal key={openHandle} handle={openHandle} onClose={() => setOpenHandle(null)} />}
     </div>,
     document.body
   );
