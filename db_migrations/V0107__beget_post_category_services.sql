@@ -1,0 +1,1 @@
+UPDATE t_p96441965_look_app_redesign.videos SET category = 'services' WHERE id = 436;
