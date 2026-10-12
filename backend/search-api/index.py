@@ -10,7 +10,7 @@ def esc(s: str) -> str:
 
 
 def handler(event: dict, context) -> dict:
-    """Поиск по видео и людям: ?q=текст&kind=video|people"""
+    """Поиск по видео и людям: ?q=текст&kind=video|people|article"""
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': {
             'Access-Control-Allow-Origin': '*',
@@ -36,6 +36,12 @@ def handler(event: dict, context) -> dict:
                 (pat, pat))
             items = [{'id': str(r[0]), 'name': r[1], 'handle': r[2], 'avatar': r[3], 'is_verified': bool(r[4])}
                      for r in cur.fetchall()]
+        elif kind == 'article':
+            cur.execute(
+                f"SELECT id, title, cover_image, views FROM {schema}.articles "
+                f"WHERE status = 'published' AND title ILIKE %s ORDER BY created_at DESC LIMIT 30",
+                (pat,))
+            items = [{'id': r[0], 'title': r[1], 'cover': r[2], 'views': r[3] or 0} for r in cur.fetchall()]
         else:
             cur.execute(
                 f"SELECT v.id, v.url, v.thumbnail, v.author, v.handle, v.description, v.likes "

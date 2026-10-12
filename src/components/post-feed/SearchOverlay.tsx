@@ -4,12 +4,14 @@ import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { Post } from "./PostFeedTypes";
 import { Product } from "@/hooks/useProducts";
+import { Reader } from "@/components/profile/ArticlesScreen";
 import SearchVideoViewer from "./SearchVideoViewer";
 import UserProfileModal from "@/components/UserProfileModal";
 
 const SEARCH_URL = "https://functions.poehali.dev/7f681f12-fcd3-45e4-aa45-38fccd3d0760";
 
 interface VideoHit { id: number; url: string; thumbnail: string | null; author: string; handle: string; description: string; likes: string }
+interface ArticleHit { id: number; title: string; cover: string | null; views: number }
 interface PersonHit { id: string; name: string; handle: string; avatar: string | null; is_verified: boolean }
 
 const PRODUCTS_URL = "https://functions.poehali.dev/c4d3aa37-b7c2-4047-880a-ab17127da315";
@@ -39,9 +41,11 @@ interface Props {
 const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>(readRecent);
-  const [resultTab, setResultTab] = useState<"posts" | "videos" | "people" | "products">("posts");
+  const [resultTab, setResultTab] = useState<"posts" | "videos" | "people" | "articles" | "products">("posts");
   const [videoHits, setVideoHits] = useState<VideoHit[]>([]);
   const [people, setPeople] = useState<PersonHit[]>([]);
+  const [articles, setArticles] = useState<ArticleHit[]>([]);
+  const [openArticleId, setOpenArticleId] = useState<number | null>(null);
   const [extraLoading, setExtraLoading] = useState(false);
   const [openVideoId, setOpenVideoId] = useState<number | null>(null);
   const [openHandle, setOpenHandle] = useState<string | null>(null);
@@ -73,7 +77,7 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
 
   useEffect(() => {
     const q = query.trim();
-    if (!q) { setVideoHits([]); setPeople([]); return; }
+    if (!q) { setVideoHits([]); setPeople([]); setArticles([]); return; }
     let cancelled = false;
     setExtraLoading(true);
     const timeout = setTimeout(() => {
@@ -82,10 +86,11 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
           .then((r) => r.json())
           .then((raw) => (typeof raw.body === "string" ? JSON.parse(raw.body) : raw).items || [])
           .catch(() => []);
-      Promise.all([load("video"), load("people")]).then(([v, p]) => {
+      Promise.all([load("video"), load("people"), load("article")]).then(([v, p, a]) => {
         if (cancelled) return;
         setVideoHits(v);
         setPeople(p);
+        setArticles(a);
         setExtraLoading(false);
       });
     }, 300);
@@ -162,6 +167,12 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
                 Люди {people.length > 0 ? `(${people.length})` : ""}
               </button>
               <button
+                onClick={() => setResultTab("articles")}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold ${resultTab === "articles" ? "bg-white text-black" : "bg-white/10 text-white/60"}`}
+              >
+                Статьи {articles.length > 0 ? `(${articles.length})` : ""}
+              </button>
+              <button
                 onClick={() => setResultTab("products")}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 ${resultTab === "products" ? "bg-white text-black" : "bg-white/10 text-white/60"}`}
               >
@@ -227,6 +238,35 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
                 <div className="flex flex-col items-center justify-center py-16 gap-2">
                   <Icon name="UserX" size={32} className="text-white/20" />
                   <p className="text-white/40 text-sm">Люди не найдены</p>
+                </div>
+              )
+            ) : resultTab === "articles" ? (
+              extraLoading && articles.length === 0 ? (
+                <div className="flex justify-center py-16">
+                  <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                </div>
+              ) : articles.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {articles.map((a) => (
+                    <button
+                      key={a.id}
+                      onClick={() => { commitSearch(query); setOpenArticleId(a.id); }}
+                      className="flex items-center gap-3 text-left"
+                    >
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 flex-shrink-0">
+                        {a.cover && <img src={a.cover} alt={a.title} className="w-full h-full object-cover" loading="lazy" />}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-white text-sm font-medium line-clamp-2">{a.title}</p>
+                        <p className="text-white/40 text-xs">{a.views} просмотров</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 gap-2">
+                  <Icon name="FileText" size={32} className="text-white/20" />
+                  <p className="text-white/40 text-sm">Статьи не найдены</p>
                 </div>
               )
             ) : resultTab === "posts" ? (
@@ -353,6 +393,11 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
         )}
       </div>
       {openVideoId !== null && <SearchVideoViewer id={openVideoId} onClose={() => setOpenVideoId(null)} />}
+      {openArticleId !== null && (
+        <div className="fixed inset-0 z-[9998] bg-white">
+          <Reader id={openArticleId} onBack={() => setOpenArticleId(null)} onEdit={() => setOpenArticleId(null)} />
+        </div>
+      )}
       {openHandle && <UserProfileModal key={openHandle} handle={openHandle} onClose={() => setOpenHandle(null)} />}
     </div>,
     document.body
