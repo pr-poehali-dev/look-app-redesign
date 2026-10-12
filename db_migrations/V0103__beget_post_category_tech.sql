@@ -1,0 +1,1 @@
+UPDATE t_p96441965_look_app_redesign.videos SET category = 'tech' WHERE id = 436;
