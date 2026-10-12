@@ -11,6 +11,7 @@ import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
 import ReportButton from "@/components/ReportButton";
 import { toast } from "sonner";
+import { copyText } from "@/lib/copyText";
 import { trackVideoView, markNotInterested, markMoreLikeThis, hideAuthor } from "@/hooks/useFeedSignals";
 import { useProductsByVideos, trackProductClick } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
@@ -901,7 +902,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           onClick={() => setShowShare(false)}
         >
           <div
-            className="sheet-theme rounded-t-3xl px-4 pt-5 pb-10 md:rounded-2xl md:pb-5 md:mr-6 md:w-[360px] md:shadow-2xl"
+            className="sheet-theme rounded-t-3xl px-4 pt-5 pb-10 md:rounded-2xl md:pb-5 md:mr-6 md:w-[360px] md:shadow-2xl max-h-[85vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-5">
@@ -960,7 +961,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             {/* Copy link */}
             <button
               onClick={() => {
-                navigator.clipboard.writeText(shareUrl).catch(() => {});
+                copyText(shareUrl);
                 setCopied(true);
                 setTimeout(() => { setCopied(false); setShowShare(false); }, 1500);
               }}

@@ -14,6 +14,7 @@ import { useUserMedia } from "@/context/UserMediaContext";
 import { useProductsByVideos, trackProductClick, Product } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
+import { copyText } from "@/lib/copyText";
 import ReportButton from "@/components/ReportButton";
 import AddToBoardSheet from "@/components/products/AddToBoardSheet";
 import PostProductStrip from "@/components/products/PostProductStrip";
@@ -300,13 +301,13 @@ const PostCard = ({ post }: { post: Post }) => {
       {/* Menu popup */}
       {showMenu && createPortal(
         <div className="fixed inset-0 z-[9999] flex flex-col justify-end md:flex-row md:justify-end md:items-center md:bg-black/40" onClick={() => setShowMenu(false)}>
-          <div className="sheet-theme rounded-t-3xl overflow-hidden pb-8 md:rounded-2xl md:pb-0 md:mr-6 md:w-[300px] md:shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="sheet-theme rounded-t-3xl overflow-hidden pb-8 md:rounded-2xl md:pb-0 md:mr-6 md:w-[300px] md:shadow-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             {[
               { icon: "Bookmark", label: saved ? "Убрать из сохранённых" : "Сохранить", action: () => { toggleSaved(); setShowMenu(false); }, active: saved },
               { icon: "Layers", label: "Добавить на доску", action: () => { setShowMenu(false); if (guest) return needAuth(); setShowAddToBoard(true); } },
               { icon: "User", label: "Перейти в профиль", action: () => { setShowMenu(false); window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: post.handle } })); } },
               { icon: muted ? "Bell" : "BellOff", label: muted ? "Включить уведомления" : "Выключить уведомления", action: () => { const nowMuted = toggleMute(); toast.success(nowMuted ? `Уведомления от @${post.handle} выключены` : `Уведомления от @${post.handle} включены`); setShowMenu(false); } },
-              { icon: "Link", label: "Скопировать ссылку", action: () => { navigator.clipboard.writeText(shareUrl).catch(() => {}); setShowMenu(false); } },
+              { icon: "Link", label: "Скопировать ссылку", action: () => { copyText(shareUrl); setShowMenu(false); } },
               { icon: "Share2", label: "Поделиться", action: () => { setShowMenu(false); setShowShare(true); } },
               { icon: "Flag", label: "Пожаловаться", action: () => { setShowMenu(false); if (guest) return needAuth(); setShowReport(true); } },
             ].map((item, i) => (
@@ -408,7 +409,7 @@ const PostCard = ({ post }: { post: Post }) => {
       {/* Share popup */}
       {showShare && createPortal(
         <div className="fixed inset-0 z-[9999] flex flex-col justify-end md:flex-row md:justify-end md:items-center md:bg-black/40" onClick={() => setShowShare(false)}>
-          <div className="sheet-theme rounded-t-3xl px-4 pt-5 pb-10 md:rounded-2xl md:pb-5 md:mr-6 md:w-[360px] md:shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="sheet-theme rounded-t-3xl px-4 pt-5 pb-10 md:rounded-2xl md:pb-5 md:mr-6 md:w-[360px] md:shadow-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
               <span className="text-white font-bold text-base">Поделиться</span>
               <button onClick={() => setShowShare(false)}>
@@ -456,7 +457,7 @@ const PostCard = ({ post }: { post: Post }) => {
             )}
 
             <button
-              onClick={() => { navigator.clipboard.writeText(shareUrl).catch(() => {}); setCopied(true); setTimeout(() => { setCopied(false); setShowShare(false); }, 1500); }}
+              onClick={() => { copyText(shareUrl); setCopied(true); setTimeout(() => { setCopied(false); setShowShare(false); }, 1500); }}
               className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3"
             >
               <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
