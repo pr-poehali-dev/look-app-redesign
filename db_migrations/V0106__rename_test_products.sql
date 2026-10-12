@@ -1,0 +1,2 @@
+UPDATE t_p96441965_look_app_redesign.products SET title = 'Игровая клавиатура с подсветкой', description = 'Механическая клавиатура с RGB-подсветкой для игр и работы.', category = 'electronics', updated_at = now() WHERE id = 1;
+UPDATE t_p96441965_look_app_redesign.products SET title = 'Filmora — программа для видеомонтажа', description = 'Видеоредактор для монтажа роликов: нарезка, переходы, эффекты, титры.', category = 'services', updated_at = now() WHERE id = 2;
