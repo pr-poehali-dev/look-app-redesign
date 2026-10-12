@@ -4,6 +4,7 @@ import { useLikes } from "@/hooks/useLikes";
 import { useComments, CommentItem } from "@/hooks/useComments";
 import { useSavedItem } from "@/hooks/useSaved";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 import ArticleShareSheet from "@/components/profile/ArticleShareSheet";
 
 const EMOJIS = ["😀", "😍", "🔥", "👏", "😮", "😢", "🙏", "👍", "❤️", "🏔️", "🌊", "📸"];
@@ -18,6 +19,8 @@ interface Props {
 
 const ArticleEngage = ({ articleId, title, cover, authorName, authorHandle }: Props) => {
   const { user } = useAuth();
+  const guest = !user;
+  const needAuth = () => toast("Зарегистрируйтесь, чтобы ставить лайки, комментировать и сохранять");
   const likes = useLikes("article", articleId);
   const { comments, count, send, toggleLike } = useComments("article", articleId, true);
   const payload = useMemo(() => ({ image: cover || "", title, handle: authorHandle || undefined }), [cover, title, authorHandle]);
@@ -38,6 +41,7 @@ const ArticleEngage = ({ articleId, title, cover, authorName, authorHandle }: Pr
     setOpenReplies((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   const submit = async () => {
+    if (guest) { needAuth(); return; }
     if (!text.trim()) return;
     const t = text;
     const parent = replyTo?.id ?? null;
@@ -66,10 +70,10 @@ const ArticleEngage = ({ articleId, title, cover, authorName, authorHandle }: Pr
         <p className="text-black text-sm whitespace-pre-wrap break-words">{c.text}</p>
         <p className="text-gray-400 text-xs mt-0.5 flex gap-3">
           <span>{c.time}</span>
-          <button onClick={() => reply(c)} className="font-semibold">Ответить</button>
+          <button onClick={() => (guest ? needAuth() : reply(c))} className="font-semibold">Ответить</button>
         </p>
       </div>
-      <button onClick={() => toggleLike(c.id)} className="flex flex-col items-center gap-0.5 self-start pt-1">
+      <button onClick={() => (guest ? needAuth() : toggleLike(c.id))} className="flex flex-col items-center gap-0.5 self-start pt-1">
         <Icon name="Heart" size={16} className={c.liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-gray-400"} />
         <span className="text-gray-400 text-[10px]">{c.likes}</span>
       </button>
@@ -120,6 +124,8 @@ const ArticleEngage = ({ articleId, title, cover, authorName, authorHandle }: Pr
           <div className="flex-1 min-w-0 flex items-center rounded-full bg-gray-100 pl-4 pr-1.5">
             <input
               ref={inputRef}
+              readOnly={guest}
+              onFocus={() => { if (guest) { inputRef.current?.blur(); needAuth(); } }}
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
@@ -130,14 +136,14 @@ const ArticleEngage = ({ articleId, title, cover, authorName, authorHandle }: Pr
             {text.trim() ? (
               <button onClick={submit} className="px-3 py-1 rounded-full bg-[#fe2c55] text-white text-xs font-semibold">Отправить</button>
             ) : (
-              <button onClick={() => setShowEmoji((v) => !v)} className="p-1.5"><Icon name="Smile" size={20} className="text-gray-500" /></button>
+              <button onClick={() => (guest ? needAuth() : setShowEmoji((v) => !v))} className="p-1.5"><Icon name="Smile" size={20} className="text-gray-500" /></button>
             )}
           </div>
-          <button onClick={likes.toggle} className="flex items-center gap-1 active:scale-95 transition-transform">
+          <button onClick={guest ? needAuth : likes.toggle} className="flex items-center gap-1 active:scale-95 transition-transform">
             <Icon name="Heart" size={24} className={likes.liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-black"} />
             <span className="text-black text-xs font-semibold">{likes.count}</span>
           </button>
-          <button onClick={save.toggle} className="active:scale-95 transition-transform">
+          <button onClick={guest ? needAuth : save.toggle} className="active:scale-95 transition-transform">
             <Icon name="Bookmark" size={24} className={save.saved ? "text-[#fe2c55] fill-[#fe2c55]" : "text-black"} />
           </button>
           <button onClick={() => listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} className="flex items-center gap-1 active:scale-95 transition-transform">
