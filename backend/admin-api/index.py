@@ -1015,6 +1015,19 @@ def _route(cur, conn, action: str, body: dict) -> dict:
                                     'with_consent': with_consent, 'no_birth': no_birth},
                                    default=str, ensure_ascii=False)}
 
+    if action == 'users_no_birth':
+        limit = _safe_int(body.get('limit'), 100, 300)
+        offset = _safe_int(body.get('offset'), 0)
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.app_users WHERE birth_date IS NULL")
+        total = cur.fetchone()['c']
+        _q(cur, """
+            SELECT id, name, handle, email, avatar, created_at
+            FROM {S}.app_users WHERE birth_date IS NULL
+            ORDER BY created_at DESC NULLS LAST LIMIT %s OFFSET %s
+        """, (limit, offset))
+        return {'statusCode': 200, 'headers': _cors(),
+                'body': json.dumps({'users': cur.fetchall(), 'total': total}, default=str, ensure_ascii=False)}
+
     if action == 'ads_hide_no_erid':
         _q(cur, "UPDATE {S}.videos SET hidden = TRUE, hidden_reason = 'no_erid' "
                 "WHERE is_ad = TRUE AND (ad_erid IS NULL OR ad_erid = '') AND (hidden IS NULL OR hidden = FALSE)")
