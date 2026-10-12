@@ -125,7 +125,7 @@ const MediaViewer = ({ items, startIndex, onClose, onDelete, isRepostView, count
           <StatItem icon="Eye" value={counts?.views[String(item.id)] || 0} label="Просмотры" />
           <StatItem icon="Heart" value={counts?.likes[String(item.id)] || 0} label="Лайки" />
           <StatItem icon="MessageCircle" value={counts?.comments[String(item.id)] || 0} label="Комментарии" />
-          <StatItem icon="Bookmark" value={counts?.saves[String(item.id)] || 0} label="Сохранения" />
+          <StatItem icon="Bookmark" value={counts?.saves[String(item.id)] || 0} label="В коллекциях" />
           <StatItem icon="Download" value={counts?.downloads[String(item.id)] || 0} label="Скачивания" />
         </div>
         <button
