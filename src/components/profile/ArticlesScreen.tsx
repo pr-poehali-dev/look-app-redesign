@@ -24,6 +24,17 @@ export const Reader = ({ id, onBack, onEdit }: { id: number; onBack: () => void;
   const [a, setA] = useState<Article | null>(null);
   useEffect(() => { fetchArticle(id).then(setA); }, [id]);
   const { following, toggle: toggleFollow, isSelf } = useFollowing(a?.author_handle || "");
+  const [done, setDone] = useState<number[]>([]);
+  useEffect(() => {
+    try { setDone(JSON.parse(localStorage.getItem(`tutorial_done_${id}`) || "[]")); } catch { setDone([]); }
+  }, [id]);
+  const toggleStep = (i: number) => {
+    const next = done.includes(i) ? done.filter((x) => x !== i) : [...done, i];
+    setDone(next);
+    try { localStorage.setItem(`tutorial_done_${id}`, JSON.stringify(next)); } catch { /* ignore */ }
+  };
+  const total = a?.steps?.length || 0;
+  const doneCount = done.filter((i) => i < total).length;
   return (
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
       <Header title={a?.kind === "tutorial" ? "Туториал" : "Статья"} onBack={onBack} right={a && a.owner_user_id === user?.id ? (
@@ -77,9 +88,34 @@ export const Reader = ({ id, onBack, onEdit }: { id: number; onBack: () => void;
                     </ul>
                   </div>
                 )}
+                {total > 0 && (
+                  <div className="sticky top-14 z-10 bg-white py-2">
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-gray-500 font-semibold">Выполнено {doneCount} из {total}</span>
+                      {doneCount > 0 && (
+                        <button
+                          onClick={() => { setDone([]); try { localStorage.removeItem(`tutorial_done_${id}`); } catch { /* ignore */ } }}
+                          className="text-gray-400"
+                        >
+                          Сбросить
+                        </button>
+                      )}
+                    </div>
+                    <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                      <div className="h-full bg-black transition-all" style={{ width: `${(doneCount / total) * 100}%` }} />
+                    </div>
+                  </div>
+                )}
                 {(a.steps || []).map((st, i) => (
-                  <div key={i} className="flex gap-3">
-                    <span className="w-8 h-8 rounded-full bg-black text-white text-sm font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                  <div key={i} className={`flex gap-3 ${done.includes(i) ? "opacity-60" : ""}`}>
+                    <button
+                      type="button"
+                      onClick={() => toggleStep(i)}
+                      aria-label={done.includes(i) ? "Снять отметку" : "Отметить выполненным"}
+                      className={`w-8 h-8 rounded-full text-sm font-bold flex items-center justify-center flex-shrink-0 ${done.includes(i) ? "bg-green-600 text-white" : "bg-black text-white"}`}
+                    >
+                      {done.includes(i) ? <Icon name="Check" size={16} /> : i + 1}
+                    </button>
                     <div className="flex-1 min-w-0 flex flex-col gap-2">
                       {st.title && <p className="text-black font-bold text-base leading-snug">{st.title}</p>}
                       {st.text && <p className="text-black text-[15px] leading-relaxed whitespace-pre-wrap">{st.text}</p>}
