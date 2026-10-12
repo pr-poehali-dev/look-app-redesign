@@ -4,7 +4,7 @@ import { useLikes } from "@/hooks/useLikes";
 import { useComments, CommentItem } from "@/hooks/useComments";
 import { useSavedItem } from "@/hooks/useSaved";
 import { useAuth } from "@/context/AuthContext";
-import { toast } from "sonner";
+import ArticleShareSheet from "@/components/profile/ArticleShareSheet";
 
 const EMOJIS = ["😀", "😍", "🔥", "👏", "😮", "😢", "🙏", "👍", "❤️", "🏔️", "🌊", "📸"];
 
@@ -23,6 +23,7 @@ const ArticleEngage = ({ articleId, title, cover, authorName, authorHandle }: Pr
   const payload = useMemo(() => ({ image: cover || "", title, handle: authorHandle || undefined }), [cover, title, authorHandle]);
   const save = useSavedItem("article", articleId, payload);
   const [text, setText] = useState("");
+  const [showShare, setShowShare] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [replyTo, setReplyTo] = useState<{ id: number | string; name: string } | null>(null);
   const [openReplies, setOpenReplies] = useState<Set<number | string>>(new Set());
@@ -45,16 +46,6 @@ const ArticleEngage = ({ articleId, title, cover, authorName, authorHandle }: Pr
     setShowEmoji(false);
     if (parent) setOpenReplies((prev) => new Set(prev).add(parent));
     await send(t, user?.name, parent);
-  };
-
-  const share = async () => {
-    const url = window.location.origin;
-    if (navigator.share) {
-      try { await navigator.share({ title, url }); } catch { /* отмена */ }
-    } else {
-      await navigator.clipboard.writeText(url);
-      toast.success("Ссылка скопирована");
-    }
   };
 
   const reply = (c: CommentItem) => {
@@ -147,17 +138,18 @@ const ArticleEngage = ({ articleId, title, cover, authorName, authorHandle }: Pr
             <span className="text-black text-xs font-semibold">{likes.count}</span>
           </button>
           <button onClick={save.toggle} className="active:scale-95 transition-transform">
-            <Icon name="Star" size={24} className={save.saved ? "text-yellow-500 fill-yellow-500" : "text-black"} />
+            <Icon name="Bookmark" size={24} className={save.saved ? "text-[#fe2c55] fill-[#fe2c55]" : "text-black"} />
           </button>
           <button onClick={() => listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} className="flex items-center gap-1 active:scale-95 transition-transform">
             <Icon name="MessageCircle" size={24} className="text-black" />
             <span className="text-black text-xs font-semibold">{count}</span>
           </button>
-          <button onClick={share} className="active:scale-95 transition-transform">
-            <Icon name="Share2" size={22} className="text-black" />
+          <button onClick={() => setShowShare(true)} className="active:scale-95 transition-transform">
+            <Icon name="ShareForward" size={24} className="text-black" />
           </button>
         </div>
       </div>
+      {showShare && <ArticleShareSheet title={title} authorName={authorName} onClose={() => setShowShare(false)} />}
     </>
   );
 };

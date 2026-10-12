@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { useArticles } from "@/hooks/useArticles";
+import ArticleCard from "@/components/post-feed/ArticleCard";
 import { Reader } from "@/components/profile/ArticlesScreen";
 
 const ArticlesFeed = ({ topPad }: { topPad: number }) => {
@@ -22,14 +23,7 @@ const ArticlesFeed = ({ topPad }: { topPad: number }) => {
         ) : (
           <div className="flex flex-col gap-3">
             {articles.map((a) => (
-              <button key={a.id} onClick={() => setOpenedId(a.id)} className="text-left rounded-2xl overflow-hidden bg-white/5 border border-white/10">
-                {a.cover_image && <img src={a.cover_image} alt="" className="w-full h-44 object-cover" loading="lazy" />}
-                <div className="p-3 flex flex-col gap-1">
-                  <p className="text-white font-bold text-base leading-snug line-clamp-2">{a.title}</p>
-                  <p className="text-white/60 text-sm line-clamp-2">{a.body}</p>
-                  <p className="text-white/40 text-[11px] pt-1">{a.author_name} · {a.read_minutes} мин · {a.views} просм.</p>
-                </div>
-              </button>
+              <ArticleCard key={a.id} a={a} onOpen={() => setOpenedId(a.id)} />
             ))}
           </div>
         )}
