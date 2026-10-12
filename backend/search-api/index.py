@@ -106,7 +106,7 @@ def handler(event: dict, context) -> dict:
     kind = params.get('kind', 'video')
     sort = params.get('sort', 'new')
     period = params.get('period', 'all')
-    if not q:
+    if not q and kind != 'trending':
         return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'items': []})}
 
     schema = os.environ['MAIN_DB_SCHEMA']
@@ -114,6 +114,19 @@ def handler(event: dict, context) -> dict:
     cur = conn.cursor()
     fuzzy = False
     try:
+        if kind == 'log':
+            qn = ' '.join(q.lower().split())[:60]
+            if len(qn) >= 2 and not qn.startswith('-'):
+                cur.execute(f"INSERT INTO {schema}.search_queries (query) VALUES (%s)", (qn,))
+                conn.commit()
+            return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'ok': True})}
+
+        if kind == 'trending':
+            cur.execute(
+                f"SELECT query, COUNT(*) c FROM {schema}.search_queries "
+                f"WHERE created_at > NOW() - INTERVAL '7 days' GROUP BY query ORDER BY c DESC, MAX(created_at) DESC LIMIT 10")
+            return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'trending': [r[0] for r in cur.fetchall()]})}
+
         if kind == 'suggest':
             last = q.split()[-1].lstrip('#-"').lower()
             out = []

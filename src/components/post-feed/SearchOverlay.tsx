@@ -45,6 +45,7 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
   const [resultTab, setResultTab] = useState<"posts" | "videos" | "people" | "articles" | "products">("posts");
   const [videoHits, setVideoHits] = useState<VideoHit[]>([]);
   const [people, setPeople] = useState<PersonHit[]>([]);
+  const [popularQueries, setPopularQueries] = useState<string[]>([]);
   const [postHits, setPostHits] = useState<Post[]>([]);
   const [sort, setSort] = useState<"new" | "popular">("new");
   const [period, setPeriod] = useState<"all" | "day" | "week" | "month">("all");
@@ -122,6 +123,13 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
     return () => { cancelled = true; clearTimeout(timeout); };
   }, [query, showSuggest]);
 
+  useEffect(() => {
+    fetch(`${SEARCH_URL}?kind=trending`)
+      .then((r) => r.json())
+      .then((raw) => setPopularQueries((typeof raw.body === "string" ? JSON.parse(raw.body) : raw).trending || []))
+      .catch(() => {});
+  }, []);
+
   const applySuggestion = (sg: string) => {
     const words = query.trim().split(/\s+/);
     words[words.length - 1] = sg;
@@ -137,9 +145,12 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
 
   const results = postHits;
 
+  const trendList = Array.from(new Set([...popularQueries, ...trending])).slice(0, 12);
+
   const commitSearch = (q: string) => {
     const trimmed = q.trim();
     if (!trimmed) return;
+    fetch(`${SEARCH_URL}?kind=log&q=${encodeURIComponent(trimmed)}`).catch(() => {});
     const next = [trimmed, ...recent.filter((r) => r !== trimmed)];
     setRecent(next);
     writeRecent(next);
@@ -400,18 +411,18 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
                 <span className="text-white/50 text-xs font-semibold uppercase tracking-wide">В тренде</span>
               </div>
               <div className="flex flex-col gap-0.5">
-                {trending.map((tag, i) => (
+                {trendList.map((tag, i) => (
                   <button
                     key={tag}
                     onClick={() => setQuery(tag)}
                     className="flex items-center gap-3 py-2.5 active:bg-white/5 rounded-xl px-1"
                   >
                     <span className={`text-sm font-bold w-5 text-center ${i < 3 ? "text-[#fe2c55]" : "text-white/30"}`}>{i + 1}</span>
-                    <span className="text-white text-sm flex-1 text-left">#{tag}</span>
+                    <span className="text-white text-sm flex-1 text-left">{popularQueries.includes(tag) ? tag : `#${tag}`}</span>
                     <Icon name="Flame" size={14} className={i < 3 ? "text-[#fe2c55]" : "text-white/20"} />
                   </button>
                 ))}
-                {trending.length === 0 && (
+                {trendList.length === 0 && (
                   <p className="text-white/30 text-sm">Пока нет трендовых тегов</p>
                 )}
               </div>
