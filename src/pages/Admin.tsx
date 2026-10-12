@@ -461,8 +461,8 @@ function Users({ token }: { token: string }) {
               </div>
               <button
                 onClick={() => openBirth(u)}
-                title="Изменить дату рождения"
-                className="p-2 rounded-lg flex-shrink-0 text-cyan-400 hover:bg-cyan-400/10"
+                title={u.birth_date ? "Дата рождения указана. Изменить" : "Дата рождения не указана. Указать"}
+                className={`p-2 rounded-lg flex-shrink-0 ${u.birth_date ? "text-blue-500 hover:bg-blue-500/10" : "text-white/20 hover:bg-white/5"}`}
               >
                 <Icon name="CalendarClock" size={16} />
               </button>
