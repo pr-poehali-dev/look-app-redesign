@@ -1,4 +1,5 @@
 import { useState } from "react";
+import BirthDateInput from "@/components/ui/birth-date-input";
 import { useAuth } from "@/context/AuthContext";
 
 const AUTH_URL = "https://functions.poehali.dev/075d6280-020a-48ce-a5e4-64eb3291a01e";
@@ -10,8 +11,6 @@ const AgeGate = () => {
   const [error, setError] = useState("");
 
   if (!user || user.birth_set !== false) return null;
-
-  const today = new Date().toISOString().slice(0, 10);
 
   const submit = async () => {
     setError("");
@@ -39,11 +38,9 @@ const AgeGate = () => {
         <p className="text-gray-500 text-sm">
           По закону часть контента доступна только совершеннолетним. Дату рождения можно указать один раз, она нужна только для возрастных ограничений.
         </p>
-        <input
+        <BirthDateInput
           value={birthDate}
-          onChange={(e) => setBirthDate(e.target.value)}
-          type="date"
-          max={today}
+          onChange={setBirthDate}
           className="w-full px-4 py-3 rounded-xl bg-gray-100 text-black text-sm outline-none focus:ring-2 focus:ring-[#8b5cf6]/30"
         />
         {error && <p className="text-[#fe2c55] text-sm">{error}</p>}

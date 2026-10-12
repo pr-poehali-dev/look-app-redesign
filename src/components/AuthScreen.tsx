@@ -1,3 +1,4 @@
+import BirthDateInput from "@/components/ui/birth-date-input";
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { LegalScreen } from "@/components/SettingsScreen";
@@ -173,11 +174,9 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Дата рождения <span className="text-[#fe2c55]">*</span></label>
-              <input
+              <BirthDateInput
                 value={birthDate}
-                onChange={e => setBirthDate(e.target.value)}
-                type="date"
-                max={today}
+                onChange={setBirthDate}
                 className="w-full px-4 py-3 rounded-xl bg-gray-100 text-black text-sm outline-none focus:ring-2 focus:ring-[#8b5cf6]/30"
               />
               {birthDate && !birthOk ? (

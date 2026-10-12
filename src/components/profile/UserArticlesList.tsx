@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Article } from "@/hooks/useArticles";
 import { Reader } from "@/components/profile/ArticlesScreen";
@@ -10,8 +10,25 @@ interface Props {
   onEdit?: (a: Article) => void;
 }
 
+type Filter = "all" | "tutorial" | "article";
+type Sort = "new" | "popular";
+
 const UserArticlesList = ({ articles, loading, emptyText = "Пока нет статей", onEdit }: Props) => {
   const [openId, setOpenId] = useState<number | null>(null);
+  const [filter, setFilter] = useState<Filter>("all");
+  const [sort, setSort] = useState<Sort>("new");
+
+  const tutorialsCount = articles.filter((a) => a.kind === "tutorial").length;
+  const articlesCount = articles.length - tutorialsCount;
+
+  const visible = useMemo(() => {
+    const list = articles.filter((a) => filter === "all" || (filter === "tutorial" ? a.kind === "tutorial" : a.kind !== "tutorial"));
+    return [...list].sort((a, b) =>
+      sort === "popular"
+        ? (b.views || 0) - (a.views || 0)
+        : new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+    );
+  }, [articles, filter, sort]);
 
   if (openId !== null) {
     return (
@@ -38,9 +55,39 @@ const UserArticlesList = ({ articles, loading, emptyText = "Пока нет ст
     );
   }
 
+  const chips: { id: Filter; label: string; count: number }[] = [
+    { id: "all", label: "Все", count: articles.length },
+    { id: "tutorial", label: "Туториалы", count: tutorialsCount },
+    { id: "article", label: "Статьи", count: articlesCount },
+  ];
+
   return (
     <div className="bg-white px-3 py-3 flex flex-col gap-3">
-      {articles.map((a) => (
+      <div className="flex items-center gap-2">
+        <div className="flex-1 flex gap-1.5 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+          {chips.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => setFilter(c.id)}
+              disabled={c.count === 0 && c.id !== "all"}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold disabled:opacity-40 ${
+                filter === c.id ? "bg-black text-white" : "bg-gray-100 text-gray-600"
+              }`}
+            >
+              {c.label} · {c.count}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => setSort(sort === "new" ? "popular" : "new")}
+          className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 text-xs font-semibold"
+        >
+          <Icon name={sort === "new" ? "Clock" : "Flame"} size={13} />
+          {sort === "new" ? "Новые" : "Популярные"}
+        </button>
+      </div>
+
+      {visible.map((a) => (
         <button
           key={a.id}
           onClick={() => setOpenId(a.id)}
