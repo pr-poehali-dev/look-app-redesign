@@ -64,7 +64,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
   const handleRepost = async () => {
     if (reposting) return;
-    if (!user) { alert("Войди в аккаунт, чтобы делать репосты"); return; }
+    if (!user) { promptAuth(); return; }
     const targetId = video.dbId ?? video.id;
     setReposting(true);
     const nowReposted = await repostMedia(targetId);
@@ -624,8 +624,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
         {/* Comment */}
         <button
-          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowComments(true); }}
-          onClick={() => setShowComments(true)}
+          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); if (guest) return needAuth(); setShowComments(true); }}
+          onClick={() => { if (guest) return needAuth(); setShowComments(true); }}
           className="flex flex-col items-center gap-1"
           style={{ touchAction: "manipulation" }}
           title="Комментарии"
@@ -638,8 +638,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
         {/* Send / Share */}
         <button
-          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowShare(true); }}
-          onClick={() => setShowShare(true)}
+          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); if (guest) return needAuth(); setShowShare(true); }}
+          onClick={() => { if (guest) return needAuth(); setShowShare(true); }}
           className="flex flex-col items-center gap-1"
           style={{ touchAction: "manipulation" }}
           title="Поделиться"
@@ -652,8 +652,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
         {/* Ещё (в т.ч. сохранение в коллекцию) */}
         <button
-          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowMore(true); }}
-          onClick={() => setShowMore(true)}
+          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); if (guest) return needAuth(); setShowMore(true); }}
+          onClick={() => { if (guest) return needAuth(); setShowMore(true); }}
           className="flex flex-col items-center justify-center"
           style={{ touchAction: "manipulation" }}
           title="Ещё действия"
@@ -679,7 +679,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         </button>
 
         {/* Comment */}
-        <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1">
+        <button onClick={() => { if (guest) return needAuth(); setShowComments(true); }} className="flex flex-col items-center gap-1">
           <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
             <Icon name="MessageDots" size={24} className="action-icon-glyph" />
           </div>
@@ -687,7 +687,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         </button>
 
         {/* Share */}
-        <button onClick={() => setShowShare(true)} className="flex flex-col items-center gap-1">
+        <button onClick={() => { if (guest) return needAuth(); setShowShare(true); }} className="flex flex-col items-center gap-1">
           <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
             <Icon name="ShareForward" size={22} className="action-icon-glyph" />
           </div>
@@ -709,7 +709,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         </button>
 
         {/* Ещё */}
-        <button onClick={() => setShowMore(true)} className="flex flex-col items-center gap-1" title="Ещё действия">
+        <button onClick={() => { if (guest) return needAuth(); setShowMore(true); }} className="flex flex-col items-center gap-1" title="Ещё действия">
           <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
             <span className="action-count-text text-white text-xs font-semibold">Ещё</span>
           </div>
