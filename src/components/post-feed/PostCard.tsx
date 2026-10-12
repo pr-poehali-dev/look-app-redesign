@@ -10,7 +10,6 @@ import { useSavedItem } from "@/hooks/useSaved";
 import { useFollowing } from "@/hooks/useFollowing";
 import { useMutedAuthor } from "@/hooks/useMutedAuthors";
 import { useAuth } from "@/context/AuthContext";
-import { useUserMedia } from "@/context/UserMediaContext";
 import { useProductsByVideos, trackProductClick, Product } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
@@ -29,10 +28,6 @@ const PostCard = ({ post }: { post: Post }) => {
   });
   const { following, toggle: rawToggleFollow, isSelf } = useFollowing(post.handle);
   const { muted, toggle: rawToggleMute } = useMutedAuthor(post.handle);
-  const { repostMedia, isReposted } = useUserMedia();
-  const [reposting, setReposting] = useState(false);
-  const [repostResult, setRepostResult] = useState<"added" | "removed" | null>(null);
-  const alreadyReposted = isReposted(post.id);
   const [expanded, setExpanded] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showShare, setShowShare] = useState(false);
@@ -47,17 +42,6 @@ const PostCard = ({ post }: { post: Post }) => {
   const shareUrl = `${window.location.origin}/?post=${post.id}`;
   const [replyingTo, setReplyingTo] = useState<{ id: number | string; name: string } | null>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
-
-  const handleRepost = async () => {
-    if (reposting) return;
-    if (!user) { toast.error("Войди в аккаунт, чтобы делать репосты"); return; }
-    setReposting(true);
-    const nowReposted = await repostMedia(post.id);
-    setReposting(false);
-    setRepostResult(nowReposted ? "added" : "removed");
-    toast.success(nowReposted ? "Репостнуто к себе" : "Репост убран");
-    setTimeout(() => { setRepostResult(null); setShowShare(false); }, 1200);
-  };
 
   const { liked, count: likes, toggle: rawHandleLike } = useLikes("post", post.id, post.likes);
   const guest = !user;
@@ -418,15 +402,6 @@ const PostCard = ({ post }: { post: Post }) => {
               </button>
             </div>
 
-            <button
-              onClick={() => { copyText(shareUrl); setCopied(true); setTimeout(() => { setCopied(false); setShowShare(false); }, 1500); }}
-              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-5"
-            >
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                <Icon name={copied ? "Check" : "Link"} size={20} className={copied ? "text-green-400" : "text-white"} />
-              </div>
-              <span className="text-white text-sm font-medium">{copied ? "Скопировано!" : "Скопировать ссылку"}</span>
-            </button>
             <div className="grid grid-cols-4 gap-4 mb-6">
               {[
                 { icon: "MessageCircle", label: "Telegram", color: "#229ED9", href: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(`@${post.handle}: ${post.caption}`)}` },
@@ -443,29 +418,15 @@ const PostCard = ({ post }: { post: Post }) => {
               ))}
             </div>
 
-            {/* Repost */}
-            {!isSelf && (
-              <button
-                onClick={handleRepost}
-                disabled={reposting}
-                className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3 disabled:opacity-60"
-              >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${alreadyReposted && !repostResult ? "bg-white/10" : "bg-[#fe2c55]/20"}`}>
-                  <Icon
-                    name={repostResult ? "Check" : "Repeat2"}
-                    fallback="Repeat"
-                    size={20}
-                    className={repostResult === "added" ? "text-green-400" : repostResult === "removed" ? "text-white/60" : alreadyReposted ? "text-white/60" : "text-[#fe2c55]"}
-                  />
-                </div>
-                <div className="text-left">
-                  <p className="text-white text-sm font-medium">
-                    {repostResult === "added" ? "Готово!" : repostResult === "removed" ? "Убрано!" : reposting ? (alreadyReposted ? "Убираем…" : "Репостим…") : alreadyReposted ? "Убрать репост" : "Репост к себе"}
-                  </p>
-                  <p className="text-white/40 text-xs">{alreadyReposted && !repostResult ? "Уже в твоём профиле" : "Публикация появится в твоём профиле"}</p>
-                </div>
-              </button>
-            )}
+            <button
+              onClick={() => { copyText(shareUrl); setCopied(true); setTimeout(() => { setCopied(false); setShowShare(false); }, 1500); }}
+              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3"
+            >
+              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                <Icon name={copied ? "Check" : "Link"} size={20} className={copied ? "text-green-400" : "text-white"} />
+              </div>
+              <span className="text-white text-sm font-medium">{copied ? "Скопировано!" : "Скопировать ссылку"}</span>
+            </button>
 
           </div>
         </div>,
