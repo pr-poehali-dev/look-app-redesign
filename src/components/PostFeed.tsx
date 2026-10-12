@@ -202,8 +202,7 @@ const PostFeed = () => {
       return [...visiblePosts].sort((a, b) => score(b) - score(a));
     }
     const followed = new Set(followingHandles.map(h => h.toLowerCase()));
-    return visiblePosts
-      .filter(p => (p.handle || "").toLowerCase() !== myHandle)
+    return [...visiblePosts]
       .sort((a, b) => {
         const fa = followed.has((a.handle || "").toLowerCase()) ? 1 : 0;
         const fb = followed.has((b.handle || "").toLowerCase()) ? 1 : 0;
