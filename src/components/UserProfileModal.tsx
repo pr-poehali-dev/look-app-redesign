@@ -6,6 +6,8 @@ import { getAuthor } from "@/data/authors";
 import { useFollowing, useFollowerCount } from "@/hooks/useFollowing";
 import { useShopProducts } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
+import { useUserArticles } from "@/hooks/useArticles";
+import UserArticlesList from "@/components/profile/UserArticlesList";
 import ShopProductsGrid from "@/components/products/ShopProductsGrid";
 import { useUserBoards } from "@/hooks/useBoards";
 import BoardDetailScreen from "@/components/profile/BoardDetailScreen";
@@ -31,7 +33,7 @@ const UserProfileModal = ({ handle, initialTab = "media", onClose }: Props) => {
   const data = getAuthor(handle);
   const { following, toggle: toggleFollow, isSelf } = useFollowing(handle);
   const realFollowers = useFollowerCount(handle);
-  const [tab, setTab] = useState<"media" | "shop" | "boards" | "files" | "links">(initialTab);
+  const [tab, setTab] = useState<"media" | "articles" | "shop" | "boards" | "files" | "links">(initialTab);
   const [openedItem, setOpenedItem] = useState<number | null>(null);
   const [openedOrigin, setOpenedOrigin] = useState<DOMRect | null>(null);
   const [openedBoardId, setOpenedBoardId] = useState<number | null>(null);
@@ -39,6 +41,7 @@ const UserProfileModal = ({ handle, initialTab = "media", onClose }: Props) => {
   const [realUser, setRealUser] = useState<{ id: string; name: string; handle: string; avatar: string | null } | null>(null);
   const { products: shopProducts, loading: shopLoading } = useShopProducts(realUser?.id);
   const { boards: userBoards, loading: boardsLoading } = useUserBoards(realUser?.id);
+  const { articles: userArticles, loading: articlesLoading } = useUserArticles(realUser?.id);
   const { addToCart } = useCart();
   const [addingId, setAddingId] = useState<number | null>(null);
   const handleAddToCart = async (id: number) => {
@@ -277,6 +280,17 @@ const UserProfileModal = ({ handle, initialTab = "media", onClose }: Props) => {
             >
               Медиа
             </button>
+            {userArticles.length > 0 && (
+              <button
+                onClick={() => setTab("articles")}
+                className={`flex-1 py-3 text-sm font-medium border-b-2 transition-all flex items-center justify-center gap-1 ${
+                  tab === "articles" ? "border-[#2AABEE] text-[#2AABEE]" : "border-transparent text-gray-500"
+                }`}
+              >
+                <Icon name="FileText" size={14} />
+                Статьи · {userArticles.length}
+              </button>
+            )}
             {(shopProducts.length > 0 || initialTab === "shop") && (
               <button
                 onClick={() => setTab("shop")}
@@ -317,7 +331,9 @@ const UserProfileModal = ({ handle, initialTab = "media", onClose }: Props) => {
             </button>
           </div>
 
-          {tab === "shop" ? (
+          {tab === "articles" ? (
+            <UserArticlesList articles={userArticles} loading={articlesLoading} />
+          ) : tab === "shop" ? (
             shopLoading && shopProducts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 gap-3 bg-white">
                 <div className="w-8 h-8 border-2 border-[#2AABEE] border-t-transparent rounded-full animate-spin" />

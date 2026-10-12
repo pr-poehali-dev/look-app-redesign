@@ -63,6 +63,25 @@ export const useArticles = (mode: "feed" | "mine") => {
   return { articles, loading, refresh, remove };
 };
 
+export const useUserArticles = (userId?: string | null) => {
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!userId) { setArticles([]); return; }
+    let cancelled = false;
+    setLoading(true);
+    fetch(`${ARTICLES_URL}?action=user&user_id=${encodeURIComponent(userId)}`)
+      .then(parseBody)
+      .then((data) => { if (!cancelled) setArticles(data.articles || []); })
+      .catch(() => { if (!cancelled) setArticles([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  return { articles, loading };
+};
+
 export const fetchArticle = async (id: number): Promise<Article | null> => {
   try {
     const data = await parseBody(await fetch(`${ARTICLES_URL}?action=view&id=${id}`));

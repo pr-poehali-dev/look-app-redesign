@@ -8,6 +8,8 @@ import ShopScreen from "./profile/ShopScreen";
 import CatalogScreen from "./profile/CatalogScreen";
 import BoardsScreen from "./profile/BoardsScreen";
 import ArticlesScreen from "./profile/ArticlesScreen";
+import UserArticlesList from "./profile/UserArticlesList";
+import { useUserArticles } from "@/hooks/useArticles";
 import ReferralsScreen from "./profile/ReferralsScreen";
 import StoryViewerModal, { StoryViewerItem } from "./shared/StoryViewerModal";
 import { useUserMedia } from "@/context/UserMediaContext";
@@ -258,7 +260,7 @@ const VIDEO_CATEGORIES = [
 const categoryLabel = (id?: string) => VIDEO_CATEGORIES.find(c => c.id === id)?.label || "Без категории";
 
 const ProfilePage = () => {
-  const [tab, setTab] = useState<"videos" | "posts" | "reposts">("videos");
+  const [tab, setTab] = useState<"videos" | "posts" | "articles" | "reposts">("videos");
   const [showSettings, setShowSettings] = useState(false);
   const [showScreen, setShowScreen] = useState<"followers" | "following" | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -270,6 +272,7 @@ const ProfilePage = () => {
   const [showReferrals, setShowReferrals] = useState(false);
   const { userVideos: stories, removeMedia, addMedia, refreshMedia } = useUserMedia();
   const { user, token, logout, updateUser } = useAuth();
+  const { articles: myArticles, loading: myArticlesLoading } = useUserArticles(showArticles ? null : user?.id);
   const { theme, toggle: toggleTheme } = useTheme();
   const followingHandles = useFollowingList();
   const followersCount = useFollowerCount(user?.handle || "");
@@ -703,6 +706,16 @@ const ProfilePage = () => {
           </div>
         </button>
         <button
+          onClick={() => setTab("articles")}
+          className={`flex-1 flex items-center justify-center py-3 md:py-2 border-b-2 transition-all ${
+            tab === "articles" ? "border-[#8b5cf6]" : "border-transparent"
+          }`}
+        >
+          <div className={`w-8 h-8 md:w-7 md:h-7 rounded-lg flex items-center justify-center ${tab === "articles" ? "bg-[#8b5cf6]" : "bg-gray-200"}`}>
+            <Icon name="FileText" size={16} className={tab === "articles" ? "text-white" : "text-gray-400"} />
+          </div>
+        </button>
+        <button
           onClick={() => setTab("reposts")}
           className={`flex-1 flex items-center justify-center py-3 md:py-2 border-b-2 transition-all ${
             tab === "reposts" ? "border-[#8b5cf6]" : "border-transparent"
@@ -762,6 +775,16 @@ const ProfilePage = () => {
             </div>
           );
         })()
+      ) : tab === "articles" ? (
+        <div className="relative">
+          <button
+            onClick={() => setShowArticles(true)}
+            className="m-3 mb-0 px-4 py-2 rounded-xl bg-black text-white text-sm font-semibold flex items-center gap-1.5"
+          >
+            <Icon name="Plus" size={14} /> Написать статью или туториал
+          </button>
+          <UserArticlesList articles={myArticles} loading={myArticlesLoading} emptyText="Вы ещё не написали ни одной статьи" />
+        </div>
       ) : tab === "posts" ? (
         (() => {
           const photos = stories.filter(s => (s.type === "image" || s.type === "text") && !s.is_repost);
