@@ -368,6 +368,16 @@ const PostCard = ({ post }: { post: Post }) => {
                   </button>
                 </div>
               )}
+              {!user ? (
+                <div className="px-4 py-3">
+                  <button
+                    onClick={promptAuth}
+                    className="w-full rounded-full bg-white/10 px-4 py-2.5 text-center text-sm text-white/60"
+                  >
+                    <span className="font-bold text-[#fe2c55]">Войти</span>, чтобы прокомментировать
+                  </button>
+                </div>
+              ) : (
               <div className="flex items-center gap-3 px-4 py-3">
                 <div className="flex-1 flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
                   <input
@@ -385,6 +395,7 @@ const PostCard = ({ post }: { post: Post }) => {
                   <Icon name="Send" size={16} className="text-white" />
                 </button>
               </div>
+              )}
             </div>
           </div>
         </div>,
