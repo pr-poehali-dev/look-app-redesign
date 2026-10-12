@@ -16,7 +16,7 @@ export interface CommentItem {
   liked?: boolean;
 }
 
-export type TargetType = "video" | "post";
+export type TargetType = "video" | "post" | "article";
 
 const formatRelative = (iso: string | null | undefined): string => {
   if (!iso) return "сейчас";

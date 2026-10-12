@@ -5,7 +5,7 @@ import { fetchLikeCount } from "@/lib/likesBatch";
 
 const COMMENTS_URL = "https://functions.poehali.dev/4ceed9c1-422c-484e-806e-b3cc8af8b9ec";
 
-export type LikeTargetType = "video" | "post";
+export type LikeTargetType = "video" | "post" | "article";
 
 // Общее состояние лайков между всеми карточками одного поста/видео (лента, мозаика, полный просмотр)
 type LikeState = { count: number; liked: boolean };

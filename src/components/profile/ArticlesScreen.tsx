@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Article, fetchArticle, importArticleByUrl, saveArticle, useArticles } from "@/hooks/useArticles";
 import { uploadProductImage } from "@/hooks/useProducts";
 import { toast } from "sonner";
+import ArticleEngage from "@/components/profile/ArticleEngage";
 
 type View = { type: "list" } | { type: "read"; id: number } | { type: "edit"; article?: Article };
 
@@ -43,6 +44,7 @@ export const Reader = ({ id, onBack, onEdit }: { id: number; onBack: () => void;
               <a href={a.source_url} target="_blank" rel="noopener noreferrer" className="text-[#8b5cf6] text-xs underline break-all">Источник</a>
             )}
           </div>
+          <ArticleEngage articleId={a.id} title={a.title} />
         </article>
       )}
     </div>
