@@ -1138,7 +1138,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
                     onFocus={() => { if (!user) { commentInputRef.current?.blur(); promptAuth(); } }}
                     value={commentText}
                     onChange={e => setCommentText(e.target.value)}
-                    placeholder="Написать комментарий..."
+                    placeholder={user ? "Написать комментарий..." : "Войдите, чтобы комментировать"}
                     className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/40"
                     onKeyDown={e => e.key === "Enter" && handleSendComment()}
                     autoComplete="off"
