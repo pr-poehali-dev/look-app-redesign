@@ -7,10 +7,6 @@ export const HQ_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   noiseSuppression: true,
   autoGainControl: true,
   channelCount: 1,
-  // На Android WebView снижаем sampleRate — помогает аппаратному AEC
-  sampleRate: isAndroid() ? 16000 : 48000,
-  sampleSize: 16,
-  ...(isMobile() ? { latency: 0.01 } : {}),
   // Vendor-prefixed hints (Chrome/Android WebView)
   ...({
     googEchoCancellation: true,

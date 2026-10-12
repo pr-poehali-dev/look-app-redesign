@@ -68,6 +68,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const wasConnectedRef = useRef<boolean>(false);
   const iceRestartDoneRef = useRef<boolean>(false);
   const iceOutboxRef = useRef<RTCIceCandidateInit[]>([]);
+  const pendingFreshIceRef = useRef<{ id: number; type: string; payload: unknown }[]>([]);
   const iceFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const sendSignal = async (type: string, payload: unknown) => {
@@ -134,7 +135,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   };
 
   const handleSignal = async (pc: RTCPeerConnection, sig: { id: number; type: string; payload: unknown }) => {
-    lastSigIdRef.current = sig.id;
+    if (sig.id > lastSigIdRef.current) lastSigIdRef.current = sig.id;
     if (processedSigIdsRef.current.has(sig.id)) return;
     processedSigIdsRef.current.add(sig.id);
     if (endedRef.current || pc.signalingState === "closed") return;
@@ -308,6 +309,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         // Свежий offer, который уже лежит в комнате к моменту принятия входящего,
         // НЕЛЬЗЯ выкидывать как stale — иначе callee не создаст answer и ICE не стартует.
         const freshOffers: { id: number; type: string; payload: unknown }[] = [];
+        const freshIce: { id: number; type: string; payload: unknown }[] = [];
         for (let i = 0; i < 8; i++) {
           const r = await fetch(
             `${API}?module=signal&room_id=${roomId}&since_id=${lastSigIdRef.current}&max_age_seconds=600`,
@@ -322,6 +324,8 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
             // offer оставляем на обработку — берём только самый свежий
             if (s.type === "offer" && !isCaller.current) {
               freshOffers.push(s);
+            } else if ((s.type === "ice" || s.type === "ice_batch") && !isCaller.current) {
+              freshIce.push(s);
             } else {
               processedSigIdsRef.current.add(s.id);
             }
@@ -333,6 +337,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         }
         console.log("[CallScreen] cleared", totalSkipped, "stale signals, kept", freshOffers.length, "offers, since_id =", lastSigIdRef.current);
         pendingFreshOffersRef.current = freshOffers;
+        pendingFreshIceRef.current = freshIce.slice(-200);
       } catch (e) { void e; }
 
       const cfg = await getRtcConfig().catch(() => RTC_CONFIG);
@@ -526,6 +531,9 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         const latest = offers[offers.length - 1];
         console.log("[CallScreen] applying buffered offer id=", latest.id);
         await handleSignal(pc, latest);
+        const iceList = pendingFreshIceRef.current;
+        pendingFreshIceRef.current = [];
+        for (const sg of iceList) await handleSignal(pc, sg);
       }
 
       if (isCaller.current) {
