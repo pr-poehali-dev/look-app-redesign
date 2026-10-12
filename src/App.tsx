@@ -383,10 +383,13 @@ const AppContent = () => {
   if (!user) {
     if (authMode === "landing") {
       return (
-        <Landing
-          onLogin={() => setAuthMode("login")}
-          onRegister={() => setAuthMode("register")}
-        />
+        <>
+          <Landing
+            onLogin={() => setAuthMode("login")}
+            onRegister={() => setAuthMode("register")}
+          />
+          <ArticleDeepLink />
+        </>
       );
     }
     return <AuthScreen initialMode={authMode} onBack={() => setAuthMode("landing")} />;
