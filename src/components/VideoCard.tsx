@@ -624,8 +624,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
         {/* Comment */}
         <button
-          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); if (guest) return needAuth(); setShowComments(true); }}
-          onClick={() => { if (guest) return needAuth(); setShowComments(true); }}
+          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowComments(true); }}
+          onClick={() => { setShowComments(true); }}
           className="flex flex-col items-center gap-1"
           style={{ touchAction: "manipulation" }}
           title="Комментарии"
@@ -679,7 +679,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         </button>
 
         {/* Comment */}
-        <button onClick={() => { if (guest) return needAuth(); setShowComments(true); }} className="flex flex-col items-center gap-1">
+        <button onClick={() => { setShowComments(true); }} className="flex flex-col items-center gap-1">
           <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
             <Icon name="MessageDots" size={24} className="action-icon-glyph" />
           </div>

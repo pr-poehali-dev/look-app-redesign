@@ -187,7 +187,7 @@ const PostCard = ({ post }: { post: Post }) => {
               className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph transition-all duration-150"}
             />
           </button>
-          <button onClick={() => { if (guest) return needAuth(); setShowComments(true); }} className="flex items-center justify-center active:scale-90 transition-transform">
+          <button onClick={() => setShowComments(true)} className="flex items-center justify-center active:scale-90 transition-transform">
             <Icon name="MessageDots" size={26} className="action-icon-glyph" />
           </button>
           <button onClick={() => { if (guest) return needAuth(); setShowShare(true); }} className="flex items-center justify-center active:scale-90 transition-transform">
@@ -265,7 +265,7 @@ const PostCard = ({ post }: { post: Post }) => {
         {/* View comments + переход в чат обсуждения */}
         {commentCount > 0 && (
           <div className="px-3 pb-1 flex items-center gap-3">
-            <button onClick={() => { if (guest) return needAuth(); setShowComments(true); }}>
+            <button onClick={() => setShowComments(true)}>
               <span className="text-white/40 text-[13px]">Посмотреть все комментарии ({commentCount})</span>
             </button>
             <button onClick={goToChat} className="flex items-center gap-1 text-[#61d4f0]">
