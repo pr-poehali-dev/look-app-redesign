@@ -39,7 +39,7 @@ export const toVideo = (v: any): VideoData => ({
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toPost = (v: any): Post => {
+export const toPost = (v: any): Post => {
   const desc: string = v.description || "";
   return {
     id: v.id,

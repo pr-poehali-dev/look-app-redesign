@@ -5,6 +5,7 @@ import UserAvatar from "@/components/ui/user-avatar";
 import { Post } from "./PostFeedTypes";
 import { Product } from "@/hooks/useProducts";
 import { Reader } from "@/components/profile/ArticlesScreen";
+import { toPost } from "@/components/MediaDeepLink";
 import SearchVideoViewer from "./SearchVideoViewer";
 import UserProfileModal from "@/components/UserProfileModal";
 
@@ -44,6 +45,12 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
   const [resultTab, setResultTab] = useState<"posts" | "videos" | "people" | "articles" | "products">("posts");
   const [videoHits, setVideoHits] = useState<VideoHit[]>([]);
   const [people, setPeople] = useState<PersonHit[]>([]);
+  const [postHits, setPostHits] = useState<Post[]>([]);
+  const [sort, setSort] = useState<"new" | "popular">("new");
+  const [period, setPeriod] = useState<"all" | "day" | "week" | "month">("all");
+  const [fuzzy, setFuzzy] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggest, setShowSuggest] = useState(true);
   const [articles, setArticles] = useState<ArticleHit[]>([]);
   const [openArticleId, setOpenArticleId] = useState<number | null>(null);
   const [extraLoading, setExtraLoading] = useState(false);
@@ -77,25 +84,50 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
 
   useEffect(() => {
     const q = query.trim();
-    if (!q) { setVideoHits([]); setPeople([]); setArticles([]); return; }
+    if (!q) { setVideoHits([]); setPeople([]); setArticles([]); setPostHits([]); setFuzzy(false); return; }
     let cancelled = false;
     setExtraLoading(true);
     const timeout = setTimeout(() => {
       const load = (kind: string) =>
-        fetch(`${SEARCH_URL}?kind=${kind}&q=${encodeURIComponent(q)}`)
+        fetch(`${SEARCH_URL}?kind=${kind}&sort=${sort}&period=${period}&q=${encodeURIComponent(q)}`)
           .then((r) => r.json())
-          .then((raw) => (typeof raw.body === "string" ? JSON.parse(raw.body) : raw).items || [])
-          .catch(() => []);
-      Promise.all([load("video"), load("people"), load("article")]).then(([v, p, a]) => {
+          .then((raw) => (typeof raw.body === "string" ? JSON.parse(raw.body) : raw))
+          .catch(() => ({ items: [] }));
+      Promise.all([load("post"), load("video"), load("people"), load("article")]).then(([po, v, pe, a]) => {
         if (cancelled) return;
-        setVideoHits(v);
-        setPeople(p);
-        setArticles(a);
+        setPostHits((po.items || []).map(toPost));
+        setVideoHits(v.items || []);
+        setPeople(pe.items || []);
+        setArticles(a.items || []);
+        setFuzzy(!!(po.fuzzy || v.fuzzy || pe.fuzzy || a.fuzzy));
         setExtraLoading(false);
       });
     }, 300);
     return () => { cancelled = true; clearTimeout(timeout); };
-  }, [query]);
+  }, [query, sort, period]);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (!q || !showSuggest) { setSuggestions([]); return; }
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      fetch(`${SEARCH_URL}?kind=suggest&q=${encodeURIComponent(q)}`)
+        .then((r) => r.json())
+        .then((raw) => {
+          const d = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+          if (!cancelled) setSuggestions(d.suggestions || []);
+        })
+        .catch(() => { if (!cancelled) setSuggestions([]); });
+    }, 200);
+    return () => { cancelled = true; clearTimeout(timeout); };
+  }, [query, showSuggest]);
+
+  const applySuggestion = (sg: string) => {
+    const words = query.trim().split(/\s+/);
+    words[words.length - 1] = sg;
+    setShowSuggest(false);
+    setQuery(words.join(" "));
+  };
 
   const trending = useMemo(() => {
     const freq: Record<string, number> = {};
@@ -103,16 +135,7 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
     return Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([tag]) => tag);
   }, [posts]);
 
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase().replace(/^#/, "");
-    if (!q) return [];
-    return posts.filter((p) =>
-      p.caption.toLowerCase().includes(q) ||
-      p.handle.toLowerCase().includes(q) ||
-      p.author.toLowerCase().includes(q) ||
-      p.hashtags.some((t) => t.toLowerCase().includes(q))
-    ).slice(0, 30);
-  }, [query, posts]);
+  const results = postHits;
 
   const commitSearch = (q: string) => {
     const trimmed = q.trim();
@@ -130,9 +153,9 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
           <input
             ref={inputRef}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => { setShowSuggest(true); setQuery(e.target.value); }}
             onKeyDown={(e) => e.key === "Enter" && commitSearch(query)}
-            placeholder="Поиск по постам, видео, людям"
+            placeholder={`Поиск: "точная фраза", -исключить`}
             className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/40 min-w-0"
           />
           {query && (
@@ -147,6 +170,25 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
       <div className="flex-1 overflow-y-auto px-4 py-4" style={{ scrollbarWidth: "none" }}>
         {query.trim() ? (
           <>
+            {suggestions.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {suggestions.map((sg) => (
+                  <button key={sg} onClick={() => applySuggestion(sg)} className="px-3 py-1.5 rounded-full bg-white/10 text-white/80 text-xs">
+                    {sg}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="flex items-center gap-2 mb-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+              {([["new", "Новые"], ["popular", "Популярные"]] as const).map(([k, l]) => (
+                <button key={k} onClick={() => setSort(k)} className={`px-3 py-1 rounded-full text-[11px] flex-shrink-0 border ${sort === k ? "border-white text-white" : "border-white/15 text-white/50"}`}>{l}</button>
+              ))}
+              <span className="w-px h-4 bg-white/15 flex-shrink-0" />
+              {([["all", "За всё время"], ["day", "Сутки"], ["week", "Неделя"], ["month", "Месяц"]] as const).map(([k, l]) => (
+                <button key={k} onClick={() => setPeriod(k)} className={`px-3 py-1 rounded-full text-[11px] flex-shrink-0 border ${period === k ? "border-white text-white" : "border-white/15 text-white/50"}`}>{l}</button>
+              ))}
+            </div>
+            {fuzzy && <p className="text-white/40 text-xs mb-3">Показаны похожие результаты (с учётом опечаток)</p>}
             <div className="flex items-center gap-2 mb-4">
               <button
                 onClick={() => setResultTab("posts")}
@@ -270,7 +312,11 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
                 </div>
               )
             ) : resultTab === "posts" ? (
-              results.length > 0 ? (
+              extraLoading && results.length === 0 ? (
+                <div className="flex justify-center py-16">
+                  <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                </div>
+              ) : results.length > 0 ? (
                 <div className="flex gap-2 items-start">
                   {[0, 1].map((col) => (
                     <div key={col} className="flex-1 min-w-0 flex flex-col gap-2">

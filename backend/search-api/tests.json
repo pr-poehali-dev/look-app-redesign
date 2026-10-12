@@ -1,5 +1,8 @@
 {"tests": [
 {"name": "Search videos", "method": "GET", "path": "/?q=a&kind=video", "expectedStatus": 200},
+{"name": "Search posts phrase exclude", "method": "GET", "path": "/?q=%22a%20b%22%20-c&kind=post&sort=popular&period=week", "expectedStatus": 200},
 {"name": "Search people", "method": "GET", "path": "/?q=a&kind=people", "expectedStatus": 200},
+{"name": "Suggest", "method": "GET", "path": "/?q=ко&kind=suggest", "expectedStatus": 200},
+{"name": "Articles", "method": "GET", "path": "/?q=стать&kind=article", "expectedStatus": 200},
 {"name": "Empty query", "method": "GET", "path": "/", "expectedStatus": 200}
 ]}
