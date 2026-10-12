@@ -388,7 +388,7 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         if search:
             pat = '%' + _esc_like(search) + '%'
             _q(cur, """
-                SELECT id, name, handle, email, avatar, created_at, email_verified, COALESCE(banned, FALSE) AS banned, COALESCE(is_verified, FALSE) AS is_verified
+                SELECT id, name, handle, email, avatar, created_at, email_verified, COALESCE(banned, FALSE) AS banned, COALESCE(is_verified, FALSE) AS is_verified, birth_date
                 FROM {S}.app_users
                 WHERE name ILIKE %s ESCAPE '\\' OR handle ILIKE %s ESCAPE '\\' OR email ILIKE %s ESCAPE '\\' OR id = %s
                 ORDER BY created_at DESC NULLS LAST
@@ -396,7 +396,7 @@ def _route(cur, conn, action: str, body: dict) -> dict:
             """, (pat, pat, pat, search, limit, offset))
         else:
             _q(cur, """
-                SELECT id, name, handle, email, avatar, created_at, email_verified, COALESCE(banned, FALSE) AS banned, COALESCE(is_verified, FALSE) AS is_verified
+                SELECT id, name, handle, email, avatar, created_at, email_verified, COALESCE(banned, FALSE) AS banned, COALESCE(is_verified, FALSE) AS is_verified, birth_date
                 FROM {S}.app_users
                 ORDER BY created_at DESC NULLS LAST
                 LIMIT %s OFFSET %s
