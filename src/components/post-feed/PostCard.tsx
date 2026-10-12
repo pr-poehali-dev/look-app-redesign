@@ -294,7 +294,6 @@ const PostCard = ({ post }: { post: Post }) => {
               { icon: "User", label: "Перейти в профиль", action: () => { setShowMenu(false); window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: post.handle } })); } },
               { icon: muted ? "Bell" : "BellOff", label: muted ? "Включить уведомления" : "Выключить уведомления", action: () => { const nowMuted = toggleMute(); toast.success(nowMuted ? `Уведомления от @${post.handle} выключены` : `Уведомления от @${post.handle} включены`); setShowMenu(false); } },
               { icon: "Link", label: "Скопировать ссылку", action: () => { copyText(shareUrl); setShowMenu(false); } },
-              { icon: "Share2", label: "Поделиться", action: () => { setShowMenu(false); setShowShare(true); } },
               { icon: "Flag", label: "Пожаловаться", action: () => { setShowMenu(false); if (guest) return needAuth(); setShowReport(true); } },
             ].map((item, i) => (
               <button

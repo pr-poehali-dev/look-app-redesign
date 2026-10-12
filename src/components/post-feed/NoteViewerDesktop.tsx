@@ -112,7 +112,6 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
       const nowMuted = toggleMute();
       toast.success(nowMuted ? `Уведомления от @${post.handle} выключены` : `Уведомления от @${post.handle} включены`);
     } },
-    { icon: "Share2", label: "Поделиться", action: () => setShowShare(true) },
     { icon: "Flag", label: "Пожаловаться", action: () => setShowReport(true) },
   ];
 
