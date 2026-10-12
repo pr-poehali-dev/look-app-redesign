@@ -115,6 +115,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller }: CallS
       className="fixed inset-0 z-50 flex flex-col overflow-hidden"
       style={{
         maxWidth: 480,
+        height: "100dvh",
         margin: "0 auto",
         paddingTop: "env(safe-area-inset-top)",
         paddingBottom: "env(safe-area-inset-bottom)",
@@ -132,7 +133,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller }: CallS
         localVideoRef={localVideoRef}
       />
 
-      <div className={`transition-opacity duration-300 ${controlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+      <div className={`shrink-0 transition-opacity duration-300 ${controlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
         <CallHeader
           name={name}
           avatar={avatar}
@@ -145,7 +146,8 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller }: CallS
         />
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 gap-3">
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col px-6">
+        <div className="my-auto w-full flex flex-col items-center gap-3">
         {endReason && (
           <div className="px-4 py-2 rounded-full bg-black/60 backdrop-blur-sm border border-white/10">
             <p className="text-white/90 text-sm text-center">{endReason}</p>
@@ -156,6 +158,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller }: CallS
             <p className="text-yellow-300/90 text-xs text-center whitespace-pre-line leading-relaxed">{diagText}</p>
           </div>
         )}
+        </div>
       </div>
 
       <div className={`absolute top-20 right-4 z-30 transition-opacity duration-300 ${controlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
@@ -168,7 +171,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller }: CallS
         </button>
       </div>
 
-      <div className={`transition-opacity duration-300 ${controlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+      <div className={`shrink-0 transition-opacity duration-300 ${controlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
         <CallControls
           mode={mode}
           muted={muted}

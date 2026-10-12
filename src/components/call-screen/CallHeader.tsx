@@ -25,7 +25,7 @@ const CallHeader = ({ name, avatar, mode, status, quality, route, connectionWarn
   }[status];
 
   return (
-    <div className="relative z-20 flex flex-col items-center pt-20 pb-6">
+    <div className="relative z-20 flex flex-col items-center pt-20 pb-4 [@media(max-height:820px)]:pt-12">
       <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/30 shadow-2xl mb-4">
         <UserAvatar src={avatar} name={name} alt={name} />
       </div>
