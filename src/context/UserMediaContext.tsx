@@ -41,6 +41,18 @@ const USER_VIDEOS_URL = "https://functions.poehali.dev/075d6280-020a-48ce-a5e4-6
 
 const UserMediaContext = createContext<UserMediaContextType | null>(null);
 
+const GUEST_MEDIA: UserMediaContextType = {
+  userVideos: [],
+  addMedia: async () => {},
+  repostMedia: async () => false,
+  removeMedia: () => {},
+  refreshMedia: async () => {},
+  isReposted: () => false,
+  loading: false,
+  removedIds: new Set(),
+  mediaVersion: 0,
+};
+
 export const UserMediaProvider = ({ userId, token, children }: { userId: string; token: string | null; children: ReactNode }) => {
   const [userVideos, setUserVideos] = useState<UserVideo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -160,8 +172,7 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
 
 export const useUserMedia = () => {
   const ctx = useContext(UserMediaContext);
-  if (!ctx) throw new Error("useUserMedia must be used within UserMediaProvider");
-  return ctx;
+  return ctx ?? GUEST_MEDIA;
 };
 
 export default UserMediaContext;

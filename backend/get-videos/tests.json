@@ -13,6 +13,12 @@
       "expectedStatus": 200
     },
     {
+      "name": "GET single video not found",
+      "method": "GET",
+      "path": "/?id=999999999",
+      "expectedStatus": 404
+    },
+    {
       "name": "GET videos by category",
       "method": "GET",
       "path": "/?type=video&category=music",

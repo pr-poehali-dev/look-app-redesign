@@ -43,6 +43,7 @@ const PostCard = ({ post }: { post: Post }) => {
   const [addingProductId, setAddingProductId] = useState<number | null>(null);
   const [commentText, setCommentText] = useState("");
   const [copied, setCopied] = useState(false);
+  const shareUrl = `${window.location.origin}/?post=${post.id}`;
   const [replyingTo, setReplyingTo] = useState<{ id: number | string; name: string } | null>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
 
@@ -305,7 +306,7 @@ const PostCard = ({ post }: { post: Post }) => {
               { icon: "Layers", label: "Добавить на доску", action: () => { setShowMenu(false); if (guest) return needAuth(); setShowAddToBoard(true); } },
               { icon: "User", label: "Перейти в профиль", action: () => { setShowMenu(false); window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: post.handle } })); } },
               { icon: muted ? "Bell" : "BellOff", label: muted ? "Включить уведомления" : "Выключить уведомления", action: () => { const nowMuted = toggleMute(); toast.success(nowMuted ? `Уведомления от @${post.handle} выключены` : `Уведомления от @${post.handle} включены`); setShowMenu(false); } },
-              { icon: "Link", label: "Скопировать ссылку", action: () => { navigator.clipboard.writeText(window.location.href).catch(() => {}); setShowMenu(false); } },
+              { icon: "Link", label: "Скопировать ссылку", action: () => { navigator.clipboard.writeText(shareUrl).catch(() => {}); setShowMenu(false); } },
               { icon: "Share2", label: "Поделиться", action: () => { setShowMenu(false); setShowShare(true); } },
               { icon: "Flag", label: "Пожаловаться", action: () => { setShowMenu(false); if (guest) return needAuth(); setShowReport(true); } },
             ].map((item, i) => (
@@ -416,10 +417,10 @@ const PostCard = ({ post }: { post: Post }) => {
             </div>
             <div className="grid grid-cols-4 gap-4 mb-6">
               {[
-                { icon: "MessageCircle", label: "Telegram", color: "#229ED9", href: `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`@${post.handle}: ${post.caption}`)}` },
-                { icon: "Send", label: "WhatsApp", color: "#25D366", href: `https://wa.me/?text=${encodeURIComponent(`@${post.handle}: ${post.caption}\n${window.location.href}`)}` },
-                { icon: "Share2", label: "VK", color: "#0077FF", href: `https://vk.com/share.php?url=${encodeURIComponent(window.location.href)}` },
-                { icon: "MessageSquare", label: "МАКС", color: "#7C66FC", href: `https://max.ru/share?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`@${post.handle}: ${post.caption}`)}` },
+                { icon: "MessageCircle", label: "Telegram", color: "#229ED9", href: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(`@${post.handle}: ${post.caption}`)}` },
+                { icon: "Send", label: "WhatsApp", color: "#25D366", href: `https://wa.me/?text=${encodeURIComponent(`@${post.handle}: ${post.caption}\n${shareUrl}`)}` },
+                { icon: "Share2", label: "VK", color: "#0077FF", href: `https://vk.com/share.php?url=${encodeURIComponent(shareUrl)}` },
+                { icon: "MessageSquare", label: "МАКС", color: "#7C66FC", href: `https://max.ru/share?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(`@${post.handle}: ${post.caption}`)}` },
               ].map(opt => (
                 <a key={opt.label} href={opt.href} target="_blank" rel="noreferrer" className="flex flex-col items-center gap-2" onClick={() => setShowShare(false)}>
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: opt.color + "22", border: `1.5px solid ${opt.color}55` }}>
@@ -455,7 +456,7 @@ const PostCard = ({ post }: { post: Post }) => {
             )}
 
             <button
-              onClick={() => { navigator.clipboard.writeText(window.location.href).catch(() => {}); setCopied(true); setTimeout(() => { setCopied(false); setShowShare(false); }, 1500); }}
+              onClick={() => { navigator.clipboard.writeText(shareUrl).catch(() => {}); setCopied(true); setTimeout(() => { setCopied(false); setShowShare(false); }, 1500); }}
               className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3"
             >
               <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">

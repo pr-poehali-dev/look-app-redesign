@@ -122,6 +122,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   };
   const [playerUrl, setPlayerUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const shareUrl = `${window.location.origin}/?video=${video.dbId ?? video.id}`;
   const [commentText, setCommentText] = useState("");
   const [replyingTo, setReplyingTo] = useState<{ id: number | string; name: string } | null>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
@@ -913,10 +914,10 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             {/* Share options */}
             <div className="grid grid-cols-4 gap-4 mb-6">
               {[
-                { icon: "MessageCircle", label: "Telegram", color: "#229ED9", href: `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`@${video.handle}: ${video.description}`)}` },
-                { icon: "Send", label: "WhatsApp", color: "#25D366", href: `https://wa.me/?text=${encodeURIComponent(`@${video.handle}: ${video.description}\n${window.location.href}`)}` },
-                { icon: "Share2", label: "VK", color: "#0077FF", href: `https://vk.com/share.php?url=${encodeURIComponent(window.location.href)}` },
-                { icon: "MessageSquare", label: "МАКС", color: "#7C66FC", href: `https://max.ru/share?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`@${video.handle}: ${video.description}`)}` },
+                { icon: "MessageCircle", label: "Telegram", color: "#229ED9", href: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(`@${video.handle}: ${video.description}`)}` },
+                { icon: "Send", label: "WhatsApp", color: "#25D366", href: `https://wa.me/?text=${encodeURIComponent(`@${video.handle}: ${video.description}\n${shareUrl}`)}` },
+                { icon: "Share2", label: "VK", color: "#0077FF", href: `https://vk.com/share.php?url=${encodeURIComponent(shareUrl)}` },
+                { icon: "MessageSquare", label: "МАКС", color: "#7C66FC", href: `https://max.ru/share?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(`@${video.handle}: ${video.description}`)}` },
               ].map(opt => (
                 <a
                   key={opt.label}
@@ -959,7 +960,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             {/* Copy link */}
             <button
               onClick={() => {
-                navigator.clipboard.writeText(window.location.href).catch(() => {});
+                navigator.clipboard.writeText(shareUrl).catch(() => {});
                 setCopied(true);
                 setTimeout(() => { setCopied(false); setShowShare(false); }, 1500);
               }}

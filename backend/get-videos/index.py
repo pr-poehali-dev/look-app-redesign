@@ -43,6 +43,26 @@ def handler(event: dict, context) -> dict:
             f"WHERE v.type = %s AND (v.hidden IS NULL OR v.hidden = FALSE) "
         )
 
+        single_id = (params.get('id') or '').strip()
+        if single_id.isdigit():
+            cur.execute(
+                base_select.replace("WHERE v.type = %s AND", "WHERE v.id = %s AND") + "LIMIT 1",
+                (int(single_id),)
+            )
+            r = cur.fetchone()
+            if not r:
+                return {'statusCode': 404, 'headers': {'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'not found'})}
+            avatar = r[1] if r[7] == 'image' else r[12]
+            item = {
+                'id': r[0], 'url': r[1], 'author': r[2], 'handle': r[3], 'description': r[4],
+                'hashtags': r[5] or '', 'category': r[6], 'type': r[7], 'likes': str(r[8]),
+                'comments': str(r[9]), 'shares': str(r[10]), 'avatar': avatar,
+                'created_at': r[11].isoformat() if r[11] else None, 'thumbnail': r[13],
+                'template_id': r[15], 'has_products': bool(r[16]), 'views': int(r[17]),
+                'is_verified': bool(r[18]), 'is_ad': bool(r[19]), 'ad_label': r[20],
+            }
+            return {'statusCode': 200, 'headers': {'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'video': item})}
+
         # Категория задана и это не персонализированная лента -> простая выдача по дате
         if category and category != 'all':
             cur.execute(

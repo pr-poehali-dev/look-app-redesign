@@ -15,6 +15,7 @@ import Icon from "@/components/ui/icon";
 import OfflineBanner from "@/components/OfflineBanner";
 
 const Index = lazy(() => import("./pages/Index"));
+const MediaDeepLink = lazy(() => import("./components/MediaDeepLink"));
 const ArticleDeepLink = lazy(() => import("./components/profile/ArticleDeepLink"));
 const Admin = lazy(() => import("./pages/Admin"));
 const AuthScreen = lazy(() => import("./components/AuthScreen"));
@@ -388,7 +389,7 @@ const AppContent = () => {
             onLogin={() => setAuthMode("login")}
             onRegister={() => setAuthMode("register")}
           />
-          <ArticleDeepLink />
+          <ArticleDeepLink /><MediaDeepLink />
         </>
       );
     }
@@ -401,7 +402,7 @@ const AppContent = () => {
       <ThumbnailWorker />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<><Index /><ArticleDeepLink /></>} />
+          <Route path="/" element={<><Index /><ArticleDeepLink /><MediaDeepLink /></>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
