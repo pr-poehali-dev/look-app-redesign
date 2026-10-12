@@ -172,7 +172,7 @@ def handler(event: dict, context) -> dict:
             if not row: return err('Токен недействителен', 401)
             if row[8]: return err('Аккаунт заблокирован. Обратитесь в поддержку: support@look.com.ru', 403)
             links_val = row[7] if row[7] is not None else []
-            return ok({'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'email': row[3], 'avatar': row[4], 'phone': row[5], 'gender': row[6], 'links': links_val, 'city': row[9], 'is_adult': (calc_age(row[10]) >= 18) if row[10] else None, 'birth_set': bool(row[10])}})
+            return ok({'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'email': row[3], 'avatar': row[4], 'phone': row[5], 'gender': row[6], 'links': links_val, 'city': row[9], 'is_adult': (calc_age(row[10]) >= 18) if row[10] else None, 'birth_set': bool(row[10]), 'birth_date': row[10].isoformat() if row[10] else None}})
 
         if action == 'qr_create':
             code = secrets.token_urlsafe(16)

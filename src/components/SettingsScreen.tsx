@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import Icon from "@/components/ui/icon";
+import BirthDateInput from "@/components/ui/birth-date-input";
 import { detectCity } from "@/lib/city";
 import UserAvatar from "@/components/ui/user-avatar";
 import { useAuth } from "@/context/AuthContext";
@@ -429,6 +430,7 @@ const EditProfileScreen = ({ onBack }: { onBack: () => void }) => {
     return p.startsWith("+7") ? p.slice(2).trim() : p;
   });
   const [links, setLinks] = useState<ProfileLinkObj[]>(normalizeLinks(user?.links));
+  const [birth, setBirth] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [avatarLoading, setAvatarLoading] = useState(false);
@@ -467,6 +469,17 @@ const EditProfileScreen = ({ onBack }: { onBack: () => void }) => {
     setError("");
     try {
       const token = localStorage.getItem("auth_token") || "";
+      if (!user?.birth_set && birth) {
+        const bres = await fetch(AUTH_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "set_birth_date", token, birth_date: birth }),
+        });
+        const braw = await bres.json();
+        const bdata = typeof braw.body === "string" ? JSON.parse(braw.body) : braw;
+        if (bdata.error) { setError(bdata.error); setSaving(false); return; }
+        updateUser({ birth_set: true, is_adult: !!bdata.is_adult, birth_date: birth });
+      }
       const phoneClean = phone.replace(/[^\d]/g, "");
       const phoneFull = phoneClean ? "+7" + phoneClean : "";
       const body: Record<string, unknown> = {
@@ -584,6 +597,29 @@ const EditProfileScreen = ({ onBack }: { onBack: () => void }) => {
                   {opt.l}
                 </button>
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* Дата рождения */}
+        <div className="px-4 pt-5">
+          <label className="text-black text-base">Дата рождения</label>
+          {user?.birth_set ? (
+            <>
+              <div className="mt-2 px-3 py-3 bg-gray-50 text-black text-base rounded-md flex items-center justify-between">
+                <span>{user.birth_date ? user.birth_date.split("-").reverse().join(".") : "Указана"}</span>
+                <Icon name="Lock" size={16} className="text-gray-400" />
+              </div>
+              <p className="text-[11px] text-gray-400 mt-1">Дата нужна для возрастных ограничений, изменить её можно через поддержку</p>
+            </>
+          ) : (
+            <div className="mt-2">
+              <BirthDateInput
+                value={birth}
+                onChange={setBirth}
+                className="w-full px-3 py-3 bg-gray-50 text-black text-base rounded-md outline-none"
+              />
+              <p className="text-[11px] text-gray-400 mt-1">Введите цифрами: 25031998. После сохранения изменить её можно только через поддержку</p>
             </div>
           )}
         </div>

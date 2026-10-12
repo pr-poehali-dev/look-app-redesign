@@ -15,6 +15,7 @@ export interface AppUser {
   is_verified?: boolean;
   is_adult?: boolean | null;
   birth_set?: boolean;
+  birth_date?: string | null;
 }
 
 interface AuthContextType {
