@@ -166,7 +166,7 @@ const ProductDetailSheet = ({ product: p, videoId, onClose }: Props) => {
                 className="flex-1 h-12 rounded-full bg-[#fe2c55] text-white text-sm font-bold active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 <Icon name="ExternalLink" size={17} />
-                Купить на сайте продавца
+                Перейти на сайт продавца
               </button>
             ) : (
               <button

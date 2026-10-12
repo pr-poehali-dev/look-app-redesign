@@ -1047,7 +1047,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
                           disabled={addingProductId === p.id}
                           className="px-3 py-1.5 rounded-full bg-[#fe2c55] text-white text-xs font-bold active:scale-95 transition-transform disabled:opacity-50 whitespace-nowrap"
                         >
-                          Купить
+                          Перейти
                         </button>
                         <button
                           onClick={() => handleAddToCart(p.id)}

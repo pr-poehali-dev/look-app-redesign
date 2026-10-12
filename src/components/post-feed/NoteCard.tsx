@@ -93,7 +93,7 @@ const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
           className="absolute top-2 left-2 flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full pl-1.5 pr-2 py-1 active:scale-95 transition-transform"
         >
           <Icon name="ShoppingBag" size={11} className="text-white" />
-          <span className="text-white text-[10px] font-semibold">Купить</span>
+          <span className="text-white text-[10px] font-semibold">Перейти</span>
         </button>
       )}
 
@@ -145,7 +145,7 @@ const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
                     >
                       {addingProductId === p.id
                         ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        : "Купить"}
+                        : "Перейти"}
                     </button>
                   </div>
                 ))}
