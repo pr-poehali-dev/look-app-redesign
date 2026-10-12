@@ -10,6 +10,7 @@ import { useMutedAuthor } from "@/hooks/useMutedAuthors";
 import { useFollowing } from "@/hooks/useFollowing";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { copyText } from "@/lib/copyText";
 import ReportButton from "@/components/ReportButton";
 import AddToBoardSheet from "@/components/products/AddToBoardSheet";
 import PostProductStrip from "@/components/products/PostProductStrip";
@@ -52,9 +53,13 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
     title: post.caption,
     handle: post.handle,
   });
-  const { following, toggle: toggleFollow, isSelf } = useFollowing(post.handle);
+  const { following, toggle: rawToggleFollow, isSelf } = useFollowing(post.handle);
   const { comments, count: commentCount, send, toggleLike: toggleCommentLike } = useComments("post", post.id, true, post.comments || 0);
-  const { muted, toggle: toggleMute } = useMutedAuthor(post.handle);
+  const { muted, toggle: rawToggleMute } = useMutedAuthor(post.handle);
+  const authUser = user;
+  const needAuth = () => { toast("Зарегистрируйтесь, чтобы выполнять действия"); };
+  const toggleFollow = () => { if (!authUser) return needAuth(); rawToggleFollow(); };
+  const toggleMute = () => { if (!authUser) { needAuth(); return muted; } return rawToggleMute(); };
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<CommentItem | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -75,6 +80,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
   const repliesOf = (id: number | string) => comments.filter((c) => c.parentId != null && String(c.parentId) === String(id));
 
   const submit = () => {
+    if (!authUser) return needAuth();
     if (!text.trim()) return;
     send(text, undefined, replyTo?.id ?? null);
     setText("");
@@ -82,36 +88,29 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
   };
 
   const startReply = (c: CommentItem) => {
+    if (!authUser) return needAuth();
     setReplyTo(c);
     setText(`@${c.name} `);
     inputRef.current?.focus();
   };
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      toast.success("Ссылка скопирована");
-    } catch {
-      toast.error("Не удалось скопировать ссылку");
-    }
-  };
+  const shareUrl = `${window.location.origin}/?post=${post.id}`;
 
   const shareOptions = [
-    { icon: "MessageCircle", label: "Telegram", color: "#229ED9", href: `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`@${post.handle}: ${post.caption}`)}` },
-    { icon: "Send", label: "WhatsApp", color: "#25D366", href: `https://wa.me/?text=${encodeURIComponent(`@${post.handle}: ${post.caption}\n${window.location.href}`)}` },
-    { icon: "Share2", label: "VK", color: "#0077FF", href: `https://vk.com/share.php?url=${encodeURIComponent(window.location.href)}` },
-    { icon: "MessageSquare", label: "МАКС", color: "#7C66FC", href: `https://max.ru/share?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`@${post.handle}: ${post.caption}`)}` },
+    { icon: "MessageCircle", label: "Telegram", color: "#229ED9", href: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(`@${post.handle}: ${post.caption}`)}` },
+    { icon: "Send", label: "WhatsApp", color: "#25D366", href: `https://wa.me/?text=${encodeURIComponent(`@${post.handle}: ${post.caption}\n${shareUrl}`)}` },
+    { icon: "Share2", label: "VK", color: "#0077FF", href: `https://vk.com/share.php?url=${encodeURIComponent(shareUrl)}` },
+    { icon: "MessageSquare", label: "МАКС", color: "#7C66FC", href: `https://max.ru/share?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(`@${post.handle}: ${post.caption}`)}` },
   ];
 
   const menuItems = [
     { icon: "Bookmark", label: saved ? "Убрать из сохранённых" : "Сохранить", action: () => toggleSaved(), active: saved },
-    { icon: "Layers", label: "Добавить на доску", action: () => setShowAddToBoard(true) },
+    { icon: "Layers", label: "Добавить на доску", action: () => { if (!authUser) return needAuth(); setShowAddToBoard(true); } },
     { icon: "User", label: "Перейти в профиль", action: () => openProfile() },
     { icon: muted ? "Bell" : "BellOff", label: muted ? "Включить уведомления" : "Выключить уведомления", action: () => {
       const nowMuted = toggleMute();
       toast.success(nowMuted ? `Уведомления от @${post.handle} выключены` : `Уведомления от @${post.handle} включены`);
     } },
-    { icon: "Link", label: "Скопировать ссылку", action: () => { copyLink(); } },
     { icon: "Share2", label: "Поделиться", action: () => setShowShare(true) },
     { icon: "Flag", label: "Пожаловаться", action: () => setShowReport(true) },
   ];
@@ -251,6 +250,8 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
             <div className="flex items-center gap-4">
               <input
                 ref={inputRef}
+                readOnly={!authUser}
+                onFocus={() => { if (!authUser) { inputRef.current?.blur(); needAuth(); } }}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && submit()}
@@ -291,6 +292,15 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
                 <Icon name="X" size={20} className="nv-icon" />
               </button>
             </div>
+            <button
+              onClick={() => { copyText(shareUrl); setShowShare(false); }}
+              className="w-full flex items-center gap-3 rounded-2xl px-4 py-3 mb-5 nv-hover"
+            >
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "rgba(255,255,255,0.1)" }}>
+                <Icon name="Link" size={20} className="nv-icon" />
+              </div>
+              <span className="text-sm font-medium">Скопировать ссылку</span>
+            </button>
             <div className="grid grid-cols-4 gap-4">
               {shareOptions.map((opt) => (
                 <a key={opt.label} href={opt.href} target="_blank" rel="noreferrer" className="flex flex-col items-center gap-2" onClick={() => setShowShare(false)}>
