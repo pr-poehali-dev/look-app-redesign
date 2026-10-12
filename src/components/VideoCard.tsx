@@ -48,12 +48,12 @@ interface VideoCardProps {
 }
 
 const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" }: VideoCardProps) => {
-  const { saved, toggle: toggleSaved } = useSavedItem("video", video.id, {
+  const { saved, toggle: rawToggleSaved } = useSavedItem("video", video.id, {
     image: video.image,
     title: video.description,
     handle: video.handle,
   });
-  const { following, toggle: toggleFollow, isSelf } = useFollowing(video.handle);
+  const { following, toggle: rawToggleFollow, isSelf } = useFollowing(video.handle);
   const { repostMedia, isReposted } = useUserMedia();
   const { user } = useAuth();
   const [reposting, setReposting] = useState(false);
@@ -186,6 +186,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
   const handleDownload = async () => {
     if (downloading) return;
+    if (!user) { toast("Зарегистрируйтесь, чтобы выполнять действия"); return; }
     const url = video.image;
     if (!url) return;
     setDownloading(true);
@@ -267,8 +268,15 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   };
   const initialCommentCount = parseShortNum(video.comments);
   const initialLikeCount = parseShortNum(video.likes);
-  const { comments: allComments, count: commentCount, send, toggleLike: toggleCommentLike } = useComments("video", video.id, showComments, initialCommentCount);
-  const { liked, count: likeCount, toggle: toggleLike } = useLikes("video", video.id, initialLikeCount);
+  const { comments: allComments, count: commentCount, send: rawSend, toggleLike: rawToggleCommentLike } = useComments("video", video.id, showComments, initialCommentCount);
+  const { liked, count: likeCount, toggle: rawToggleLike } = useLikes("video", video.id, initialLikeCount);
+  const guest = !user;
+  const needAuth = () => { toast("Зарегистрируйтесь, чтобы выполнять действия"); };
+  const toggleLike = () => { if (guest) return needAuth(); rawToggleLike(); };
+  const toggleSaved = () => { if (guest) return needAuth(); rawToggleSaved(); };
+  const toggleFollow = () => { if (guest) return needAuth(); rawToggleFollow(); };
+  const send: typeof rawSend = (...args) => { if (guest) { needAuth(); return Promise.resolve() as ReturnType<typeof rawSend>; } return rawSend(...args); };
+  const toggleCommentLike: typeof rawToggleCommentLike = (...args) => { if (guest) { needAuth(); return Promise.resolve(); } return rawToggleCommentLike(...args); };
   const formatCount = (n: number) => n >= 1_000_000 ? (n / 1_000_000).toFixed(1) + "M" : n >= 1000 ? (n / 1000).toFixed(1) + "K" : String(n);
 
   // Системный жест/кнопка «Назад» закрывает наш плеер вместо ухода с сайта
@@ -744,6 +752,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             <button
               onClick={() => {
                 setShowMore(false);
+                if (!user) { toast("Зарегистрируйтесь, чтобы выполнять действия"); return; }
                 setShowAddToBoard(true);
               }}
               className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3"
@@ -837,7 +846,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
 
             {/* Жалоба */}
             <button
-              onClick={() => { setShowMore(false); setShowReport(true); }}
+              onClick={() => { setShowMore(false); if (!user) { toast("Зарегистрируйтесь, чтобы выполнять действия"); return; } setShowReport(true); }}
               className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3"
             >
               <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
@@ -1121,6 +1130,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
                 <div className="flex-1 flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
                   <input
                     ref={commentInputRef}
+                    readOnly={!user}
+                    onFocus={() => { if (!user) { commentInputRef.current?.blur(); toast("Зарегистрируйтесь, чтобы выполнять действия"); } }}
                     value={commentText}
                     onChange={e => setCommentText(e.target.value)}
                     placeholder="Написать комментарий..."

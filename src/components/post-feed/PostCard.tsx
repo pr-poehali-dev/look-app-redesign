@@ -21,13 +21,13 @@ import ProductDetailSheet from "@/components/products/ProductDetailSheet";
 
 const PostCard = ({ post }: { post: Post }) => {
   const { user } = useAuth();
-  const { saved, toggle: toggleSaved } = useSavedItem("post", post.id, {
+  const { saved, toggle: rawToggleSaved } = useSavedItem("post", post.id, {
     image: post.image,
     title: post.caption,
     handle: post.handle,
   });
-  const { following, toggle: toggleFollow, isSelf } = useFollowing(post.handle);
-  const { muted, toggle: toggleMute } = useMutedAuthor(post.handle);
+  const { following, toggle: rawToggleFollow, isSelf } = useFollowing(post.handle);
+  const { muted, toggle: rawToggleMute } = useMutedAuthor(post.handle);
   const { repostMedia, isReposted } = useUserMedia();
   const [reposting, setReposting] = useState(false);
   const [repostResult, setRepostResult] = useState<"added" | "removed" | null>(null);
@@ -57,9 +57,17 @@ const PostCard = ({ post }: { post: Post }) => {
     setTimeout(() => { setRepostResult(null); setShowShare(false); }, 1200);
   };
 
-  const { liked, count: likes, toggle: handleLike } = useLikes("post", post.id, post.likes);
+  const { liked, count: likes, toggle: rawHandleLike } = useLikes("post", post.id, post.likes);
+  const guest = !user;
+  const needAuth = () => { toast("Зарегистрируйтесь, чтобы выполнять действия"); };
+  const handleLike = () => { if (guest) return needAuth(); rawHandleLike(); };
+  const toggleSaved = () => { if (guest) return needAuth(); rawToggleSaved(); };
+  const toggleFollow = () => { if (guest) return needAuth(); rawToggleFollow(); };
+  const toggleMute = () => { if (guest) { needAuth(); return muted; } return rawToggleMute(); };
+  const send: typeof rawSend = (...args) => { if (guest) { needAuth(); return Promise.resolve() as ReturnType<typeof rawSend>; } return rawSend(...args); };
+  const toggleCommentLike: typeof rawToggleCommentLike = (...args) => { if (guest) { needAuth(); return Promise.resolve(); } return rawToggleCommentLike(...args); };
   // enabled=true — превью последних комментариев грузится сразу, чтобы показать 2 штуки под постом
-  const { comments: allComments, count: commentCount, send, toggleLike: toggleCommentLike } = useComments("post", post.id, true, post.comments || 0);
+  const { comments: allComments, count: commentCount, send: rawSend, toggleLike: rawToggleCommentLike } = useComments("post", post.id, true, post.comments || 0);
   const previewComments = allComments.filter(c => !c.parentId).slice(0, 2);
 
   // Товары грузим ТОЛЬКО если у поста реально есть привязанные товары (экономим трафик)
@@ -109,6 +117,7 @@ const PostCard = ({ post }: { post: Post }) => {
   };
 
   const goToChat = () => {
+    if (!user) { toast("Зарегистрируйтесь, чтобы выполнять действия"); return; }
     window.dispatchEvent(new CustomEvent("open-direct-message", { detail: { handle: post.handle } }));
   };
 
@@ -293,12 +302,12 @@ const PostCard = ({ post }: { post: Post }) => {
           <div className="sheet-theme rounded-t-3xl overflow-hidden pb-8 md:rounded-2xl md:pb-0 md:mr-6 md:w-[300px] md:shadow-2xl" onClick={e => e.stopPropagation()}>
             {[
               { icon: "Bookmark", label: saved ? "Убрать из сохранённых" : "Сохранить", action: () => { toggleSaved(); setShowMenu(false); }, active: saved },
-              { icon: "Layers", label: "Добавить на доску", action: () => { setShowMenu(false); setShowAddToBoard(true); } },
+              { icon: "Layers", label: "Добавить на доску", action: () => { setShowMenu(false); if (guest) return needAuth(); setShowAddToBoard(true); } },
               { icon: "User", label: "Перейти в профиль", action: () => { setShowMenu(false); window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: post.handle } })); } },
               { icon: muted ? "Bell" : "BellOff", label: muted ? "Включить уведомления" : "Выключить уведомления", action: () => { const nowMuted = toggleMute(); toast.success(nowMuted ? `Уведомления от @${post.handle} выключены` : `Уведомления от @${post.handle} включены`); setShowMenu(false); } },
               { icon: "Link", label: "Скопировать ссылку", action: () => { navigator.clipboard.writeText(window.location.href).catch(() => {}); setShowMenu(false); } },
               { icon: "Share2", label: "Поделиться", action: () => { setShowMenu(false); setShowShare(true); } },
-              { icon: "Flag", label: "Пожаловаться", action: () => { setShowMenu(false); setShowReport(true); } },
+              { icon: "Flag", label: "Пожаловаться", action: () => { setShowMenu(false); if (guest) return needAuth(); setShowReport(true); } },
             ].map((item, i) => (
               <button
                 key={i}
@@ -376,6 +385,8 @@ const PostCard = ({ post }: { post: Post }) => {
                 <div className="flex-1 flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
                   <input
                     ref={commentInputRef}
+                    readOnly={!user}
+                    onFocus={() => { if (!user) { commentInputRef.current?.blur(); toast("Зарегистрируйтесь, чтобы выполнять действия"); } }}
                     value={commentText}
                     onChange={e => setCommentText(e.target.value)}
                     placeholder="Написать комментарий..."
