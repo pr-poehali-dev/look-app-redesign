@@ -92,7 +92,7 @@ const PostFeed = () => {
       const tags = hashtagsField
         ? (hashtagsField.match(/#\S+/g) || hashtagsField.split(/[\s,]+/).filter(Boolean).map((t: string) => t.replace(/^#/, ""))).map((t: string) => t.replace(/^#/, ""))
         : (desc.match(/#\S+/g) || []).map((t: string) => t.slice(1));
-      const caption = desc || (isVideo ? "Видео" : "Фото");
+      const caption = desc || (v.type === "text" ? "Пост" : isVideo ? "Видео" : "Фото");
       // Аватарка: берём из БД если есть. Подставляем свою — только если это пост текущего пользователя
       const isMyPost = (v.handle && user?.handle && v.handle === user.handle)
         || (v.author && user?.name && v.author === user.name)
@@ -112,6 +112,7 @@ const PostFeed = () => {
         time: formatTime(v.created_at),
         createdAt,
         isVideo,
+        isText: v.type === "text",
         category: v.category || null,
         templateId: v.template_id || null,
         hasProducts: !!v.has_products,

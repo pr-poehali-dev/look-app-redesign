@@ -1,3 +1,4 @@
+import TextPostComposer from "@/components/camera/TextPostComposer";
 import { PublishCompliance, DEFAULT_COMPLIANCE } from "@/components/camera/ComplianceFields";
 import { toast } from "sonner";
 import { useState, useRef, useEffect } from "react";
@@ -325,6 +326,10 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
 
   if (showLive) {
     return <LiveStream onClose={onClose} />;
+  }
+
+  if (mode === "Пост") {
+    return <TextPostComposer onClose={onClose} />;
   }
 
   if (mode === "Конструктор") {

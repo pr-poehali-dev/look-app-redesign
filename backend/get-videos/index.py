@@ -49,13 +49,13 @@ def handler(event: dict, context) -> dict:
             f"LEFT JOIN {schema}.legacy_posts lp ON lp.migrated_to_video_id = v.id "
             f"LEFT JOIN {schema}.legacy_users lu ON lu.id = lp.user_id "
             f"LEFT JOIN {schema}.app_users au ON au.id = v.user_id "
-            f"WHERE v.type = %s AND (v.hidden IS NULL OR v.hidden = FALSE) "
+            f"WHERE (v.type = %s OR (%s = 'image' AND v.type = 'text')) AND (v.hidden IS NULL OR v.hidden = FALSE) "
         ) + age_cond
 
         single_id = (params.get('id') or '').strip()
         if single_id.isdigit():
             cur.execute(
-                base_select.replace(age_cond, "", 1).replace("WHERE v.type = %s AND", "WHERE v.id = %s AND") + "LIMIT 1",
+                base_select.replace(age_cond, "", 1).replace("WHERE (v.type = %s OR (%s = 'image' AND v.type = 'text')) AND", "WHERE v.id = %s AND") + "LIMIT 1",
                 (int(single_id),)
             )
             r = cur.fetchone()
@@ -80,13 +80,13 @@ def handler(event: dict, context) -> dict:
         if category and category != 'all':
             cur.execute(
                 base_select + "AND v.category = %s ORDER BY v.created_at DESC LIMIT 80",
-                (media_type, category)
+                (media_type, media_type, category)
             )
             rows = cur.fetchall()
         else:
             cur.execute(
                 base_select + ("ORDER BY v.created_at DESC LIMIT 2000" if full_list else "ORDER BY v.created_at DESC LIMIT 200"),
-                (media_type,)
+                (media_type, media_type)
             )
             rows = cur.fetchall()
 
@@ -108,13 +108,13 @@ def handler(event: dict, context) -> dict:
             f"LEFT JOIN {schema}.legacy_posts lp ON lp.migrated_to_video_id = v.id "
             f"LEFT JOIN {schema}.legacy_users lu ON lu.id = lp.user_id "
             f"LEFT JOIN {schema}.app_users au ON au.id = v.user_id "
-            f"WHERE v.type = %s AND (v.hidden IS NULL OR v.hidden = FALSE) "
+            f"WHERE (v.type = %s OR (%s = 'image' AND v.type = 'text')) AND (v.hidden IS NULL OR v.hidden = FALSE) "
         ) + age_cond
         try:
             if category and category != 'all':
-                cur.execute(repost_select + "AND v.category = %s ORDER BY r.created_at DESC LIMIT 40", (media_type, category))
+                cur.execute(repost_select + "AND v.category = %s ORDER BY r.created_at DESC LIMIT 40", (media_type, media_type, category))
             else:
-                cur.execute(repost_select + "ORDER BY r.created_at DESC LIMIT 60", (media_type,))
+                cur.execute(repost_select + "ORDER BY r.created_at DESC LIMIT 60", (media_type, media_type))
             repost_rows_raw = cur.fetchall()
         except Exception:
             repost_rows_raw = []

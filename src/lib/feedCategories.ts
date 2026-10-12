@@ -6,6 +6,11 @@ export interface FeedCategory {
 
 export const FEED_CATEGORIES: FeedCategory[] = [
   { id: "recommend", label: "Все", match: [] },
+  { id: "lifehacks", label: "Советы", match: ["lifehacks"] },
+  { id: "traveldiary", label: "Дневник путешествий", match: ["traveldiary"] },
+  { id: "diy", label: "Сделай сам", match: ["diy"] },
+  { id: "review", label: "Обзоры", match: ["review"] },
+  { id: "tutorial", label: "Туториалы", match: ["tutorial"] },
   { id: "fashion", label: "Мода", match: ["fashion", "style"] },
   { id: "food", label: "Еда", match: ["food"] },
   { id: "makeup", label: "Макияж", match: ["makeup", "beauty"] },
@@ -13,7 +18,7 @@ export const FEED_CATEGORIES: FeedCategory[] = [
   { id: "kpop", label: "KPOP", match: ["kpop"] },
   { id: "career", label: "Карьера", match: ["career", "education"] },
   { id: "relations", label: "Отношения", match: ["relations", "family"] },
-  { id: "home", label: "Дом", match: ["home", "diy"] },
+  { id: "home", label: "Дом", match: ["home"] },
   { id: "gaming", label: "Игры", match: ["gaming"] },
   { id: "travel", label: "Путешествия", match: ["travel"] },
   { id: "fitness", label: "Фитнес", match: ["fitness"] },

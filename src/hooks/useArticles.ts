@@ -16,7 +16,21 @@ export interface Article {
   author_handle?: string | null;
   author_avatar?: string | null;
   read_minutes: number;
+  kind?: "article" | "tutorial";
+  steps?: TutorialStep[];
+  steps_count?: number;
+  materials?: string;
+  duration?: string;
+  difficulty?: "" | "easy" | "medium" | "hard";
 }
+
+export interface TutorialStep {
+  title: string;
+  text: string;
+  image: string;
+}
+
+export const DIFFICULTY_LABEL: Record<string, string> = { easy: "Легко", medium: "Средне", hard: "Сложно" };
 
 const parseBody = async (res: Response) => {
   const raw = await res.json();
@@ -60,7 +74,10 @@ export const fetchArticle = async (id: number): Promise<Article | null> => {
 
 export const saveArticle = async (
   userId: string,
-  a: { id?: number; title: string; body: string; cover_image?: string | null; source_url?: string | null }
+  a: {
+    id?: number; title: string; body: string; cover_image?: string | null; source_url?: string | null;
+    kind?: "article" | "tutorial"; steps?: TutorialStep[]; materials?: string; duration?: string; difficulty?: string;
+  }
 ): Promise<boolean> => {
   const res = await fetch(`${ARTICLES_URL}?action=${a.id ? "update" : "create"}`, {
     method: a.id ? "PUT" : "POST",

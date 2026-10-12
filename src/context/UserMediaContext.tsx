@@ -5,7 +5,7 @@ export interface UserVideo {
   url: string;
   thumb?: string;
   thumbnail?: string;
-  type: "video" | "image";
+  type: "video" | "image" | "text";
   label: string;
   description?: string;
   hashtags?: string;

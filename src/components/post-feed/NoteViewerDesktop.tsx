@@ -136,7 +136,11 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex-1 min-w-0 nv-media flex items-center justify-center">
-          {post.isVideo ? (
+          {post.isText ? (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#2a1f3d] to-[#1a2a3a] px-10">
+              <p className="text-white text-xl leading-relaxed whitespace-pre-wrap break-words max-h-full overflow-y-auto">{post.caption}</p>
+            </div>
+          ) : post.isVideo ? (
             <video
               src={post.image}
               className="max-w-full max-h-full w-full h-full object-contain"

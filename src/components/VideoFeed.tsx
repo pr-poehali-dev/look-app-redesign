@@ -8,6 +8,10 @@ import { useFollowingList } from "@/hooks/useFollowing";
 import { useHiddenAuthors } from "@/hooks/useFeedSignals";
 
 export const CATEGORIES = [
+  { id: "lifehacks", label: "Советы по образу жизни" },
+  { id: "traveldiary", label: "Дневник путешествий" },
+  { id: "review", label: "Обзоры" },
+  { id: "tutorial", label: "Туториалы" },
   { id: "new", label: "Новые" },
   { id: "all", label: "Все" },
   { id: "subs", label: "Подписки" },

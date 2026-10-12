@@ -54,8 +54,12 @@ const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
         onClick={onOpen}
         className="block w-full text-left active:opacity-90 transition-opacity"
       >
-        <div className="relative w-full bg-white/10" style={{ aspectRatio: aspect }}>
-          {post.isVideo ? (
+        <div className="relative w-full bg-white/10" style={post.isText ? undefined : { aspectRatio: aspect }}>
+          {post.isText ? (
+            <div className="w-full px-3 py-4 bg-gradient-to-br from-[#2a1f3d] to-[#1a2a3a]">
+              <p className="text-white text-[14px] leading-snug line-clamp-8 whitespace-pre-wrap break-words">{post.caption}</p>
+            </div>
+          ) : post.isVideo ? (
             <video src={post.image} className="absolute inset-0 w-full h-full object-cover" muted playsInline preload="metadata" />
           ) : (
             <img src={post.image} alt={post.caption} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
@@ -66,8 +70,8 @@ const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
             </div>
           )}
         </div>
-        <div className="p-2.5">
-          <p className="text-white text-[13px] leading-snug line-clamp-2 mb-2">{post.caption}</p>
+        <div className={post.isText ? "px-2.5 pb-2.5 pt-1" : "p-2.5"}>
+          {!post.isText && <p className="text-white text-[13px] leading-snug line-clamp-2 mb-2">{post.caption}</p>}
           <div className="flex items-center justify-between gap-1">
             <div className="flex items-center gap-1.5 min-w-0">
               <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0">

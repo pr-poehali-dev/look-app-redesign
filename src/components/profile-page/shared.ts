@@ -24,6 +24,10 @@ export interface Story {
 export const AUTH_URL = "https://functions.poehali.dev/075d6280-020a-48ce-a5e4-64eb3291a01e";
 
 export const VIDEO_CATEGORIES = [
+  { id: "lifehacks", label: "Советы по образу жизни" },
+  { id: "traveldiary", label: "Дневник путешествий" },
+  { id: "review", label: "Обзоры" },
+  { id: "tutorial", label: "Туториалы" },
   { id: "music", label: "Музыка" },
   { id: "dance", label: "Танцы" },
   { id: "sport", label: "Спорт" },

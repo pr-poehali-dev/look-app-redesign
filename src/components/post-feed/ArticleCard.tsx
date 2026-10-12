@@ -24,7 +24,7 @@ const ArticleCard = ({ a, onOpen }: { a: Article; onOpen: () => void }) => {
         <div className="p-3 flex flex-col gap-1">
           <p className="text-white font-bold text-base leading-snug line-clamp-2">{a.title}</p>
           <p className="text-white/60 text-sm line-clamp-2">{a.body}</p>
-          <p className="text-white/40 text-[11px] pt-1">{a.author_name} · {a.read_minutes} мин · {a.views} просм.</p>
+          <p className="text-white/40 text-[11px] pt-1">{a.kind === "tutorial" ? `Туториал · ${a.steps_count || 0} шагов` : `${a.read_minutes} мин`} · {a.author_name} · {a.views} просм.</p>
         </div>
       </button>
       <div className="flex items-center gap-5 px-3 pb-3 pt-1">

@@ -58,6 +58,7 @@ export const toPost = (v: any): Post => {
     time: formatTime(v.created_at),
     createdAt: v.created_at ? parseServerDate(v.created_at).getTime() : undefined,
     isVideo: v.type === "video",
+    isText: v.type === "text",
     templateId: v.template_id || null,
     hasProducts: !!v.has_products,
     views: typeof v.views === "number" ? v.views : undefined,

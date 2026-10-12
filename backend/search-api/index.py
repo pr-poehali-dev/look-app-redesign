@@ -178,11 +178,11 @@ def handler(event: dict, context) -> dict:
                 "created_at DESC", "views DESC NULLS LAST", sort, period, 'created_at')
             items = [{'id': r[0], 'title': r[1], 'cover': r[2], 'views': r[3] or 0} for r in rows]
         else:
-            media = 'video' if kind == 'video' else 'image'
+            type_cond = "type = 'video'" if kind == 'video' else "type IN ('image', 'text')"
             rows, fuzzy = run_search(
                 cur, f"{schema}.videos", ['description', 'hashtags', 'author', 'handle'],
                 "id, url, thumbnail, author, handle, description, likes, comments, created_at, type, user_id",
-                f"type = '{media}' AND (hidden IS NULL OR hidden = FALSE)" + ("" if adult else " AND age_rating <> '18+'"), p,
+                f"{type_cond} AND (hidden IS NULL OR hidden = FALSE)" + ("" if adult else " AND age_rating <> '18+'"), p,
                 "created_at DESC", "likes DESC NULLS LAST, created_at DESC", sort, period, 'created_at')
             items = [{'id': r[0], 'url': r[1], 'thumbnail': r[2], 'author': r[3], 'handle': r[4],
                       'description': r[5], 'likes': str(r[6]), 'comments': str(r[7]),

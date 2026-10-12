@@ -176,6 +176,41 @@ def handler(event: dict, context) -> dict:
                                 'key': key, 'type': media_type, 'moderation': 'pending' if flagged else 'ok'}),
         }
 
+    if action == 'text_post':
+        text = (body.get('text') or '').strip()[:2000]
+        user_id = (body.get('user_id') or '').strip()[:100]
+        if not user_id or user_id == 'anonymous':
+            return {'statusCode': 401, 'headers': _cors(), 'body': json.dumps({'error': 'Войдите в аккаунт'})}
+        if len(text) < 3:
+            return {'statusCode': 400, 'headers': _cors(), 'body': json.dumps({'error': 'Напишите хотя бы пару слов'})}
+        age_rating = body.get('age_rating') if body.get('age_rating') in ('0+', '6+', '12+', '16+', '18+') else '12+'
+        place = (body.get('place') or '').strip()[:120] or None
+        hashtags = (body.get('hashtags') or '').strip()[:300]
+        category = (body.get('category') or 'everyday').strip()[:40]
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
+        try:
+            cur.execute("SELECT word FROM moderation_words")
+            low = f"{text} {hashtags}".lower().replace('ё', 'е')
+            flagged = any(w[0].lower().replace('ё', 'е') in low for w in cur.fetchall())
+            cur.execute(
+                "INSERT INTO videos (url, author, handle, description, hashtags, category, type, user_id, hidden, hidden_reason, age_rating, place) "
+                "VALUES ('', %s, %s, %s, %s, %s, 'text', %s, %s, %s, %s, %s) RETURNING id",
+                ((body.get('author') or 'Пользователь')[:100], (body.get('handle') or 'user')[:100], text, hashtags, category,
+                 user_id, flagged, 'auto_words' if flagged else None, age_rating, place))
+            post_id = cur.fetchone()[0]
+            if flagged:
+                cur.execute(
+                    "INSERT INTO reports (target_type, target_id, reason, comment, reporter_id, reporter_name, status) "
+                    "VALUES ('post', %s, 'illegal', %s, 'auto', 'Автомодерация', 'open')",
+                    (str(post_id), 'Автоматически скрыто: запрещённые слова в тексте'))
+            conn.commit()
+        finally:
+            cur.close()
+            conn.close()
+        return {'statusCode': 200, 'headers': _cors(),
+                'body': json.dumps({'id': post_id, 'moderation': 'pending' if flagged else 'ok'})}
+
     if action == 'abort':
         upload_id = body.get('upload_id')
         total_parts = int(body.get('total_parts') or 0)

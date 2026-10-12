@@ -175,8 +175,8 @@ const PostCard = ({ post }: { post: Post }) => {
       </div>
 
       {/* Photo / Video */}
-      <div className="w-full flex-1 min-h-0 overflow-hidden bg-black flex items-center justify-center">
-        {post.isVideo ? (
+      <div className={`w-full min-h-0 overflow-hidden flex items-center justify-center ${post.isText ? "flex-shrink-0" : "flex-1 bg-black"}`}>
+        {post.isText ? null : post.isVideo ? (
           <video src={post.image} className="max-w-full max-h-full w-auto h-auto object-contain" controls playsInline loop />
         ) : post.images && post.images.length > 0 ? (
           <PhotoCarousel images={[post.image, ...post.images]} alt={post.caption} />
@@ -237,14 +237,22 @@ const PostCard = ({ post }: { post: Post }) => {
 
         {/* Caption */}
         <div className="px-3 pb-1">
+          {post.isText ? (
+            <p className="text-white text-[16px] leading-relaxed whitespace-pre-wrap break-words py-2">
+              <LinkifiedText text={post.caption} />
+            </p>
+          ) : (
+          <>
           <span className="text-white font-semibold text-[13px] mr-1.5">{post.handle}</span>
           <span className="text-white text-[13px]">
             <LinkifiedText text={expanded ? post.caption : post.caption.slice(0, 90) + (post.caption.length > 90 ? "…" : "")} />
           </span>
-          {post.caption.length > 90 && !expanded && (
+          </>
+          )}
+          {!post.isText && post.caption.length > 90 && !expanded && (
             <button onClick={() => setExpanded(true)} className="text-white/40 text-[13px] ml-1">ещё</button>
           )}
-          {post.caption.length > 90 && expanded && (
+          {!post.isText && post.caption.length > 90 && expanded && (
             <button onClick={() => setExpanded(false)} className="text-white/40 text-[13px] ml-1">свернуть</button>
           )}
           {post.isAd && post.adErid && (

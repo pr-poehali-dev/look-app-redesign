@@ -15,11 +15,46 @@ CORS = {
     'Access-Control-Max-Age': '86400',
 }
 
-FIELDS = "a.id, a.owner_user_id, a.title, a.cover_image, a.body, a.source_url, a.views, a.created_at, u.name, u.handle, u.avatar"
+FIELDS = "a.id, a.owner_user_id, a.title, a.cover_image, a.body, a.source_url, a.views, a.created_at, u.name, u.handle, u.avatar, a.kind, a.steps, a.materials, a.duration, a.difficulty"
 
 
 def _resp(status, payload):
     return {'statusCode': status, 'headers': {**CORS, 'Content-Type': 'application/json'}, 'body': json.dumps(payload, default=str)}
+
+
+def _load_steps(raw):
+    try:
+        data = json.loads(raw) if raw else []
+    except Exception:
+        return []
+    return data if isinstance(data, list) else []
+
+
+def _clean_steps(raw):
+    out = []
+    for st in (raw or [])[:30]:
+        if not isinstance(st, dict):
+            continue
+        text = str(st.get('text') or '').strip()[:1500]
+        title = str(st.get('title') or '').strip()[:120]
+        image = str(st.get('image') or '').strip()[:1000]
+        if not text and not title:
+            continue
+        out.append({'title': title, 'text': text, 'image': image if image.startswith('https://') else ''})
+    return out
+
+
+def _tutorial_fields(body):
+    kind = 'tutorial' if body.get('kind') == 'tutorial' else 'article'
+    steps = _clean_steps(body.get('steps')) if kind == 'tutorial' else []
+    difficulty = body.get('difficulty') if body.get('difficulty') in ('easy', 'medium', 'hard') else None
+    return (
+        kind,
+        json.dumps(steps, ensure_ascii=False) if steps else None,
+        str(body.get('materials') or '').strip()[:1500] or None,
+        str(body.get('duration') or '').strip()[:40] or None,
+        difficulty if kind == 'tutorial' else None,
+    ), steps
 
 
 def _row(r, full=True):
@@ -30,6 +65,12 @@ def _row(r, full=True):
         'created_at': r[7].isoformat() if r[7] else None,
         'author_name': r[8] or r[9] or 'Автор', 'author_handle': r[9], 'author_avatar': r[10],
         'read_minutes': max(1, round(len(body.split()) / 200)),
+        'kind': r[11] or 'article',
+        'steps': _load_steps(r[12]) if full else [],
+        'steps_count': len(_load_steps(r[12])),
+        'materials': r[13] or '',
+        'duration': r[14] or '',
+        'difficulty': r[15] or '',
     }
 
 
@@ -170,11 +211,17 @@ def handler(event: dict, context) -> dict:
                 return _resp(401, {'error': 'X-User-Id required'})
             title = str(body.get('title') or '').strip()[:200]
             text = str(body.get('body') or '').strip()[:30000]
-            if not title or not text:
+            extra, steps = _tutorial_fields(body)
+            if extra[0] == 'tutorial':
+                if not title or not steps:
+                    return _resp(400, {'error': 'Добавьте заголовок и хотя бы один шаг'})
+                text = text or title
+            elif not title or not text:
                 return _resp(400, {'error': 'title and body required'})
             cur.execute(
-                f"INSERT INTO {schema}.articles (owner_user_id, title, cover_image, body, source_url) VALUES (%s,%s,%s,%s,%s) RETURNING id",
-                (user_id, title, str(body.get('cover_image') or '')[:1000] or None, text, str(body.get('source_url') or '')[:1000] or None)
+                f"INSERT INTO {schema}.articles (owner_user_id, title, cover_image, body, source_url, kind, steps, materials, duration, difficulty) "
+                f"VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id",
+                (user_id, title, str(body.get('cover_image') or '')[:1000] or None, text, str(body.get('source_url') or '')[:1000] or None) + extra
             )
             aid = cur.fetchone()[0]
             conn.commit()
@@ -186,11 +233,17 @@ def handler(event: dict, context) -> dict:
             aid = int(body.get('id') or 0)
             title = str(body.get('title') or '').strip()[:200]
             text = str(body.get('body') or '').strip()[:30000]
-            if not aid or not title or not text:
+            extra, steps = _tutorial_fields(body)
+            if extra[0] == 'tutorial':
+                text = text or title
+                if not aid or not title or not steps:
+                    return _resp(400, {'error': 'id, title and steps required'})
+            elif not aid or not title or not text:
                 return _resp(400, {'error': 'id, title, body required'})
             cur.execute(
-                f"UPDATE {schema}.articles SET title=%s, body=%s, cover_image=%s, updated_at=now() WHERE id=%s AND owner_user_id=%s",
-                (title, text, str(body.get('cover_image') or '')[:1000] or None, aid, user_id)
+                f"UPDATE {schema}.articles SET title=%s, body=%s, cover_image=%s, kind=%s, steps=%s, materials=%s, duration=%s, difficulty=%s, updated_at=now() "
+                f"WHERE id=%s AND owner_user_id=%s",
+                (title, text, str(body.get('cover_image') or '')[:1000] or None) + extra + (aid, user_id)
             )
             conn.commit()
             return _resp(200, {'ok': True})

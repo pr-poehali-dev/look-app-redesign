@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { promptAuth } from "@/lib/promptAuth";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
-import { Article, fetchArticle, importArticleByUrl, saveArticle, useArticles } from "@/hooks/useArticles";
+import { Article, DIFFICULTY_LABEL, fetchArticle, importArticleByUrl, saveArticle, useArticles } from "@/hooks/useArticles";
+import TutorialFields, { EMPTY_TUTORIAL, TutorialValue } from "@/components/profile/TutorialFields";
 import { uploadProductImage } from "@/hooks/useProducts";
 import { toast } from "sonner";
 import ArticleEngage from "@/components/profile/ArticleEngage";
@@ -25,7 +26,7 @@ export const Reader = ({ id, onBack, onEdit }: { id: number; onBack: () => void;
   const { following, toggle: toggleFollow, isSelf } = useFollowing(a?.author_handle || "");
   return (
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-      <Header title="Статья" onBack={onBack} right={a && a.owner_user_id === user?.id ? (
+      <Header title={a?.kind === "tutorial" ? "Туториал" : "Статья"} onBack={onBack} right={a && a.owner_user_id === user?.id ? (
         <button onClick={() => onEdit(a)}><Icon name="Pencil" size={18} className="text-black" /></button>
       ) : undefined} />
       {!a ? (
@@ -50,6 +51,44 @@ export const Reader = ({ id, onBack, onEdit }: { id: number; onBack: () => void;
               )}
             </div>
             <div className="text-black text-[15px] leading-relaxed whitespace-pre-wrap">{a.body}</div>
+            {a.kind === "tutorial" && (
+              <div className="flex flex-col gap-4">
+                {(a.duration || a.difficulty) && (
+                  <div className="flex flex-wrap gap-2">
+                    {a.duration && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">
+                        <Icon name="Clock" size={13} /> {a.duration}
+                      </span>
+                    )}
+                    {a.difficulty && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">
+                        <Icon name="Gauge" size={13} /> {DIFFICULTY_LABEL[a.difficulty]}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {a.materials && (
+                  <div className="rounded-2xl bg-gray-50 p-4">
+                    <p className="text-black font-bold text-sm mb-2 flex items-center gap-1.5"><Icon name="Package" size={15} /> Что понадобится</p>
+                    <ul className="flex flex-col gap-1">
+                      {a.materials.split("\n").map((m) => m.trim()).filter(Boolean).map((m, i) => (
+                        <li key={i} className="text-gray-700 text-sm flex gap-2"><span className="text-gray-300">•</span>{m}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {(a.steps || []).map((st, i) => (
+                  <div key={i} className="flex gap-3">
+                    <span className="w-8 h-8 rounded-full bg-black text-white text-sm font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                    <div className="flex-1 min-w-0 flex flex-col gap-2">
+                      {st.title && <p className="text-black font-bold text-base leading-snug">{st.title}</p>}
+                      {st.text && <p className="text-black text-[15px] leading-relaxed whitespace-pre-wrap">{st.text}</p>}
+                      {st.image && <img src={st.image} alt="" className="w-full rounded-xl object-cover" loading="lazy" />}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {a.source_url && (
               <a href={a.source_url} target="_blank" rel="noopener noreferrer" className="text-[#8b5cf6] text-xs underline break-all">Источник</a>
             )}
@@ -66,6 +105,12 @@ const Editor = ({ article, onBack, onSaved }: { article?: Article; onBack: () =>
   const { user } = useAuth();
   const [title, setTitle] = useState(article?.title || "");
   const [body, setBody] = useState(article?.body || "");
+  const [kind, setKind] = useState<"article" | "tutorial">(article?.kind || "article");
+  const [tutorial, setTutorial] = useState<TutorialValue>(
+    article?.kind === "tutorial"
+      ? { steps: article.steps?.length ? article.steps : EMPTY_TUTORIAL.steps, materials: article.materials || "", duration: article.duration || "", difficulty: article.difficulty || "" }
+      : EMPTY_TUTORIAL
+  );
   const [cover, setCover] = useState<string | null>(article?.cover_image || null);
   const [source, setSource] = useState<string | null>(article?.source_url || null);
   const [importUrl, setImportUrl] = useState("");
@@ -97,18 +142,44 @@ const Editor = ({ article, onBack, onSaved }: { article?: Article; onBack: () =>
 
   const save = async () => {
     if (!user?.id) return;
+    if (kind === "tutorial") {
+      const filled = tutorial.steps.filter((st) => st.text.trim() || st.title.trim());
+      if (!title.trim() || filled.length === 0) { toast.error("Добавь заголовок и хотя бы один шаг"); return; }
+      setSaving(true);
+      const ok = await saveArticle(user.id, {
+        id: article?.id, title, body: body.trim() || title, cover_image: cover, kind: "tutorial",
+        steps: filled, materials: tutorial.materials, duration: tutorial.duration, difficulty: tutorial.difficulty,
+      });
+      setSaving(false);
+      if (ok) { toast.success("Туториал опубликован"); onSaved(); } else toast.error("Не удалось сохранить");
+      return;
+    }
     if (!title.trim() || !body.trim()) { toast.error("Заполни заголовок и текст"); return; }
     setSaving(true);
-    const ok = await saveArticle(user.id, { id: article?.id, title, body, cover_image: cover, source_url: source });
+    const ok = await saveArticle(user.id, { id: article?.id, title, body, cover_image: cover, source_url: source, kind: "article" });
     setSaving(false);
     if (ok) { toast.success("Статья опубликована"); onSaved(); } else toast.error("Не удалось сохранить");
   };
 
   return (
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-      <Header title={article ? "Редактирование" : "Новая статья"} onBack={onBack} />
+      <Header title={article ? "Редактирование" : kind === "tutorial" ? "Новый туториал" : "Новая статья"} onBack={onBack} />
       <div className="px-4 py-4 flex flex-col gap-3 pb-20">
         {!article && (
+          <div className="flex gap-2">
+            {([["article", "Статья"], ["tutorial", "Туториал по шагам"]] as const).map(([k, label]) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setKind(k)}
+                className={`flex-1 py-2 rounded-xl text-sm font-semibold ${kind === k ? "bg-black text-white" : "bg-gray-100 text-gray-600"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+        {!article && kind === "article" && (
           <div className="rounded-2xl bg-gray-50 p-3 flex flex-col gap-2">
             <span className="text-black text-xs font-semibold flex items-center gap-1.5"><Icon name="Download" size={13} /> Импорт по ссылке</span>
             <div className="flex gap-2">
@@ -127,8 +198,16 @@ const Editor = ({ article, onBack, onSaved }: { article?: Article; onBack: () =>
         </button>
         <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} placeholder="Заголовок"
           className="w-full px-1 py-2 text-black text-xl font-bold outline-none border-b border-gray-100" />
-        <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={14} placeholder="Напиши свою статью..."
-          className="w-full px-1 py-2 text-black text-[15px] leading-relaxed outline-none resize-none" />
+        {kind === "tutorial" ? (
+          <>
+            <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={3} placeholder="Коротко: что получится в итоге"
+              className="w-full px-1 py-2 text-black text-[15px] leading-relaxed outline-none resize-none" />
+            <TutorialFields userId={user?.id || ""} value={tutorial} onChange={setTutorial} />
+          </>
+        ) : (
+          <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={14} placeholder="Напиши свою статью..."
+            className="w-full px-1 py-2 text-black text-[15px] leading-relaxed outline-none resize-none" />
+        )}
         <button onClick={save} disabled={saving} className="w-full py-3 rounded-xl bg-black text-white font-bold text-sm disabled:opacity-60">
           {saving ? "Публикую..." : "Опубликовать"}
         </button>
@@ -171,7 +250,7 @@ const ArticlesScreen = ({ onBack }: { onBack: () => void }) => {
                 <div className="p-3 flex flex-col gap-1">
                   <p className="text-black font-bold text-base leading-snug line-clamp-2">{a.title}</p>
                   <p className="text-gray-500 text-sm line-clamp-2">{a.body}</p>
-                  <p className="text-gray-400 text-[11px] pt-1">{a.author_name} · {a.read_minutes} мин · {a.views} просм.</p>
+                  <p className="text-gray-400 text-[11px] pt-1">{a.kind === "tutorial" ? `Туториал · ${a.steps_count || 0} шагов` : `${a.read_minutes} мин`} · {a.author_name} · {a.views} просм.</p>
                 </div>
               </button>
               {mode === "mine" && a.owner_user_id === user?.id && (

@@ -31,6 +31,10 @@ const SUGGESTED_TAGS: Record<string, string[]> = {
   relations: ["отношения", "любовь", "пара", "свидание", "love"],
   show: ["шоу", "эфир", "выступление", "talent", "show"],
   lipsync: ["липсинк", "lipsync", "озвучка", "дуэт", "трек"],
+  lifehacks: ["лайфхак", "совет", "полезное", "привычки", "lifestyle"],
+  traveldiary: ["дневникпутешествий", "поездка", "маршрут", "путешествия", "travel"],
+  review: ["обзор", "отзыв", "честныйобзор", "покупка", "review"],
+  tutorial: ["туториал", "пошагово", "урок", "какэто", "tutorial"],
   everyday: ["повседневность", "будни", "день", "влог", "lifestyle"],
   society: ["общество", "мнение", "новости", "люди", "тема"],
   family: ["семья", "дети", "родители", "дом", "family"],
@@ -42,6 +46,10 @@ const SUGGESTED_TAGS: Record<string, string[]> = {
 };
 
 const VIDEO_CATEGORIES = [
+  { id: "lifehacks", label: "Советы по образу жизни" },
+  { id: "traveldiary", label: "Дневник путешествий" },
+  { id: "review", label: "Обзоры" },
+  { id: "tutorial", label: "Туториалы" },
   { id: "music", label: "Музыка" },
   { id: "dance", label: "Танцы" },
   { id: "sport", label: "Спорт" },

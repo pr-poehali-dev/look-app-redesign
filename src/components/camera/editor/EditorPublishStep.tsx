@@ -16,6 +16,10 @@ export interface PendingProduct {
 }
 
 const VIDEO_CATEGORIES = [
+  { id: "lifehacks", label: "Советы по образу жизни" },
+  { id: "traveldiary", label: "Дневник путешествий" },
+  { id: "review", label: "Обзоры" },
+  { id: "tutorial", label: "Туториалы" },
   { id: "music", label: "Музыка" },
   { id: "dance", label: "Танцы" },
   { id: "sport", label: "Спорт" },

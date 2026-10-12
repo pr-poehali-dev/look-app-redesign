@@ -73,8 +73,9 @@ const UserListScreen = ({ title, users, onBack, emptyText, showUnfollow }: { tit
 interface Story {
   id: number;
   url: string;
-  type: "image" | "video";
+  type: "image" | "video" | "text";
   label: string;
+  description?: string;
 }
 
 interface MediaCounts { likes: Record<string, number>; comments: Record<string, number>; saves: Record<string, number>; downloads: Record<string, number>; views: Record<string, number> }
@@ -174,7 +175,11 @@ const MediaViewer = ({ items, startIndex, onClose, onDelete, isRepostView, count
 
       {/* Media */}
       <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden">
-        {item.type === "video" ? (
+        {item.type === "text" ? (
+          <div key={item.id} className="w-full h-full overflow-y-auto flex items-center justify-center px-8 py-24 bg-gradient-to-br from-[#2a1f3d] to-[#1a2a3a]">
+            <p className="text-white text-lg leading-relaxed whitespace-pre-wrap break-words">{item.description}</p>
+          </div>
+        ) : item.type === "video" ? (
           <video
             key={item.id}
             src={item.url}
@@ -213,6 +218,10 @@ const MediaViewer = ({ items, startIndex, onClose, onDelete, isRepostView, count
 const AUTH_URL = "https://functions.poehali.dev/075d6280-020a-48ce-a5e4-64eb3291a01e";
 
 const VIDEO_CATEGORIES = [
+  { id: "lifehacks", label: "Советы по образу жизни" },
+  { id: "traveldiary", label: "Дневник путешествий" },
+  { id: "review", label: "Обзоры" },
+  { id: "tutorial", label: "Туториалы" },
   { id: "music", label: "Музыка" },
   { id: "dance", label: "Танцы" },
   { id: "sport", label: "Спорт" },
@@ -312,7 +321,7 @@ const ProfilePage = () => {
   }, [user?.handle]);
   const [viewingStory, setViewingStory] = useState<number | null>(null);
   const [storyOrigin, setStoryOrigin] = useState<DOMRect | null>(null);
-  const [mediaViewer, setMediaViewer] = useState<{ tab: "video" | "image"; id: number; onlyReposts?: boolean } | null>(null);
+  const [mediaViewer, setMediaViewer] = useState<{ tab: "video" | "image" | "text"; id: number; onlyReposts?: boolean } | null>(null);
   const [avatarLoading, setAvatarLoading] = useState(false);
 
   useEffect(() => {
@@ -755,19 +764,25 @@ const ProfilePage = () => {
         })()
       ) : tab === "posts" ? (
         (() => {
-          const photos = stories.filter(s => s.type === "image" && !s.is_repost);
+          const photos = stories.filter(s => (s.type === "image" || s.type === "text") && !s.is_repost);
           return photos.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
               <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
                 <Icon name="Image" size={28} className="text-gray-300" />
               </div>
-              <p className="text-sm text-gray-400">Нет загруженных фото</p>
+              <p className="text-sm text-gray-400">Нет фото и постов</p>
             </div>
           ) : (
             <div className="grid grid-cols-3 md:grid-cols-4 gap-1 bg-gray-200 p-1">
               {photos.map((item) => (
-                <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200 cursor-pointer" onClick={() => setMediaViewer({ tab: "image", id: item.id })}>
-                  <img src={item.url} alt="" className="w-full h-full object-cover rounded-md" />
+                <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200 cursor-pointer" onClick={() => setMediaViewer({ tab: item.type === "text" ? "text" : "image", id: item.id })}>
+                  {item.type === "text" ? (
+                    <div className="w-full h-full rounded-md p-2 bg-gradient-to-br from-[#2a1f3d] to-[#1a2a3a] flex items-center">
+                      <p className="text-white text-[11px] leading-snug line-clamp-6 break-words">{item.description}</p>
+                    </div>
+                  ) : (
+                    <img src={item.url} alt="" className="w-full h-full object-cover rounded-md" />
+                  )}
                 </div>
               ))}
             </div>
