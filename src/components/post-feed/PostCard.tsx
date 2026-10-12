@@ -162,7 +162,7 @@ const PostCard = ({ post }: { post: Post }) => {
             )}
           </div>
         </div>
-        <button className="p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer" onClick={() => setShowMenu(true)} title="Ещё действия">
+        <button className="p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer" onClick={() => { if (guest) return needAuth(); setShowMenu(true); }} title="Ещё действия">
           <Icon name="MoreHorizontal" size={20} className="text-white" />
         </button>
       </div>
@@ -186,10 +186,10 @@ const PostCard = ({ post }: { post: Post }) => {
               className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph transition-all duration-150"}
             />
           </button>
-          <button onClick={() => setShowComments(true)} className="flex items-center justify-center active:scale-90 transition-transform">
+          <button onClick={() => { if (guest) return needAuth(); setShowComments(true); }} className="flex items-center justify-center active:scale-90 transition-transform">
             <Icon name="MessageDots" size={26} className="action-icon-glyph" />
           </button>
-          <button onClick={() => setShowShare(true)} className="flex items-center justify-center active:scale-90 transition-transform">
+          <button onClick={() => { if (guest) return needAuth(); setShowShare(true); }} className="flex items-center justify-center active:scale-90 transition-transform">
             <Icon name="ShareForward" size={26} className="action-icon-glyph" />
           </button>
         </div>
@@ -264,7 +264,7 @@ const PostCard = ({ post }: { post: Post }) => {
         {/* View comments + переход в чат обсуждения */}
         {commentCount > 0 && (
           <div className="px-3 pb-1 flex items-center gap-3">
-            <button onClick={() => setShowComments(true)}>
+            <button onClick={() => { if (guest) return needAuth(); setShowComments(true); }}>
               <span className="text-white/40 text-[13px]">Посмотреть все комментарии ({commentCount})</span>
             </button>
             <button onClick={goToChat} className="flex items-center gap-1 text-[#61d4f0]">
