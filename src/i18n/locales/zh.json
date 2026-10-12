@@ -33,7 +33,6 @@
   "settings": {
     "title": "设置",
     "account": "账号",
-    "saved": "已保存",
     "languages": "语言",
     "blocked": "已屏蔽",
     "qrCode": "我的二维码",
@@ -45,7 +44,6 @@
     "languageChanged": "语言已更改",
     "noBlocked": "没有被屏蔽的用户",
     "unblock": "取消屏蔽",
-    "noSaved": "没有已保存的视频",
     "qrShare": "分享二维码",
     "qrDescription": "扫描二维码在 Look 上找到我",
     "notif": {

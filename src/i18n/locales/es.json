@@ -33,7 +33,6 @@
   "settings": {
     "title": "Ajustes",
     "account": "Cuenta",
-    "saved": "Guardados",
     "languages": "Idiomas",
     "blocked": "Bloqueados",
     "qrCode": "Mi código QR",
@@ -45,7 +44,6 @@
     "languageChanged": "Idioma cambiado",
     "noBlocked": "Sin usuarios bloqueados",
     "unblock": "Desbloquear",
-    "noSaved": "Sin videos guardados",
     "qrShare": "Compartir QR",
     "qrDescription": "Escanea el código para encontrarme en Look",
     "notif": {

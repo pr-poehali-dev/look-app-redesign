@@ -33,7 +33,6 @@
   "settings": {
     "title": "Settings",
     "account": "Account",
-    "saved": "Saved",
     "languages": "Languages",
     "blocked": "Blocked",
     "qrCode": "My QR code",
@@ -45,7 +44,6 @@
     "languageChanged": "Language changed",
     "noBlocked": "No blocked users",
     "unblock": "Unblock",
-    "noSaved": "No saved videos",
     "qrShare": "Share QR code",
     "qrDescription": "Scan the code to find me on Look",
     "notif": {
