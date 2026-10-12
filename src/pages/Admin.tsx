@@ -4,7 +4,7 @@ import Icon from "@/components/ui/icon";
 const API = "https://functions.poehali.dev/c578b52c-b9b6-47b3-9bcf-b6ab8405c4d7";
 const TOKEN_KEY = "admin_token_v1";
 
-type Section = "dashboard" | "users" | "videos" | "photos" | "comments" | "chats" | "products" | "reports" | "search" | "streams" | "broadcast" | "email_stats" | "support" | "mobile_api" | "privacy" | "terms";
+type Section = "dashboard" | "users" | "videos" | "photos" | "comments" | "chats" | "products" | "reports" | "search" | "compliance" | "streams" | "broadcast" | "email_stats" | "support" | "mobile_api" | "privacy" | "terms";
 
 interface Stats {
   users_total: number; users_today: number; users_week: number;
@@ -41,6 +41,7 @@ const SECTIONS: { id: Section; label: string; icon: string }[] = [
   { id: "streams", label: "Стримы", icon: "Radio" },
   { id: "reports", label: "Жалобы", icon: "Flag" },
   { id: "search", label: "Поиск", icon: "Search" },
+  { id: "compliance", label: "Закон и реклама", icon: "Scale" },
   { id: "broadcast", label: "Рассылки", icon: "Send" },
   { id: "email_stats", label: "Метрики писем", icon: "Mail" },
   { id: "support", label: "Поддержка", icon: "LifeBuoy" },
@@ -116,6 +117,7 @@ export default function Admin() {
           {section === "streams" && <Streams token={token!} />}
           {section === "reports" && <Reports token={token!} />}
           {section === "search" && <SearchStats token={token!} />}
+          {section === "compliance" && <Compliance token={token!} />}
           {section === "broadcast" && <Broadcast token={token!} />}
           {section === "email_stats" && <EmailStats />}
           {section === "support" && <SupportAdmin />}
@@ -1308,6 +1310,133 @@ const TARGET_LABEL: Record<string, string> = {
 };
 
 type SearchRow = { query: string; cnt: number; last_at: string };
+
+interface AdRow { id: number; handle: string; author: string; description: string; ad_erid: string | null; ad_advertiser: string | null; age_rating: string; hidden: boolean; created_at: string }
+interface RemovalRow { id: number; user_id: string; removed_at: string; source: string }
+
+const downloadCsv = (name: string, rows: (string | number)[][]) => {
+  const csv = "\uFEFF" + rows.map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(";")).join("\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+function Compliance({ token }: { token: string }) {
+  const [ads, setAds] = useState<AdRow[]>([]);
+  const [ages, setAges] = useState<{ age_rating: string; c: number }[]>([]);
+  const [removals, setRemovals] = useState<RemovalRow[]>([]);
+  const [withConsent, setWithConsent] = useState(0);
+  const [noBirth, setNoBirth] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    api("compliance_report", {}, token)
+      .then((d) => {
+        setAds(d.ads || []); setAges(d.ages || []); setRemovals(d.removals || []);
+        setWithConsent(d.with_consent || 0); setNoBirth(d.no_birth || 0);
+      })
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const noErid = ads.filter((a) => !a.ad_erid).length;
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-2xl font-bold hidden md:block">Закон и реклама</h2>
+      {loading && <p className="text-white/50 text-sm">Загрузка...</p>}
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-zinc-900 border border-white/10 rounded-2xl p-4">
+          <p className="text-white/50 text-xs">Рекламных публикаций</p>
+          <p className="text-2xl font-bold">{ads.length}</p>
+        </div>
+        <div className={`bg-zinc-900 border rounded-2xl p-4 ${noErid ? "border-[#fe2c55]/50" : "border-white/10"}`}>
+          <p className="text-white/50 text-xs">Без ERID</p>
+          <p className={`text-2xl font-bold ${noErid ? "text-[#fe2c55]" : ""}`}>{noErid}</p>
+        </div>
+        <div className="bg-zinc-900 border border-white/10 rounded-2xl p-4">
+          <p className="text-white/50 text-xs">Дали согласие</p>
+          <p className="text-2xl font-bold">{withConsent}</p>
+        </div>
+        <div className="bg-zinc-900 border border-white/10 rounded-2xl p-4">
+          <p className="text-white/50 text-xs">Без даты рождения</p>
+          <p className="text-2xl font-bold">{noBirth}</p>
+        </div>
+      </div>
+
+      <div className="bg-zinc-900 border border-white/10 rounded-2xl p-4 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="font-semibold">Реклама и ERID</h3>
+          <button
+            onClick={() => downloadCsv("ads.csv", [["ID", "Автор", "Рекламодатель", "ERID", "Возраст", "Скрыто", "Дата", "Описание"], ...ads.map((a) => [a.id, a.handle, a.ad_advertiser || "", a.ad_erid || "", a.age_rating, a.hidden ? "да" : "нет", a.created_at?.slice(0, 16), a.description || ""])])}
+            disabled={ads.length === 0}
+            className="px-3 py-1.5 rounded-lg bg-white/10 text-white text-xs font-medium disabled:opacity-40"
+          >
+            Скачать CSV
+          </button>
+        </div>
+        {ads.length === 0 ? (
+          <p className="text-white/50 text-sm">Рекламных публикаций нет</p>
+        ) : (
+          <div className="space-y-2">
+            {ads.map((a) => (
+              <div key={a.id} className="flex items-start gap-3 text-sm bg-black/20 rounded-xl p-3">
+                <span className="text-white/40 w-10 flex-shrink-0">#{a.id}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="truncate">@{a.handle} · {a.ad_advertiser || "рекламодатель не указан"}</p>
+                  <p className="text-xs text-white/40 truncate">{a.description || "—"}</p>
+                </div>
+                <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 break-all ${a.ad_erid ? "bg-emerald-500/20 text-emerald-300" : "bg-[#fe2c55]/20 text-[#fe2c55]"}`}>
+                  {a.ad_erid ? `erid: ${a.ad_erid}` : "нет ERID"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="bg-zinc-900 border border-white/10 rounded-2xl p-4 space-y-2">
+        <h3 className="font-semibold">Публикации по возрасту</h3>
+        <div className="flex flex-wrap gap-2">
+          {ages.map((a) => (
+            <span key={a.age_rating} className="px-3 py-1 rounded-full bg-white/10 text-sm">{a.age_rating}: {a.c}</span>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-zinc-900 border border-white/10 rounded-2xl p-4 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="font-semibold">Журнал удаления аккаунтов</h3>
+          <button
+            onClick={() => downloadCsv("removals.csv", [["ID", "Пользователь", "Дата", "Источник"], ...removals.map((r) => [r.id, r.user_id, r.removed_at?.slice(0, 16), r.source])])}
+            disabled={removals.length === 0}
+            className="px-3 py-1.5 rounded-lg bg-white/10 text-white text-xs font-medium disabled:opacity-40"
+          >
+            Скачать CSV
+          </button>
+        </div>
+        {removals.length === 0 ? (
+          <p className="text-white/50 text-sm">Удалений пока не было</p>
+        ) : (
+          <div className="space-y-1.5">
+            {removals.map((r) => (
+              <div key={r.id} className="flex items-center gap-3 text-sm">
+                <span className="text-white/40 w-10">#{r.id}</span>
+                <span className="flex-1 truncate">{r.user_id}</span>
+                <span className="text-white/50 text-xs">{r.removed_at?.slice(0, 16)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="text-xs text-white/40">В журнале хранится только факт удаления, без личных данных.</p>
+      </div>
+    </div>
+  );
+}
 
 function SearchStats({ token }: { token: string }) {
   const [days, setDays] = useState(7);

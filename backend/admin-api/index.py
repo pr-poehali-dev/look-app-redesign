@@ -975,6 +975,26 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         conn.commit()
         return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
 
+    if action == 'compliance_report':
+        _q(cur, """
+            SELECT v.id, v.handle, v.author, v.description, v.ad_erid, v.ad_advertiser, v.ad_label,
+                   v.age_rating, v.hidden, v.created_at
+            FROM {S}.videos v WHERE v.is_ad = TRUE ORDER BY v.created_at DESC LIMIT 500
+        """)
+        ads = cur.fetchall()
+        _q(cur, "SELECT age_rating, COUNT(*) AS c FROM {S}.videos GROUP BY age_rating ORDER BY age_rating")
+        ages = cur.fetchall()
+        _q(cur, "SELECT id, user_id, removed_at, source FROM {S}.account_removal_log ORDER BY removed_at DESC LIMIT 500")
+        removals = cur.fetchall()
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.app_users WHERE consent_at IS NOT NULL")
+        with_consent = cur.fetchone()['c']
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.app_users WHERE birth_date IS NULL")
+        no_birth = cur.fetchone()['c']
+        return {'statusCode': 200, 'headers': _cors(),
+                'body': json.dumps({'ads': ads, 'ages': ages, 'removals': removals,
+                                    'with_consent': with_consent, 'no_birth': no_birth},
+                                   default=str, ensure_ascii=False)}
+
     if action == 'mod_words_list':
         _q(cur, "SELECT id, word FROM {S}.moderation_words ORDER BY word")
         return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'words': cur.fetchall()}, ensure_ascii=False)}
