@@ -1,3 +1,4 @@
+import PhotoCarousel from "@/components/post-feed/PhotoCarousel";
 import { useEffect, useRef, useState } from "react";
 import { promptAuth } from "@/lib/promptAuth";
 import Icon from "@/components/ui/icon";
@@ -150,7 +151,11 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
               playsInline
             />
           ) : (
-            <img src={post.image} alt={post.caption} className="max-w-full max-h-full w-full h-full object-contain" />
+            post.images && post.images.length > 0 ? (
+              <PhotoCarousel images={[post.image, ...post.images]} alt={post.caption} />
+            ) : (
+              <img src={post.image} alt={post.caption} className="max-w-full max-h-full w-full h-full object-contain" />
+            )
           )}
         </div>
 
