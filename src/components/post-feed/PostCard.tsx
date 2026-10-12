@@ -208,9 +208,6 @@ const PostCard = ({ post }: { post: Post }) => {
           <button onClick={() => setShowShare(true)} className="flex items-center justify-center active:scale-90 transition-transform">
             <Icon name="ShareForward" size={26} className="action-icon-glyph" />
           </button>
-          <button onClick={() => copyText(shareUrl)} title="Скопировать ссылку" className="flex items-center justify-center active:scale-90 transition-transform">
-            <Icon name="Link" size={24} className="action-icon-glyph" />
-          </button>
         </div>
         {(post.hasProducts || post.templateId) && (
           <div className="ml-auto flex items-center gap-2">
@@ -420,6 +417,16 @@ const PostCard = ({ post }: { post: Post }) => {
                 <Icon name="X" size={20} className="text-white/60" />
               </button>
             </div>
+
+            <button
+              onClick={() => { copyText(shareUrl); setCopied(true); setTimeout(() => { setCopied(false); setShowShare(false); }, 1500); }}
+              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-5"
+            >
+              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                <Icon name={copied ? "Check" : "Link"} size={20} className={copied ? "text-green-400" : "text-white"} />
+              </div>
+              <span className="text-white text-sm font-medium">{copied ? "Скопировано!" : "Скопировать ссылку"}</span>
+            </button>
             <div className="grid grid-cols-4 gap-4 mb-6">
               {[
                 { icon: "MessageCircle", label: "Telegram", color: "#229ED9", href: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(`@${post.handle}: ${post.caption}`)}` },
@@ -460,15 +467,6 @@ const PostCard = ({ post }: { post: Post }) => {
               </button>
             )}
 
-            <button
-              onClick={() => { copyText(shareUrl); setCopied(true); setTimeout(() => { setCopied(false); setShowShare(false); }, 1500); }}
-              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3"
-            >
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                <Icon name={copied ? "Check" : "Link"} size={20} className={copied ? "text-green-400" : "text-white"} />
-              </div>
-              <span className="text-white text-sm font-medium">{copied ? "Скопировано!" : "Скопировать ссылку"}</span>
-            </button>
           </div>
         </div>,
         document.body
