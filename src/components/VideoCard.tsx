@@ -1142,7 +1142,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
                     className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/40"
                     onKeyDown={e => e.key === "Enter" && handleSendComment()}
                     autoComplete="off"
-                    autoFocus
+                    autoFocus={!!user}
                   />
                 </div>
                 <button
