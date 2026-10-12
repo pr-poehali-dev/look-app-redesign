@@ -47,6 +47,7 @@ export const CATEGORIES = [
   { id: "fitness", label: "Фитнес и здоровье" },
   { id: "education", label: "Образование" },
   { id: "tech", label: "Технологии" },
+  { id: "services", label: "Услуги и сервисы" },
 ];
 
 

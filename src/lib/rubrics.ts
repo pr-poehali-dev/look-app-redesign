@@ -22,5 +22,6 @@ export const RUBRICS: Rubric[] = [
   { id: "fitness", label: "Фитнес и здоровье" },
   { id: "career", label: "Карьера" },
   { id: "tech", label: "Технологии" },
+  { id: "services", label: "Услуги и сервисы" },
   { id: "humor", label: "Юмор" },
 ];

@@ -31,6 +31,7 @@ export const FEED_CATEGORIES: FeedCategory[] = [
   { id: "science", label: "Наука", match: ["science"] },
   { id: "auto", label: "Авто", match: ["auto"] },
   { id: "tech", label: "Технологии", match: ["tech"] },
+  { id: "services", label: "Услуги и сервисы", match: ["services"] },
   { id: "anime", label: "Аниме и комиксы", match: ["anime"] },
   { id: "singdance", label: "Пение и танцы", match: ["singdance"] },
   { id: "lipsync", label: "Липсинк", match: ["lipsync"] },
