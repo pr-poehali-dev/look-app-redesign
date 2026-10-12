@@ -13,6 +13,7 @@ const CATEGORIES = [
   { id: "beauty", label: "Красота" },
   { id: "electronics", label: "Электроника" },
   { id: "home", label: "Дом" },
+  { id: "services", label: "Услуги и сервисы" },
   { id: "other", label: "Другое" },
 ];
 

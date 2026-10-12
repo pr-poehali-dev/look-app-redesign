@@ -10,6 +10,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   beauty: "Красота",
   electronics: "Электроника",
   home: "Дом",
+  services: "Услуги и сервисы",
   other: "Другое",
 };
 

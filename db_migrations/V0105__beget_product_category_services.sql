@@ -1,0 +1,1 @@
+UPDATE t_p96441965_look_app_redesign.products SET category = 'services', updated_at = now() WHERE id = 7;
