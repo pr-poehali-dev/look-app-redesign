@@ -292,15 +292,6 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
                 <Icon name="X" size={20} className="nv-icon" />
               </button>
             </div>
-            <button
-              onClick={() => { copyText(shareUrl); setShowShare(false); }}
-              className="w-full flex items-center gap-3 rounded-2xl px-4 py-3 mb-5 nv-hover"
-            >
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "rgba(255,255,255,0.1)" }}>
-                <Icon name="Link" size={20} className="nv-icon" />
-              </div>
-              <span className="text-sm font-medium">Скопировать ссылку</span>
-            </button>
             <div className="grid grid-cols-4 gap-4">
               {shareOptions.map((opt) => (
                 <a key={opt.label} href={opt.href} target="_blank" rel="noreferrer" className="flex flex-col items-center gap-2" onClick={() => setShowShare(false)}>
@@ -311,6 +302,15 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
                 </a>
               ))}
             </div>
+            <button
+              onClick={() => { copyText(shareUrl); setShowShare(false); }}
+              className="w-full flex items-center gap-3 rounded-2xl px-4 py-3 mt-5 nv-hover"
+            >
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "rgba(255,255,255,0.1)" }}>
+                <Icon name="Link" size={20} className="nv-icon" />
+              </div>
+              <span className="text-sm font-medium">Скопировать ссылку</span>
+            </button>
           </div>
         </div>
       )}
