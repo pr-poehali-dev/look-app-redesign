@@ -1,0 +1,1 @@
+UPDATE t_p96441965_look_app_redesign.articles SET owner_user_id = 'u_259dd4c92c95a437' WHERE title IN ('Байкал самостоятельно: куда поехать и что посмотреть', 'Летний Байкал: маршрут на неделю без тура');
