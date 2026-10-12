@@ -178,6 +178,13 @@ def handler(event: dict, context) -> dict:
                     VALUES (%s, %s, %s, %s, %s, %s, 'open') RETURNING id
                 """, (target_type, target_id, reason, comment_txt, reporter_id, reporter_name))
                 rid = cur.fetchone()['id']
+                if target_type in ('video', 'post') and target_id.isdigit():
+                    _q(cur, "SELECT COUNT(DISTINCT reporter_id) AS c FROM {S}.reports "
+                            "WHERE target_type IN ('video', 'post') AND target_id = %s AND status = 'open' AND reporter_id <> 'auto'",
+                       (target_id,))
+                    if cur.fetchone()['c'] >= 3:
+                        _q(cur, "UPDATE {S}.videos SET hidden = TRUE, hidden_reason = 'auto_reports' "
+                                "WHERE id = %s AND (hidden IS NULL OR hidden = FALSE)", (int(target_id),))
                 conn.commit()
             return {'statusCode': 200, 'headers': _cors(),
                     'body': json.dumps({'ok': True, 'report_id': rid})}
@@ -965,6 +972,30 @@ def _route(cur, conn, action: str, body: dict) -> dict:
             return {'statusCode': 400, 'headers': _cors(), 'body': json.dumps({'error': 'unsupported action for this target'})}
         _q(cur, "UPDATE {S}.reports SET status = 'resolved', resolved_at = NOW(), resolved_note = %s WHERE id = %s",
            (act, rid))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
+
+    if action == 'mod_words_list':
+        _q(cur, "SELECT id, word FROM {S}.moderation_words ORDER BY word")
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'words': cur.fetchall()}, ensure_ascii=False)}
+
+    if action == 'mod_word_add':
+        w = (body.get('word') or '').strip().lower()[:100]
+        if len(w) < 3:
+            return {'statusCode': 400, 'headers': _cors(), 'body': json.dumps({'error': 'слишком короткое слово'})}
+        _q(cur, "INSERT INTO {S}.moderation_words (word) VALUES (%s) ON CONFLICT DO NOTHING", (w,))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
+
+    if action == 'mod_word_delete':
+        _q(cur, "DELETE FROM {S}.moderation_words WHERE id = %s", (int(body.get('id') or 0),))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
+
+    if action == 'video_restore':
+        _q(cur, "UPDATE {S}.videos SET hidden = FALSE, hidden_reason = NULL WHERE id = %s", (int(body.get('video_id') or 0),))
+        _q(cur, "UPDATE {S}.reports SET status = 'resolved', resolved_at = NOW(), resolved_note = 'restored' "
+                "WHERE target_type IN ('video', 'post') AND target_id = %s AND status = 'open'", (str(body.get('video_id') or ''),))
         conn.commit()
         return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
 

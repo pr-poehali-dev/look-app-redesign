@@ -112,6 +112,7 @@ def handler(event: dict, context) -> dict:
 
         meta = body.get('meta') or {}
         video_id = None
+        flagged = False
         media_type = 'video' if str(content_type).startswith('video') else 'image'
         if meta:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
@@ -119,17 +120,25 @@ def handler(event: dict, context) -> dict:
             try:
                 is_ad = bool(meta.get('is_ad'))
                 ad_label = (meta.get('ad_label') or '').strip()[:60] or ('Реклама' if is_ad else None)
+                cur.execute("SELECT word FROM moderation_words")
+                low = f"{meta.get('description', '')} {meta.get('hashtags', '')}".lower().replace('ё', 'е')
+                flagged = any(w[0].lower().replace('ё', 'е') in low for w in cur.fetchall())
                 cur.execute(
-                    "INSERT INTO videos (url, thumbnail, author, handle, description, hashtags, category, type, user_id, template_id, is_ad, ad_label) "
-                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+                    "INSERT INTO videos (url, thumbnail, author, handle, description, hashtags, category, type, user_id, template_id, is_ad, ad_label, hidden, hidden_reason) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
                     (cdn_url, thumb_url,
                      meta.get('author', 'Я'), meta.get('handle', 'user'),
                      meta.get('description', ''), meta.get('hashtags', ''),
                      meta.get('category', 'humor'), media_type,
                      meta.get('user_id', 'anonymous'), meta.get('template_id'),
-                     is_ad, ad_label),
+                     is_ad, ad_label, flagged, 'auto_words' if flagged else None),
                 )
                 video_id = cur.fetchone()[0]
+                if flagged:
+                    cur.execute(
+                        "INSERT INTO reports (target_type, target_id, reason, comment, reporter_id, reporter_name, status) "
+                        "VALUES ('video', %s, 'illegal', %s, 'auto', 'Автомодерация', 'open')",
+                        (str(video_id), 'Автоматически скрыто: запрещённые слова в описании'))
 
                 # Товары, привязанные к этому видео/посту (E-commerce), уходят на модерацию
                 products = meta.get('products') or []
@@ -153,7 +162,7 @@ def handler(event: dict, context) -> dict:
         return {
             'statusCode': 200, 'headers': _cors(),
             'body': json.dumps({'url': cdn_url, 'thumb': thumb_url, 'id': video_id,
-                                'key': key, 'type': media_type}),
+                                'key': key, 'type': media_type, 'moderation': 'pending' if flagged else 'ok'}),
         }
 
     if action == 'abort':

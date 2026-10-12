@@ -1368,6 +1368,48 @@ function SearchStats({ token }: { token: string }) {
   );
 }
 
+function StopWords({ token }: { token: string }) {
+  const [words, setWords] = useState<{ id: number; word: string }[]>([]);
+  const [value, setValue] = useState("");
+  const load = useCallback(() => {
+    api("mod_words_list", {}, token).then((d) => setWords(d.words || []));
+  }, [token]);
+  useEffect(() => { load(); }, [load]);
+  const add = async () => {
+    if (value.trim().length < 3) return;
+    await api("mod_word_add", { word: value }, token);
+    setValue("");
+    load();
+  };
+  const remove = async (id: number) => { await api("mod_word_delete", { id }, token); load(); };
+  return (
+    <div className="bg-zinc-900 border border-white/10 rounded-2xl p-4 space-y-3">
+      <div>
+        <h3 className="font-semibold">Автомодерация: стоп-слова</h3>
+        <p className="text-xs text-white/50 mt-1">Комментарии с этими словами не публикуются. Публикации с ними скрываются и попадают в жалобы. Публикация также скрывается после 3 жалоб от разных людей.</p>
+      </div>
+      <div className="flex gap-2">
+        <input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && add()}
+          placeholder="Слово или фраза"
+          className="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none"
+        />
+        <button onClick={add} className="px-4 py-2 rounded-lg bg-[#fe2c55] text-white text-sm font-medium">Добавить</button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {words.map((w) => (
+          <span key={w.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-white/80 text-xs">
+            {w.word}
+            <button onClick={() => remove(w.id)} aria-label="Удалить"><Icon name="X" size={12} className="text-white/50" /></button>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Reports({ token }: { token: string }) {
   const [rows, setRows] = useState<ReportRow[]>([]);
   const [previews, setPreviews] = useState<Record<string, ReportPreview>>({});
@@ -1410,6 +1452,8 @@ function Reports({ token }: { token: string }) {
           ))}
         </div>
       </div>
+
+      <StopWords token={token} />
 
       {loading && <p className="text-white/50 text-sm">Загрузка...</p>}
       {!loading && rows.length === 0 && (
@@ -1458,6 +1502,14 @@ function Reports({ token }: { token: string }) {
 
               {r.status === "open" && (
                 <div className="flex flex-wrap gap-2">
+                  {r.target_type === "video" && preview?.hidden && (
+                    <button
+                      onClick={async () => { await api("video_restore", { video_id: Number(r.target_id) }, token); load(); }}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs font-medium hover:bg-emerald-500/30"
+                    >
+                      Вернуть в ленту
+                    </button>
+                  )}
                   {r.target_type === "video" && (
                     <>
                       <button onClick={() => doAction(r.id, "hide_video", "скрыть видео")} className="px-3 py-1.5 rounded-lg bg-orange-500/20 text-orange-300 text-xs font-medium hover:bg-orange-500/30">

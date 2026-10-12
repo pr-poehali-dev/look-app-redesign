@@ -220,6 +220,11 @@ def handler(event: dict, context) -> dict:
             if not target_type or not target_id or not text:
                 return _resp(400, {'error': 'target_type, target_id and text required'})
 
+            cur.execute(f"SELECT word FROM {schema}.moderation_words")
+            low = text.lower().replace('ё', 'е')
+            if any(w[0].lower().replace('ё', 'е') in low for w in cur.fetchall()):
+                return _resp(422, {'error': 'moderation', 'message': 'Комментарий содержит запрещённые слова и не опубликован'})
+
             safe_type = _esc(target_type)
             safe_id = _esc(target_id)
             safe_text = _esc(text[:2000])

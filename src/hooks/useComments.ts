@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { useEffect, useState, useCallback } from "react";
 import { promptAuth } from "@/lib/promptAuth";
 import { useAuth } from "@/context/AuthContext";
@@ -125,6 +126,12 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
         }),
       });
       const data = await res.json();
+      if (data.error === "moderation") {
+        setComments(prev => prev.filter(c => c.id !== optimistic.id));
+        setCount(c => Math.max(0, c - 1));
+        toast.error(data.message || "Комментарий не опубликован");
+        return;
+      }
       if (data.comment) {
         setComments(prev => prev.map(c => c.id === optimistic.id ? {
           id: data.comment.id,
