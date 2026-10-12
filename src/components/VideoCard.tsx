@@ -385,6 +385,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   };
 
   const startReply = (id: number | string, name: string) => {
+    if (!user) { toast("Зарегистрируйтесь, чтобы выполнять действия"); return; }
     setReplyingTo({ id, name });
     setCommentText(`@${name} `);
     commentInputRef.current?.focus();

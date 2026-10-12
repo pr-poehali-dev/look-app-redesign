@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 import { getGuestId } from "@/lib/guestId";
 import { fetchLikeCount } from "@/lib/likesBatch";
 
@@ -53,6 +54,7 @@ export const useLikes = (targetType: LikeTargetType, targetId: string | number, 
   }, [targetType, targetId, userId, key]);
 
   const toggle = useCallback(async () => {
+    if (!user) { toast("Зарегистрируйтесь, чтобы выполнять действия"); return; }
     if (!targetId || inFlight.current) return;
     inFlight.current = true;
     const prev = likeCache.get(key) || { count, liked };
@@ -74,7 +76,7 @@ export const useLikes = (targetType: LikeTargetType, targetId: string | number, 
     } finally {
       inFlight.current = false;
     }
-  }, [targetType, targetId, userId, key, liked, count]);
+  }, [targetType, targetId, userId, key, liked, count, user]);
 
   return { liked, count, toggle, ready };
 };

@@ -113,6 +113,7 @@ const PostCard = ({ post }: { post: Post }) => {
   };
 
   const startReply = (id: number | string, name: string) => {
+    if (!user) { toast("Зарегистрируйтесь, чтобы выполнять действия"); return; }
     setReplyingTo({ id, name });
     setCommentText(`@${name} `);
     commentInputRef.current?.focus();
@@ -206,6 +207,9 @@ const PostCard = ({ post }: { post: Post }) => {
           </button>
           <button onClick={() => setShowShare(true)} className="flex items-center justify-center active:scale-90 transition-transform">
             <Icon name="ShareForward" size={26} className="action-icon-glyph" />
+          </button>
+          <button onClick={() => copyText(shareUrl)} title="Скопировать ссылку" className="flex items-center justify-center active:scale-90 transition-transform">
+            <Icon name="Link" size={24} className="action-icon-glyph" />
           </button>
         </div>
         {(post.hasProducts || post.templateId) && (
