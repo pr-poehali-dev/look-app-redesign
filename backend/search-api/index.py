@@ -117,7 +117,9 @@ def handler(event: dict, context) -> dict:
         if kind == 'log':
             qn = ' '.join(q.lower().split())[:60]
             if len(qn) >= 2 and not qn.startswith('-'):
-                cur.execute(f"INSERT INTO {schema}.search_queries (query) VALUES (%s)", (qn,))
+                n = params.get('n', '')
+                cnt = int(n) if n.isdigit() else None
+                cur.execute(f"INSERT INTO {schema}.search_queries (query, results_count) VALUES (%s, %s)", (qn, cnt))
                 conn.commit()
             return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'ok': True})}
 

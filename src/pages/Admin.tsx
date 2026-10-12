@@ -4,7 +4,7 @@ import Icon from "@/components/ui/icon";
 const API = "https://functions.poehali.dev/c578b52c-b9b6-47b3-9bcf-b6ab8405c4d7";
 const TOKEN_KEY = "admin_token_v1";
 
-type Section = "dashboard" | "users" | "videos" | "photos" | "comments" | "chats" | "products" | "reports" | "streams" | "broadcast" | "email_stats" | "support" | "mobile_api" | "privacy" | "terms";
+type Section = "dashboard" | "users" | "videos" | "photos" | "comments" | "chats" | "products" | "reports" | "search" | "streams" | "broadcast" | "email_stats" | "support" | "mobile_api" | "privacy" | "terms";
 
 interface Stats {
   users_total: number; users_today: number; users_week: number;
@@ -40,6 +40,7 @@ const SECTIONS: { id: Section; label: string; icon: string }[] = [
   { id: "products", label: "Товары", icon: "ShoppingBag" },
   { id: "streams", label: "Стримы", icon: "Radio" },
   { id: "reports", label: "Жалобы", icon: "Flag" },
+  { id: "search", label: "Поиск", icon: "Search" },
   { id: "broadcast", label: "Рассылки", icon: "Send" },
   { id: "email_stats", label: "Метрики писем", icon: "Mail" },
   { id: "support", label: "Поддержка", icon: "LifeBuoy" },
@@ -114,6 +115,7 @@ export default function Admin() {
           {section === "chats" && <Chats token={token!} />}
           {section === "streams" && <Streams token={token!} />}
           {section === "reports" && <Reports token={token!} />}
+          {section === "search" && <SearchStats token={token!} />}
           {section === "broadcast" && <Broadcast token={token!} />}
           {section === "email_stats" && <EmailStats />}
           {section === "support" && <SupportAdmin />}
@@ -1304,6 +1306,67 @@ const TARGET_LABEL: Record<string, string> = {
   video: "Видео", comment: "Комментарий", user: "Пользователь",
   chat: "Чат", message: "Сообщение", stream: "Стрим", post: "Пост",
 };
+
+type SearchRow = { query: string; cnt: number; last_at: string };
+
+function SearchStats({ token }: { token: string }) {
+  const [days, setDays] = useState(7);
+  const [top, setTop] = useState<SearchRow[]>([]);
+  const [empty, setEmpty] = useState<SearchRow[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    api("search_stats", { days }, token)
+      .then((d) => { setTop(d.top || []); setEmpty(d.empty || []); setTotal(d.total || 0); })
+      .finally(() => setLoading(false));
+  }, [token, days]);
+
+  const list = (title: string, rows: SearchRow[], emptyText: string) => (
+    <div className="bg-zinc-900 border border-white/10 rounded-2xl p-4">
+      <h3 className="font-semibold mb-3">{title}</h3>
+      {rows.length === 0 ? (
+        <p className="text-white/50 text-sm">{emptyText}</p>
+      ) : (
+        <div className="space-y-1.5">
+          {rows.map((r, i) => (
+            <div key={r.query} className="flex items-center gap-3 text-sm">
+              <span className="text-white/30 w-6 text-right">{i + 1}</span>
+              <span className="flex-1 truncate">{r.query}</span>
+              <span className="text-white/60">{r.cnt}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h2 className="text-2xl font-bold hidden md:block">Поиск</h2>
+        <div className="flex gap-1 bg-zinc-900 border border-white/10 rounded-xl p-1">
+          {[7, 30].map((d) => (
+            <button
+              key={d}
+              onClick={() => setDays(d)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${days === d ? "bg-[#fe2c55] text-white" : "text-white/60 hover:text-white"}`}
+            >
+              {d === 7 ? "7 дней" : "30 дней"}
+            </button>
+          ))}
+        </div>
+      </div>
+      {loading && <p className="text-white/50 text-sm">Загрузка...</p>}
+      <p className="text-white/60 text-sm">Всего поисков: {total}</p>
+      <div className="grid md:grid-cols-2 gap-4">
+        {list("Частые запросы", top, "Пока нет запросов")}
+        {list("Ничего не найдено", empty, "Таких запросов нет")}
+      </div>
+    </div>
+  );
+}
 
 function Reports({ token }: { token: string }) {
   const [rows, setRows] = useState<ReportRow[]>([]);

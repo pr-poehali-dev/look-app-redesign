@@ -310,6 +310,25 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         conn.commit()
         return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
 
+    if action == 'search_stats':
+        days = 30 if int(body.get('days') or 7) > 7 else 7
+        _q(cur, f"""
+            SELECT query, COUNT(*) AS cnt, MAX(created_at) AS last_at, MIN(results_count) AS min_results
+            FROM {{S}}.search_queries WHERE created_at >= NOW() - INTERVAL '{days} days'
+            GROUP BY query ORDER BY cnt DESC, last_at DESC LIMIT 50
+        """)
+        top = cur.fetchall()
+        _q(cur, f"""
+            SELECT query, COUNT(*) AS cnt, MAX(created_at) AS last_at
+            FROM {{S}}.search_queries WHERE created_at >= NOW() - INTERVAL '{days} days' AND results_count = 0
+            GROUP BY query ORDER BY cnt DESC, last_at DESC LIMIT 50
+        """)
+        empty = cur.fetchall()
+        _q(cur, f"SELECT COUNT(*) AS c FROM {{S}}.search_queries WHERE created_at >= NOW() - INTERVAL '{days} days'")
+        total = cur.fetchone()['c']
+        return {'statusCode': 200, 'headers': _cors(),
+                'body': json.dumps({'top': top, 'empty': empty, 'total': total}, default=str, ensure_ascii=False)}
+
     # ============ DASHBOARD ============
     if action == 'stats':
         result = {}

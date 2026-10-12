@@ -147,10 +147,12 @@ const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
 
   const trendList = Array.from(new Set([...popularQueries, ...trending])).slice(0, 12);
 
+  const totalHits = postHits.length + videoHits.length + people.length + articles.length + products.length;
+
   const commitSearch = (q: string) => {
     const trimmed = q.trim();
     if (!trimmed) return;
-    fetch(`${SEARCH_URL}?kind=log&q=${encodeURIComponent(trimmed)}`).catch(() => {});
+    fetch(`${SEARCH_URL}?kind=log&n=${extraLoading ? "" : totalHits}&q=${encodeURIComponent(trimmed)}`).catch(() => {});
     const next = [trimmed, ...recent.filter((r) => r !== trimmed)];
     setRecent(next);
     writeRecent(next);
