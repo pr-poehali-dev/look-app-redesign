@@ -80,7 +80,7 @@ const BoardsScreen = ({ onBack }: { onBack: () => void }) => {
         <div className="flex flex-col items-center justify-center py-20 gap-3 px-8 text-center">
           <Icon name="LayoutGrid" size={48} className="text-gray-300" />
           <p className="text-gray-400 text-sm">Пока нет ни одной доски</p>
-          <p className="text-xs text-gray-400/70">Создавайте подборки сохранённых постов и делитесь ими</p>
+          <p className="text-xs text-gray-400/70">Создавайте подборки из коллекции и делитесь ими</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 p-4">
