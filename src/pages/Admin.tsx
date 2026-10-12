@@ -120,7 +120,7 @@ export default function Admin() {
           {section === "compliance" && <Compliance token={token!} />}
           {section === "broadcast" && <Broadcast token={token!} />}
           {section === "email_stats" && <EmailStats />}
-          {section === "support" && <SupportAdmin />}
+          {section === "support" && <SupportAdmin token={token} />}
           {section === "mobile_api" && <MobileApiAccess token={token!} />}
           {section === "privacy" && <DocEditor token={token!} settingKey="privacy_policy" title="Политика конфиденциальности" />}
           {section === "terms" && <DocEditor token={token!} settingKey="terms_of_use" title="Условия использования" />}
@@ -2225,14 +2225,32 @@ const CATEGORY_META: Record<string, { label: string; icon: string; color: string
   idea: { label: "Идея", icon: "Lightbulb", color: "bg-yellow-500/20 text-yellow-400" },
   suggestion: { label: "Предложение", icon: "MessageSquarePlus", color: "bg-purple-500/20 text-purple-400" },
   content: { label: "Контент", icon: "Flag", color: "bg-orange-500/20 text-orange-400" },
+  birthdate: { label: "Дата рождения", icon: "CalendarClock", color: "bg-cyan-500/20 text-cyan-400" },
   other: { label: "Другое", icon: "HelpCircle", color: "bg-white/10 text-white/70" },
 };
 
-function SupportAdmin() {
+function SupportAdmin({ token }: { token: string }) {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Ticket | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [birthInput, setBirthInput] = useState("");
+  const [birthMsg, setBirthMsg] = useState("");
+
+  const applyBirth = async (t: Ticket) => {
+    setBirthMsg("");
+    const digits = birthInput.replace(/\D/g, "");
+    if (digits.length !== 8) { setBirthMsg("Введите дату в формате ДД.ММ.ГГГГ"); return; }
+    const iso = `${digits.slice(4)}-${digits.slice(2, 4)}-${digits.slice(0, 2)}`;
+    try {
+      await api("user_set_birth", { user_id: t.user_id, birth_date: iso }, token);
+      setBirthMsg("Дата обновлена, пользователь получил уведомление");
+      setBirthInput("");
+      updateStatus(t.id, "done");
+    } catch (e) {
+      setBirthMsg(e instanceof Error ? e.message : "Не удалось обновить");
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -2394,6 +2412,29 @@ function SupportAdmin() {
                 <p className="text-white/40 text-xs font-semibold uppercase mb-2">Сообщение</p>
                 <p className="bg-white/5 rounded-xl p-3 text-sm whitespace-pre-wrap">{selected.message}</p>
               </div>
+
+              {selected.category === "birthdate" && selected.user_id && (
+                <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-3">
+                  <p className="text-cyan-300 text-xs font-semibold uppercase mb-2">Исправить дату рождения</p>
+                  <div className="flex gap-2">
+                    <input
+                      value={birthInput}
+                      inputMode="numeric"
+                      maxLength={10}
+                      placeholder="ДД.ММ.ГГГГ"
+                      onChange={(e) => {
+                        const d = e.target.value.replace(/\D/g, "").slice(0, 8);
+                        setBirthInput(d.length <= 2 ? d : d.length <= 4 ? `${d.slice(0, 2)}.${d.slice(2)}` : `${d.slice(0, 2)}.${d.slice(2, 4)}.${d.slice(4)}`);
+                      }}
+                      className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none"
+                    />
+                    <button onClick={() => applyBirth(selected)} className="px-4 py-2 rounded-lg bg-cyan-500 text-black text-sm font-bold">
+                      Применить
+                    </button>
+                  </div>
+                  {birthMsg && <p className="text-xs mt-2 text-white/70">{birthMsg}</p>}
+                </div>
+              )}
 
               {selected.attachment_url && (
                 <div>

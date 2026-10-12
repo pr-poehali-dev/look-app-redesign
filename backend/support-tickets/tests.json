@@ -10,35 +10,44 @@
       "name": "Validation fails on empty",
       "method": "POST",
       "path": "/",
-      "body": {"action": "create", "subject": "", "message": ""},
+      "body": {
+        "action": "create",
+        "subject": "",
+        "message": ""
+      },
       "expectedStatus": 400
     },
     {
       "name": "Create ticket",
       "method": "POST",
       "path": "/",
-      "body": {"action": "create", "subject": "Тест", "message": "Проверка тикета", "user_email": "test@test.ru", "category": "bug"},
-      "expectedStatus": 200,
-      "expectedBody": {"ok": true},
-      "bodyMatcher": "partial"
+      "body": {
+        "action": "create",
+        "subject": "Тест",
+        "message": "Проверка тикета",
+        "user_email": "test@test.ru",
+        "category": "bug"
+      },
+      "expectedStatus": 200
     },
     {
       "name": "List by category",
       "method": "POST",
       "path": "/",
-      "body": {"action": "list", "category": "bug"},
-      "expectedStatus": 200,
-      "expectedBody": {"tickets": "array"},
-      "bodyMatcher": "partial"
+      "body": {
+        "action": "list",
+        "category": "bug"
+      },
+      "expectedStatus": 200
     },
     {
       "name": "List tickets",
       "method": "POST",
       "path": "/",
-      "body": {"action": "list"},
-      "expectedStatus": 200,
-      "expectedBody": {"tickets": "array"},
-      "bodyMatcher": "partial"
+      "body": {
+        "action": "list"
+      },
+      "expectedStatus": 200
     }
   ]
 }

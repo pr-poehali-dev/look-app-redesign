@@ -59,6 +59,7 @@ CATEGORY_LABELS = {
     'idea': 'Идея',
     'suggestion': 'Предложение',
     'content': 'Контент',
+    'birthdate': 'Исправить дату рождения',
     'other': 'Другое',
 }
 
@@ -154,7 +155,7 @@ def handler(event: dict, context) -> dict:
             file_b64 = body.get('file_base64') or ''
             file_name = body.get('file_name') or ''
             category = (body.get('category') or 'other').strip().lower()
-            allowed_categories = {'bug', 'payment', 'account', 'idea', 'suggestion', 'content', 'other'}
+            allowed_categories = {'bug', 'payment', 'account', 'idea', 'suggestion', 'content', 'birthdate', 'other'}
             if category not in allowed_categories:
                 category = 'other'
             if not subject or not message:

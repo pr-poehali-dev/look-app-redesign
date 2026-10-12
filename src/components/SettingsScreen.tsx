@@ -846,6 +846,7 @@ const SUPPORT_CATEGORIES: { id: string; label: string; icon: string }[] = [
   { id: "idea", label: "Идея", icon: "Lightbulb" },
   { id: "suggestion", label: "Предложение", icon: "MessageSquarePlus" },
   { id: "content", label: "Жалоба на контент", icon: "Flag" },
+  { id: "birthdate", label: "Исправить дату рождения", icon: "CalendarClock" },
   { id: "other", label: "Другое", icon: "HelpCircle" },
 ];
 
@@ -980,6 +981,10 @@ const SupportScreen = ({ onBack }: { onBack: () => void }) => {
                       onClick={() => {
                         setCategory(c.id);
                         setCategoryOpen(false);
+                        if (c.id === "birthdate") {
+                          if (!subject.trim()) setSubject("Исправить дату рождения");
+                          if (!message.trim()) setMessage("Верная дата рождения: ДД.ММ.ГГГГ\nПричина исправления: ");
+                        }
                       }}
                       className={`w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm border-b border-gray-50 last:border-0 ${
                         category === c.id ? "bg-[#8b5cf6]/10 text-[#8b5cf6] font-semibold" : "text-black hover:bg-gray-50"

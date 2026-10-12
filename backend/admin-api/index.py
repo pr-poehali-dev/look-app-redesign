@@ -4,6 +4,7 @@ Args: event с httpMethod, headers (X-Admin-Token), body (action + параме�
 Returns: JSON с данными раздела
 """
 import json
+from datetime import datetime
 import os
 import hmac
 import hashlib
@@ -454,6 +455,25 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         _q(cur, sql, tuple(params))
         conn.commit()
         return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
+
+    if action == 'user_set_birth':
+        uid = body.get('user_id')
+        raw = str(body.get('birth_date') or '')[:10]
+        try:
+            bd = datetime.strptime(raw, '%Y-%m-%d').date()
+        except ValueError:
+            return {'statusCode': 400, 'headers': _cors(), 'body': json.dumps({'error': 'Неверная дата'})}
+        today = datetime.utcnow().date()
+        age = today.year - bd.year - ((today.month, today.day) < (bd.month, bd.day))
+        if not uid or age < 14 or age > 120:
+            return {'statusCode': 400, 'headers': _cors(), 'body': json.dumps({'error': 'Возраст должен быть от 14 до 120 лет'})}
+        _q(cur, "UPDATE {S}.app_users SET birth_date = %s WHERE id = %s", (bd, uid))
+        if cur.rowcount == 0:
+            return {'statusCode': 404, 'headers': _cors(), 'body': json.dumps({'error': 'Пользователь не найден'})}
+        _q(cur, "INSERT INTO {S}.notifications (user_id, type, title, message) VALUES (%s, 'system', %s, %s)",
+           (uid, 'Дата рождения обновлена', 'Мы исправили дату рождения в вашем профиле по вашему обращению'))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True, 'age': age})}
 
     # ============ VIDEOS ============
     if action == 'videos_list':
