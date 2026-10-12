@@ -149,7 +149,7 @@ const ArticleEngage = ({ articleId, title, cover, authorName, authorHandle }: Pr
           </button>
         </div>
       </div>
-      {showShare && <ArticleShareSheet title={title} authorName={authorName} onClose={() => setShowShare(false)} />}
+      {showShare && <ArticleShareSheet articleId={articleId} title={title} authorName={authorName} onClose={() => setShowShare(false)} />}
     </>
   );
 };

@@ -3,14 +3,15 @@ import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 
 interface Props {
+  articleId: number;
   title: string;
   authorName: string;
   onClose: () => void;
 }
 
-const ArticleShareSheet = ({ title, authorName, onClose }: Props) => {
+const ArticleShareSheet = ({ articleId, title, authorName, onClose }: Props) => {
   const [copied, setCopied] = useState(false);
-  const url = window.location.origin;
+  const url = `${window.location.origin}/?article=${articleId}`;
   const text = `${authorName}: ${title}`;
   const options = [
     { icon: "MessageCircle", label: "Telegram", color: "#229ED9", href: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}` },

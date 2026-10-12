@@ -41,7 +41,7 @@ const ArticleCard = ({ a, onOpen }: { a: Article; onOpen: () => void }) => {
           </button>
         </div>
       </div>
-      {showShare && <ArticleShareSheet title={a.title} authorName={a.author_name} onClose={() => setShowShare(false)} />}
+      {showShare && <ArticleShareSheet articleId={a.id} title={a.title} authorName={a.author_name} onClose={() => setShowShare(false)} />}
     </div>
   );
 };

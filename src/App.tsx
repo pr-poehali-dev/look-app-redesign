@@ -15,6 +15,7 @@ import Icon from "@/components/ui/icon";
 import OfflineBanner from "@/components/OfflineBanner";
 
 const Index = lazy(() => import("./pages/Index"));
+const ArticleDeepLink = lazy(() => import("./components/profile/ArticleDeepLink"));
 const Admin = lazy(() => import("./pages/Admin"));
 const AuthScreen = lazy(() => import("./components/AuthScreen"));
 const ResetPasswordScreen = lazy(() => import("./components/ResetPasswordScreen"));
@@ -397,7 +398,7 @@ const AppContent = () => {
       <ThumbnailWorker />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<><Index /><ArticleDeepLink /></>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
