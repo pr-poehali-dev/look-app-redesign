@@ -245,6 +245,40 @@ def handler(event: dict, context) -> dict:
                 )
             row = cur.fetchone()
             conn.commit()
+
+            try:
+                owner = None
+                if target_type in ('video', 'post') and target_id.isdigit():
+                    vid = int(target_id) - (10000 if target_type == 'video' else 0)
+                    cur.execute(f"SELECT user_id FROM {schema}.videos WHERE id = %s", (vid,))
+                    r = cur.fetchone()
+                    owner = r[0] if r else None
+                elif target_type == 'article' and target_id.isdigit():
+                    cur.execute(f"SELECT owner_user_id FROM {schema}.articles WHERE id = %s", (int(target_id),))
+                    r = cur.fetchone()
+                    owner = r[0] if r else None
+                parent_author = None
+                if parent_id:
+                    cur.execute(f"SELECT user_id FROM {schema}.comments WHERE id = %s", (int(parent_id),))
+                    r = cur.fetchone()
+                    parent_author = r[0] if r else None
+                snippet = f"{author_name}: {text[:100]}"
+                notify = []
+                if parent_author and parent_author != user_id:
+                    notify.append((parent_author, 'reply', 'Ответ на ваш комментарий'))
+                if owner and owner != user_id and owner != 'anonymous' and owner != parent_author:
+                    notify.append((owner, 'comment', 'Новый комментарий'))
+                for uid_to, ntype, title in notify:
+                    cur.execute(
+                        f"INSERT INTO {schema}.notifications (user_id, type, title, message, entity_type, entity_id) "
+                        f"VALUES (%s, %s, %s, %s, %s, %s)",
+                        (uid_to, ntype, title, snippet, target_type, target_id))
+                if notify:
+                    conn.commit()
+            except Exception as e:
+                conn.rollback()
+                print(f'notify error: {e}')
+
             return _resp(200, {
                 'comment': {
                     'id': row[0],

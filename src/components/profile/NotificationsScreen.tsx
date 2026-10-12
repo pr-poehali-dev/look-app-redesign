@@ -4,6 +4,8 @@ import { useNotificationsList, AppNotification } from "@/hooks/useNotifications"
 const TYPE_ICON: Record<string, string> = {
   product_moderation: "ShoppingBag",
   system: "Bell",
+  comment: "MessageCircle",
+  reply: "Reply",
 };
 
 const timeAgo = (iso?: string | null) => {

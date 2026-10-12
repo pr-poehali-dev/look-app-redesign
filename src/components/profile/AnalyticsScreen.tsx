@@ -10,8 +10,12 @@ interface Summary {
   products_count: number;
   template_uses_by_others: number;
   live_count: number;
+  total_saves: number;
+  total_likes: number;
+  total_comments: number;
+  top_saved: { id: number; thumbnail?: string; url: string; description: string; saves: number }[];
   videos_count: number;
-  top_videos: { id: number; thumbnail?: string; url: string; description: string; views: number }[];
+  top_videos: { id: number; thumbnail?: string; url: string; description: string; views: number; saves?: number; comments?: number }[];
 }
 
 const StatCard = ({ icon, label, value }: { icon: string; label: string; value: number | string }) => (
@@ -61,6 +65,9 @@ const AnalyticsScreen = ({ onBack }: { onBack: () => void }) => {
         <div className="px-4 py-4">
           <div className="grid grid-cols-2 gap-3">
             <StatCard icon="Eye" label="Просмотров всего" value={data.total_views} />
+            <StatCard icon="Bookmark" label="Сохранений в коллекции" value={data.total_saves ?? 0} />
+            <StatCard icon="Heart" label="Лайков" value={data.total_likes ?? 0} />
+            <StatCard icon="MessageCircle" label="Комментариев" value={data.total_comments ?? 0} />
             <StatCard icon="ShoppingBag" label="Переходов по товарам" value={data.product_clicks} />
             <StatCard icon="Wand2" label="Твои шаблоны использовали" value={data.template_uses_by_others} />
             <StatCard icon="Radio" label="Проведено эфиров" value={data.live_count} />
@@ -75,6 +82,23 @@ const AnalyticsScreen = ({ onBack }: { onBack: () => void }) => {
             <span className="text-gray-600 text-sm">Товаров создано</span>
             <span className="text-black font-bold">{data.products_count}</span>
           </div>
+
+          {data.top_saved && data.top_saved.length > 0 && (
+            <>
+              <p className="text-gray-400 text-xs mb-2 uppercase font-semibold">Чаще всего сохраняют</p>
+              <div className="flex flex-col gap-2 mb-5">
+                {data.top_saved.map((v) => (
+                  <div key={v.id} className="flex items-center gap-3 bg-gray-50 rounded-2xl p-2">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0">
+                      {v.thumbnail && <img src={v.thumbnail} className="w-full h-full object-cover" alt="" />}
+                    </div>
+                    <span className="flex-1 text-sm text-gray-700 truncate">{v.description || "Без описания"}</span>
+                    <span className="text-black font-bold text-sm flex-shrink-0">{v.saves} 🔖</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
           {data.top_videos.length > 0 && (
             <>

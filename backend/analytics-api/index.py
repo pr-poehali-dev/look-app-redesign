@@ -110,7 +110,60 @@ def handler(event: dict, context) -> dict:
                     'description': (r[3] or '')[:80], 'views': r[4],
                 } for r in cur.fetchall()]
 
+            ids_post = [str(i) for i in my_video_ids]
+            ids_vid = [str(i + 10000) for i in my_video_ids]
+
+            def engagement(table):
+                per_video = {}
+                if my_video_ids:
+                    cur.execute(
+                        f"SELECT target_type, target_id, COUNT(*) FROM {schema}.{table} "
+                        f"WHERE (target_type = 'post' AND target_id = ANY(%s)) "
+                        f"OR (target_type = 'video' AND target_id = ANY(%s)) GROUP BY 1, 2",
+                        (ids_post, ids_vid)
+                    )
+                    for t, tid, c in cur.fetchall():
+                        if not str(tid).isdigit():
+                            continue
+                        vid = int(tid) - (10000 if t == 'video' else 0)
+                        per_video[vid] = per_video.get(vid, 0) + c
+                art_total = 0
+                if art_ids:
+                    cur.execute(
+                        f"SELECT COUNT(*) FROM {schema}.{table} WHERE target_type = 'article' AND target_id = ANY(%s)",
+                        ([str(a) for a in art_ids],)
+                    )
+                    art_total = cur.fetchone()[0] or 0
+                return per_video, sum(per_video.values()) + art_total
+
+            cur.execute(f"SELECT id FROM {schema}.articles WHERE owner_user_id = %s", (user_id,))
+            art_ids = [r[0] for r in cur.fetchall()]
+            saves_map, total_saves = engagement('saves')
+            likes_map, total_likes = engagement('likes')
+            comments_map, total_comments = engagement('comments')
+
+            for tv in top_videos:
+                tv['saves'] = saves_map.get(tv['id'], 0)
+                tv['likes'] = likes_map.get(tv['id'], 0)
+                tv['comments'] = comments_map.get(tv['id'], 0)
+
+            top_saved = []
+            top_ids = [vid for vid, c in sorted(saves_map.items(), key=lambda x: -x[1])[:5] if c > 0]
+            if top_ids:
+                cur.execute(
+                    f"SELECT id, thumbnail, url, description FROM {schema}.videos WHERE id = ANY(%s)", (top_ids,)
+                )
+                info = {r[0]: r for r in cur.fetchall()}
+                top_saved = [{
+                    'id': vid, 'thumbnail': info[vid][1], 'url': info[vid][2],
+                    'description': (info[vid][3] or '')[:80], 'saves': saves_map[vid],
+                } for vid in top_ids if vid in info]
+
             return _resp(200, {
+                'total_saves': total_saves,
+                'total_likes': total_likes,
+                'total_comments': total_comments,
+                'top_saved': top_saved,
                 'total_views': total_views,
                 'product_clicks': product_clicks,
                 'products_count': products_count,
