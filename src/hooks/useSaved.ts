@@ -12,7 +12,7 @@ const syncSaveToServer = (type: string, id: number | string, userId: string, sav
   }).catch(() => {});
 };
 
-export type SavedItemType = "post" | "video";
+export type SavedItemType = "post" | "video" | "article";
 
 export interface SavedItem {
   type: SavedItemType;

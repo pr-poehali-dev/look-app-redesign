@@ -5,6 +5,7 @@ import { Article, fetchArticle, importArticleByUrl, saveArticle, useArticles } f
 import { uploadProductImage } from "@/hooks/useProducts";
 import { toast } from "sonner";
 import ArticleEngage from "@/components/profile/ArticleEngage";
+import { useFollowing } from "@/hooks/useFollowing";
 
 type View = { type: "list" } | { type: "read"; id: number } | { type: "edit"; article?: Article };
 
@@ -20,6 +21,7 @@ export const Reader = ({ id, onBack, onEdit }: { id: number; onBack: () => void;
   const { user } = useAuth();
   const [a, setA] = useState<Article | null>(null);
   useEffect(() => { fetchArticle(id).then(setA); }, [id]);
+  const { following, toggle: toggleFollow, isSelf } = useFollowing(a?.author_handle || "");
   return (
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
       <Header title="Статья" onBack={onBack} right={a && a.owner_user_id === user?.id ? (
@@ -28,23 +30,31 @@ export const Reader = ({ id, onBack, onEdit }: { id: number; onBack: () => void;
       {!a ? (
         <div className="py-20 flex justify-center"><div className="w-6 h-6 border-2 border-black/30 border-t-black rounded-full animate-spin" /></div>
       ) : (
-        <article className="pb-16">
+        <article>
           {a.cover_image && <img src={a.cover_image} alt="" className="w-full max-h-72 object-cover" />}
           <div className="px-5 pt-5 flex flex-col gap-3">
             <h1 className="text-black text-2xl font-bold leading-tight">{a.title}</h1>
-            <div className="flex items-center gap-2 text-gray-500 text-xs">
-              <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-200">
+            <div className="sticky top-0 z-10 -mx-5 px-5 py-2 bg-white flex items-center gap-2 text-gray-500 text-xs">
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200">
                 {a.author_avatar && <img src={a.author_avatar} alt="" className="w-full h-full object-cover" />}
               </div>
-              <span className="font-semibold text-black">{a.author_name}</span>
-              <span>· {a.read_minutes} мин · {a.views} просм.</span>
+              <div className="flex-1 min-w-0 flex flex-col">
+                <span className="font-semibold text-black text-sm truncate">{a.author_name}</span>
+                <span>{a.read_minutes} мин · {a.views} просм.</span>
+              </div>
+              {a.author_handle && !isSelf && (
+                <button onClick={toggleFollow} className={`px-4 py-1.5 rounded-full text-xs font-semibold ${following ? "bg-gray-100 text-black" : "bg-[#fe2c55] text-white"}`}>
+                  {following ? "Вы подписаны" : "Подписаться"}
+                </button>
+              )}
             </div>
             <div className="text-black text-[15px] leading-relaxed whitespace-pre-wrap">{a.body}</div>
             {a.source_url && (
               <a href={a.source_url} target="_blank" rel="noopener noreferrer" className="text-[#8b5cf6] text-xs underline break-all">Источник</a>
             )}
+            {a.created_at && <p className="text-gray-400 text-xs">{new Date(a.created_at).toLocaleDateString("ru-RU")}</p>}
           </div>
-          <ArticleEngage articleId={a.id} title={a.title} />
+          <ArticleEngage articleId={a.id} title={a.title} cover={a.cover_image} authorName={a.author_name} authorHandle={a.author_handle} />
         </article>
       )}
     </div>
