@@ -1,3 +1,4 @@
+import PhotoCarousel from "@/components/post-feed/PhotoCarousel";
 import { useState, useRef } from "react";
 import { promptAuth } from "@/lib/promptAuth";
 import { createPortal } from "react-dom";
@@ -177,6 +178,8 @@ const PostCard = ({ post }: { post: Post }) => {
       <div className="w-full flex-1 min-h-0 overflow-hidden bg-black flex items-center justify-center">
         {post.isVideo ? (
           <video src={post.image} className="max-w-full max-h-full w-auto h-auto object-contain" controls playsInline loop />
+        ) : post.images && post.images.length > 0 ? (
+          <PhotoCarousel images={[post.image, ...post.images]} alt={post.caption} />
         ) : (
           <img src={post.image} alt={post.caption} className="max-w-full max-h-full w-auto h-auto object-contain" />
         )}
@@ -255,7 +258,14 @@ const PostCard = ({ post }: { post: Post }) => {
         {post.hashtags.length > 0 && (
           <div className="px-3 pb-1 flex flex-row flex-wrap gap-x-1">
             {post.hashtags.map(tag => (
-              <span key={tag} className="text-[#00a2ff] text-[13px]">#{tag}</span>
+              <button
+                key={tag}
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent("open-search", { detail: { query: `#${tag}` } }))}
+                className="text-[#00a2ff] text-[13px]"
+              >
+                #{tag}
+              </button>
             ))}
           </div>
         )}

@@ -42,6 +42,7 @@ export interface VideoData {
   ageRating?: string | null;
   adErid?: string | null;
   adAdvertiser?: string | null;
+  place?: string | null;
   repostedBy?: string | null;
 }
 
@@ -587,6 +588,12 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             </div>
           );
         })()}
+        {video.place && (
+          <p className="flex items-center gap-1 text-white/70 text-xs mb-2">
+            <Icon name="MapPin" size={12} />
+            <span className="truncate">{video.place}</span>
+          </p>
+        )}
         {video.isAd && video.adErid && (
           <p className="text-white/50 text-[11px] mb-2 break-all">
             Реклама{video.adAdvertiser ? ` · ${video.adAdvertiser}` : ""} · erid: {video.adErid}

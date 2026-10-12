@@ -130,6 +130,8 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
           ageRating: compliance.ageRating,
           adErid: compliance.adErid,
           adAdvertiser: compliance.adAdvertiser,
+          extraImages: compliance.extraImages,
+          place: compliance.place,
         },
         (p) => setPublishProgress({ stage: "upload", percent: p }),
       );

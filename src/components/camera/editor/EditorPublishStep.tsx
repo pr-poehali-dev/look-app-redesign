@@ -71,6 +71,7 @@ interface Props {
   userId?: string;
   isAd: boolean;
   setIsAd: (v: boolean) => void;
+  clipsCount?: number;
   compliance: PublishCompliance;
   onComplianceChange: (v: PublishCompliance) => void;
 }
@@ -96,6 +97,7 @@ const EditorPublishStep = ({
   userId,
   isAd,
   setIsAd,
+  clipsCount = 1,
   compliance,
   onComplianceChange,
 }: Props) => {
@@ -232,7 +234,7 @@ const EditorPublishStep = ({
           />
         </div>
 
-        <ComplianceFields isAd={isAd} setIsAd={setIsAd} value={compliance} onChange={onComplianceChange} />
+        <ComplianceFields isAd={isAd} setIsAd={setIsAd} value={compliance} onChange={onComplianceChange} isImage={!!active && active.type === "image" && clipsCount <= 1} />
 
         {/* Товары в кадре */}
         <div>

@@ -630,6 +630,8 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
           ageRating: compliance.ageRating,
           adErid: compliance.adErid,
           adAdvertiser: compliance.adAdvertiser,
+          extraImages: compliance.extraImages,
+          place: compliance.place,
         },
         (p) => setPublishProgress({ stage: "upload", percent: p }),
       );
@@ -705,6 +707,7 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
         userId={user?.id}
         isAd={isAd}
         setIsAd={setIsAd}
+        clipsCount={clips.length}
         compliance={compliance}
         onComplianceChange={setCompliance}
       />

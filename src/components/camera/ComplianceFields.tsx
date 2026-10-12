@@ -1,4 +1,5 @@
 import Icon from "@/components/ui/icon";
+import PostExtras from "@/components/camera/PostExtras";
 
 export type AgeRating = "0+" | "6+" | "12+" | "16+" | "18+";
 
@@ -6,9 +7,11 @@ export interface PublishCompliance {
   ageRating: AgeRating;
   adErid: string;
   adAdvertiser: string;
+  extraImages: string[];
+  place: string;
 }
 
-export const DEFAULT_COMPLIANCE: PublishCompliance = { ageRating: "12+", adErid: "", adAdvertiser: "" };
+export const DEFAULT_COMPLIANCE: PublishCompliance = { ageRating: "12+", adErid: "", adAdvertiser: "", extraImages: [], place: "" };
 
 const AGES: AgeRating[] = ["0+", "6+", "12+", "16+", "18+"];
 
@@ -17,10 +20,16 @@ interface Props {
   setIsAd: (v: boolean) => void;
   value: PublishCompliance;
   onChange: (v: PublishCompliance) => void;
+  isImage?: boolean;
 }
 
-const ComplianceFields = ({ isAd, setIsAd, value, onChange }: Props) => (
+const ComplianceFields = ({ isAd, setIsAd, value, onChange, isImage = true }: Props) => (
   <div className="flex flex-col gap-3">
+    <PostExtras
+      value={{ extraImages: value.extraImages, place: value.place }}
+      onChange={(e) => onChange({ ...value, extraImages: e.extraImages, place: e.place })}
+      allowImages={isImage}
+    />
     <div>
       <p className="text-white/60 text-xs font-semibold uppercase mb-2">Возрастная маркировка</p>
       <div className="flex gap-1.5">

@@ -120,6 +120,9 @@ def handler(event: dict, context) -> dict:
             try:
                 is_ad = bool(meta.get('is_ad'))
                 age_rating = meta.get('age_rating') if meta.get('age_rating') in ('0+', '6+', '12+', '16+', '18+') else '12+'
+                extra = [u for u in (meta.get('extra_images') or []) if isinstance(u, str) and u.startswith('https://')][:9]
+                extra_images = json.dumps(extra) if extra and media_type == 'image' else None
+                place = (meta.get('place') or '').strip()[:120] or None
                 ad_erid = (meta.get('ad_erid') or '').strip()[:100] or None
                 ad_advertiser = (meta.get('ad_advertiser') or '').strip()[:200] or None
                 if is_ad and not ad_erid:
@@ -130,15 +133,16 @@ def handler(event: dict, context) -> dict:
                 low = f"{meta.get('description', '')} {meta.get('hashtags', '')}".lower().replace('ё', 'е')
                 flagged = any(w[0].lower().replace('ё', 'е') in low for w in cur.fetchall())
                 cur.execute(
-                    "INSERT INTO videos (url, thumbnail, author, handle, description, hashtags, category, type, user_id, template_id, is_ad, ad_label, hidden, hidden_reason, age_rating, ad_erid, ad_advertiser) "
-                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+                    "INSERT INTO videos (url, thumbnail, author, handle, description, hashtags, category, type, user_id, template_id, is_ad, ad_label, hidden, hidden_reason, age_rating, ad_erid, ad_advertiser, extra_images, place) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
                     (cdn_url, thumb_url,
                      meta.get('author', 'Я'), meta.get('handle', 'user'),
                      meta.get('description', ''), meta.get('hashtags', ''),
                      meta.get('category', 'humor'), media_type,
                      meta.get('user_id', 'anonymous'), meta.get('template_id'),
                      is_ad, ad_label, flagged, 'auto_words' if flagged else None,
-                     age_rating, ad_erid if is_ad else None, ad_advertiser if is_ad else None),
+                     age_rating, ad_erid if is_ad else None, ad_advertiser if is_ad else None,
+                     extra_images, place),
                 )
                 video_id = cur.fetchone()[0]
                 if flagged:

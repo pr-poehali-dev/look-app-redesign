@@ -41,6 +41,15 @@ const PostFeed = () => {
     return (localStorage.getItem("feed_view_mode") as ViewMode) || "masonry";
   });
   const [showSearch, setShowSearch] = useState(false);
+  const [searchSeed, setSearchSeed] = useState("");
+  useEffect(() => {
+    const on = (e: Event) => {
+      setSearchSeed((e as CustomEvent).detail?.query || "");
+      setShowSearch(true);
+    };
+    window.addEventListener("open-search", on);
+    return () => window.removeEventListener("open-search", on);
+  }, []);
   const [categoryId, setCategoryId] = useState("recommend");
   const [detecting, setDetecting] = useState(false);
   const [cityInput, setCityInput] = useState("");
@@ -111,6 +120,8 @@ const PostFeed = () => {
         isVerified: !!v.is_verified,
         isAd: !!v.is_ad,
         adLabel: v.ad_label || null,
+        images: Array.isArray(v.images) ? v.images : [],
+        location: v.place || undefined,
         ageRating: v.age_rating || null,
         adErid: v.ad_erid || null,
         adAdvertiser: v.ad_advertiser || null,
@@ -234,6 +245,7 @@ const PostFeed = () => {
 
       {showSearch && (
         <SearchOverlay
+          initialQuery={searchSeed}
           posts={categoryPosts}
           onClose={() => setShowSearch(false)}
           onOpenPost={(p) => { setShowSearch(false); setSearchOpenedPost(p); }}
@@ -256,7 +268,7 @@ const PostFeed = () => {
             </button>
           ))}
         </div>
-        <button onClick={() => setShowSearch(true)} className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+        <button onClick={() => { setSearchSeed(""); setShowSearch(true); }} className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
           <Icon name="Search" size={18} className="text-white" />
         </button>
         <button

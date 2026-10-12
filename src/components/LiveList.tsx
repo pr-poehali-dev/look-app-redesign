@@ -1,3 +1,4 @@
+import UpcomingStreams from "@/components/live-stream/UpcomingStreams";
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
@@ -375,6 +376,10 @@ const LiveList = () => {
             <span className="text-[#fe2c55] text-xs font-bold">В ЭФИРЕ</span>
           </div>
         </div>
+      </div>
+
+      <div className="pt-3">
+        <UpcomingStreams />
       </div>
 
       {/* Categories */}

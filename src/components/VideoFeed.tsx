@@ -145,6 +145,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
           ageRating: v.age_rating || null,
           adErid: v.ad_erid || null,
           adAdvertiser: v.ad_advertiser || null,
+          place: v.place || null,
           repostedBy: v.reposted_by || null,
         });
         }));

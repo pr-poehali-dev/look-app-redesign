@@ -6,6 +6,7 @@ const TYPE_ICON: Record<string, string> = {
   system: "Bell",
   comment: "MessageCircle",
   reply: "Reply",
+  stream: "Radio",
 };
 
 const timeAgo = (iso?: string | null) => {

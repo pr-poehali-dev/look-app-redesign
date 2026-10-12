@@ -8,7 +8,8 @@ import CommunitySettingsScreen from "./CommunitySettingsScreen";
 import { Chat } from "./MessagesScreen";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
-const CATEGORIES = ["Все", "Фото", "Путешествия", "Спорт", "Игры", "Еда", "Музыка", "Другое"];
+const TOPICS = ["Мода", "Красота", "Путешествия", "Еда", "Интерьер", "Спорт", "Хобби", "Фото", "Игры", "Музыка", "Другое"];
+const CATEGORIES = ["Все", ...TOPICS];
 
 interface Community {
   id: string;
@@ -39,7 +40,7 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState<"open" | "closed">("open");
   const [newDesc, setNewDesc] = useState("");
-  const [newCategory] = useState("Другое");
+  const [newCategory, setNewCategory] = useState("Другое");
   const [creating, setCreating] = useState(false);
   const [openChat, setOpenChat] = useState<Chat | null>(null);
   const [groupCall, setGroupCall] = useState<{ communityId: string; name: string; mode: "audio" | "video" } | null>(null);
@@ -265,6 +266,18 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
             placeholder="Описание (необязательно)..."
             className="bg-zinc-800 rounded-xl px-3 py-2.5 text-white text-sm outline-none placeholder-zinc-500 border border-white/10"
           />
+          <div className="flex flex-wrap gap-1.5">
+            {TOPICS.map(t => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setNewCategory(t)}
+                className={`px-3 py-1 rounded-full text-xs font-semibold border cursor-pointer ${newCategory === t ? "bg-[#fe2c55] border-[#fe2c55] text-white" : "bg-zinc-800 border-white/10 text-white/70"}`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
           <div className="flex gap-2">
             {(["open", "closed"] as const).map(t => (
               <button

@@ -28,6 +28,7 @@ export interface Post {
   isAd?: boolean;
   adLabel?: string | null;
   ageRating?: string | null;
+  images?: string[];
   adErid?: string | null;
   adAdvertiser?: string | null;
   repostedBy?: string | null;

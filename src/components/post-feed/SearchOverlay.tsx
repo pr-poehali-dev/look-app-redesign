@@ -38,10 +38,11 @@ interface Props {
   posts: Post[];
   onClose: () => void;
   onOpenPost: (post: Post) => void;
+  initialQuery?: string;
 }
 
-const SearchOverlay = ({ posts, onClose, onOpenPost }: Props) => {
-  const [query, setQuery] = useState("");
+const SearchOverlay = ({ posts, onClose, onOpenPost, initialQuery = "" }: Props) => {
+  const [query, setQuery] = useState(initialQuery);
   const [recent, setRecent] = useState<string[]>(readRecent);
   const [resultTab, setResultTab] = useState<"posts" | "videos" | "people" | "articles" | "products">("posts");
   const [videoHits, setVideoHits] = useState<VideoHit[]>([]);

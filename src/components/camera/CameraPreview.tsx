@@ -365,7 +365,7 @@ const CameraPreview = ({
                   })()}
                 </div>
 
-                <ComplianceFields isAd={isAd} setIsAd={onIsAdChange} value={compliance} onChange={onComplianceChange} />
+                <ComplianceFields isAd={isAd} setIsAd={onIsAdChange} value={compliance} onChange={onComplianceChange} isImage={uploadedMedia?.type !== "video"} />
               </>
             )}
 

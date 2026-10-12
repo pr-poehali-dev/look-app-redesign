@@ -39,6 +39,7 @@ export const toVideo = (v: any): VideoData => ({
   ageRating: v.age_rating || null,
   adErid: v.ad_erid || null,
   adAdvertiser: v.ad_advertiser || null,
+  place: v.place || null,
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -63,9 +64,11 @@ export const toPost = (v: any): Post => {
     isVerified: !!v.is_verified,
     isAd: !!v.is_ad,
     adLabel: v.ad_label || null,
-  ageRating: v.age_rating || null,
-  adErid: v.ad_erid || null,
-  adAdvertiser: v.ad_advertiser || null,
+    ageRating: v.age_rating || null,
+    adErid: v.ad_erid || null,
+    adAdvertiser: v.ad_advertiser || null,
+    images: Array.isArray(v.images) ? v.images : [],
+    location: v.place || undefined,
   };
 };
 

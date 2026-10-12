@@ -231,6 +231,8 @@ export interface DirectUploadMeta {
   ageRating?: string;
   adErid?: string;
   adAdvertiser?: string;
+  extraImages?: string[];
+  place?: string;
 }
 
 async function blobToBase64(blob: Blob): Promise<string> {
@@ -285,10 +287,16 @@ async function postJSON(payload: Record<string, unknown>, attempt = 1): Promise<
   }
 }
 
+export async function uploadExtraImage(file: File): Promise<string> {
+  const reg = await uploadFileDirect(file, { category: "feed" } as DirectUploadMeta, undefined, true);
+  return reg.url;
+}
+
 export async function uploadFileDirect(
   file: File,
   meta: DirectUploadMeta,
   onProgress?: (percent: number) => void,
+  skipRegister = false,
 ): Promise<{ id: number; url: string; thumb?: string; type: string }> {
   const ext = (file.name.split(".").pop() || (file.type.startsWith("video") ? "mp4" : "jpg")).toLowerCase();
   const contentType = file.type || (file.type.startsWith("video") ? "video/mp4" : "image/jpeg");
@@ -338,7 +346,7 @@ export async function uploadFileDirect(
     total_parts: totalParts,
     content_type: contentType,
     thumb_data: meta.thumbData || null,
-    meta: {
+    meta: skipRegister ? null : {
       category: meta.category,
       description: meta.description || "",
       hashtags: meta.hashtags || "",
@@ -351,11 +359,13 @@ export async function uploadFileDirect(
       age_rating: meta.ageRating || "12+",
       ad_erid: meta.isAd ? (meta.adErid || "") : "",
       ad_advertiser: meta.isAd ? (meta.adAdvertiser || "") : "",
+      extra_images: meta.extraImages || [],
+      place: meta.place || "",
     },
   });
   const finalUrl = finish.url as string | undefined;
-  const finalId = finish.id as number | undefined;
-  if (!finalUrl || !finalId) {
+  const finalId = (finish.id as number | undefined) ?? (skipRegister ? 0 : undefined);
+  if (!finalUrl || (finalId === undefined)) {
     console.error("[upload] finish bad response:", finish);
     throw new Error("finish: bad response");
   }
