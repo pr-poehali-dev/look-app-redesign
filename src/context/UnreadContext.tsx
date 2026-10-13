@@ -17,6 +17,7 @@ export const UnreadProvider = ({ children }: { children: ReactNode }) => {
 
   const refresh = () => {
     if (!user) { setTotalUnread(0); return; }
+    if (document.visibilityState !== "visible") return;
     fetch(`${CHAT_API}?module=chat&action=list`, {
       headers: { "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
     })
