@@ -18,17 +18,49 @@ const findBackButton = (): HTMLElement | null => {
   return found;
 };
 
+const closeSheet = (sheet: HTMLElement) => {
+  const backdrop = sheet.parentElement;
+  if (!backdrop) return;
+  backdrop.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+  backdrop.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+};
+
+const scrolledInside = (el: HTMLElement | null, sheet: HTMLElement) => {
+  while (el && el !== sheet.parentElement) {
+    if (el.scrollTop > 0) return true;
+    el = el.parentElement;
+  }
+  return false;
+};
+
 export const useSwipeBack = () => {
   useEffect(() => {
     if (typeof window === "undefined") return;
     let start: { x: number; y: number } | null = null;
+    let sheetStart: { y: number; x: number; sheet: HTMLElement } | null = null;
 
     const onStart = (e: TouchEvent) => {
       const isMobile = window.innerWidth < 768;
       const t = e.touches[0];
+      sheetStart = null;
+      const target = e.target as HTMLElement | null;
+      const sheet = isMobile && e.touches.length === 1 ? (target?.closest?.(".sheet-theme") as HTMLElement | null) : null;
+      if (sheet && !scrolledInside(target, sheet)) sheetStart = { x: t.clientX, y: t.clientY, sheet };
       start = isMobile && e.touches.length === 1 && t.clientX <= EDGE ? { x: t.clientX, y: t.clientY } : null;
     };
     const onEnd = (e: TouchEvent) => {
+      const ss = sheetStart;
+      sheetStart = null;
+      if (ss) {
+        const t = e.changedTouches[0];
+        const dy = t.clientY - ss.y;
+        const dx = Math.abs(t.clientX - ss.x);
+        if (dy > 90 && dy > dx * 1.5 && !scrolledInside(e.target as HTMLElement, ss.sheet)) {
+          start = null;
+          closeSheet(ss.sheet);
+          return;
+        }
+      }
       const s = start;
       start = null;
       if (!s) return;
