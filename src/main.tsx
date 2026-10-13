@@ -1,4 +1,5 @@
 import { createRoot } from 'react-dom/client'
+import { initExternalLinks } from './lib/externalLinks'
 import App from './App'
 import ErrorBoundary from './components/ErrorBoundary'
 import './index.css'
@@ -13,6 +14,7 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   });
 }
 
+initExternalLinks();
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
     <App />
