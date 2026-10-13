@@ -228,7 +228,6 @@ const AppContent = () => {
   useEffect(() => {
     if (!user) return;
     pollRef.current = setInterval(async () => {
-      if (document.visibilityState !== "visible") return;
       try {
         const res = await fetch(
           `${CHAT_API}?module=signal&room_id=incoming_${user.id}&since_id=${lastSigRef.current}&max_age_seconds=30`,
@@ -258,7 +257,7 @@ const AppContent = () => {
           }
         }
       } catch (e) { void e; }
-    }, 5000);
+    }, 3000);
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
       if (autoTimeoutRef.current) clearTimeout(autoTimeoutRef.current);

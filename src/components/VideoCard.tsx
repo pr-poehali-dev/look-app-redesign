@@ -324,18 +324,13 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
     const updateBuffered = () => {
       try {
         if (v.buffered.length && v.duration) {
-          const nb = Math.round(v.buffered.end(v.buffered.length - 1) / v.duration * 20) * 5;
-          setBuffered(prev => (prev === nb ? prev : nb));
+          setBuffered(v.buffered.end(v.buffered.length - 1) / v.duration * 100);
         }
       } catch { /* ignore */ }
     };
     let fixedInfinity = false;
-    let lastUiTime = -1;
     const onTime = () => {
-      if (!seeking && Math.abs(v.currentTime - lastUiTime) >= 0.5) {
-        lastUiTime = v.currentTime;
-        setCurrentTime(v.currentTime);
-      }
+      if (!seeking) setCurrentTime(v.currentTime);
       if (v.currentTime > maxWatchedRef.current) maxWatchedRef.current = v.currentTime;
       updateBuffered();
     };
