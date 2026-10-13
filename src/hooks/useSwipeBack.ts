@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 
-const EDGE = 32;
-const MIN_DX = 70;
+const MIN_DX = 60;
 const TOP_ZONE = 130;
 
 const findBackButton = (): HTMLElement | null => {
@@ -16,6 +15,20 @@ const findBackButton = (): HTMLElement | null => {
     found = btn;
   });
   return found;
+};
+
+const isBlocked = (el: HTMLElement | null) => {
+  if (!el) return false;
+  if (el.closest?.("input,textarea,select,[contenteditable=true],[role=slider],[data-no-swipe],.sheet-theme")) return true;
+  let n: HTMLElement | null = el;
+  while (n && n !== document.body) {
+    if (n.scrollWidth > n.clientWidth + 4) {
+      const ox = getComputedStyle(n).overflowX;
+      if (ox === "auto" || ox === "scroll") return true;
+    }
+    n = n.parentElement;
+  }
+  return false;
 };
 
 const closeSheet = (sheet: HTMLElement) => {
@@ -46,7 +59,7 @@ export const useSwipeBack = () => {
       const target = e.target as HTMLElement | null;
       const sheet = isMobile && e.touches.length === 1 ? (target?.closest?.(".sheet-theme") as HTMLElement | null) : null;
       if (sheet && !scrolledInside(target, sheet)) sheetStart = { x: t.clientX, y: t.clientY, sheet };
-      start = isMobile && e.touches.length === 1 && t.clientX <= EDGE ? { x: t.clientX, y: t.clientY } : null;
+      start = isMobile && e.touches.length === 1 && !isBlocked(target) ? { x: t.clientX, y: t.clientY } : null;
     };
     const onEnd = (e: TouchEvent) => {
       const ss = sheetStart;
