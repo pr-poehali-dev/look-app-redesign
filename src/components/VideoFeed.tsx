@@ -270,7 +270,9 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
               style={{ height: "100%", background: "var(--look-bg)" }}
             >
               <div className="w-full md:w-auto md:h-[calc(100vh-24px)] h-full" style={{ background: "var(--look-bg)" }}>
-                <VideoCard video={video} isActive={activeIndex === i} preloadLevel={preloadLevel} />
+                {distance <= 2 && (
+                  <VideoCard video={video} isActive={activeIndex === i} preloadLevel={preloadLevel} />
+                )}
               </div>
             </div>
           );
