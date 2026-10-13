@@ -17,6 +17,7 @@ export const UnreadProvider = ({ children }: { children: ReactNode }) => {
 
   const refresh = () => {
     if (!user) { setTotalUnread(0); return; }
+    if (document.visibilityState !== "visible") return;
     fetch(`${CHAT_API}?module=chat&action=list`, {
       headers: { "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
     })
@@ -32,7 +33,7 @@ export const UnreadProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!user) { setTotalUnread(0); return; }
     refresh();
-    intervalRef.current = setInterval(refresh, 15000);
+    intervalRef.current = setInterval(refresh, 30000);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };

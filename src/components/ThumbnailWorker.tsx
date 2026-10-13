@@ -33,6 +33,8 @@ const ThumbnailWorker = () => {
   useEffect(() => {
     if (doneRef.current) return;
     doneRef.current = true;
+    if (sessionStorage.getItem("thumb_worker_done")) return;
+    sessionStorage.setItem("thumb_worker_done", "1");
 
     const run = async () => {
       // Получаем все видео без thumbnail
@@ -50,10 +52,10 @@ const ThumbnailWorker = () => {
 
       // Обрабатываем по одному с паузой 1с между ними
       let processed = 0;
-      for (const video of videos) {
+      for (const video of videos.slice(0, 5)) {
         const ok = await processOne(video);
         if (ok) processed++;
-        await new Promise((r) => setTimeout(r, 1000));
+        await new Promise((r) => setTimeout(r, 3000));
       }
 
       // После обработки — сигнализируем сеткам перезагрузиться
@@ -63,7 +65,7 @@ const ThumbnailWorker = () => {
     };
 
     // Запускаем через 3с после загрузки чтобы не мешать основному контенту
-    const t = setTimeout(run, 3000);
+    const t = setTimeout(run, 20000);
     return () => clearTimeout(t);
   }, []);
 
