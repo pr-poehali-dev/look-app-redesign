@@ -29,7 +29,19 @@ const LIVE_CATEGORY = { id: "live", label: "Эфиры" };
 
 const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
+const useIsDesktopScreen = () => {
+  const [desktop, setDesktop] = useState(() => typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches);
+  useEffect(() => {
+    const mql = window.matchMedia("(min-width: 768px)");
+    const onChange = () => setDesktop(mql.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+  return desktop;
+};
+
 const Index = () => {
+  const isDesktopScreen = useIsDesktopScreen();
   const { user, logout } = useAuth();
   const { theme, toggle: toggleTheme } = useTheme();
   const initialCommunityFromUrl = (() => {
@@ -411,7 +423,7 @@ const Index = () => {
           {activeTab === "home" && activeCategory !== LIVE_CATEGORY.id && (
             <>
               {/* На ПК показываем плиточную сетку (TikTok-стиль) для всех категорий, кроме «Подписки» и «Новые». Клик — открывает видео в ленте */}
-              <div className="hidden md:block w-full h-full">
+              {isDesktopScreen && <div className="hidden md:block w-full h-full">
                 {activeCategory !== "subs" && activeCategory !== "new" && gridOpenVideoId === null ? (
                   <VideoGrid category={activeCategory} onOpenVideo={(id) => setGridOpenVideoId(id)} />
                 ) : (
@@ -422,11 +434,10 @@ const Index = () => {
                     onCloseInitial={() => setGridOpenVideoId(null)}
                   />
                 )}
-              </div>
-              {/* Мобильная — всегда вертикальная лента */}
-              <div className="md:hidden w-full h-full">
+              </div>}
+              {!isDesktopScreen && <div className="md:hidden w-full h-full">
                 <VideoFeed activeTab={activeTab} activeCategory={activeCategory} />
-              </div>
+              </div>}
             </>
           )}
 
