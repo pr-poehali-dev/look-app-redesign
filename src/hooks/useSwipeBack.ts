@@ -49,7 +49,7 @@ const scrolledInside = (el: HTMLElement | null, sheet: HTMLElement) => {
 export const useSwipeBack = () => {
   useEffect(() => {
     if (typeof window === "undefined") return;
-    let start: { x: number; y: number } | null = null;
+    let start: { x: number; y: number; target: HTMLElement | null } | null = null;
     let sheetStart: { y: number; x: number; sheet: HTMLElement } | null = null;
 
     const onStart = (e: TouchEvent) => {
@@ -57,9 +57,10 @@ export const useSwipeBack = () => {
       const t = e.touches[0];
       sheetStart = null;
       const target = e.target as HTMLElement | null;
-      const sheet = isMobile && e.touches.length === 1 ? (target?.closest?.(".sheet-theme") as HTMLElement | null) : null;
-      if (sheet && !scrolledInside(target, sheet)) sheetStart = { x: t.clientX, y: t.clientY, sheet };
-      start = isMobile && e.touches.length === 1 && !isBlocked(target) ? { x: t.clientX, y: t.clientY } : null;
+      if (!isMobile || e.touches.length !== 1) { start = null; return; }
+      const sheet = target?.closest?.(".sheet-theme") as HTMLElement | null;
+      if (sheet) sheetStart = { x: t.clientX, y: t.clientY, sheet };
+      start = { x: t.clientX, y: t.clientY, target };
     };
     const onEnd = (e: TouchEvent) => {
       const ss = sheetStart;
@@ -81,6 +82,7 @@ export const useSwipeBack = () => {
       const dx = t.clientX - s.x;
       const dy = Math.abs(t.clientY - s.y);
       if (dx < MIN_DX || dx < dy * 1.5) return;
+      if (isBlocked(s.target)) return;
       findBackButton()?.click();
     };
 
