@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useSwipeBack } from "@/hooks/useSwipeBack";
 import NotFound from "./pages/NotFound";
 import { UserMediaProvider } from "./context/UserMediaContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -55,6 +56,7 @@ const queryClient = new QueryClient({
 });
 
 const AppContent = () => {
+  useSwipeBack();
   const { user, token, loading } = useAuth();
   const [resetToken, setResetToken] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;

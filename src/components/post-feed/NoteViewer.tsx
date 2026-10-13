@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import PostCard from "./PostCard";
@@ -22,29 +22,13 @@ const useIsDesktop = () => {
 
 const NoteViewer = ({ post, onClose }: { post: Post; onClose: () => void }) => {
   const desktop = useIsDesktop();
-  const swipe = useRef<{ x: number; y: number } | null>(null);
 
   if (desktop) {
     return createPortal(<NoteViewerDesktop post={post} onClose={onClose} />, document.body);
   }
 
   return createPortal(
-    <div
-      className="fixed inset-0 z-[9998] bg-black flex flex-col"
-      onTouchStart={(e) => {
-        const t = e.touches[0];
-        swipe.current = t.clientX <= 80 ? { x: t.clientX, y: t.clientY } : null;
-      }}
-      onTouchEnd={(e) => {
-        const s = swipe.current;
-        swipe.current = null;
-        if (!s) return;
-        const t = e.changedTouches[0];
-        const dx = t.clientX - s.x;
-        const dy = Math.abs(t.clientY - s.y);
-        if (dx > 70 && dx > dy * 1.5) onClose();
-      }}
-    >
+    <div className="fixed inset-0 z-[9998] bg-black flex flex-col">
       <div className="relative w-full h-full">
         <button
           onClick={onClose}
