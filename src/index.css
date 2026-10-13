@@ -1059,3 +1059,14 @@ html.theme-light .nv-tag {
   color: #fe2c55 !important;
   stroke: #fe2c55 !important;
 }
+
+@media (max-width: 767px) {
+  .backdrop-blur,
+  .backdrop-blur-sm,
+  .backdrop-blur-md,
+  .backdrop-blur-lg,
+  .backdrop-blur-xl {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
