@@ -167,7 +167,7 @@ const EditorToolbar = ({
                   <div className={`relative w-16 h-24 rounded-lg overflow-hidden border-2 ${i === activeIdx ? "border-[#fe2c55]" : "border-white/10"}`}>
                     <button onClick={() => setActiveIdx(i)} className="w-full h-full">
                       {c.type === "image"
-                        ? <img src={c.url} className="w-full h-full object-cover" alt="" />
+                        ? <img loading="lazy" decoding="async" src={c.url} className="w-full h-full object-cover" alt="" />
                         : <video src={c.url} className="w-full h-full object-cover" muted />}
                     </button>
                     <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-1">
@@ -242,7 +242,7 @@ const EditorToolbar = ({
               <button key={f.id} onClick={() => setFilter(f.id)} className={`flex-shrink-0 flex flex-col items-center gap-1 ${filter === f.id ? "opacity-100" : "opacity-70"}`}>
                 <div className="w-14 h-20 rounded-lg overflow-hidden bg-black border-2" style={{ borderColor: filter === f.id ? "#fe2c55" : "transparent" }}>
                   {active && (active.type === "image"
-                    ? <img src={active.url} className="w-full h-full object-cover" style={{ filter: f.css }} alt="" />
+                    ? <img loading="lazy" decoding="async" src={active.url} className="w-full h-full object-cover" style={{ filter: f.css }} alt="" />
                     : <video src={active.url} className="w-full h-full object-cover" style={{ filter: f.css }} muted />)}
                 </div>
                 <span className="text-white text-[10px]">{f.label}</span>
@@ -352,7 +352,7 @@ const EditorToolbar = ({
             ) : (
               <>
                 <div className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2">
-                  <img src={watermarkUrl} className="w-8 h-8 object-contain rounded bg-white/10" alt="" />
+                  <img loading="lazy" decoding="async" src={watermarkUrl} className="w-8 h-8 object-contain rounded bg-white/10" alt="" />
                   <span className="text-white text-sm flex-1">Логотип добавлен</span>
                   <button onClick={removeWatermark} className="text-red-400"><Icon name="X" size={14} /></button>
                 </div>

@@ -85,7 +85,7 @@ const SavedScreen = ({ onBack }: { onBack: () => void }) => {
                     preview.type === "video" || /\.(mp4|mov|webm)(\?|$)/i.test(preview.image) ? (
                       <video src={preview.image} className="w-full h-full object-cover" muted playsInline preload="metadata" />
                     ) : (
-                      <img src={preview.image} alt="" className="w-full h-full object-cover" />
+                      <img loading="lazy" decoding="async" src={preview.image} alt="" className="w-full h-full object-cover" />
                     )
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gray-50">
@@ -133,7 +133,7 @@ const SavedScreen = ({ onBack }: { onBack: () => void }) => {
                     {isVideo ? (
                       <video src={item.image} className="w-full h-full object-cover" muted playsInline preload="metadata" />
                     ) : (
-                      <img src={item.image} alt="" className="w-full h-full object-cover" />
+                      <img loading="lazy" decoding="async" src={item.image} alt="" className="w-full h-full object-cover" />
                     )}
                   </button>
                   <div className="absolute bottom-1.5 left-1.5 right-1.5 flex items-center justify-between">
@@ -536,7 +536,7 @@ const EditProfileScreen = ({ onBack }: { onBack: () => void }) => {
             className="relative w-24 h-24 rounded-full bg-gradient-to-br from-[#c084fc] to-[#8b5cf6] flex items-center justify-center overflow-hidden"
           >
             {user?.avatar
-              ? <img src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
+              ? <img loading="lazy" decoding="async" src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
               : <span className="text-white font-black text-4xl">{(name?.[0] || user?.name?.[0] || "?").toUpperCase()}</span>
             }
             <span className="absolute -right-1 -bottom-1 w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center border-2 border-white">

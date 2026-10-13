@@ -98,7 +98,7 @@ const BoardDetailScreen = ({ boardId, onBack }: { boardId: number; onBack: () =>
             {opened.isVideo ? (
               <video src={opened.image} className="max-h-full max-w-full object-contain" controls autoPlay playsInline loop />
             ) : (
-              <img src={opened.image} alt="" className="max-h-full max-w-full object-contain" />
+              <img loading="lazy" decoding="async" src={opened.image} alt="" className="max-h-full max-w-full object-contain" />
             )}
           </div>
         </div>

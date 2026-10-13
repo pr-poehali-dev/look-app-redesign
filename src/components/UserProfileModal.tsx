@@ -365,7 +365,7 @@ const UserProfileModal = ({ handle, initialTab = "media", onClose }: Props) => {
                     className="relative rounded-2xl overflow-hidden bg-gray-50 aspect-square active:opacity-80"
                   >
                     {b.cover_image ? (
-                      <img src={b.cover_image} alt="" className="w-full h-full object-cover" />
+                      <img loading="lazy" decoding="async" src={b.cover_image} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gray-100">
                         <Icon name="Layers" size={28} className="text-gray-300" />

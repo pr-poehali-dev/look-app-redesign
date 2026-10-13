@@ -37,7 +37,7 @@ const RequestsModal = ({ requests, requestsLoading, onClose, onDecide }: Props) 
             requests.map((r) => (
               <div key={r.id} className="flex items-center gap-3 px-3 py-2.5">
                 {r.avatar ? (
-                  <img src={r.avatar} className="w-10 h-10 rounded-full object-cover" alt={r.user_name} />
+                  <img loading="lazy" decoding="async" src={r.avatar} className="w-10 h-10 rounded-full object-cover" alt={r.user_name} />
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center text-white text-sm font-bold">
                     {r.user_name.slice(0, 1).toUpperCase()}

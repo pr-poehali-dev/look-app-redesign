@@ -90,7 +90,7 @@ const ProductMasonryCard = ({ p, onAdd, adding, hideOwner, rating }: Props) => {
         {!hideOwner && p.owner_handle && !p.is_partner ? (
           <button onClick={openSeller} className="flex items-center gap-1.5 pt-0.5">
             <div className="w-4 h-4 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-              {p.owner_avatar && <img src={p.owner_avatar} alt="" className="w-full h-full object-cover" />}
+              {p.owner_avatar && <img loading="lazy" decoding="async" src={p.owner_avatar} alt="" className="w-full h-full object-cover" />}
             </div>
             <span className="text-gray-400 text-[11px] truncate">{p.owner_name || `@${p.owner_handle}`}</span>
           </button>

@@ -518,7 +518,7 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
             }}
           >
             {imgLoaded && (
-              <img
+              <img loading="lazy" decoding="async"
                 ref={displayImgRef}
                 src={src}
                 alt="edit"
@@ -596,7 +596,7 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
               {FILTERS.map(f => (
                 <button key={f.id} onClick={() => setFilter(f.id)} className={`flex-shrink-0 flex flex-col items-center gap-1 ${filter === f.id ? "opacity-100" : "opacity-70"}`}>
                   <div className={`w-14 h-14 rounded-lg overflow-hidden border-2 ${filter === f.id ? "border-[#fe2c55]" : "border-transparent"}`}>
-                    {imgLoaded && <img src={src} alt="" className="w-full h-full object-cover" style={{ filter: f.css(DEFAULT_ADJ) }} />}
+                    {imgLoaded && <img loading="lazy" decoding="async" src={src} alt="" className="w-full h-full object-cover" style={{ filter: f.css(DEFAULT_ADJ) }} />}
                   </div>
                   <span className="text-white/70 text-[10px]">{f.label}</span>
                 </button>

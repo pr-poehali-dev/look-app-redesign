@@ -90,7 +90,7 @@ const AnalyticsScreen = ({ onBack }: { onBack: () => void }) => {
                 {data.top_saved.map((v) => (
                   <div key={v.id} className="flex items-center gap-3 bg-gray-50 rounded-2xl p-2">
                     <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0">
-                      {v.thumbnail && <img src={v.thumbnail} className="w-full h-full object-cover" alt="" />}
+                      {v.thumbnail && <img loading="lazy" decoding="async" src={v.thumbnail} className="w-full h-full object-cover" alt="" />}
                     </div>
                     <span className="flex-1 text-sm text-gray-700 truncate">{v.description || "Без описания"}</span>
                     <span className="text-black font-bold text-sm flex-shrink-0">{v.saves} 🔖</span>
@@ -107,7 +107,7 @@ const AnalyticsScreen = ({ onBack }: { onBack: () => void }) => {
                 {data.top_videos.map((v) => (
                   <div key={v.id} className="flex items-center gap-3 bg-gray-50 rounded-2xl p-2">
                     <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0">
-                      {v.thumbnail && <img src={v.thumbnail} className="w-full h-full object-cover" alt="" />}
+                      {v.thumbnail && <img loading="lazy" decoding="async" src={v.thumbnail} className="w-full h-full object-cover" alt="" />}
                     </div>
                     <span className="flex-1 text-sm text-gray-700 truncate">{v.description || "Без описания"}</span>
                     <span className="text-black font-bold text-sm flex-shrink-0">{v.views} 👁</span>

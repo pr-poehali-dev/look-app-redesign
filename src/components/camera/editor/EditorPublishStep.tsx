@@ -177,7 +177,7 @@ const EditorPublishStep = ({
         {/* Preview */}
         <div className="mx-auto w-40 aspect-[9/16] bg-black rounded-xl overflow-hidden flex items-center justify-center">
           {active && (active.type === "image"
-            ? <img src={active.url} alt="" className="w-full h-full object-cover" style={{ filter: cssFilter, transform }} />
+            ? <img loading="lazy" decoding="async" src={active.url} alt="" className="w-full h-full object-cover" style={{ filter: cssFilter, transform }} />
             : <video src={active.url} className="w-full h-full object-cover" style={{ filter: cssFilter, transform }} muted autoPlay loop />)}
         </div>
 
@@ -259,7 +259,7 @@ const EditorPublishStep = ({
               {products.map((p, i) => (
                 <div key={i} className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2">
                   <div className="w-10 h-10 rounded-lg overflow-hidden bg-white/10 flex-shrink-0">
-                    {p.image && <img src={p.image} className="w-full h-full object-cover" alt="" />}
+                    {p.image && <img loading="lazy" decoding="async" src={p.image} className="w-full h-full object-cover" alt="" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
@@ -308,7 +308,7 @@ const EditorPublishStep = ({
                         className="flex items-center gap-2 bg-white/5 hover:bg-white/10 rounded-lg p-2 text-left"
                       >
                         <div className="w-9 h-9 rounded-lg overflow-hidden bg-white/10 flex-shrink-0">
-                          {p.image && <img src={p.image} className="w-full h-full object-cover" alt="" />}
+                          {p.image && <img loading="lazy" decoding="async" src={p.image} className="w-full h-full object-cover" alt="" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-white text-sm truncate">{p.title}</p>
@@ -333,7 +333,7 @@ const EditorPublishStep = ({
                         className="flex items-center gap-2 bg-white/5 hover:bg-white/10 rounded-lg p-2 text-left"
                       >
                         <div className="w-9 h-9 rounded-lg overflow-hidden bg-white/10 flex-shrink-0">
-                          {p.image && <img src={p.image} className="w-full h-full object-cover" alt="" />}
+                          {p.image && <img loading="lazy" decoding="async" src={p.image} className="w-full h-full object-cover" alt="" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5">
@@ -360,7 +360,7 @@ const EditorPublishStep = ({
                     className="w-full aspect-video rounded-lg bg-white/5 border-2 border-dashed border-white/15 overflow-hidden relative flex items-center justify-center"
                   >
                     {newImage ? (
-                      <img src={newImage} className="w-full h-full object-cover" alt="" />
+                      <img loading="lazy" decoding="async" src={newImage} className="w-full h-full object-cover" alt="" />
                     ) : (
                       <div className="flex flex-col items-center gap-1 text-white/40">
                         <Icon name="ImagePlus" size={22} />

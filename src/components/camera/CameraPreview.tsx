@@ -195,7 +195,7 @@ const CameraPreview = ({
         <div className="absolute inset-0 z-30 bg-black flex flex-col md:flex-row md:overflow-hidden overflow-y-auto md:overflow-y-hidden">
           <div className="relative w-full h-[38vh] flex-shrink-0 md:h-auto md:flex-[1.4] md:min-h-0">
             {uploadedMedia.type === "image" ? (
-              <img src={uploadedMedia.url} className="w-full h-full object-contain" alt="preview" />
+              <img loading="lazy" decoding="async" src={uploadedMedia.url} className="w-full h-full object-contain" alt="preview" />
             ) : (
               <video src={uploadedMedia.url} className="w-full h-full object-contain" autoPlay loop playsInline />
             )}
@@ -227,7 +227,7 @@ const CameraPreview = ({
               </div>
               <div className="rounded-xl overflow-hidden bg-black aspect-square mb-2">
                 {uploadedMedia.type === "image" ? (
-                  <img src={uploadedMedia.url} className="w-full h-full object-cover" alt="preview" />
+                  <img loading="lazy" decoding="async" src={uploadedMedia.url} className="w-full h-full object-cover" alt="preview" />
                 ) : (
                   <video src={uploadedMedia.url} className="w-full h-full object-cover" muted playsInline autoPlay loop />
                 )}

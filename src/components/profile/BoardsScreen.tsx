@@ -88,7 +88,7 @@ const BoardsScreen = ({ onBack }: { onBack: () => void }) => {
             <div key={b.id} className="relative rounded-2xl overflow-hidden bg-gray-50 aspect-square shadow-sm">
               <button onClick={() => setOpenedId(b.id)} className="w-full h-full active:opacity-80">
                 {b.cover_image ? (
-                  <img src={b.cover_image} alt="" className="w-full h-full object-cover" />
+                  <img loading="lazy" decoding="async" src={b.cover_image} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gray-100">
                     <Icon name={BOARD_COVER_ICONS[i % BOARD_COVER_ICONS.length]} size={32} className="text-gray-300" />

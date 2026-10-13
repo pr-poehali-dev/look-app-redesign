@@ -243,7 +243,7 @@ const WatchStream = ({ channel, onBack }: { channel: LiveChannel; onBack: () => 
       {/* Author info */}
       <div className="relative z-20 px-4 pb-2 flex items-center gap-3">
         <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#fe2c55]">
-          <img src={channel.thumb} alt={channel.name} className="w-full h-full object-cover" />
+          <img loading="lazy" decoding="async" src={channel.thumb} alt={channel.name} className="w-full h-full object-cover" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1">
@@ -409,7 +409,7 @@ const LiveList = () => {
           className="relative w-full rounded-2xl overflow-hidden aspect-video"
           style={{ touchAction: "manipulation" }}
         >
-          <img src={filtered[0].thumb} className="w-full h-full object-cover rounded-2xl" alt="" />
+          <img loading="lazy" decoding="async" src={filtered[0].thumb} className="w-full h-full object-cover rounded-2xl" alt="" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
           <div className="absolute top-3 left-3 flex items-center gap-2">
             <div className="flex items-center gap-1.5 bg-[#fe2c55] px-2 py-0.5 rounded-md">
@@ -451,7 +451,7 @@ const LiveList = () => {
               className="flex items-center gap-3 bg-white/5 rounded-2xl p-3 hover:bg-white/10 active:scale-[0.98] transition-all text-left"
             >
               <div className="relative w-20 h-14 rounded-xl overflow-hidden flex-shrink-0">
-                <img src={ch.thumb} className="w-full h-full object-cover rounded-xl" alt={ch.name} />
+                <img loading="lazy" decoding="async" src={ch.thumb} className="w-full h-full object-cover rounded-xl" alt={ch.name} />
                 <div className="absolute inset-0 bg-black/20" />
                 <div className="absolute bottom-1 left-1 flex items-center gap-1 bg-[#fe2c55] px-1.5 py-0.5 rounded">
                   <div className="w-1 h-1 rounded-full bg-white animate-pulse" />

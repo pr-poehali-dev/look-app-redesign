@@ -91,7 +91,7 @@ const ChannelsScreen = ({ onBack, initialChannelId, onInitialConsumed }: Props) 
   const Row = ({ c }: { c: Channel }) => (
     <button onClick={() => setOpenId(c.id)} className="w-full flex items-center gap-3 p-3 rounded-2xl bg-[#111] border border-white/8 text-left active:scale-[0.99] transition-transform">
       <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center flex-shrink-0">
-        {c.img ? <img src={c.img} className="w-full h-full object-cover" alt="" /> : <Icon name="Megaphone" size={20} className="text-white" />}
+        {c.img ? <img loading="lazy" decoding="async" src={c.img} className="w-full h-full object-cover" alt="" /> : <Icon name="Megaphone" size={20} className="text-white" />}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">

@@ -79,7 +79,7 @@ const InviteModal = ({
                 >
                   <div className="relative">
                     {c.avatar ? (
-                      <img src={c.avatar} className="w-10 h-10 rounded-full object-cover" alt={c.name} />
+                      <img loading="lazy" decoding="async" src={c.avatar} className="w-10 h-10 rounded-full object-cover" alt={c.name} />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center text-white text-sm font-bold">
                         {c.name.slice(0, 1).toUpperCase()}

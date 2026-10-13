@@ -424,7 +424,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
               muted={muted}
               autoPlay={isActive}
               playsInline
-              preload={preloadLevel === "full" ? "auto" : "metadata"}
+              preload="metadata"
               onClick={handleVideoClick}
               x-webkit-airplay="allow"
               style={{ touchAction: "manipulation" }}
@@ -510,7 +510,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           </div>
         </>
       ) : (
-        <img
+        <img loading="lazy" decoding="async"
           src={video.image}
           alt={video.description}
           className="absolute inset-0 w-full h-full object-cover pointer-events-none md:rounded-2xl"
@@ -1025,7 +1025,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
                   <div key={p.id} className="flex flex-col gap-2 bg-white/5 rounded-2xl p-3">
                     <div className="flex items-center gap-3">
                       <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 flex-shrink-0">
-                        {p.image && <img src={p.image} alt={p.title} className="w-full h-full object-cover" />}
+                        {p.image && <img loading="lazy" decoding="async" src={p.image} alt={p.title} className="w-full h-full object-cover" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-sm font-semibold truncate">{p.title}</p>

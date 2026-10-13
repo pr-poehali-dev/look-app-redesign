@@ -66,7 +66,7 @@ const PostExtras = ({ value, onChange, allowImages }: Props) => {
           <div className="flex flex-wrap gap-2">
             {value.extraImages.map((u, i) => (
               <div key={u} className="relative w-16 h-16 rounded-lg overflow-hidden bg-white/10">
-                <img src={u} alt="" className="w-full h-full object-cover" />
+                <img loading="lazy" decoding="async" src={u} alt="" className="w-full h-full object-cover" />
                 <button
                   type="button"
                   onClick={() => remove(i)}

@@ -55,7 +55,7 @@ const SettingsForm = ({
     <div className="flex-1 overflow-y-scroll px-4 pb-28 flex flex-col gap-4" style={{ scrollbarWidth: "none" }}>
       <div className="relative h-40 rounded-2xl overflow-hidden bg-[#111] border border-white/10">
         {displayImg ? (
-          <img src={displayImg} className="w-full h-full object-cover" alt={name} />
+          <img loading="lazy" decoding="async" src={displayImg} className="w-full h-full object-cover" alt={name} />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-[#fe2c55]/30 to-[#8b5cf6]/30" />
         )}

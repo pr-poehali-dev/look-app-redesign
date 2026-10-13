@@ -72,7 +72,7 @@ const ReviewsSheet = ({ productId, title, onClose }: Props) => {
             <div key={r.id} className="rounded-2xl bg-gray-50 p-3 flex flex-col gap-1.5">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-                  {r.author_avatar && <img src={r.author_avatar} alt="" className="w-full h-full object-cover" />}
+                  {r.author_avatar && <img loading="lazy" decoding="async" src={r.author_avatar} alt="" className="w-full h-full object-cover" />}
                 </div>
                 <span className="text-black text-sm font-semibold flex-1 truncate">{r.author_name}</span>
                 {r.user_id === user?.id && (
@@ -81,7 +81,7 @@ const ReviewsSheet = ({ productId, title, onClose }: Props) => {
               </div>
               <Stars value={r.rating} size={12} />
               {r.text && <p className="text-black text-sm leading-snug whitespace-pre-wrap">{r.text}</p>}
-              {r.image && <img src={r.image} alt="" className="w-24 h-24 rounded-xl object-cover" />}
+              {r.image && <img loading="lazy" decoding="async" src={r.image} alt="" className="w-24 h-24 rounded-xl object-cover" />}
             </div>
           ))}
         </div>
@@ -102,7 +102,7 @@ const ReviewsSheet = ({ productId, title, onClose }: Props) => {
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
             <button onClick={() => fileRef.current?.click()} className="w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
               {uploading ? <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                : image ? <img src={image} alt="" className="w-full h-full object-cover" />
+                : image ? <img loading="lazy" decoding="async" src={image} alt="" className="w-full h-full object-cover" />
                 : <Icon name="Camera" size={18} className="text-gray-500" />}
             </button>
             <button onClick={submit} disabled={sending} className="flex-1 h-11 rounded-xl bg-black text-white text-sm font-bold disabled:opacity-60">

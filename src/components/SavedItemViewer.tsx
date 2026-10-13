@@ -61,7 +61,7 @@ const SavedItemViewer = ({ item, onClose }: Props) => {
             loop
           />
         ) : (
-          <img
+          <img loading="lazy" decoding="async"
             src={item.image}
             alt={item.title || ""}
             className="max-h-full max-w-full object-contain"

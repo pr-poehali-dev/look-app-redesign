@@ -131,7 +131,7 @@ const ChannelInfo = ({ channel, onClose, onChanged }: Props) => {
             onClick={() => fileRef.current?.click()}
             className="relative w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center"
           >
-            {img ? <img src={img} className="w-full h-full object-cover" alt="" /> : <Icon name="Megaphone" size={36} className="text-white" />}
+            {img ? <img loading="lazy" decoding="async" src={img} className="w-full h-full object-cover" alt="" /> : <Icon name="Megaphone" size={36} className="text-white" />}
             {isAdmin && (
               <span className="absolute inset-x-0 bottom-0 bg-black/50 py-1 flex justify-center">
                 <Icon name="Camera" size={14} className="text-white" />

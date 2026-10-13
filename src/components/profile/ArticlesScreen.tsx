@@ -44,12 +44,12 @@ export const Reader = ({ id, onBack, onEdit }: { id: number; onBack: () => void;
         <div className="py-20 flex justify-center"><div className="w-6 h-6 border-2 border-black/30 border-t-black rounded-full animate-spin" /></div>
       ) : (
         <article>
-          {a.cover_image && <img src={a.cover_image} alt="" className="w-full max-h-72 object-cover" />}
+          {a.cover_image && <img loading="lazy" decoding="async" src={a.cover_image} alt="" className="w-full max-h-72 object-cover" />}
           <div className="px-5 pt-5 flex flex-col gap-3">
             <h1 className="text-black text-2xl font-bold leading-tight">{a.title}</h1>
             <div className="sticky top-0 z-10 -mx-5 px-5 py-2 bg-white flex items-center gap-2 text-gray-500 text-xs">
               <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200">
-                {a.author_avatar && <img src={a.author_avatar} alt="" className="w-full h-full object-cover" />}
+                {a.author_avatar && <img loading="lazy" decoding="async" src={a.author_avatar} alt="" className="w-full h-full object-cover" />}
               </div>
               <div className="flex-1 min-w-0 flex flex-col">
                 <span className="font-semibold text-black text-sm truncate">{a.author_name}</span>
@@ -230,7 +230,7 @@ const Editor = ({ article, onBack, onSaved }: { article?: Article; onBack: () =>
         )}
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
         <button onClick={() => fileRef.current?.click()} className="w-full h-36 rounded-2xl bg-gray-100 overflow-hidden flex flex-col items-center justify-center gap-1 text-gray-500">
-          {cover ? <img src={cover} alt="" className="w-full h-full object-cover" /> : (<><Icon name="Image" size={24} /><span className="text-xs">Добавить обложку</span></>)}
+          {cover ? <img loading="lazy" decoding="async" src={cover} alt="" className="w-full h-full object-cover" /> : (<><Icon name="Image" size={24} /><span className="text-xs">Добавить обложку</span></>)}
         </button>
         <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} placeholder="Заголовок"
           className="w-full px-1 py-2 text-black text-xl font-bold outline-none border-b border-gray-100" />

@@ -976,7 +976,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       return (
         <div className="max-w-[45%] flex flex-col items-center">
           {isImg ? (
-            <img src={msg.content} className="w-32 h-32 object-contain drop-shadow-lg" alt="sticker" />
+            <img loading="lazy" decoding="async" src={msg.content} className="w-32 h-32 object-contain drop-shadow-lg" alt="sticker" />
           ) : (
             <span className="text-[76px] leading-none select-none">{msg.content}</span>
           )}
@@ -991,7 +991,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     if (msg.type === "image") {
       return (
         <div className={`max-w-[70%] rounded-2xl overflow-hidden ${isMe ? "rounded-br-sm" : "rounded-bl-sm"}`}>
-          <img src={msg.content} className="w-full object-cover max-h-56" alt="img" />
+          <img loading="lazy" decoding="async" src={msg.content} className="w-full object-cover max-h-56" alt="img" />
           <div className="bg-[#1a1a1a] px-3 py-1.5 flex justify-end items-center gap-1.5">
             <DisappearBadge msg={msg} />
             <span className="text-white/30 text-[10px]">{msg.time}</span>
@@ -1951,7 +1951,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                   ) : (
                     <div className="grid grid-cols-3 gap-1 mb-4">
                       {imgs.map(m => (
-                        <img key={m.id} src={m.content} alt="" className="w-full aspect-square object-cover rounded-md" />
+                        <img loading="lazy" decoding="async" key={m.id} src={m.content} alt="" className="w-full aspect-square object-cover rounded-md" />
                       ))}
                     </div>
                   )}

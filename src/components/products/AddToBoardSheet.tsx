@@ -98,7 +98,7 @@ const AddToBoardSheet = ({ itemType, itemId, image, title, onClose }: Props) => 
                   className="flex items-center gap-3 bg-white/5 rounded-2xl p-3"
                 >
                   <div className="w-10 h-10 rounded-xl overflow-hidden bg-white/10 flex-shrink-0 flex items-center justify-center">
-                    {b.cover_image ? <img src={b.cover_image} className="w-full h-full object-cover" alt="" /> : <Icon name="Layers" size={16} className="text-white/40" />}
+                    {b.cover_image ? <img loading="lazy" decoding="async" src={b.cover_image} className="w-full h-full object-cover" alt="" /> : <Icon name="Layers" size={16} className="text-white/40" />}
                   </div>
                   <span className="flex-1 text-left text-white text-sm font-medium truncate flex items-center gap-1.5">
                     {!b.is_public && <Icon name="Lock" size={11} className="text-white/40" />}

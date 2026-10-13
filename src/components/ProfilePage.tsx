@@ -191,7 +191,7 @@ const MediaViewer = ({ items, startIndex, onClose, onDelete, isRepostView, count
             playsInline
           />
         ) : (
-          <img key={item.id} src={item.url} className="max-w-full max-h-full w-auto h-auto object-contain" alt="" />
+          <img loading="lazy" decoding="async" key={item.id} src={item.url} className="max-w-full max-h-full w-auto h-auto object-contain" alt="" />
         )}
       </div>
 
@@ -436,7 +436,7 @@ const ProfilePage = () => {
           className="relative w-20 h-20 md:w-16 md:h-16 rounded-full flex-shrink-0 bg-gradient-to-br from-[#c084fc] to-[#8b5cf6] flex items-center justify-center overflow-hidden"
         >
           {user?.avatar
-            ? <img src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
+            ? <img loading="lazy" decoding="async" src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
             : <span className="text-white font-black text-3xl md:text-2xl">{user?.name?.[0]?.toUpperCase() ?? "?"}</span>
           }
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
@@ -619,9 +619,9 @@ const ProfilePage = () => {
                 <div className="w-full h-full rounded-full overflow-hidden border-2 border-white bg-gray-100">
                   {s.type === "video"
                     ? ((s.thumbnail || s.thumb)
-                        ? <img src={s.thumbnail || s.thumb} className="w-full h-full object-cover" alt="" />
+                        ? <img loading="lazy" decoding="async" src={s.thumbnail || s.thumb} className="w-full h-full object-cover" alt="" />
                         : <video src={s.url} className="w-full h-full object-cover" muted playsInline preload="metadata" poster={s.thumbnail || s.thumb} />)
-                    : <img src={s.url} className="w-full h-full object-cover" alt="" />
+                    : <img loading="lazy" decoding="async" src={s.url} className="w-full h-full object-cover" alt="" />
                   }
                 </div>
               </div>
@@ -743,7 +743,7 @@ const ProfilePage = () => {
               {videos.map((item) => (
                 <div key={item.id} className="relative aspect-square overflow-hidden cursor-pointer" style={{ background: "linear-gradient(135deg, #0a2e1a 0%, #1a1a1a 100%)" }} onClick={() => setMediaViewer({ tab: "video", id: item.id })}>
                   {(item.thumb || item.thumbnail) ? (
-                    <img src={item.thumb || item.thumbnail} alt="" className="w-full h-full object-cover rounded-md" />
+                    <img loading="lazy" decoding="async" src={item.thumb || item.thumbnail} alt="" className="w-full h-full object-cover rounded-md" />
                   ) : (item.url ? (
                     <video
                       src={`${item.url}#t=0.1`}
@@ -805,7 +805,7 @@ const ProfilePage = () => {
                       <p className="text-white text-[11px] leading-snug line-clamp-6 break-words">{item.description}</p>
                     </div>
                   ) : (
-                    <img src={item.url} alt="" className="w-full h-full object-cover rounded-md" />
+                    <img loading="lazy" decoding="async" src={item.url} alt="" className="w-full h-full object-cover rounded-md" />
                   )}
                 </div>
               ))}
@@ -833,9 +833,9 @@ const ProfilePage = () => {
                   onClick={() => setMediaViewer({ tab: item.type, id: item.id, onlyReposts: true })}
                 >
                   {(item.thumb || item.thumbnail) ? (
-                    <img src={item.thumb || item.thumbnail} alt="" className="w-full h-full object-cover rounded-md" />
+                    <img loading="lazy" decoding="async" src={item.thumb || item.thumbnail} alt="" className="w-full h-full object-cover rounded-md" />
                   ) : item.type === "image" ? (
-                    <img src={item.url} alt="" className="w-full h-full object-cover rounded-md" />
+                    <img loading="lazy" decoding="async" src={item.url} alt="" className="w-full h-full object-cover rounded-md" />
                   ) : item.url ? (
                     <video src={`${item.url}#t=0.1`} className="w-full h-full object-cover rounded-md pointer-events-none" muted playsInline preload="metadata" />
                   ) : null}

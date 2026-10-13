@@ -420,7 +420,7 @@ function Users({ token }: { token: string }) {
           {users.map((u) => (
             <div key={u.id} className={`flex items-center gap-3 p-3 ${u.banned ? "bg-[#fe2c55]/5" : ""}`}>
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center text-white font-bold overflow-hidden flex-shrink-0">
-                {u.avatar ? <img src={u.avatar} alt="" className="w-full h-full object-cover" /> : (u.name?.[0] || "?")}
+                {u.avatar ? <img loading="lazy" decoding="async" src={u.avatar} alt="" className="w-full h-full object-cover" /> : (u.name?.[0] || "?")}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate flex items-center gap-1.5">
@@ -1066,7 +1066,7 @@ function Products({ token }: { token: string }) {
         {rows.map((p) => (
           <div key={p.id} className="p-3 flex items-start gap-3">
             <div className="w-14 h-14 rounded-xl overflow-hidden bg-white/5 flex-shrink-0">
-              {p.image && <img src={p.image} className="w-full h-full object-cover" alt="" />}
+              {p.image && <img loading="lazy" decoding="async" src={p.image} className="w-full h-full object-cover" alt="" />}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
@@ -1162,7 +1162,7 @@ function CreatePartnerProductModal({ token, onClose, onCreated }: { token: strin
             className="w-full aspect-video rounded-xl bg-white/5 border-2 border-dashed border-white/15 overflow-hidden relative flex items-center justify-center"
           >
             {image ? (
-              <img src={image} className="w-full h-full object-cover" alt="" />
+              <img loading="lazy" decoding="async" src={image} className="w-full h-full object-cover" alt="" />
             ) : (
               <div className="flex flex-col items-center gap-1.5 text-white/40">
                 <Icon name="ImagePlus" size={26} />
@@ -1783,7 +1783,7 @@ function Reports({ token }: { token: string }) {
 
               {preview && (
                 <div className="flex items-center gap-3 p-3 bg-black/30 rounded-xl">
-                  {preview.thumb && <img src={preview.thumb} alt="" className="w-12 h-16 object-cover rounded" />}
+                  {preview.thumb && <img loading="lazy" decoding="async" src={preview.thumb} alt="" className="w-12 h-16 object-cover rounded" />}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-white truncate">{preview.title || "—"}</p>
                     {preview.subtitle && <p className="text-xs text-white/50 truncate">{preview.subtitle}</p>}

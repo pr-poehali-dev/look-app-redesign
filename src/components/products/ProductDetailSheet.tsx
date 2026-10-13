@@ -76,7 +76,7 @@ const ProductDetailSheet = ({ product: p, videoId, onClose }: Props) => {
       >
         <div className="relative bg-white/5">
           {p.image ? (
-            <img src={p.image} alt={p.title} className="w-full max-h-[48vh] object-cover" />
+            <img loading="lazy" decoding="async" src={p.image} alt={p.title} className="w-full max-h-[48vh] object-cover" />
           ) : (
             <div className="w-full h-48 flex items-center justify-center">
               <Icon name="ShoppingBag" size={40} className="text-white/30" />
@@ -120,7 +120,7 @@ const ProductDetailSheet = ({ product: p, videoId, onClose }: Props) => {
           {p.owner_handle && !p.is_partner && (
             <button onClick={openShop} className="flex items-center gap-3 bg-white/5 rounded-2xl p-3 active:bg-white/10 transition-colors">
               <div className="w-10 h-10 rounded-full overflow-hidden bg-white/10 flex-shrink-0">
-                {p.owner_avatar && <img src={p.owner_avatar} alt="" className="w-full h-full object-cover" />}
+                {p.owner_avatar && <img loading="lazy" decoding="async" src={p.owner_avatar} alt="" className="w-full h-full object-cover" />}
               </div>
               <div className="flex-1 min-w-0 text-left">
                 <p className="text-white text-sm font-semibold truncate">{p.owner_name || `@${p.owner_handle}`}</p>

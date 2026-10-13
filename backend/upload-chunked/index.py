@@ -48,6 +48,8 @@ def handler(event: dict, context) -> dict:
         ext = (body.get('ext') or 'mp4').lstrip('.').lower()
         if len(ext) > 6 or not ext.isalnum():
             ext = 'bin'
+        if ext in ('mov', 'm4v', 'qt'):
+            ext = 'mp4'
         upload_id = uuid.uuid4().hex
         key = f"videos/{upload_id}.{ext}"
         return {
@@ -75,6 +77,8 @@ def handler(event: dict, context) -> dict:
         upload_id = body.get('upload_id')
         total_parts = int(body.get('total_parts') or 0)
         content_type = body.get('content_type') or 'application/octet-stream'
+        if content_type in ('video/quicktime', 'video/x-m4v') or key.lower().endswith('.mp4'):
+            content_type = 'video/mp4'
         if not key or not upload_id or total_parts < 1:
             return {'statusCode': 400, 'headers': _cors(),
                     'body': json.dumps({'error': 'bad params'})}

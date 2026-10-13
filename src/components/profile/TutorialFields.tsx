@@ -126,7 +126,7 @@ const TutorialFields = ({ userId, value, onChange }: Props) => {
           />
           {st.image ? (
             <div className="relative rounded-xl overflow-hidden">
-              <img src={st.image} alt="" className="w-full max-h-56 object-cover" />
+              <img loading="lazy" decoding="async" src={st.image} alt="" className="w-full max-h-56 object-cover" />
               <button
                 type="button"
                 onClick={() => setStep(i, { image: "" })}

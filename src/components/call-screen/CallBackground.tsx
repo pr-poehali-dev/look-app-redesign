@@ -16,7 +16,7 @@ const CallBackground = ({ mode, avatar, cameraOff, remoteVideoRef, localVideoRef
         {mode === "video" ? (
           <video ref={remoteVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
         ) : avatar && !imgFailed ? (
-          <img src={avatar} onError={() => setImgFailed(true)} className="w-full h-full object-cover" alt="" />
+          <img loading="lazy" decoding="async" src={avatar} onError={() => setImgFailed(true)} className="w-full h-full object-cover" alt="" />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-950" />
         )}

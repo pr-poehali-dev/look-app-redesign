@@ -121,7 +121,7 @@ const CameraBottomControls = ({
                 filter === f.id ? "border-white scale-105" : "border-white/20"
               }`}
             >
-              <img
+              <img loading="lazy" decoding="async"
                 src="https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/48f38c64-742e-458c-9f09-0013a0813b5f.jpg"
                 className="w-full h-full object-cover"
                 alt={f.label}
@@ -143,7 +143,7 @@ const CameraBottomControls = ({
         >
           {uploadedMedia ? (
             uploadedMedia.type === "image"
-              ? <img src={uploadedMedia.url} className="w-full h-full object-cover pointer-events-none" alt="gallery" />
+              ? <img loading="lazy" decoding="async" src={uploadedMedia.url} className="w-full h-full object-cover pointer-events-none" alt="gallery" />
               : <video src={uploadedMedia.url} className="w-full h-full object-cover pointer-events-none" muted playsInline />
           ) : (
             <div className="w-full h-full bg-white/10 flex flex-col items-center justify-center gap-0.5 pointer-events-none">

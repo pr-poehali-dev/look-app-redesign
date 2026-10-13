@@ -49,7 +49,7 @@ const CartScreen = ({ onBack }: { onBack: () => void }) => {
             {items.map((item) => (
               <div key={item.id} className="flex items-center gap-3 bg-gray-50 rounded-2xl p-3">
                 <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0">
-                  {item.image && <img src={item.image} className="w-full h-full object-cover" alt="" />}
+                  {item.image && <img loading="lazy" decoding="async" src={item.image} className="w-full h-full object-cover" alt="" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-black text-sm font-semibold truncate">{item.title}</p>

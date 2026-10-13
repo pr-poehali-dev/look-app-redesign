@@ -103,7 +103,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
         >
           <div className="absolute inset-0 rounded-2xl blur-2xl opacity-70 logo-glow-pulse" style={{ background: "radial-gradient(circle, #22e0a1 0%, #22d3ee 60%, transparent 100%)" }} />
           <div className="relative w-20 h-20 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/15">
-            <img
+            <img loading="lazy" decoding="async"
               src="https://static.rustore.ru/imgproxy/vs3_tA6Fiyv_VxNKTcByf1sXvc4-Qy2G_VlA-uzDgTs/preset:web_app_icon_62/plain/https://static.rustore.ru/2025/9/16/49/apk/2063656157/content/ICON/586db88b-5139-4dc5-b8f4-5a7e07f892ba.png@webp"
               alt="Лоок"
               className="w-full h-full object-cover"

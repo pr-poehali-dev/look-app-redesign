@@ -120,7 +120,7 @@ const ShopScreen = ({ onBack }: { onBack: () => void }) => {
             className="w-full aspect-video rounded-2xl bg-gray-50 border-2 border-dashed border-gray-200 overflow-hidden relative flex items-center justify-center"
           >
             {editing.image ? (
-              <img src={editing.image} className="w-full h-full object-cover" alt="" />
+              <img loading="lazy" decoding="async" src={editing.image} className="w-full h-full object-cover" alt="" />
             ) : (
               <div className="flex flex-col items-center gap-1.5 text-gray-400">
                 <Icon name="ImagePlus" size={28} />
@@ -244,7 +244,7 @@ const ShopScreen = ({ onBack }: { onBack: () => void }) => {
             {products.map((p) => (
               <div key={p.id} className="flex items-center gap-3 bg-gray-50 rounded-2xl p-3">
                 <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0">
-                  {p.image && <img src={p.image} className="w-full h-full object-cover" alt="" />}
+                  {p.image && <img loading="lazy" decoding="async" src={p.image} className="w-full h-full object-cover" alt="" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">

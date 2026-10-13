@@ -24,6 +24,9 @@ def handler(event: dict, context) -> dict:
     file_data = body.get('file')
     file_type = body.get('type', 'video/mp4')
     ext = body.get('ext', 'mp4')
+    if file_type in ('video/quicktime', 'video/x-m4v') or ext.lower() in ('mov', 'm4v', 'qt'):
+        file_type = 'video/mp4'
+        ext = 'mp4'
     category = body.get('category', 'humor')
     user_id = body.get('user_id', 'anonymous')
     author = body.get('author', 'Я')

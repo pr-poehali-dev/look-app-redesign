@@ -75,7 +75,7 @@ const StoryViewer = ({ stories, startIndex, onClose }: { stories: Story[]; start
 
         {/* Image */}
         <div className="flex-1 relative">
-          <img src={story.image} className="absolute inset-0 w-full h-full object-cover" />
+          <img loading="lazy" decoding="async" src={story.image} className="absolute inset-0 w-full h-full object-cover" />
         </div>
       </div>
     </div>,

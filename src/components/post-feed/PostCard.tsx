@@ -181,7 +181,7 @@ const PostCard = ({ post }: { post: Post }) => {
         ) : post.images && post.images.length > 0 ? (
           <PhotoCarousel images={[post.image, ...post.images]} alt={post.caption} />
         ) : (
-          <img src={post.image} alt={post.caption} className="max-w-full max-h-full w-auto h-auto object-contain" />
+          <img loading="lazy" decoding="async" src={post.image} alt={post.caption} className="max-w-full max-h-full w-auto h-auto object-contain" />
         )}
       </div>
 
@@ -499,7 +499,7 @@ const PostCard = ({ post }: { post: Post }) => {
                   <div key={p.id} className="flex flex-col gap-2 bg-white/5 rounded-2xl p-3">
                     <div className="flex items-center gap-3">
                       <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 flex-shrink-0 cursor-pointer" onClick={() => setDetailProduct(p)}>
-                        {p.image && <img src={p.image} alt={p.title} className="w-full h-full object-cover" />}
+                        {p.image && <img loading="lazy" decoding="async" src={p.image} alt={p.title} className="w-full h-full object-cover" />}
                       </div>
                       <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setDetailProduct(p)}>
                         <p className="text-white text-sm font-semibold truncate">{p.title}</p>

@@ -67,7 +67,7 @@ const ReferralsScreen = ({ onBack }: { onBack: () => void }) => {
             {referrals.map((r) => (
               <div key={r.product_id} className="flex items-center gap-3 bg-gray-50 rounded-2xl p-3">
                 <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0">
-                  {r.image && <img src={r.image} className="w-full h-full object-cover" alt="" />}
+                  {r.image && <img loading="lazy" decoding="async" src={r.image} className="w-full h-full object-cover" alt="" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-black text-sm font-semibold truncate">{r.title}</p>

@@ -122,7 +122,7 @@ const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
                 {products.map((p) => (
                   <div key={p.id} className="flex items-center gap-3 bg-white/5 rounded-2xl p-3">
                     <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 flex-shrink-0 cursor-pointer" onClick={() => setDetailProduct(p)}>
-                      {p.image && <img src={p.image} alt={p.title} className="w-full h-full object-cover" />}
+                      {p.image && <img loading="lazy" decoding="async" src={p.image} alt={p.title} className="w-full h-full object-cover" />}
                     </div>
                     <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setDetailProduct(p)}>
                       <p className="text-white text-sm font-semibold truncate">{p.title}</p>

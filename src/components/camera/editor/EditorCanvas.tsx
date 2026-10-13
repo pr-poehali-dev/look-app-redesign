@@ -62,7 +62,7 @@ const EditorCanvas = ({
           onClick={onClickCanvas}
         >
           {active && (active.type === "image" ? (
-            <img
+            <img loading="lazy" decoding="async"
               src={active.url}
               alt=""
               className="absolute inset-0 w-full h-full object-cover"
@@ -147,7 +147,7 @@ const EditorCanvas = ({
                   }}
                 >
                   {l.mediaType === "image" ? (
-                    <img src={l.url} className="w-full h-full object-cover" alt="" draggable={false} />
+                    <img loading="lazy" decoding="async" src={l.url} className="w-full h-full object-cover" alt="" draggable={false} />
                   ) : (
                     <video src={l.url} className="w-full h-full object-cover" autoPlay muted loop playsInline />
                   )}

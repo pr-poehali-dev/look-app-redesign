@@ -88,7 +88,7 @@ const StoryViewer = ({ stories, startIndex, onClose }: { stories: Story[]; start
           onLoadedData={() => videoRef.current?.play()}
         />
       ) : (
-        <img
+        <img loading="lazy" decoding="async"
           key={story.id}
           src={story.url}
           className="w-full h-full object-cover"

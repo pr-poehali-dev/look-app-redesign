@@ -165,7 +165,7 @@ const StoryViewerModal = ({ items, startIndex, onClose, originRect }: Props) => 
             onLoadedData={() => videoRef.current?.play()}
           />
         ) : (
-          <img key={item.id} src={item.image} className="absolute inset-0 w-full h-full object-cover" alt="" />
+          <img loading="lazy" decoding="async" key={item.id} src={item.image} className="absolute inset-0 w-full h-full object-cover" alt="" />
         )}
 
         {/* Tap zones */}

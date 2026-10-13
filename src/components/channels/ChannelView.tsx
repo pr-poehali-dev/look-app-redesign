@@ -284,7 +284,7 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
       <div className="flex items-center gap-3 px-3 pt-14 pb-3 border-b border-white/8">
         <button onClick={onBack}><Icon name="ChevronLeft" size={24} className="text-white" /></button>
         <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center flex-shrink-0">
-          {channel.img ? <img src={channel.img} className="w-full h-full object-cover" alt="" /> : <Icon name="Megaphone" size={18} className="text-white" />}
+          {channel.img ? <img loading="lazy" decoding="async" src={channel.img} className="w-full h-full object-cover" alt="" /> : <Icon name="Megaphone" size={18} className="text-white" />}
         </div>
         <button onClick={() => setShowInfo(true)} className="flex-1 min-w-0 text-left">
           <p className="text-white font-bold text-sm truncate">{channel.name}</p>
@@ -340,7 +340,7 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
           const st = stats[post.id];
           return (
             <div key={post.id} id={`post-${post.id}`} className="flex-shrink-0 bg-[#161616] rounded-2xl overflow-hidden border border-white/8">
-              {post.type === "image" && <img src={post.content} className="w-full max-h-96 object-cover" alt="" />}
+              {post.type === "image" && <img loading="lazy" decoding="async" src={post.content} className="w-full max-h-96 object-cover" alt="" />}
               {post.type === "video" && <video src={post.content} controls playsInline preload="metadata" className="w-full max-h-96 bg-black" />}
               {post.type === "poll" && (() => {
                 let pid = 0;

@@ -154,7 +154,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
             post.images && post.images.length > 0 ? (
               <PhotoCarousel images={[post.image, ...post.images]} alt={post.caption} />
             ) : (
-              <img src={post.image} alt={post.caption} className="max-w-full max-h-full w-full h-full object-contain" />
+              <img loading="lazy" decoding="async" src={post.image} alt={post.caption} className="max-w-full max-h-full w-full h-full object-contain" />
             )
           )}
         </div>

@@ -312,7 +312,7 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
               onClick={() => setSettingsCom(com)}
             >
               {com.img ? (
-                <img src={com.img} className="w-full h-full object-cover opacity-70" alt={com.name} />
+                <img loading="lazy" decoding="async" src={com.img} className="w-full h-full object-cover opacity-70" alt={com.name} />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-[#fe2c55]/30 to-[#8b5cf6]/30" />
               )}
