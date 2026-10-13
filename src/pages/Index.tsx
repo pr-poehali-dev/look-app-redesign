@@ -1,21 +1,24 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import Icon from "@/components/ui/icon";
 import VideoFeed, { CATEGORIES } from "@/components/VideoFeed";
-import VideoGrid from "@/components/VideoGrid";
+const VideoGrid = lazy(() => import("@/components/VideoGrid"));
 import { useTheme } from "@/context/ThemeContext";
-import PostFeed from "@/components/PostFeed";
-import LiveStream from "@/components/LiveStream";
-import LiveList from "@/components/LiveList";
-import ProfilePage from "@/components/ProfilePage";
-import CameraScreen from "@/components/CameraScreen";
-import MessagesScreen from "@/components/MessagesScreen";
-import UserProfileModal from "@/components/UserProfileModal";
-import { SupportScreen, LegalScreen } from "@/components/SettingsScreen";
+const PostFeed = lazy(() => import("@/components/PostFeed"));
+const LiveStream = lazy(() => import("@/components/LiveStream"));
+const LiveList = lazy(() => import("@/components/LiveList"));
+const ProfilePage = lazy(() => import("@/components/ProfilePage"));
+const CameraScreen = lazy(() => import("@/components/CameraScreen"));
+const MessagesScreen = lazy(() => import("@/components/MessagesScreen"));
+const UserProfileModal = lazy(() => import("@/components/UserProfileModal"));
+const SupportScreen = lazy(() => import("@/components/SettingsScreen").then(m => ({ default: m.SupportScreen })));
+const LegalScreen = lazy(() => import("@/components/SettingsScreen").then(m => ({ default: m.LegalScreen })));
+const ProductDetailSheet = lazy(() => import("@/components/products/ProductDetailSheet"));
 import { useUnread } from "@/context/UnreadContext";
 import { useAuth } from "@/context/AuthContext";
 import { setPendingReferral, fetchProductById, captureTrafficSource, Product } from "@/hooks/useProducts";
-import ProductDetailSheet from "@/components/products/ProductDetailSheet";
 import { toast } from "sonner";
+
+const isPhone = () => typeof window !== "undefined" && window.innerWidth < 768;
 
 const TABS = [
   { id: "home", icon: "Home", label: "Главная" },
@@ -31,6 +34,12 @@ const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958
 
 const Index = () => {
   const { user, logout } = useAuth();
+  const [phone, setPhone] = useState(isPhone);
+  useEffect(() => {
+    const onResize = () => setPhone(isPhone());
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
   const { theme, toggle: toggleTheme } = useTheme();
   const initialCommunityFromUrl = (() => {
     if (typeof window === "undefined") return null;
@@ -311,14 +320,14 @@ const Index = () => {
         {/* Live Stream overlay */}
         {showLive && (
           <div className="absolute inset-0 z-50">
-            <LiveStream onClose={() => setShowLive(false)} />
+            <Suspense fallback={null}><LiveStream onClose={() => setShowLive(false)} /></Suspense>
           </div>
         )}
 
         {/* Camera overlay */}
         {showCamera && (
           <div className="absolute inset-0 z-50">
-            <CameraScreen onClose={() => setShowCamera(false)} />
+            <Suspense fallback={null}><CameraScreen onClose={() => setShowCamera(false)} /></Suspense>
           </div>
         )}
 
@@ -404,6 +413,7 @@ const Index = () => {
 
         {/* Content */}
         <div className="flex-1 relative overflow-hidden" style={{ background: "var(--look-bg)" }}>
+         <Suspense fallback={null}>
           {activeTab === "home" && activeCategory === LIVE_CATEGORY.id && (
             <LiveList />
           )}
@@ -411,7 +421,7 @@ const Index = () => {
           {activeTab === "home" && activeCategory !== LIVE_CATEGORY.id && (
             <>
               {/* На ПК показываем плиточную сетку (TikTok-стиль) для всех категорий, кроме «Подписки» и «Новые». Клик — открывает видео в ленте */}
-              <div className="hidden md:block w-full h-full">
+              {!phone && <div className="hidden md:block w-full h-full">
                 {activeCategory !== "subs" && activeCategory !== "new" && gridOpenVideoId === null ? (
                   <VideoGrid category={activeCategory} onOpenVideo={(id) => setGridOpenVideoId(id)} />
                 ) : (
@@ -422,11 +432,10 @@ const Index = () => {
                     onCloseInitial={() => setGridOpenVideoId(null)}
                   />
                 )}
-              </div>
-              {/* Мобильная — всегда вертикальная лента */}
-              <div className="md:hidden w-full h-full">
+              </div>}
+              {phone && <div className="w-full h-full">
                 <VideoFeed activeTab={activeTab} activeCategory={activeCategory} />
-              </div>
+              </div>}
             </>
           )}
 
@@ -464,6 +473,7 @@ const Index = () => {
               />
             </div>
           )}
+         </Suspense>
         </div>
 
         {/* Bottom Tab Bar (mobile only) */}
@@ -511,9 +521,9 @@ const Index = () => {
           </div>
         </div>
       </div>
-      {linkedProduct && <ProductDetailSheet product={linkedProduct} onClose={() => setLinkedProduct(null)} />}
+      {linkedProduct && <Suspense fallback={null}><ProductDetailSheet product={linkedProduct} onClose={() => setLinkedProduct(null)} /></Suspense>}
       {profileHandle && (
-        <UserProfileModal key={`${profileHandle}-${profileTab}`} handle={profileHandle} initialTab={profileTab} onClose={() => setProfileHandle(null)} />
+        <Suspense fallback={null}><UserProfileModal key={`${profileHandle}-${profileTab}`} handle={profileHandle} initialTab={profileTab} onClose={() => setProfileHandle(null)} /></Suspense>
       )}
      </div>
     </div>
