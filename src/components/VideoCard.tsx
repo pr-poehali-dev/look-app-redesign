@@ -329,13 +329,9 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       } catch { /* ignore */ }
     };
     let fixedInfinity = false;
-    let lastUiUpdate = 0;
     const onTime = () => {
-      if (v.currentTime > maxWatchedRef.current) maxWatchedRef.current = v.currentTime;
-      const now = performance.now();
-      if (now - lastUiUpdate < 250) return;
-      lastUiUpdate = now;
       if (!seeking) setCurrentTime(v.currentTime);
+      if (v.currentTime > maxWatchedRef.current) maxWatchedRef.current = v.currentTime;
       updateBuffered();
     };
     const onLoop = () => { repeatCountRef.current += 1; };

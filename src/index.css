@@ -1059,26 +1059,3 @@ html.theme-light .nv-tag {
   color: #fe2c55 !important;
   stroke: #fe2c55 !important;
 }
-
-@media (max-width: 767px) {
-  .backdrop-blur,
-  .backdrop-blur-sm,
-  .backdrop-blur-md,
-  .backdrop-blur-lg,
-  .backdrop-blur-xl {
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
-  }
-}
-
-@media (max-width: 767px) {
-  .action-icon-mobile-bg,
-  .action-count-mobile-bg,
-  .cat-toggle-mobile-bg {
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
-  }
-  .action-icon-mobile-bg { background: rgba(0, 0, 0, 0.45) !important; }
-  .action-count-mobile-bg { background: rgba(0, 0, 0, 0.4) !important; }
-  .cat-toggle-mobile-bg { background: rgba(0, 0, 0, 0.45) !important; }
-}

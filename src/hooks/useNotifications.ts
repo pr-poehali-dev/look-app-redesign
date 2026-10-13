@@ -27,7 +27,6 @@ export const useUnreadNotifications = () => {
 
   const refresh = useCallback(() => {
     if (!user?.id) { setCount(0); return; }
-    if (document.visibilityState !== "visible") return;
     fetch(`${NOTIFICATIONS_URL}?action=unread_count`, { headers: { "X-User-Id": user.id } })
       .then(parseBody)
       .then((data) => setCount(data.count || 0))
@@ -37,7 +36,7 @@ export const useUnreadNotifications = () => {
   useEffect(() => {
     if (!user?.id) { setCount(0); return; }
     refresh();
-    intervalRef.current = setInterval(refresh, 30000);
+    intervalRef.current = setInterval(refresh, 20000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [user?.id, refresh]);
 
