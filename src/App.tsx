@@ -267,7 +267,8 @@ const AppContent = () => {
   useEffect(() => {
     if (!user) return;
     pollRef.current = setInterval(async () => {
-      if (document.visibilityState !== "visible") return;
+      const nativeBridge = (window as any).flutter_inappwebview;
+      if (document.visibilityState !== "visible" && !nativeBridge) return;
       try {
         const res = await fetch(
           `${CHAT_API}?module=signal&room_id=incoming_${user.id}&since_id=${lastSigRef.current}&max_age_seconds=30`,
@@ -278,7 +279,7 @@ const AppContent = () => {
         for (const sig of data.signals || []) {
           lastSigRef.current = sig.id;
           if (sig.type === "call_invite" && sig.payload) {
-            playRingtone();
+            if (document.visibilityState === "visible") playRingtone();
             vibrate();
             const call: IncomingCall = {
               callerId: sig.payload.callerId,
@@ -288,9 +289,15 @@ const AppContent = () => {
               sigId: sig.id,
             };
             setIncomingCall(call);
+            nativeBridge?.callHandler?.("onIncomingCall", {
+              callId: String(sig.id),
+              callerName: call.callerName,
+              isVideo: call.mode === "video",
+            });
             if (autoTimeoutRef.current) clearTimeout(autoTimeoutRef.current);
             autoTimeoutRef.current = setTimeout(() => autoMissCall(call), 30000);
           } else if (sig.type === "call_cancel") {
+            nativeBridge?.callHandler?.("onCallEnded", { callId: "" });
             stopRingtone();
             if (autoTimeoutRef.current) { clearTimeout(autoTimeoutRef.current); autoTimeoutRef.current = null; }
             setIncomingCall(null);
@@ -304,6 +311,16 @@ const AppContent = () => {
       stopRingtone();
     };
   }, [user]);
+
+  const acceptCallRef = useRef<() => void>(() => {});
+  const declineCallRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    (window as any).lookCallAction = (action: string) => {
+      if (action === "accept") acceptCallRef.current();
+      else if (action === "decline") declineCallRef.current();
+    };
+    return () => { delete (window as any).lookCallAction; };
+  }, []);
 
   const acceptCall = () => {
     if (!incomingCall) return;
@@ -330,6 +347,9 @@ const AppContent = () => {
     }).catch(() => {});
     setIncomingCall(null);
   };
+
+  acceptCallRef.current = acceptCall;
+  declineCallRef.current = declineCall;
 
   if (loading) {
     return (
