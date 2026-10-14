@@ -25,7 +25,6 @@ const AuthScreen = lazy(() => import("./components/AuthScreen"));
 const ResetPasswordScreen = lazy(() => import("./components/ResetPasswordScreen"));
 const QrLoginScreen = lazy(() => import("./components/QrLoginScreen"));
 const QrApproveScreen = lazy(() => import("./components/QrApproveScreen"));
-const CallScreen = lazy(() => import("./components/CallScreen"));
 const ThumbnailWorker = lazy(() => import("./components/ThumbnailWorker"));
 
 const ScreenFallback = () => (
@@ -35,14 +34,6 @@ const ScreenFallback = () => (
 );
 
 const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
-
-interface IncomingCall {
-  callerId: string;
-  callerName: string;
-  mode: "audio" | "video";
-  roomId: string;
-  sigId: number;
-}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -124,107 +115,8 @@ const AppContent = () => {
       })
       .catch(() => { setVerifyState("error"); setVerifyError("Ошибка сети"); });
   }, [verifyToken]);
-  const [, setIncomingCall] = useState<IncomingCall | null>(null);
-  const [activeCall, setActiveCall] = useState<IncomingCall | null>(null);
   const lastSigRef = useRef(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const masterGainRef = useRef<GainNode | null>(null);
-  const oscillatorsRef = useRef<OscillatorNode[]>([]);
-  const ringtoneRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const autoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const allCtxRef = useRef<AudioContext[]>([]);
-
-  const playRingtone = () => {
-    // Гарантированно глушим всё, что играло до этого
-    stopRingtone();
-    try {
-      const ctx = new AudioContext();
-      audioCtxRef.current = ctx;
-      allCtxRef.current.push(ctx);
-      const masterGain = ctx.createGain();
-      masterGain.gain.value = 1;
-      masterGain.connect(ctx.destination);
-      masterGainRef.current = masterGain;
-      oscillatorsRef.current = [];
-
-      const playNote = (freq: number, start: number, duration: number, volume = 0.25) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        const filter = ctx.createBiquadFilter();
-        osc.connect(filter);
-        filter.connect(gain);
-        gain.connect(masterGain);
-        osc.type = "triangle";
-        filter.type = "lowpass";
-        filter.frequency.value = 2000;
-        osc.frequency.setValueAtTime(freq, start);
-        gain.gain.setValueAtTime(0, start);
-        gain.gain.linearRampToValueAtTime(volume, start + 0.02);
-        gain.gain.linearRampToValueAtTime(volume * 0.7, start + duration * 0.6);
-        gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-        osc.start(start);
-        osc.stop(start + duration);
-        oscillatorsRef.current.push(osc);
-      };
-
-      const playMelody = () => {
-        const now = ctx.currentTime;
-        playNote(659.25, now + 0.0, 0.18);
-        playNote(880.0, now + 0.2, 0.18);
-        playNote(659.25, now + 0.5, 0.18);
-        playNote(880.0, now + 0.7, 0.18);
-        playNote(987.77, now + 1.0, 0.35);
-      };
-
-      playMelody();
-      ringtoneRef.current = setInterval(playMelody, 2200);
-    } catch (e) { void e; }
-  };
-
-  const stopRingtone = () => {
-    if (ringtoneRef.current) { clearInterval(ringtoneRef.current); ringtoneRef.current = null; }
-    // Самое надёжное — суспендим И закрываем КАЖДЫЙ когда-либо созданный AudioContext.
-    // suspend() мгновенно глушит ВСЕ запланированные на будущее осцилляторы,
-    // а close() освобождает ресурсы.
-    for (const ctx of allCtxRef.current) {
-      try { ctx.suspend().catch(() => {}); } catch (e) { void e; }
-      try { ctx.close().catch(() => {}); } catch (e) { void e; }
-    }
-    for (const osc of oscillatorsRef.current) {
-      try { osc.stop(0); } catch (e) { void e; }
-      try { osc.disconnect(); } catch (e) { void e; }
-    }
-    oscillatorsRef.current = [];
-    masterGainRef.current = null;
-    audioCtxRef.current = null;
-    allCtxRef.current = [];
-    if ("vibrate" in navigator) {
-      try { navigator.vibrate(0); } catch (e) { void e; }
-    }
-  };
-
-  const vibrate = () => {
-    if ("vibrate" in navigator) {
-      navigator.vibrate([400, 200, 400, 200, 400]);
-    }
-  };
-
-  const autoMissCall = (call: IncomingCall) => {
-    if (!user) return;
-    stopRingtone();
-    fetch(`${CHAT_API}?module=signal`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-User-Id": user.id },
-      body: JSON.stringify({
-        room_id: call.roomId,
-        to_user: call.callerId,
-        type: "call_declined",
-        payload: { reason: "timeout" },
-      }),
-    }).catch(() => {});
-    setIncomingCall(null);
-  };
 
   useEffect(() => {
     if (!user) return;
@@ -240,31 +132,13 @@ const AppContent = () => {
         for (const sig of data.signals || []) {
           lastSigRef.current = sig.id;
           if (sig.type === "call_invite" && sig.payload) {
-            playRingtone();
-            vibrate();
-            const call: IncomingCall = {
-              callerId: sig.payload.callerId,
-              callerName: sig.payload.callerName,
-              mode: sig.payload.mode,
-              roomId: sig.payload.roomId,
-              sigId: sig.id,
-            };
-            notifyIncomingCall({ callerName: call.callerName, isVideo: call.mode === "video", callId: call.roomId });
-            setIncomingCall(call);
-            if (autoTimeoutRef.current) clearTimeout(autoTimeoutRef.current);
-            autoTimeoutRef.current = setTimeout(() => autoMissCall(call), 30000);
-          } else if (sig.type === "call_cancel") {
-            stopRingtone();
-            if (autoTimeoutRef.current) { clearTimeout(autoTimeoutRef.current); autoTimeoutRef.current = null; }
-            setIncomingCall(null);
+            notifyIncomingCall({ callerName: sig.payload.callerName, isVideo: sig.payload.mode === "video", callId: sig.payload.roomId });
           }
         }
       } catch (e) { void e; }
     }, 5000);
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
-      if (autoTimeoutRef.current) clearTimeout(autoTimeoutRef.current);
-      stopRingtone();
     };
   }, [user]);
 
@@ -392,20 +266,6 @@ const AppContent = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
-
-      {activeCall && (
-        <div className="fixed inset-0 z-[10000]">
-          <CallScreen
-            name={activeCall.callerName}
-            avatar=""
-            mode={activeCall.mode}
-            myId={user.id}
-            peerId={activeCall.callerId}
-            isCaller={false}
-            onEnd={() => setActiveCall(null)}
-          />
-        </div>
-      )}
 
       </UnreadProvider>
     </UserMediaProvider>
