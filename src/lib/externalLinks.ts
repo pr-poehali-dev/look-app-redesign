@@ -1,5 +1,6 @@
 const isExternal = (a: HTMLAnchorElement) => {
   if (!/^https?:$/.test(a.protocol)) return false;
+  if (a.hasAttribute('download')) return false;
   return a.host !== window.location.host;
 };
 
