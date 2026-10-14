@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'call_service.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -9,6 +10,7 @@ class CallBridge {
   final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
   InAppWebViewController? _web;
   String? _activeCallId;
+  String? _pendingAction;
 
   static const String _channelId = 'incoming_calls';
   static const String _actionAccept = 'accept';
@@ -45,6 +47,23 @@ class CallBridge {
           callerName: d['callerName'].toString(),
           isVideo: d['isVideo'] == true,
         );
+        return null;
+      },
+    );
+
+    controller.addJavaScriptHandler(
+      handlerName: 'onUserLogin',
+      callback: (args) {
+        final d = Map<String, dynamic>.from(args[0] as Map);
+        CallService.login(d['userId'].toString(), (d['userName'] ?? '').toString());
+        return null;
+      },
+    );
+
+    controller.addJavaScriptHandler(
+      handlerName: 'onUserLogout',
+      callback: (args) {
+        CallService.logout();
         return null;
       },
     );
@@ -115,9 +134,20 @@ class CallBridge {
     }
   }
 
+  Future<void> flushPending(Uri url) async {
+    final a = _pendingAction;
+    if (a == null) return;
+    _pendingAction = null;
+    await Future.delayed(const Duration(seconds: 2));
+    await _sendActionToWeb(a);
+  }
+
   Future<void> _sendActionToWeb(String action) async {
     final web = _web;
-    if (web == null) return;
+    if (web == null) {
+      _pendingAction = action;
+      return;
+    }
     await web.evaluateJavascript(
       source: "window.lookCallAction && window.lookCallAction('$action')",
     );

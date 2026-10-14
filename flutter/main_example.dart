@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'call_bridge.dart';
+import 'call_service.dart';
 
 const String siteUrl = 'https://ВАШ-САЙТ';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await CallBridge.instance.init();
+  await CallService.init();
   runApp(const MaterialApp(home: WebScreen()));
 }
 

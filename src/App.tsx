@@ -288,6 +288,12 @@ const AppContent = () => {
               roomId: sig.payload.roomId,
               sigId: sig.id,
             };
+            if (pendingActionRef.current === "accept") {
+              pendingActionRef.current = null;
+              stopRingtone();
+              setActiveCall(call);
+              continue;
+            }
             setIncomingCall(call);
             nativeBridge?.callHandler?.("onIncomingCall", {
               callId: String(sig.id),
@@ -312,11 +318,21 @@ const AppContent = () => {
     };
   }, [user]);
 
+  useEffect(() => {
+    const bridge = (window as any).flutter_inappwebview;
+    if (!bridge?.callHandler) return;
+    if (user) bridge.callHandler("onUserLogin", { userId: user.id, userName: user.name });
+    else bridge.callHandler("onUserLogout", {});
+  }, [user?.id]);
+
+  const pendingActionRef = useRef<string | null>(null);
+  const incomingRef = useRef<IncomingCall | null>(null);
   const acceptCallRef = useRef<() => void>(() => {});
   const declineCallRef = useRef<() => void>(() => {});
   useEffect(() => {
     (window as any).lookCallAction = (action: string) => {
-      if (action === "accept") acceptCallRef.current();
+      if (action === "accept" && !incomingRef.current) pendingActionRef.current = "accept";
+      else if (action === "accept") acceptCallRef.current();
       else if (action === "decline") declineCallRef.current();
     };
     return () => { delete (window as any).lookCallAction; };
@@ -348,6 +364,7 @@ const AppContent = () => {
     setIncomingCall(null);
   };
 
+  incomingRef.current = incomingCall;
   acceptCallRef.current = acceptCall;
   declineCallRef.current = declineCall;
 
