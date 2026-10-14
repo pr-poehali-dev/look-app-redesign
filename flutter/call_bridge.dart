@@ -82,12 +82,6 @@ class CallBridge {
           showsUserInterface: false,
           cancelNotification: true,
         ),
-        AndroidNotificationAction(
-          _actionAccept,
-          isVideo ? 'Видео' : 'Принять',
-          showsUserInterface: true,
-          cancelNotification: true,
-        ),
       ],
     );
     await _notifications.show(
