@@ -115,12 +115,28 @@ class CallBridge {
     }
   }
 
+  String? _pendingAction;
+
   Future<void> _sendActionToWeb(String action) async {
     final web = _web;
-    if (web == null) return;
+    if (web == null) {
+      _pendingAction = action;
+      return;
+    }
     await web.evaluateJavascript(
-      source: "window.lookCallAction && window.lookCallAction('$action')",
+      source: "window.dispatchEvent(new CustomEvent('look-call-action', {detail: '$action'}))",
     );
+  }
+
+  Future<void> flushPending(Uri baseUrl) async {
+    final action = _pendingAction;
+    if (action == null || _web == null) return;
+    _pendingAction = null;
+    final url = baseUrl.replace(queryParameters: {
+      ...baseUrl.queryParameters,
+      'call_action': action,
+    });
+    await _web!.loadUrl(urlRequest: URLRequest(url: WebUri(url.toString())));
   }
 }
 

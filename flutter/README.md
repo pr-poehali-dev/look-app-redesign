@@ -6,5 +6,4 @@
 4. InAppWebView: onWebViewCreated: (c) => CallBridge.instance.attach(c)
 5. AndroidManifest.xml: разрешения POST_NOTIFICATIONS, USE_FULL_SCREEN_INTENT, VIBRATE
 
-Если уведомления о звонках у вас уже реализованы своим кодом, достаточно
-вызова lookCallAction('accept' | 'decline') из обработчика кнопок.
+Кнопки уведомления сами передают решение на сайт (событие look-call-action или параметр ?call_action=accept|decline в адресе), вызывать lookCallAction не нужно.

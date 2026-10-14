@@ -127,6 +127,7 @@ const AppContent = () => {
   const [incomingCall, setIncomingCall] = useState<IncomingCall | null>(null);
   const [activeCall, setActiveCall] = useState<IncomingCall | null>(null);
   const incomingRef = useRef<IncomingCall | null>(null);
+  const pollNowRef = useRef<(() => void) | null>(null);
   const pendingActionRef = useRef<{ action: string; at: number } | null>(null);
   incomingRef.current = incomingCall;
   const lastSigRef = useRef(0);
@@ -232,7 +233,7 @@ const AppContent = () => {
 
   useEffect(() => {
     if (!user) return;
-    pollRef.current = setInterval(async () => {
+    const poll = async () => {
       if (document.visibilityState !== "visible") return;
       try {
         const res = await fetch(
@@ -275,8 +276,16 @@ const AppContent = () => {
           }
         }
       } catch (e) { void e; }
-    }, 5000);
+    };
+    pollRef.current = setInterval(poll, 2000);
+    const wake = () => { if (document.visibilityState === "visible") poll(); };
+    pollNowRef.current = poll;
+    document.addEventListener("visibilitychange", wake);
+    window.addEventListener("focus", wake);
     return () => {
+      document.removeEventListener("visibilitychange", wake);
+      window.removeEventListener("focus", wake);
+      pollNowRef.current = null;
       if (pollRef.current) clearInterval(pollRef.current);
       if (autoTimeoutRef.current) clearTimeout(autoTimeoutRef.current);
       stopRingtone();
@@ -314,15 +323,30 @@ const AppContent = () => {
   const callActionsRef = useRef({ accept: acceptCall, decline: declineCall });
   callActionsRef.current = { accept: acceptCall, decline: declineCall };
   useEffect(() => {
-    (window as unknown as { lookCallAction?: (a: string) => void }).lookCallAction = (a) => {
+    const handle = (a: string) => {
       if (!incomingRef.current) {
         pendingActionRef.current = { action: a, at: Date.now() };
+        pollNowRef.current?.();
         return;
       }
       if (a === "accept") callActionsRef.current.accept();
       else if (a === "decline") callActionsRef.current.decline();
     };
-    return () => { delete (window as unknown as { lookCallAction?: unknown }).lookCallAction; };
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get("call_action");
+    if (fromUrl === "accept" || fromUrl === "decline") {
+      handle(fromUrl);
+      params.delete("call_action");
+      const q = params.toString();
+      window.history.replaceState(null, "", window.location.pathname + (q ? `?${q}` : "") + window.location.hash);
+    }
+    const onEvent = (e: Event) => handle(String((e as CustomEvent).detail));
+    window.addEventListener("look-call-action", onEvent);
+    (window as unknown as { lookCallAction?: (a: string) => void }).lookCallAction = handle;
+    return () => {
+      window.removeEventListener("look-call-action", onEvent);
+      delete (window as unknown as { lookCallAction?: unknown }).lookCallAction;
+    };
   }, []);
 
   if (loading) {
