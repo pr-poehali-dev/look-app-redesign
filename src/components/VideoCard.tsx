@@ -422,7 +422,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           ) : (
             <video
               ref={videoRef}
-              src={video.image}
+              src={video.image.includes("#") ? video.image : `${video.image}#t=0.001`}
               poster={video.thumbnail || undefined}
               className="absolute inset-0 w-full h-full object-cover md:rounded-2xl"
               loop
