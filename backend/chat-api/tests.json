@@ -219,6 +219,16 @@
         "error": "invalid field"
       },
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Push public key",
+      "method": "GET",
+      "path": "/?module=push",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "publicKey": "string"
+      },
+      "bodyMatcher": "partial"
     }
   ]
 }

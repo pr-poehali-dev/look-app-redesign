@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
+import { subscribeToCallPush } from "@/lib/pushSubscribe";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -224,6 +225,12 @@ const AppContent = () => {
     }).catch(() => {});
     setIncomingCall(null);
   };
+
+  useEffect(() => {
+    if (!user) return;
+    const t = setTimeout(() => { subscribeToCallPush(user.id, user.name).catch(() => {}); }, 4000);
+    return () => clearTimeout(t);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user) return;

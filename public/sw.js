@@ -50,3 +50,38 @@ self.addEventListener("fetch", (e) => {
     })
   );
 });
+
+self.addEventListener("push", (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = {}; }
+  if (d.type !== "call") return;
+  const title = (d.callerName || "Входящий звонок");
+  const body = d.mode === "video" ? "Видеозвонок" : "Аудиозвонок";
+  e.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      tag: "incoming-call",
+      renotify: true,
+      requireInteraction: true,
+      vibrate: [400, 200, 400, 200, 400],
+      data: d,
+      actions: [
+        { action: "accept", title: "Принять" },
+        { action: "decline", title: "Отклонить" },
+      ],
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  if (e.action === "decline") return;
+  e.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      if (list.length) return list[0].focus();
+      return self.clients.openWindow("/");
+    })
+  );
+});

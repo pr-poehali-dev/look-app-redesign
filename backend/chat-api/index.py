@@ -8,6 +8,7 @@ import datetime
 import psycopg2
 import boto3
 import requests
+import push as push_mod
 
 _MSK_TZ = datetime.timezone(datetime.timedelta(hours=3))
 
@@ -1845,6 +1846,17 @@ def handler(event: dict, context) -> dict:
                         "DELETE FROM sa_signaling WHERE created_at < NOW() - INTERVAL '5 minutes'"
                     )
                 conn.commit()
+                if sig_type == 'call_invite' and isinstance(payload, dict):
+                    try:
+                        push_mod.send_call_push(cur, conn, to_user, {
+                            'type': 'call',
+                            'callerName': payload.get('callerName', ''),
+                            'callerId': payload.get('callerId', ''),
+                            'mode': payload.get('mode', 'audio'),
+                            'roomId': payload.get('roomId', ''),
+                        })
+                    except Exception:
+                        pass
                 return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True})}
 
             elif method == 'GET':
@@ -1880,6 +1892,24 @@ def handler(event: dict, context) -> dict:
                 conn.commit()
                 return {'statusCode': 200, 'headers': headers,
                         'body': json.dumps({'signals': signals})}
+
+        elif module == 'push':
+            if method == 'GET':
+                _, pub = push_mod.get_vapid(cur, conn)
+                return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'publicKey': pub})}
+            elif method == 'POST':
+                body = json.loads(event.get('body') or '{}')
+                sub = body.get('subscription') or {}
+                keys = sub.get('keys') or {}
+                if not (sub.get('endpoint') and keys.get('p256dh') and keys.get('auth')) or user_id == 'anon':
+                    return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'bad subscription'})}
+                cur.execute(
+                    "INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth) VALUES (%s, %s, %s, %s) "
+                    "ON CONFLICT (endpoint) DO UPDATE SET user_id = EXCLUDED.user_id, p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth",
+                    (user_id, sub['endpoint'], keys['p256dh'], keys['auth'])
+                )
+                conn.commit()
+                return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True})}
 
         # ── CALL HISTORY MODULE ──────────────────────────────────────
         elif module == 'calls':
