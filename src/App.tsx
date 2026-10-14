@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
+import { notifyIncomingCall } from "@/lib/nativeBridge";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -248,6 +249,7 @@ const AppContent = () => {
               roomId: sig.payload.roomId,
               sigId: sig.id,
             };
+            notifyIncomingCall({ callerName: call.callerName, isVideo: call.mode === "video", callId: call.roomId });
             setIncomingCall(call);
             if (autoTimeoutRef.current) clearTimeout(autoTimeoutRef.current);
             autoTimeoutRef.current = setTimeout(() => autoMissCall(call), 30000);
