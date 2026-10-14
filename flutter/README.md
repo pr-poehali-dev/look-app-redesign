@@ -2,8 +2,12 @@
 
 1. pubspec.yaml: flutter_inappwebview, flutter_local_notifications
 2. Скопировать call_bridge.dart в lib/
-3. main(): await CallBridge.instance.init();
-4. InAppWebView: onWebViewCreated: (c) => CallBridge.instance.attach(c)
-5. AndroidManifest.xml: разрешения POST_NOTIFICATIONS, USE_FULL_SCREEN_INTENT, VIBRATE
+3. Взять main_example.dart за основу: вставить адрес сайта в siteUrl
+4. AndroidManifest.xml: разрешения POST_NOTIFICATIONS, USE_FULL_SCREEN_INTENT, VIBRATE, CAMERA, RECORD_AUDIO
 
-Кнопки уведомления сами передают решение на сайт (событие look-call-action или параметр ?call_action=accept|decline в адресе), вызывать lookCallAction не нужно.
+Если WebView уже есть, добавьте только три вещи:
+- await CallBridge.instance.init(); в main()
+- onWebViewCreated: (c) => CallBridge.instance.attach(c)
+- onLoadStop: (c, u) => CallBridge.instance.flushPending(Uri.parse(siteUrl))
+
+Кнопки уведомления сами передают решение на сайт, вызывать lookCallAction не нужно.
