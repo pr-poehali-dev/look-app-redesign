@@ -54,7 +54,6 @@ interface VideoCardProps {
 }
 
 const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" }: VideoCardProps) => {
-  const [framePlaying, setFramePlaying] = useState(false);
   const { saved, toggle: rawToggleSaved } = useSavedItem("video", video.id, {
     image: video.image,
     title: video.description,
@@ -412,7 +411,6 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         <>
           {preloadLevel === "none" ? (
             <div
-              key="placeholder"
               className="absolute inset-0 w-full h-full bg-black flex items-center justify-center md:rounded-2xl"
               style={video.thumbnail ? { backgroundImage: `url(${video.thumbnail})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
               onClick={handleVideoClick}
@@ -423,7 +421,6 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             </div>
           ) : (
             <video
-              key="player"
               ref={videoRef}
               src={video.image.includes("#") ? video.image : `${video.image}#t=0.001`}
               poster={video.thumbnail || undefined}
@@ -435,20 +432,12 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
               preload="metadata"
               onClick={handleVideoClick}
               x-webkit-airplay="allow"
-              onPlaying={() => setFramePlaying(true)}
-              style={{ touchAction: "manipulation" }}
+              style={{
+                touchAction: "manipulation",
+                ...(video.thumbnail ? { backgroundImage: `url(${video.thumbnail})`, backgroundSize: "cover", backgroundPosition: "center" } : {}),
+              }}
             />
           )}
-          <div
-            key="thumb-overlay"
-            className="absolute inset-0 w-full h-full pointer-events-none md:rounded-2xl"
-            style={{
-              display: preloadLevel !== "none" && video.thumbnail && !framePlaying ? "block" : "none",
-              backgroundImage: video.thumbnail ? `url(${video.thumbnail})` : undefined,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-          />
 
           {showPauseIcon && (
             <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
