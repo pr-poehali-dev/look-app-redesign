@@ -1,5 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
-import { isNativeApp, notifyCallEnded, notifyIncomingCall } from "@/lib/nativeBridge";
+import { notifyIncomingCall } from "@/lib/nativeBridge";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -126,9 +126,6 @@ const AppContent = () => {
   }, [verifyToken]);
   const [incomingCall, setIncomingCall] = useState<IncomingCall | null>(null);
   const [activeCall, setActiveCall] = useState<IncomingCall | null>(null);
-  const incomingRef = useRef<IncomingCall | null>(null);
-  const pendingActionRef = useRef<{ action: string; at: number } | null>(null);
-  incomingRef.current = incomingCall;
   const lastSigRef = useRef(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -216,7 +213,6 @@ const AppContent = () => {
   const autoMissCall = (call: IncomingCall) => {
     if (!user) return;
     stopRingtone();
-    notifyCallEnded({ callId: call.roomId, reason: "timeout" });
     fetch(`${CHAT_API}?module=signal`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-User-Id": user.id },
@@ -244,7 +240,8 @@ const AppContent = () => {
         for (const sig of data.signals || []) {
           lastSigRef.current = sig.id;
           if (sig.type === "call_invite" && sig.payload) {
-            if (!isNativeApp()) { playRingtone(); vibrate(); }
+            playRingtone();
+            vibrate();
             const call: IncomingCall = {
               callerId: sig.payload.callerId,
               callerName: sig.payload.callerName,
@@ -253,24 +250,12 @@ const AppContent = () => {
               sigId: sig.id,
             };
             notifyIncomingCall({ callerName: call.callerName, isVideo: call.mode === "video", callId: call.roomId });
-            const pending = pendingActionRef.current;
-            pendingActionRef.current = null;
-            if (pending && Date.now() - pending.at < 20000) {
-              stopRingtone();
-              if (pending.action === "accept") {
-                setActiveCall(call);
-                continue;
-              }
-              autoMissCall(call);
-              continue;
-            }
             setIncomingCall(call);
             if (autoTimeoutRef.current) clearTimeout(autoTimeoutRef.current);
             autoTimeoutRef.current = setTimeout(() => autoMissCall(call), 30000);
           } else if (sig.type === "call_cancel") {
             stopRingtone();
             if (autoTimeoutRef.current) { clearTimeout(autoTimeoutRef.current); autoTimeoutRef.current = null; }
-            notifyCallEnded({ callId: incomingRef.current?.roomId ?? "", reason: "cancelled" });
             setIncomingCall(null);
           }
         }
@@ -287,7 +272,6 @@ const AppContent = () => {
     if (!incomingCall) return;
     if (autoTimeoutRef.current) { clearTimeout(autoTimeoutRef.current); autoTimeoutRef.current = null; }
     stopRingtone();
-    notifyCallEnded({ callId: incomingCall.roomId, reason: "accepted" });
     setActiveCall(incomingCall);
     setIncomingCall(null);
   };
@@ -296,7 +280,6 @@ const AppContent = () => {
     if (!incomingCall || !user) return;
     if (autoTimeoutRef.current) { clearTimeout(autoTimeoutRef.current); autoTimeoutRef.current = null; }
     stopRingtone();
-    notifyCallEnded({ callId: incomingCall.roomId, reason: "declined" });
     // Шлём в комнату самого звонка, чтобы CallScreen звонящего получил сигнал и закрылся
     await fetch(`${CHAT_API}?module=signal`, {
       method: "POST",
@@ -310,20 +293,6 @@ const AppContent = () => {
     }).catch(() => {});
     setIncomingCall(null);
   };
-
-  const callActionsRef = useRef({ accept: acceptCall, decline: declineCall });
-  callActionsRef.current = { accept: acceptCall, decline: declineCall };
-  useEffect(() => {
-    (window as unknown as { lookCallAction?: (a: string) => void }).lookCallAction = (a) => {
-      if (!incomingRef.current) {
-        pendingActionRef.current = { action: a, at: Date.now() };
-        return;
-      }
-      if (a === "accept") callActionsRef.current.accept();
-      else if (a === "decline") callActionsRef.current.decline();
-    };
-    return () => { delete (window as unknown as { lookCallAction?: unknown }).lookCallAction; };
-  }, []);
 
   if (loading) {
     return (
@@ -464,7 +433,7 @@ const AppContent = () => {
         </div>
       )}
 
-      {incomingCall && !isNativeApp() && (
+      {incomingCall && (
         <div
           className="fixed inset-0 z-[9999] flex items-end justify-center px-4"
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 64px)" }}
