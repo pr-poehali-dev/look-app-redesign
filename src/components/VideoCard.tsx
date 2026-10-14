@@ -409,35 +409,34 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       <div className="video-round-frame relative w-full h-full md:flex-none md:h-full md:w-auto md:aspect-[9/16] md:overflow-hidden md:rounded-2xl">
       {isVideo ? (
         <>
-          {preloadLevel === "none" ? (
-            <div
-              className="absolute inset-0 w-full h-full bg-black flex items-center justify-center md:rounded-2xl"
-              style={video.thumbnail ? { backgroundImage: `url(${video.thumbnail})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
-              onClick={handleVideoClick}
-            >
-              <div className="bg-black/40 rounded-full p-4">
-                <Icon name="Play" size={44} className="text-white ml-1" />
-              </div>
+          <video
+            key="main-video"
+            ref={videoRef}
+            src={preloadLevel === "none" ? undefined : (video.image.includes("#") ? video.image : `${video.image}#t=0.001`)}
+            poster={video.thumbnail || undefined}
+            className="absolute inset-0 w-full h-full object-cover md:rounded-2xl"
+            loop
+            muted={muted}
+            autoPlay={isActive}
+            playsInline
+            preload={preloadLevel === "none" ? "none" : "metadata"}
+            onClick={handleVideoClick}
+            x-webkit-airplay="allow"
+            style={{
+              touchAction: "manipulation",
+              backgroundColor: "#000",
+              ...(video.thumbnail ? { backgroundImage: `url(${video.thumbnail})`, backgroundSize: "cover", backgroundPosition: "center" } : {}),
+            }}
+          />
+          <div
+            key="play-hint"
+            className="absolute inset-0 flex items-center justify-center pointer-events-none"
+            style={{ display: preloadLevel === "none" ? "flex" : "none" }}
+          >
+            <div className="bg-black/40 rounded-full p-4">
+              <Icon name="Play" size={44} className="text-white ml-1" />
             </div>
-          ) : (
-            <video
-              ref={videoRef}
-              src={video.image.includes("#") ? video.image : `${video.image}#t=0.001`}
-              poster={video.thumbnail || undefined}
-              className="absolute inset-0 w-full h-full object-cover md:rounded-2xl"
-              loop
-              muted={muted}
-              autoPlay={isActive}
-              playsInline
-              preload="metadata"
-              onClick={handleVideoClick}
-              x-webkit-airplay="allow"
-              style={{
-                touchAction: "manipulation",
-                ...(video.thumbnail ? { backgroundImage: `url(${video.thumbnail})`, backgroundSize: "cover", backgroundPosition: "center" } : {}),
-              }}
-            />
-          )}
+          </div>
 
           {showPauseIcon && (
             <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
