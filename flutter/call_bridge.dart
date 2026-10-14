@@ -82,6 +82,12 @@ class CallBridge {
           showsUserInterface: false,
           cancelNotification: true,
         ),
+        AndroidNotificationAction(
+          _actionAccept,
+          isVideo ? 'Видео' : 'Принять',
+          showsUserInterface: true,
+          cancelNotification: true,
+        ),
       ],
     );
     await _notifications.show(
@@ -109,28 +115,12 @@ class CallBridge {
     }
   }
 
-  String? _pendingAction;
-
   Future<void> _sendActionToWeb(String action) async {
     final web = _web;
-    if (web == null) {
-      _pendingAction = action;
-      return;
-    }
+    if (web == null) return;
     await web.evaluateJavascript(
-      source: "window.dispatchEvent(new CustomEvent('look-call-action', {detail: '$action'}))",
+      source: "window.lookCallAction && window.lookCallAction('$action')",
     );
-  }
-
-  Future<void> flushPending(Uri baseUrl) async {
-    final action = _pendingAction;
-    if (action == null || _web == null) return;
-    _pendingAction = null;
-    final url = baseUrl.replace(queryParameters: {
-      ...baseUrl.queryParameters,
-      'call_action': action,
-    });
-    await _web!.loadUrl(urlRequest: URLRequest(url: WebUri(url.toString())));
   }
 }
 

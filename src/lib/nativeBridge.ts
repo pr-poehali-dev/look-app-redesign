@@ -15,3 +15,7 @@ export const notifyCallEnded = (data: { callId: string; reason: "cancelled" | "a
     bridge?.callHandler?.("onCallEnded", data);
   } catch (e) { void e; }
 };
+
+export const isNativeApp = () =>
+  typeof window !== "undefined" &&
+  !!(window as unknown as { flutter_inappwebview?: unknown }).flutter_inappwebview;

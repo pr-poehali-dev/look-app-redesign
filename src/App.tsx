@@ -1,5 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
-import { notifyCallEnded, notifyIncomingCall } from "@/lib/nativeBridge";
+import { isNativeApp, notifyCallEnded, notifyIncomingCall } from "@/lib/nativeBridge";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -127,6 +127,7 @@ const AppContent = () => {
   const [incomingCall, setIncomingCall] = useState<IncomingCall | null>(null);
   const [activeCall, setActiveCall] = useState<IncomingCall | null>(null);
   const incomingRef = useRef<IncomingCall | null>(null);
+  const pendingActionRef = useRef<{ action: string; at: number } | null>(null);
   incomingRef.current = incomingCall;
   const lastSigRef = useRef(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -243,8 +244,7 @@ const AppContent = () => {
         for (const sig of data.signals || []) {
           lastSigRef.current = sig.id;
           if (sig.type === "call_invite" && sig.payload) {
-            playRingtone();
-            vibrate();
+            if (!isNativeApp()) { playRingtone(); vibrate(); }
             const call: IncomingCall = {
               callerId: sig.payload.callerId,
               callerName: sig.payload.callerName,
@@ -253,6 +253,17 @@ const AppContent = () => {
               sigId: sig.id,
             };
             notifyIncomingCall({ callerName: call.callerName, isVideo: call.mode === "video", callId: call.roomId });
+            const pending = pendingActionRef.current;
+            pendingActionRef.current = null;
+            if (pending && Date.now() - pending.at < 20000) {
+              stopRingtone();
+              if (pending.action === "accept") {
+                setActiveCall(call);
+                continue;
+              }
+              autoMissCall(call);
+              continue;
+            }
             setIncomingCall(call);
             if (autoTimeoutRef.current) clearTimeout(autoTimeoutRef.current);
             autoTimeoutRef.current = setTimeout(() => autoMissCall(call), 30000);
@@ -299,6 +310,20 @@ const AppContent = () => {
     }).catch(() => {});
     setIncomingCall(null);
   };
+
+  const callActionsRef = useRef({ accept: acceptCall, decline: declineCall });
+  callActionsRef.current = { accept: acceptCall, decline: declineCall };
+  useEffect(() => {
+    (window as unknown as { lookCallAction?: (a: string) => void }).lookCallAction = (a) => {
+      if (!incomingRef.current) {
+        pendingActionRef.current = { action: a, at: Date.now() };
+        return;
+      }
+      if (a === "accept") callActionsRef.current.accept();
+      else if (a === "decline") callActionsRef.current.decline();
+    };
+    return () => { delete (window as unknown as { lookCallAction?: unknown }).lookCallAction; };
+  }, []);
 
   if (loading) {
     return (
@@ -439,7 +464,7 @@ const AppContent = () => {
         </div>
       )}
 
-      {incomingCall && (
+      {incomingCall && !isNativeApp() && (
         <div
           className="fixed inset-0 z-[9999] flex items-end justify-center px-4"
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 64px)" }}
