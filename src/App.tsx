@@ -1,5 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
-import { subscribeToCallPush } from "@/lib/pushSubscribe";
+import EnableCallPushBanner from "@/components/EnableCallPushBanner";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -260,15 +260,8 @@ const AppContent = () => {
 
   useEffect(() => {
     if (!user) return;
-    const t = setTimeout(() => { subscribeToCallPush(user.id, user.name).catch(() => {}); }, 4000);
-    return () => clearTimeout(t);
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (!user) return;
     pollRef.current = setInterval(async () => {
-      const nativeBridge = (window as any).flutter_inappwebview;
-      if (document.visibilityState !== "visible" && !nativeBridge) return;
+      if (document.visibilityState !== "visible") return;
       try {
         const res = await fetch(
           `${CHAT_API}?module=signal&room_id=incoming_${user.id}&since_id=${lastSigRef.current}&max_age_seconds=30`,
@@ -279,7 +272,7 @@ const AppContent = () => {
         for (const sig of data.signals || []) {
           lastSigRef.current = sig.id;
           if (sig.type === "call_invite" && sig.payload) {
-            if (document.visibilityState === "visible") playRingtone();
+            playRingtone();
             vibrate();
             const call: IncomingCall = {
               callerId: sig.payload.callerId,
@@ -288,22 +281,10 @@ const AppContent = () => {
               roomId: sig.payload.roomId,
               sigId: sig.id,
             };
-            if (pendingActionRef.current === "accept") {
-              pendingActionRef.current = null;
-              stopRingtone();
-              setActiveCall(call);
-              continue;
-            }
             setIncomingCall(call);
-            nativeBridge?.callHandler?.("onIncomingCall", {
-              callId: String(sig.id),
-              callerName: call.callerName,
-              isVideo: call.mode === "video",
-            });
             if (autoTimeoutRef.current) clearTimeout(autoTimeoutRef.current);
             autoTimeoutRef.current = setTimeout(() => autoMissCall(call), 30000);
           } else if (sig.type === "call_cancel") {
-            nativeBridge?.callHandler?.("onCallEnded", { callId: "" });
             stopRingtone();
             if (autoTimeoutRef.current) { clearTimeout(autoTimeoutRef.current); autoTimeoutRef.current = null; }
             setIncomingCall(null);
@@ -317,26 +298,6 @@ const AppContent = () => {
       stopRingtone();
     };
   }, [user]);
-
-  useEffect(() => {
-    const bridge = (window as any).flutter_inappwebview;
-    if (!bridge?.callHandler) return;
-    if (user) bridge.callHandler("onUserLogin", { userId: user.id, userName: user.name });
-    else bridge.callHandler("onUserLogout", {});
-  }, [user?.id]);
-
-  const pendingActionRef = useRef<string | null>(null);
-  const incomingRef = useRef<IncomingCall | null>(null);
-  const acceptCallRef = useRef<() => void>(() => {});
-  const declineCallRef = useRef<() => void>(() => {});
-  useEffect(() => {
-    (window as any).lookCallAction = (action: string) => {
-      if (action === "accept" && !incomingRef.current) pendingActionRef.current = "accept";
-      else if (action === "accept") acceptCallRef.current();
-      else if (action === "decline") declineCallRef.current();
-    };
-    return () => { delete (window as any).lookCallAction; };
-  }, []);
 
   const acceptCall = () => {
     if (!incomingCall) return;
@@ -363,10 +324,6 @@ const AppContent = () => {
     }).catch(() => {});
     setIncomingCall(null);
   };
-
-  incomingRef.current = incomingCall;
-  acceptCallRef.current = acceptCall;
-  declineCallRef.current = declineCall;
 
   if (loading) {
     return (
@@ -507,6 +464,7 @@ const AppContent = () => {
         </div>
       )}
 
+      {user && <EnableCallPushBanner userId={user.id} userName={user.name} />}
       {incomingCall && (
         <div
           className="fixed inset-0 z-[9999] flex items-end justify-center px-4"
