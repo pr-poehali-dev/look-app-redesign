@@ -75,12 +75,40 @@ self.addEventListener("push", (e) => {
   );
 });
 
+const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
+
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
-  if (e.action === "decline") return;
+  const d = e.notification.data || {};
+  if (e.action === "decline") {
+    if (d.toUser && d.callerId && d.roomId) {
+      e.waitUntil(
+        fetch(`${CHAT_API}?module=signal`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-User-Id": d.toUser },
+          body: JSON.stringify({ room_id: d.roomId, to_user: d.callerId, type: "call_declined", payload: {} }),
+        }).catch(() => {})
+      );
+    }
+    return;
+  }
+  const accept = e.action === "accept";
   e.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
-      if (list.length) return list[0].focus();
+      if (list.length) {
+        const c = list[0];
+        if (accept) c.postMessage({ type: "accept_call", call: d });
+        return c.focus();
+      }
+      if (accept) {
+        const q = new URLSearchParams({
+          accept_call: d.roomId || "",
+          cid: d.callerId || "",
+          cname: d.callerName || "",
+          cmode: d.mode || "audio",
+        });
+        return self.clients.openWindow("/?" + q.toString());
+      }
       return self.clients.openWindow("/");
     })
   );

@@ -228,6 +228,38 @@ const AppContent = () => {
 
   useEffect(() => {
     if (!user) return;
+    const params = new URLSearchParams(window.location.search);
+    const room = params.get("accept_call");
+    if (room) {
+      setActiveCall({
+        callerId: params.get("cid") || "",
+        callerName: params.get("cname") || "",
+        mode: params.get("cmode") === "video" ? "video" : "audio",
+        roomId: room,
+        sigId: 0,
+      });
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+    const onMsg = (ev: MessageEvent) => {
+      const m = ev.data;
+      if (m && m.type === "accept_call" && m.call) {
+        stopRingtone();
+        setIncomingCall(null);
+        setActiveCall({
+          callerId: m.call.callerId,
+          callerName: m.call.callerName,
+          mode: m.call.mode === "video" ? "video" : "audio",
+          roomId: m.call.roomId,
+          sigId: 0,
+        });
+      }
+    };
+    navigator.serviceWorker?.addEventListener("message", onMsg);
+    return () => navigator.serviceWorker?.removeEventListener("message", onMsg);
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user) return;
     const t = setTimeout(() => { subscribeToCallPush(user.id, user.name).catch(() => {}); }, 4000);
     return () => clearTimeout(t);
   }, [user?.id]);
