@@ -54,6 +54,7 @@ interface VideoCardProps {
 }
 
 const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" }: VideoCardProps) => {
+  const [framePlaying, setFramePlaying] = useState(false);
   const { saved, toggle: rawToggleSaved } = useSavedItem("video", video.id, {
     image: video.image,
     title: video.description,
@@ -432,10 +433,14 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
               preload="metadata"
               onClick={handleVideoClick}
               x-webkit-airplay="allow"
-              style={{
-                touchAction: "manipulation",
-                ...(video.thumbnail ? { backgroundImage: `url(${video.thumbnail})`, backgroundSize: "cover", backgroundPosition: "center" } : {}),
-              }}
+              onPlaying={() => setFramePlaying(true)}
+              style={{ touchAction: "manipulation" }}
+            />
+          )}
+          {preloadLevel !== "none" && video.thumbnail && !framePlaying && (
+            <div
+              className="absolute inset-0 w-full h-full pointer-events-none md:rounded-2xl"
+              style={{ backgroundImage: `url(${video.thumbnail})`, backgroundSize: "cover", backgroundPosition: "center" }}
             />
           )}
 
