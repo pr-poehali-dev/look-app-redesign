@@ -8,3 +8,10 @@ export const notifyIncomingCall = (data: { callerName: string; isVideo: boolean;
     bridge?.callHandler?.("onIncomingCall", data);
   } catch (e) { void e; }
 };
+
+export const notifyCallEnded = (data: { callId: string; reason: "cancelled" | "accepted" | "declined" | "timeout" }) => {
+  try {
+    const bridge = (window as unknown as { flutter_inappwebview?: FlutterWebview }).flutter_inappwebview;
+    bridge?.callHandler?.("onCallEnded", data);
+  } catch (e) { void e; }
+};

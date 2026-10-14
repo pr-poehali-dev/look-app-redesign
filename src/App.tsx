@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
+import { notifyCallEnded, notifyIncomingCall } from "@/lib/nativeBridge";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -125,6 +126,8 @@ const AppContent = () => {
   }, [verifyToken]);
   const [incomingCall, setIncomingCall] = useState<IncomingCall | null>(null);
   const [activeCall, setActiveCall] = useState<IncomingCall | null>(null);
+  const incomingRef = useRef<IncomingCall | null>(null);
+  incomingRef.current = incomingCall;
   const lastSigRef = useRef(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -212,6 +215,7 @@ const AppContent = () => {
   const autoMissCall = (call: IncomingCall) => {
     if (!user) return;
     stopRingtone();
+    notifyCallEnded({ callId: call.roomId, reason: "timeout" });
     fetch(`${CHAT_API}?module=signal`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-User-Id": user.id },
@@ -248,12 +252,14 @@ const AppContent = () => {
               roomId: sig.payload.roomId,
               sigId: sig.id,
             };
+            notifyIncomingCall({ callerName: call.callerName, isVideo: call.mode === "video", callId: call.roomId });
             setIncomingCall(call);
             if (autoTimeoutRef.current) clearTimeout(autoTimeoutRef.current);
             autoTimeoutRef.current = setTimeout(() => autoMissCall(call), 30000);
           } else if (sig.type === "call_cancel") {
             stopRingtone();
             if (autoTimeoutRef.current) { clearTimeout(autoTimeoutRef.current); autoTimeoutRef.current = null; }
+            notifyCallEnded({ callId: incomingRef.current?.roomId ?? "", reason: "cancelled" });
             setIncomingCall(null);
           }
         }
@@ -270,6 +276,7 @@ const AppContent = () => {
     if (!incomingCall) return;
     if (autoTimeoutRef.current) { clearTimeout(autoTimeoutRef.current); autoTimeoutRef.current = null; }
     stopRingtone();
+    notifyCallEnded({ callId: incomingCall.roomId, reason: "accepted" });
     setActiveCall(incomingCall);
     setIncomingCall(null);
   };
@@ -278,6 +285,7 @@ const AppContent = () => {
     if (!incomingCall || !user) return;
     if (autoTimeoutRef.current) { clearTimeout(autoTimeoutRef.current); autoTimeoutRef.current = null; }
     stopRingtone();
+    notifyCallEnded({ callId: incomingCall.roomId, reason: "declined" });
     // Шлём в комнату самого звонка, чтобы CallScreen звонящего получил сигнал и закрылся
     await fetch(`${CHAT_API}?module=signal`, {
       method: "POST",
