@@ -127,6 +127,7 @@ const AppContent = () => {
   const [incomingCall, setIncomingCall] = useState<IncomingCall | null>(null);
   const [activeCall, setActiveCall] = useState<IncomingCall | null>(null);
   const incomingRef = useRef<IncomingCall | null>(null);
+  const pendingActionRef = useRef<{ action: string; at: number } | null>(null);
   incomingRef.current = incomingCall;
   const lastSigRef = useRef(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -252,6 +253,17 @@ const AppContent = () => {
               sigId: sig.id,
             };
             notifyIncomingCall({ callerName: call.callerName, isVideo: call.mode === "video", callId: call.roomId });
+            const pending = pendingActionRef.current;
+            pendingActionRef.current = null;
+            if (pending && Date.now() - pending.at < 20000) {
+              stopRingtone();
+              if (pending.action === "accept") {
+                setActiveCall(call);
+                continue;
+              }
+              autoMissCall(call);
+              continue;
+            }
             setIncomingCall(call);
             if (autoTimeoutRef.current) clearTimeout(autoTimeoutRef.current);
             autoTimeoutRef.current = setTimeout(() => autoMissCall(call), 30000);
@@ -303,6 +315,10 @@ const AppContent = () => {
   callActionsRef.current = { accept: acceptCall, decline: declineCall };
   useEffect(() => {
     (window as unknown as { lookCallAction?: (a: string) => void }).lookCallAction = (a) => {
+      if (!incomingRef.current) {
+        pendingActionRef.current = { action: a, at: Date.now() };
+        return;
+      }
       if (a === "accept") callActionsRef.current.accept();
       else if (a === "decline") callActionsRef.current.decline();
     };
