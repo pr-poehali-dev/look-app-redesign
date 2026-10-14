@@ -17,8 +17,19 @@ export const initExternalLinks = () => {
       const el = (e.target as HTMLElement | null)?.closest?.("a") as HTMLAnchorElement | null;
       if (!el || !el.href || !isExternal(el)) return;
       e.preventDefault();
-      window.open(el.href, "_blank", "noopener,noreferrer");
+      openInBrowser(el.href);
     },
     true
   );
+};
+
+export const openInBrowser = (url: string) => {
+  let u: URL;
+  try { u = new URL(url, window.location.href); } catch { return; }
+  if (/Android/i.test(navigator.userAgent) && /^https?:$/.test(u.protocol)) {
+    const fallback = encodeURIComponent(u.href);
+    window.location.href = `intent://${u.host}${u.pathname}${u.search}${u.hash}#Intent;scheme=${u.protocol.replace(":", "")};action=android.intent.action.VIEW;S.browser_fallback_url=${fallback};end`;
+    return;
+  }
+  window.open(u.href, "_blank", "noopener,noreferrer");
 };

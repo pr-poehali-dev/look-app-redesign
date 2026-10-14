@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { openInBrowser } from "@/lib/externalLinks";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import { Product, trackProductClick, buildProductLink } from "@/hooks/useProducts";
@@ -41,7 +42,7 @@ const ProductDetailSheet = ({ product: p, videoId, onClose }: Props) => {
   const goExternal = () => {
     if (!p.product_url) return;
     trackProductClick(p.id, videoId, user?.id, "external");
-    window.open(p.product_url, "_blank", "noopener,noreferrer");
+    openInBrowser(p.product_url);
   };
 
   const openShop = () => {
