@@ -45,12 +45,21 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
   const [tab, setTab] = useState<Tab>(initialCommunityId ? (initialKind === "channel" ? "channels" : "communities") : "chats");
   const [openChat, setOpenChat] = useState<Chat | null>(null);
   const [search, setSearch] = useState("");
-  const [chats, setChats] = useState<Chat[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const chatsCacheKey = `chats_cache_v1_${user?.id || "anon"}`;
+  const [chats, setChats] = useState<Chat[]>(() => {
+    try {
+      const raw = localStorage.getItem(chatsCacheKey);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch { return []; }
+  });
+  const [loading, setLoading] = useState(() => {
+    try { return !localStorage.getItem(chatsCacheKey); } catch { return true; }
+  });
   const [searchUsers, setSearchUsers] = useState<{ id: string; name: string; avatar: string; handle: string; phone: string; online: boolean; seen_ago?: number | null }[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [activeCall, setActiveCall] = useState<{ user: { id: string; name: string }; mode: "audio" | "video" } | null>(null);
-  const { user } = useAuth();
   const { refresh: refreshUnread } = useUnread();
 
   const loadChats = () => {
@@ -68,9 +77,10 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
           unread: c.unread || 0,
         }));
         setChats(dbChats);
+        try { localStorage.setItem(chatsCacheKey, JSON.stringify(dbChats)); } catch { /* ignore */ }
         refreshUnread();
       })
-      .catch(() => setChats([]))
+      .catch(() => { /* оставляем показанный кэш */ })
       .finally(() => setLoading(false));
   };
 
