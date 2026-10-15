@@ -23,6 +23,24 @@ def _log(ids, title, status, response):
         print(f'push_log error: {e}')
 
 
+def _diagnose(key, uid):
+    try:
+        req = urllib.request.Request(
+            f'https://api.onesignal.com/apps/{APP_ID}/users/by/external_id/{uid}',
+            headers={'Authorization': f'Key {key}'})
+        d = json.loads(urllib.request.urlopen(req, timeout=3).read())
+        subs = [
+            {'type': x.get('type'), 'enabled': x.get('enabled'), 'nt': x.get('notification_types'),
+             'token': bool(x.get('token')), 'sdk': x.get('sdk'), 'app_version': x.get('app_version')}
+            for x in d.get('subscriptions', [])
+        ]
+        return subs
+    except urllib.error.HTTPError as e:
+        return f'diag http {e.code} {e.read()[:200]}'
+    except Exception as e:
+        return f'diag error {e}'
+
+
 def send_push(user_ids, title, message, path='/', extra=None):
     """Пуш через OneSignal по внешнему ID пользователя. Ошибки не прерывают основную логику."""
     key = os.environ.get('ONESIGNAL_REST_API_KEY')
@@ -51,6 +69,8 @@ def send_push(user_ids, title, message, path='/', extra=None):
     try:
         raw = urllib.request.urlopen(req, timeout=4).read() or b'{}'
         res = json.loads(raw)
+        if not res.get('id') and res.get('errors'):
+            res = {'result': res, 'subs': {u: _diagnose(key, u) for u in ids[:2]}}
         _log(ids, title, 'ok', res)
         return int(res.get('recipients') or 0) if res.get('id') else 0
     except urllib.error.HTTPError as e:
