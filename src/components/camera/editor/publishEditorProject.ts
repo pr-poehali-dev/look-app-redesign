@@ -114,7 +114,7 @@ export const publishEditorProject = async ({
       } catch (err) {
         console.warn("[MediaEditor] render failed, fallback to original", err);
         file = active.file;
-        if (file.size > 4 * 1024 * 1024) {
+        if (file.size > 80 * 1024 * 1024) {
           try {
             const result = await compressVideo(file, {
               maxWidth: 720, maxHeight: 1280, videoBitsPerSecond: 1_200_000,

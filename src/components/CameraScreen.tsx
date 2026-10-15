@@ -101,7 +101,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
       let file = original;
 
       // 1) Сжатие видео (если файл больше 4 МБ и это видео)
-      if (file.type.startsWith("video") && file.size > 4 * 1024 * 1024) {
+      if (file.type.startsWith("video") && file.size > 80 * 1024 * 1024) {
         setPublishProgress({ stage: "compress", percent: 0 });
         try {
           const result = await compressVideo(file, {
