@@ -1864,17 +1864,40 @@ def handler(event: dict, context) -> dict:
                     )
                 conn.commit()
                 if sig_type == 'call_invite' and isinstance(payload, dict):
+                    call_data = {
+                        'type': 'call',
+                        'toUser': to_user,
+                        'callerName': payload.get('callerName', ''),
+                        'callerId': payload.get('callerId', ''),
+                        'mode': payload.get('mode', 'audio'),
+                        'roomId': payload.get('roomId', ''),
+                    }
+                    delivered = 0
                     try:
-                        push_mod.send_call_push(cur, conn, to_user, {
-                            'type': 'call',
-                            'toUser': to_user,
-                            'callerName': payload.get('callerName', ''),
-                            'callerId': payload.get('callerId', ''),
-                            'mode': payload.get('mode', 'audio'),
-                            'roomId': payload.get('roomId', ''),
-                        })
-                    except Exception:
-                        pass
+                        is_video = call_data['mode'] == 'video'
+                        delivered = send_push(
+                            [to_user],
+                            call_data['callerName'] or 'Входящий звонок',
+                            'Видеозвонок' if is_video else 'Аудиозвонок',
+                            '/?incoming_call=' + str(call_data['roomId']),
+                            extra={
+                                'priority': 10,
+                                'ttl': 40,
+                                'data': call_data,
+                                'android_visibility': 1,
+                                'ios_interruption_level': 'time_sensitive',
+                                'ios_badgeType': 'None',
+                                'web_push_topic': 'incoming-call',
+                                'collapse_id': 'incoming-call',
+                            },
+                        )
+                    except Exception as e:
+                        print(f'call onesignal error: {e}')
+                    if not delivered:
+                        try:
+                            push_mod.send_call_push(cur, conn, to_user, call_data)
+                        except Exception:
+                            pass
                 return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True})}
 
             elif method == 'GET':
