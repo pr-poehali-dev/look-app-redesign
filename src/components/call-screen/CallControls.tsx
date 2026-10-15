@@ -69,6 +69,15 @@ const CallControls = ({
             <span className="text-white/60 text-xs">Камера</span>
           </button>
         )}
+
+        {mode === "audio" && toggleLowData && (
+          <button onClick={toggleLowData} className="flex flex-col items-center gap-2">
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center ${lowData ? "bg-white" : "bg-white/20"}`}>
+              <Icon name="Gauge" size={22} className={lowData ? "text-black" : "text-white"} />
+            </div>
+            <span className="text-white/60 text-xs">{lowData ? "Экономия вкл" : "Экономия"}</span>
+          </button>
+        )}
       </div>
 
       <div className="flex items-center justify-center gap-6 mb-4">
@@ -80,7 +89,7 @@ const CallControls = ({
             <span className="text-white/60 text-xs">{sharing ? "Остановить" : "Экран"}</span>
           </button>
         )}
-        {toggleLowData && (
+        {mode === "video" && toggleLowData && (
           <button onClick={toggleLowData} className="flex flex-col items-center gap-2">
             <div className={`w-12 h-12 rounded-full flex items-center justify-center ${lowData ? "bg-white" : "bg-white/20"}`}>
               <Icon name="Gauge" size={20} className={lowData ? "text-black" : "text-white"} />
