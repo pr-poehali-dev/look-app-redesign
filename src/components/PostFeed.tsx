@@ -8,6 +8,7 @@ import PostCard from "./post-feed/PostCard";
 import NoteViewer from "./post-feed/NoteViewer";
 import MasonryFeed from "./post-feed/MasonryFeed";
 import ArticlesFeed from "./post-feed/ArticlesFeed";
+import TutorialsStrip from "./post-feed/TutorialsStrip";
 import SearchOverlay from "./post-feed/SearchOverlay";
 import { Post, GET_PHOTOS_URL, formatTime, parseServerDate } from "./post-feed/PostFeedTypes";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
@@ -390,7 +391,7 @@ const PostFeed = () => {
         </div>
       ) : viewMode === "masonry" ? (
         <div className="absolute inset-0">
-          <MasonryFeed posts={categoryPosts} loading={loading} topPad={headerH} />
+          <MasonryFeed posts={categoryPosts} loading={loading} topPad={headerH} top={categoryId === "recommend" || categoryId === "diy" ? <TutorialsStrip /> : undefined} />
         </div>
       ) : (
         /* Posts — прокрутка с привязкой, под фиксированной панелью сторис */
