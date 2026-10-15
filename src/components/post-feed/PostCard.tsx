@@ -227,7 +227,7 @@ const PostCard = ({ post }: { post: Post }) => {
       </div>
 
       {/* Текстовый блок — ограничен по высоте, при длинной подписи прокручивается */}
-      <div className="flex-shrink-0 max-h-[22%] overflow-y-auto pb-2" style={{ scrollbarWidth: "none" }}>
+      <div className={post.isText ? "flex-1 min-h-0 overflow-y-auto pb-2" : "flex-shrink-0 max-h-[22%] overflow-y-auto pb-2"} style={{ scrollbarWidth: "none" }}>
         {/* Likes count */}
         <div className="px-3 pb-1">
           <span className="text-white font-semibold text-[13px]">{formatLikes(likes)} отметок «Нравится»</span>
