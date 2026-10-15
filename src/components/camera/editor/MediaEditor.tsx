@@ -1,16 +1,16 @@
-import { toast } from "sonner";
 import { PublishCompliance, DEFAULT_COMPLIANCE } from "@/components/camera/ComplianceFields";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
 import { useUserMedia } from "@/context/UserMediaContext";
-import { compressVideo, uploadFileDirect } from "@/lib/videoCompress";
-import { renderVideoWithOverlays, type RenderClip, type RenderSfxCue } from "@/lib/videoRender";
-import { FILTERS, FONTS, TEMPLATES, EXPORT_FORMATS, EXPORT_QUALITIES, type Filter, type Layer, type TextLayer, type StickerLayer, type PipLayer, type Clip, type ExportFormat, type ExportQuality, type SubtitleCue, type WatermarkPosition, type SfxItem, type SfxCue } from "./editorTypes";
+import { FILTERS, FONTS, TEMPLATES, type Filter, type Layer, type TextLayer, type StickerLayer, type PipLayer, type Clip, type ExportFormat, type ExportQuality, type SubtitleCue, type WatermarkPosition, type SfxItem, type SfxCue } from "./editorTypes";
 import EditorEmptyState from "./EditorEmptyState";
 import EditorPublishStep from "./EditorPublishStep";
 import EditorCanvas from "./EditorCanvas";
 import EditorToolbar from "./EditorToolbar";
+import EditorHeader from "./EditorHeader";
+import EditorHiddenInputs from "./EditorHiddenInputs";
+import captureEditorFrame from "./captureEditorFrame";
+import publishEditorProject from "./publishEditorProject";
 
 type Tab = "templates" | "clips" | "trim" | "crop" | "filter" | "adjust" | "text" | "stickers" | "music" | "pip" | "watermark" | "subtitles" | "sfx";
 
@@ -371,301 +371,20 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
     dragRef.current = null;
   };
 
-  const captureFrame = async (): Promise<Blob | null> => {
-    if (!active) return null;
-    const canvas = document.createElement("canvas");
-    const quality = EXPORT_QUALITIES.find((q) => q.id === exportQuality) || EXPORT_QUALITIES[1];
-    const size = Math.round((1080 * quality.scale) / 2) * 2;
-    canvas.width = size;
-    canvas.height = Math.round((size * 1.5) / 2) * 2;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
+  const captureFrame = (): Promise<Blob | null> => captureEditorFrame({
+    active, exportQuality, cssFilter, rotation, flipH, layers, videoRefs,
+    watermarkUrl, watermarkSize, watermarkPosition, watermarkOpacity, subtitles,
+  });
 
-    const drawMedia = async (): Promise<HTMLImageElement | HTMLVideoElement | null> => {
-      if (active.type === "image") {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        await new Promise<void>((resolve) => {
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-          img.src = active.url;
-        });
-        return img;
-      } else {
-        const v = videoRefs.current.get(active.id);
-        if (!v) return null;
-        if (v.readyState < 2 || v.videoWidth === 0) {
-          await new Promise<void>((resolve) => {
-            const onReady = () => { v.removeEventListener("loadeddata", onReady); resolve(); };
-            v.addEventListener("loadeddata", onReady);
-            setTimeout(resolve, 2000);
-          });
-        }
-        return v;
-      }
-    };
+  const handlePublish = () => publishEditorProject({
+    user, clips, active, isAd, compliance, exportFormat, exportQuality, speed, sfxCues,
+    filter, brightness, contrast, saturation, rotation, flipH, layers, clipVolume,
+    musicFile, musicVolume, watermarkUrl, watermarkPosition, watermarkOpacity, watermarkSize,
+    subtitles, destination, categoryTouched, category, description, hashtags,
+    selectedTemplateId, pendingProducts, captureFrame, refreshMedia, onPublished,
+    setPublishing, setPublishProgress,
+  });
 
-    const media = await drawMedia();
-    ctx.save();
-    ctx.filter = cssFilter;
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-    ctx.rotate((rotation * Math.PI) / 180);
-    if (flipH) ctx.scale(-1, 1);
-    if (media) {
-      const mw = (media as HTMLImageElement).naturalWidth || (media as HTMLVideoElement).videoWidth || canvas.width;
-      const mh = (media as HTMLImageElement).naturalHeight || (media as HTMLVideoElement).videoHeight || canvas.height;
-      const scale = Math.max(canvas.width / mw, canvas.height / mh);
-      const w = mw * scale;
-      const h = mh * scale;
-      ctx.drawImage(media, -w / 2, -h / 2, w, h);
-    } else {
-      ctx.fillStyle = "#000";
-      ctx.fillRect(-canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
-    }
-    ctx.restore();
-    ctx.filter = "none";
-
-    for (const l of layers) {
-      ctx.save();
-      const cx = (l.x / 100) * canvas.width;
-      const cy = (l.y / 100) * canvas.height;
-      ctx.translate(cx, cy);
-      ctx.rotate((l.rotation * Math.PI) / 180);
-      if (l.type === "text") {
-        const fontSize = (l.size / 100) * canvas.height * 0.08;
-        ctx.font = `bold ${fontSize}px ${l.font}`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        const metrics = ctx.measureText(l.text);
-        const pad = fontSize * 0.3;
-        if (l.bg && l.bg !== "transparent") {
-          ctx.fillStyle = l.bg;
-          ctx.fillRect(-metrics.width / 2 - pad, -fontSize / 2 - pad / 2, metrics.width + pad * 2, fontSize + pad);
-        }
-        ctx.fillStyle = l.color;
-        ctx.fillText(l.text, 0, 0);
-      } else if (l.type === "sticker") {
-        const fontSize = (l.size / 100) * canvas.height * 0.1;
-        ctx.font = `${fontSize}px sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(l.emoji, 0, 0);
-      } else if (l.type === "pip") {
-        const pipMedia = l.mediaType === "image" ? new Image() : videoRefs.current.get(l.id);
-        const box = (l.size / 100) * canvas.width;
-        const draw = (media: HTMLImageElement | HTMLVideoElement) => {
-          const mw = (media as HTMLImageElement).naturalWidth || (media as HTMLVideoElement).videoWidth || box;
-          const mh = (media as HTMLImageElement).naturalHeight || (media as HTMLVideoElement).videoHeight || box;
-          const scale = Math.max(box / mw, box / mh);
-          const dw = mw * scale;
-          const dh = mh * scale;
-          ctx.save();
-          if (l.shape === "circle") {
-            ctx.beginPath();
-            ctx.arc(0, 0, box / 2, 0, Math.PI * 2);
-            ctx.clip();
-          } else {
-            const r = box * 0.08;
-            const half = box / 2;
-            ctx.beginPath();
-            ctx.moveTo(-half + r, -half);
-            ctx.arcTo(half, -half, half, half, r);
-            ctx.arcTo(half, half, -half, half, r);
-            ctx.arcTo(-half, half, -half, -half, r);
-            ctx.arcTo(-half, -half, half, -half, r);
-            ctx.closePath();
-            ctx.clip();
-          }
-          ctx.drawImage(media, -dw / 2, -dh / 2, dw, dh);
-          ctx.restore();
-        };
-        if (l.mediaType === "image" && pipMedia instanceof HTMLImageElement) {
-          // изображение может ещё не быть загружено — рисуем синхронно, если готово, иначе пропускаем кадр
-          if (pipMedia.complete && pipMedia.naturalWidth > 0) draw(pipMedia);
-        } else if (pipMedia) {
-          draw(pipMedia);
-        }
-      }
-      ctx.restore();
-    }
-
-    // Водяной знак
-    if (watermarkUrl) {
-      const wm = new Image();
-      wm.crossOrigin = "anonymous";
-      await new Promise<void>((res) => { wm.onload = () => res(); wm.onerror = () => res(); wm.src = watermarkUrl; });
-      if (wm.naturalWidth > 0) {
-        const iw = wm.naturalWidth, ih = wm.naturalHeight;
-        const w = (watermarkSize / 100) * canvas.width;
-        const h = w * (ih / iw);
-        const margin = canvas.width * 0.03;
-        let x = margin, y = margin;
-        if (watermarkPosition === "top-right") { x = canvas.width - w - margin; y = margin; }
-        else if (watermarkPosition === "bottom-left") { x = margin; y = canvas.height - h - margin; }
-        else if (watermarkPosition === "bottom-right") { x = canvas.width - w - margin; y = canvas.height - h - margin; }
-        else if (watermarkPosition === "center") { x = (canvas.width - w) / 2; y = (canvas.height - h) / 2; }
-        ctx.save();
-        ctx.globalAlpha = watermarkOpacity / 100;
-        ctx.drawImage(wm, x, y, w, h);
-        ctx.restore();
-      }
-    }
-
-    // Субтитры (первый активный в момент публикации кадра)
-    const activeCue = subtitles.find((c) => c.start <= 0 && c.end > 0) || subtitles[0];
-    if (activeCue) {
-      const fontSize = canvas.height * 0.045;
-      ctx.save();
-      ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      const y = canvas.height * 0.88;
-      const metrics = ctx.measureText(activeCue.text);
-      const pad = fontSize * 0.35;
-      if (activeCue.bg && activeCue.bg !== "transparent") {
-        ctx.fillStyle = activeCue.bg;
-        ctx.fillRect(canvas.width / 2 - metrics.width / 2 - pad, y - fontSize / 2 - pad / 2, metrics.width + pad * 2, fontSize + pad);
-      }
-      ctx.fillStyle = activeCue.color;
-      ctx.fillText(activeCue.text, canvas.width / 2, y);
-      ctx.restore();
-    }
-
-    return new Promise((resolve) => {
-      canvas.toBlob((b) => resolve(b), "image/jpeg", 0.92);
-    });
-  };
-
-  const handlePublish = async () => {
-    if (clips.length === 0 || !active) return;
-    if (isAd && compliance.adErid.trim().length < 5) {
-      toast.error("Для рекламы укажи токен ERID — без него публикация запрещена законом");
-      return;
-    }
-    setPublishing(true);
-    try {
-      // Одиночное фото без второго клипа — публикуем статичным кадром, иначе рендерим видео
-      // (склеивая ВСЕ клипы по порядку — не только активный)
-      const isVideo = !(clips.length === 1 && active.type === "image");
-      const fmt = EXPORT_FORMATS.find((f) => f.id === exportFormat) || EXPORT_FORMATS[0];
-      const quality = EXPORT_QUALITIES.find((q) => q.id === exportQuality) || EXPORT_QUALITIES[1];
-      const outW = Math.round((fmt.w * quality.scale) / 2) * 2;
-      const outH = Math.round((fmt.h * quality.scale) / 2) * 2;
-
-      let file: File;
-
-      if (isVideo) {
-        // Рендерим финальное видео со всеми эффектами: фильтры, текст/стикеры/PiP, переходы,
-        // водяной знак, субтитры, звуковые эффекты, обрезка, скорость, музыка
-        setPublishProgress({ stage: "compress", percent: 0 });
-        const renderClips: RenderClip[] = clips.map((c) => ({
-          url: c.url,
-          type: c.type,
-          trimStart: c.trimStart,
-          trimEnd: c.trimEnd,
-          speed: c.speed ?? speed,
-          imageDuration: c.type === "image" ? 4 : undefined,
-          transitionBefore: c.transition,
-        }));
-        const renderSfx: RenderSfxCue[] = sfxCues.map((s) => ({ url: s.url, time: s.time, volume: s.volume }));
-        try {
-          file = await renderVideoWithOverlays({
-            clips: renderClips,
-            outWidth: outW,
-            outHeight: outH,
-            filter,
-            brightness,
-            contrast,
-            saturation,
-            rotation,
-            flipH,
-            layers,
-            clipVolume: clipVolume / 100,
-            musicFile,
-            musicVolume: musicVolume / 100,
-            watermark: watermarkUrl ? { url: watermarkUrl, position: watermarkPosition, opacity: watermarkOpacity, size: watermarkSize } : null,
-            subtitles,
-            sfxCues: renderSfx,
-            onProgress: (p) => setPublishProgress({ stage: "compress", percent: p }),
-          });
-        } catch (err) {
-          console.warn("[MediaEditor] render failed, fallback to original", err);
-          file = active.file;
-          if (file.size > 4 * 1024 * 1024) {
-            try {
-              const result = await compressVideo(file, {
-                maxWidth: 720, maxHeight: 1280, videoBitsPerSecond: 1_200_000,
-                onProgress: (p) => setPublishProgress({ stage: "compress", percent: p }),
-              });
-              file = result.file;
-            } catch { /* keep original */ }
-          }
-        }
-      } else {
-        const blob = await captureFrame();
-        file = blob ? new File([blob], "edited.jpg", { type: "image/jpeg" }) : active.file;
-      }
-
-      const finalCategory =
-        destination === "feed" ? (categoryTouched ? category : "feed")
-        : category;
-
-      setPublishProgress({ stage: "upload", percent: 0 });
-      const reg = await uploadFileDirect(
-        file,
-        {
-          category: finalCategory,
-          destinations: destination === "both" ? ["home", "feed"] : [destination],
-          description,
-          hashtags,
-          author: user?.name || "Пользователь",
-          handle: user?.handle || user?.name || "user",
-          user_id: user?.id || "anonymous",
-          templateId: selectedTemplateId,
-          products: pendingProducts.map((p) => ({
-            title: p.title, price: p.price, old_price: p.oldPrice,
-            promo_code: p.promoCode, product_url: p.productUrl, image: p.image,
-          })),
-          isAd,
-          ageRating: compliance.ageRating,
-          adErid: compliance.adErid,
-          adAdvertiser: compliance.adAdvertiser,
-          extraImages: compliance.extraImages,
-          place: compliance.place,
-        },
-        (p) => setPublishProgress({ stage: "upload", percent: p }),
-      );
-      if (!reg || !reg.url) throw new Error("Сервер не вернул ссылку на файл");
-
-      // Для видео — генерируем превью на сервере (OpenCV снимает кадр)
-      if (isVideo && reg.id) {
-        fetch("https://functions.poehali.dev/be575f5c-eb60-4522-ad3e-1b6527c85abb", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ video_url: reg.url, video_id: reg.id }),
-        }).catch(() => {});
-      }
-
-      // Фиксируем использование шаблона для аналитики автора шаблона
-      if (selectedTemplateId && reg.id) {
-        fetch("https://functions.poehali.dev/7b5c6c18-7098-4f9b-bf3c-e6ac50574c06?action=track_template_use", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-User-Id": user?.id || "anonymous" },
-          body: JSON.stringify({ template_id: selectedTemplateId, video_id: reg.id }),
-        }).catch(() => {});
-      }
-
-      setPublishProgress({ stage: "save", percent: 100 });
-      try { await refreshMedia(); } catch { /* ignore */ }
-      onPublished();
-    } catch (e) {
-      console.error("[MediaEditor] publish error", e);
-      alert("Не удалось опубликовать. Проверь интернет и попробуй ещё раз.");
-    } finally {
-      setPublishing(false);
-      setPublishProgress(null);
-    }
-  };
 
   // EMPTY STATE
   if (clips.length === 0) {
@@ -717,30 +436,28 @@ const MediaEditor = ({ onClose, onPublished }: Props) => {
   // MAIN EDIT VIEW
   return (
     <div className="absolute inset-0 z-50 bg-zinc-950 flex flex-col">
-      <audio ref={audioRef} />
-      <input ref={fileInputRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => addClips(e.target.files)} />
-      <input ref={galleryInputRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => { addClips(e.target.files); e.target.value = ""; }} />
-      <input ref={cameraInputRef} type="file" accept="image/*,video/*" capture="environment" className="hidden" onChange={(e) => { addClips(e.target.files); e.target.value = ""; }} />
-      <input ref={musicInputRef} type="file" accept="audio/*" className="hidden" onChange={handleMusicUpload} />
-      <input ref={pipInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) addPip(f); e.target.value = ""; }} />
-      <input ref={watermarkInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { handleWatermarkUpload(e); e.target.value = ""; }} />
+      <EditorHiddenInputs
+        audioRef={audioRef}
+        fileInputRef={fileInputRef}
+        galleryInputRef={galleryInputRef}
+        cameraInputRef={cameraInputRef}
+        musicInputRef={musicInputRef}
+        pipInputRef={pipInputRef}
+        watermarkInputRef={watermarkInputRef}
+        addClips={addClips}
+        handleMusicUpload={handleMusicUpload}
+        addPip={addPip}
+        handleWatermarkUpload={handleWatermarkUpload}
+      />
 
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-12 pb-3 border-b border-white/10 gap-2">
-        <div className="flex items-center gap-1">
-          <button onClick={undo} disabled={!canUndo} className={`p-2 rounded-full transition-colors ${canUndo ? "text-white hover:bg-white/10 cursor-pointer" : "text-white/25 cursor-not-allowed"}`} title="Отменить">
-            <Icon name="Undo2" size={20} />
-          </button>
-          <button onClick={redo} disabled={!canRedo} className={`p-2 rounded-full transition-colors ${canRedo ? "text-white hover:bg-white/10 cursor-pointer" : "text-white/25 cursor-not-allowed"}`} title="Повторить">
-            <Icon name="Redo2" size={20} />
-          </button>
-        </div>
-        <button
-          onClick={() => setStep("publish")}
-          className="px-4 py-1.5 rounded-full bg-[#fe2c55] hover:bg-[#e0264c] active:scale-95 transition-all cursor-pointer text-white text-sm font-bold flex-shrink-0"
-        >Далее</button>
-        <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer" title="Закрыть"><Icon name="X" size={22} className="text-white" /></button>
-      </div>
+      <EditorHeader
+        undo={undo}
+        redo={redo}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onNext={() => setStep("publish")}
+        onClose={onClose}
+      />
 
       <EditorCanvas
         active={active}
