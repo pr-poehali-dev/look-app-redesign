@@ -113,6 +113,22 @@ export default defineConfig(({mode}) => ({
             "@": path.resolve(__dirname, "./src"),
         },
     },
+    build: {
+        target: 'es2019',
+        cssCodeSplit: true,
+        chunkSizeWarningLimit: 800,
+        rollupOptions: {
+            output: {
+                manualChunks(id: string) {
+                    if (!id.includes('node_modules')) return;
+                    if (/node_modules\/(react|react-dom|scheduler|react-router|react-router-dom)\//.test(id)) return 'vendor-react';
+                    if (id.includes('@radix-ui')) return 'vendor-radix';
+                    if (id.includes('@tanstack')) return 'vendor-query';
+                    if (id.includes('i18next')) return 'vendor-i18n';
+                },
+            },
+        },
+    },
     server: {
         host: '0.0.0.0',
         port: 5173,

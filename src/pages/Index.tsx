@@ -19,6 +19,21 @@ import { useAuth } from "@/context/AuthContext";
 import { setPendingReferral, fetchProductById, captureTrafficSource, Product } from "@/hooks/useProducts";
 import { toast } from "sonner";
 
+const prefetchTabs = () => {
+  const run = () => {
+    import("@/components/MessagesScreen");
+    import("@/components/ProfilePage");
+    import("@/components/PostFeed");
+    import("@/components/VideoGrid");
+    import("@/components/CameraScreen");
+  };
+  const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
+  const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+  if (conn?.saveData || conn?.effectiveType === "2g" || conn?.effectiveType === "slow-2g") return;
+  if (w.requestIdleCallback) w.requestIdleCallback(run, { timeout: 4000 });
+  else setTimeout(run, 2500);
+};
+
 const isPhone = () => typeof window !== "undefined" && window.innerWidth < 768;
 
 const TABS = [
@@ -34,6 +49,7 @@ const LIVE_CATEGORY = { id: "live", label: "Эфиры" };
 const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
 const Index = () => {
+  useEffect(() => { prefetchTabs(); }, []);
   const { user, logout } = useAuth();
   const [phone, setPhone] = useState(isPhone);
   useEffect(() => {
