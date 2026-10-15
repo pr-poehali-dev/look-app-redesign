@@ -4,6 +4,8 @@
  * Возвращает исходный файл, если сжатие не удалось или браузер не поддерживает.
  */
 
+import { faststartMp4 } from "./mp4Faststart";
+
 export interface CompressOptions {
   maxWidth?: number;
   maxHeight?: number;
@@ -333,11 +335,15 @@ export async function uploadExtraImage(file: File): Promise<string> {
 }
 
 export async function uploadFileDirect(
-  file: File,
+  inputFile: File,
   meta: DirectUploadMeta,
   onProgress?: (percent: number) => void,
   skipRegister = false,
 ): Promise<{ id: number; url: string; thumb?: string; type: string }> {
+  let file = inputFile;
+  if (/\.(mp4|mov|m4v)$/i.test(file.name) || file.type === "video/mp4" || file.type === "video/quicktime") {
+    file = await faststartMp4(file);
+  }
   const ext = (file.name.split(".").pop() || (file.type.startsWith("video") ? "mp4" : "jpg")).toLowerCase();
   const contentType = file.type || (file.type.startsWith("video") ? "video/mp4" : "image/jpeg");
 
