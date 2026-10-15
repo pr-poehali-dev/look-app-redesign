@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import PushToggle from "@/components/profile/PushToggle";
 import { QRCodeCanvas } from "qrcode.react";
 import Icon from "@/components/ui/icon";
 import BirthDateInput from "@/components/ui/birth-date-input";
@@ -337,6 +338,7 @@ const NotificationsScreen = ({ onBack }: { onBack: () => void }) => {
         <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Уведомления</span>
       </div>
       <div className="mt-2">
+        <PushToggle />
         {settings.map((n) => (
           <div key={n.label} className="flex items-center gap-4 px-4 py-4 md:py-3 bg-white border-b border-gray-100">
             <span className="flex-1 text-black text-base md:text-sm">{n.label}</span>
