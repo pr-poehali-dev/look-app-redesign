@@ -37,7 +37,7 @@ export const Reader = ({ id, onBack, onEdit }: { id: number; onBack: () => void;
   const doneCount = done.filter((i) => i < total).length;
   return (
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-      <Header title={a?.kind === "tutorial" ? "Туториал" : "Статья"} onBack={onBack} right={a && a.owner_user_id === user?.id ? (
+      <Header title={!a ? "" : a.kind === "tutorial" ? "Туториал" : "Статья"} onBack={onBack} right={a && a.owner_user_id === user?.id ? (
         <button onClick={() => onEdit(a)}><Icon name="Pencil" size={18} className="text-black" /></button>
       ) : undefined} />
       {!a ? (
