@@ -64,6 +64,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   const pendingFreshOffersRef = useRef<{ id: number; type: string; payload: unknown }[]>([]);
   const audioCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastVideoLevelRef = useRef<"low" | "mid" | "high" | "">("");
+  const lastAudioLevelRef = useRef<"low" | "mid" | "high" | "">("");
   const recoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wasConnectedRef = useRef<boolean>(false);
   const iceRestartDoneRef = useRef<boolean>(false);
@@ -281,9 +282,23 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         if (sigs.length < 50) break;
       }
     };
-    pollRef.current = setInterval(() => {
-      pollOnce().catch((e) => console.warn("[CallScreen] poll error", e));
-    }, 1500);
+    let polling = false;
+    const run = () => {
+      if (polling) return;
+      polling = true;
+      pollOnce()
+        .catch((e) => console.warn("[CallScreen] poll error", e))
+        .finally(() => { polling = false; });
+    };
+    const startedAt = Date.now();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const loop = () => {
+      run();
+      const connecting = !wasConnectedRef.current && Date.now() - startedAt < 30000;
+      timer = setTimeout(loop, connecting ? 500 : 1500);
+      pollRef.current = timer as unknown as ReturnType<typeof setInterval>;
+    };
+    loop();
   };
 
   useEffect(() => {
@@ -298,6 +313,8 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
       iceOutboxRef.current = [];
       console.log("[CallScreen] start", { myId, peerId, roomId, isCaller: isCaller.current, mode });
       setStatus("connecting");
+
+      const cfgPromise = getRtcConfig().catch(() => RTC_CONFIG);
 
       // Сбрасываем «хвост» старых сигналов прошлых попыток звонка в этой же комнате,
       // иначе callee сразу получит end/call_declined от прошлого сеанса и звонок мгновенно закроется.
@@ -340,7 +357,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         pendingFreshIceRef.current = freshIce.slice(-200);
       } catch (e) { void e; }
 
-      const cfg = await getRtcConfig().catch(() => RTC_CONFIG);
+      const cfg = await cfgPromise;
       console.log("[CallScreen] iceServers count =", (cfg.iceServers || []).length);
       pc = new RTCPeerConnection(cfg);
       pcRef.current = pc;
@@ -711,6 +728,11 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         else if (lossRate > 0.03 || rtt > 200) q = "fair";
         else q = "good";
         setQuality(q);
+        const audioLevel = lowDataRef.current ? "low" : q === "poor" ? "low" : q === "fair" ? "mid" : "high";
+        if (audioLevel !== lastAudioLevelRef.current) {
+          lastAudioLevelRef.current = audioLevel;
+          tuneAudioSenders(pc, audioLevel);
+        }
         // Адаптация видео под качество сети — чтобы связь не рвалась на плохом инете.
         if (mode === "video") {
           const level = lowDataRef.current ? "low" : q === "poor" ? "low" : q === "fair" ? "mid" : "high";

@@ -71,7 +71,10 @@ export const tuneRemoteAudioElement = (el: HTMLAudioElement | HTMLVideoElement |
   }
 };
 
-export const tuneAudioSenders = async (pc: RTCPeerConnection | null | undefined) => {
+export const tuneAudioSenders = async (
+  pc: RTCPeerConnection | null | undefined,
+  level: 'low' | 'mid' | 'high' = 'high',
+) => {
   if (!pc) return;
   try {
     const senders = pc.getSenders().filter(s => s.track && s.track.kind === 'audio');
@@ -82,7 +85,7 @@ export const tuneAudioSenders = async (pc: RTCPeerConnection | null | undefined)
       }
       params.encodings.forEach(enc => {
         // Низкий битрейт для устойчивости на плохом интернете
-        enc.maxBitrate = isMobile() ? 16000 : 24000;
+        enc.maxBitrate = level === 'low' ? 12000 : level === 'mid' ? 20000 : isMobile() ? 24000 : 32000;
         enc.priority = 'high';
         enc.networkPriority = 'high';
         (enc as RTCRtpEncodingParameters & { adaptivePtime?: boolean }).adaptivePtime = true;
@@ -104,9 +107,9 @@ export const tuneVideoSenders = async (
   try {
     const senders = pc.getSenders().filter(s => s.track && s.track.kind === 'video');
     const cfg = {
-      low: { maxBitrate: 120000, scaleDownBy: 3, maxFramerate: 12 },
-      mid: { maxBitrate: 400000, scaleDownBy: 1.5, maxFramerate: 20 },
-      high: { maxBitrate: 900000, scaleDownBy: 1, maxFramerate: 30 },
+      low: { maxBitrate: 150000, scaleDownBy: 3, maxFramerate: 15 },
+      mid: { maxBitrate: 500000, scaleDownBy: 1.5, maxFramerate: 24 },
+      high: { maxBitrate: 1400000, scaleDownBy: 1, maxFramerate: 30 },
     }[level];
     for (const sender of senders) {
       const params = sender.getParameters();
@@ -119,6 +122,8 @@ export const tuneVideoSenders = async (
         enc.maxFramerate = cfg.maxFramerate;
         enc.networkPriority = 'high';
       });
+      (params as RTCRtpSendParameters & { degradationPreference?: string }).degradationPreference = 'maintain-framerate';
+      try { (sender.track as MediaStreamTrack & { contentHint?: string }).contentHint = 'motion'; } catch { /* noop */ }
       await sender.setParameters(params).catch(() => {});
     }
   } catch {
@@ -132,8 +137,8 @@ export const boostOpusInSdp = (sdp: string): string => {
     const mobile = isMobile();
     const android = isAndroid();
     // Android WebView — минимальный битрейт для надёжного AEC
-    const bitrate = android ? '12000' : mobile ? '16000' : '24000';
-    const playbackRate = android ? '8000' : '16000';
+    const bitrate = android ? '20000' : mobile ? '24000' : '32000';
+    const playbackRate = android ? '16000' : '24000';
     return sdp.replace(/a=fmtp:(\d+) ([^\r\n]*opus[^\r\n]*)/gi, (_match, pt, rest) => {
       let updated = rest;
       const set = (key: string, value: string) => {
@@ -150,8 +155,8 @@ export const boostOpusInSdp = (sdp: string): string => {
       set('useinbandfec', '1');
       set('usedtx', '1');
       set('cbr', '0');
-      set('minptime', android ? '40' : '60');
-      set('ptime', android ? '40' : '60');
+      set('minptime', '20');
+      set('ptime', '40');
       return `a=fmtp:${pt} ${updated}`;
     });
   } catch {

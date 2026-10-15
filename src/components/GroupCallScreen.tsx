@@ -102,8 +102,25 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
       if (e.candidate) sendSig(peerId, "g_ice", { c: e.candidate.toJSON(), n: myName });
     };
 
+    let dropTimer: ReturnType<typeof setTimeout> | null = null;
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === "disconnected" || pc.connectionState === "failed") {
+      if (pc.connectionState === "connected") {
+        if (dropTimer) { clearTimeout(dropTimer); dropTimer = null; }
+        return;
+      }
+      if (pc.connectionState === "disconnected") {
+        if (dropTimer) return;
+        dropTimer = setTimeout(() => {
+          dropTimer = null;
+          if (pc.connectionState === "disconnected" || pc.connectionState === "failed") {
+            peersMapRef.current.delete(peerId);
+            syncPeers();
+          }
+        }, 8000);
+        return;
+      }
+      if (pc.connectionState === "failed") {
+        if (dropTimer) { clearTimeout(dropTimer); dropTimer = null; }
         peersMapRef.current.delete(peerId);
         syncPeers();
       }

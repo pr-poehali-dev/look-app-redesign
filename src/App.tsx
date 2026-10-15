@@ -13,6 +13,7 @@ import { UnreadProvider } from "./context/UnreadContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import Landing from "./components/Landing";
 import AutoTranslator from "./components/AutoTranslator";
+import { fetchIceServers } from "@/lib/webrtc-config";
 import Icon from "@/components/ui/icon";
 import OfflineBanner from "@/components/OfflineBanner";
 
@@ -59,6 +60,13 @@ const queryClient = new QueryClient({
 const AppContent = () => {
   useSwipeBack();
   const { user, token, loading } = useAuth();
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetchIceServers().catch(() => {});
+    const t = setInterval(() => { fetchIceServers().catch(() => {}); }, 25 * 60 * 1000);
+    return () => clearInterval(t);
+  }, [user?.id]);
   const [resetToken, setResetToken] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     const params = new URLSearchParams(window.location.search);
