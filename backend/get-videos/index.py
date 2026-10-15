@@ -129,7 +129,7 @@ def handler(event: dict, context) -> dict:
             rows = cur.fetchall()
 
         # Репосты — подмешиваем в ленту с пометкой "кто поделился".
-        # Позволяет всплыть старому контенту через социальное расшаривание, как в Instagram.
+        # Позволяет всплыть старому контенту через социальное расшаривание.
         existing_ids = {r[0] for r in rows}
         repost_select = (
             f"SELECT v.id, v.url, v.author, v.handle, v.description, v.hashtags, "

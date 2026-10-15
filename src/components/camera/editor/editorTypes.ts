@@ -91,9 +91,9 @@ export type ExportFormat = "9:16" | "1:1" | "16:9";
 
 // Базовые (короткая сторона = 1080, соответствует Full HD-качеству по умолчанию)
 export const EXPORT_FORMATS: { id: ExportFormat; label: string; hint: string; w: number; h: number }[] = [
-  { id: "9:16", label: "TikTok / Shorts", hint: "Вертикальное", w: 1080, h: 1920 },
+  { id: "9:16", label: "Вертикальное 9:16", hint: "Для коротких видео", w: 1080, h: 1920 },
   { id: "1:1", label: "Квадрат", hint: "Лента / Stories", w: 1080, h: 1080 },
-  { id: "16:9", label: "YouTube", hint: "Горизонтальное", w: 1920, h: 1080 },
+  { id: "16:9", label: "Горизонтальное 16:9", hint: "Широкий экран", w: 1920, h: 1080 },
 ];
 
 export type ExportQuality = "720" | "1080" | "4k";

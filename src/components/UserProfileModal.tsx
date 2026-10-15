@@ -172,7 +172,7 @@ const UserProfileModal = ({ handle, initialTab = "media", onClose }: Props) => {
 
       <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
         <div className="md:max-w-2xl md:mx-auto">
-          {/* Large avatar header — Telegram style */}
+          {/* Large avatar header */}
           <div className="flex flex-col items-center pt-8 pb-6 px-6 bg-white">
             <button
               onClick={(e) => { if (gallery[0]) { setOpenedOrigin(e.currentTarget.getBoundingClientRect()); setOpenedItem(0); } }}
@@ -187,7 +187,7 @@ const UserProfileModal = ({ handle, initialTab = "media", onClose }: Props) => {
             <p className="text-gray-500 text-sm mt-1">был(а) недавно</p>
           </div>
 
-          {/* Action buttons — Telegram style round */}
+          {/* Action buttons */}
           <div className="flex justify-center gap-3 px-6 pb-6 bg-white">
             {!isSelf && (
               <button
@@ -227,7 +227,7 @@ const UserProfileModal = ({ handle, initialTab = "media", onClose }: Props) => {
             </button>
           </div>
 
-          {/* Info section — Telegram style rows */}
+          {/* Info section */}
           <div className="bg-[#f4f4f5] py-2">
             <div className="bg-white">
               <div className="px-4 py-3 border-b border-gray-100">
@@ -244,7 +244,7 @@ const UserProfileModal = ({ handle, initialTab = "media", onClose }: Props) => {
             </div>
           </div>
 
-          {/* Stats — Telegram style */}
+          {/* Stats */}
           <div className="bg-[#f4f4f5] pb-2">
             <div className="bg-white grid grid-cols-3 divide-x divide-gray-100">
               <button className="py-3 active:bg-gray-50">
@@ -262,7 +262,7 @@ const UserProfileModal = ({ handle, initialTab = "media", onClose }: Props) => {
             </div>
           </div>
 
-          {/* Tabs — Telegram style underlined */}
+          {/* Tabs */}
           <div className="bg-white border-b border-gray-100 flex sticky top-0 z-[1]">
             <button
               onClick={() => setTab("media")}

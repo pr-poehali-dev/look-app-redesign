@@ -25,7 +25,7 @@ def _row_to_board(r):
 
 
 def handler(event: dict, context) -> dict:
-    """Публичные доски (коллекции) — как в Pinterest: создание досок, добавление/удаление элементов, публичный просмотр чужих досок."""
+    """Публичные доски (коллекции): создание досок, добавление/удаление элементов, публичный просмотр чужих досок."""
     method = event.get('httpMethod', 'GET')
     if method == 'OPTIONS':
         return {'statusCode': 200, 'headers': CORS, 'body': ''}

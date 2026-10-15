@@ -462,7 +462,7 @@ const Index = () => {
 
           {activeTab === "home" && activeCategory !== LIVE_CATEGORY.id && (
             <>
-              {/* На ПК показываем плиточную сетку (TikTok-стиль) для всех категорий, кроме «Подписки» и «Новые». Клик — открывает видео в ленте */}
+              {/* На ПК показываем плиточную сетку для всех категорий, кроме «Подписки» и «Новые». Клик — открывает видео в ленте */}
               {!phone && <div className="hidden md:block w-full h-full">
                 {activeCategory !== "subs" && activeCategory !== "new" && gridOpenVideoId === null ? (
                   <VideoGrid category={activeCategory} onOpenVideo={(id) => setGridOpenVideoId(id)} />

@@ -225,7 +225,7 @@ const Editor = ({ article, onBack, onSaved }: { article?: Article; onBack: () =>
                 {importing ? "..." : "Загрузить"}
               </button>
             </div>
-            <p className="text-gray-400 text-[11px]">Подтянем заголовок, обложку и текст страницы. Закрытые страницы соцсетей (Instagram, VK) могут не открыться.</p>
+            <p className="text-gray-400 text-[11px]">Подтянем заголовок, обложку и текст страницы. Закрытые страницы могут не открыться.</p>
           </div>
         )}
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
