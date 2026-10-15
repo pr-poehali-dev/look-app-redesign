@@ -29,6 +29,15 @@ interface Message {
   expires_at?: string | null;
 }
 
+const cacheKey = (chatId: string | number) => `chat_cache_v1_${chatId}`;
+const readCache = (chatId: string | number): Message[] => {
+  try {
+    const raw = localStorage.getItem(cacheKey(chatId));
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch { return []; }
+};
+
 const MAX_VOICE_SEC = 120;
 const MAX_VIDEO_NOTE_SEC = 60;
 
@@ -173,6 +182,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const [showContactPicker, setShowContactPicker] = useState(false);
   const [contactList, setContactList] = useState<{ id: string; name: string; avatar?: string }[]>([]);
   const lastIdRef = useRef(0);
+  const firstLoadRef = useRef(true);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const typingPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastTypingSentRef = useRef(0);
@@ -354,6 +364,18 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       );
       const raw = await res.json();
       const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
+      if (firstLoadRef.current) {
+        firstLoadRef.current = false;
+        const loaded = (data.messages || []) as Message[];
+        const maxId = loaded.reduce((m: number, x: Message) => Math.max(m, x.id), lastIdRef.current);
+        lastIdRef.current = maxId;
+        setMessages((prev) => {
+          const loadedIds = new Set(loaded.map(m => m.id));
+          const pending = prev.filter(m => m.id < 0 && !loadedIds.has(m.id));
+          return [...loaded, ...pending];
+        });
+        return;
+      }
       if (data.messages?.length) {
         const maxId = data.messages.reduce((m: number, x: Message) => Math.max(m, x.id), lastIdRef.current);
         lastIdRef.current = maxId;
@@ -436,8 +458,9 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   }, [chatId, MY_ID, MY_NAME]);
 
   useEffect(() => {
-    setMessages([]);
+    setMessages(readCache(chatId));
     setReads({});
+    firstLoadRef.current = true;
     lastIdRef.current = 0;
     lastSentReadRef.current = 0;
     fetchMessages();
@@ -457,6 +480,14 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       if (readPollRef.current) clearInterval(readPollRef.current);
     };
   }, [chatId, fetchMessages, fetchTyping, fetchReads, fetchSettings]);
+
+  useEffect(() => {
+    if (firstLoadRef.current) return;
+    try {
+      const real = messages.filter(m => m.id > 0).slice(-50);
+      localStorage.setItem(cacheKey(chatId), JSON.stringify(real));
+    } catch { /* ignore */ }
+  }, [messages, chatId]);
 
   useEffect(() => {
     if (!messages.length) return;

@@ -114,7 +114,8 @@ def handler(event: dict, context) -> dict:
         # ── CHAT MODULE ──────────────────────────────────────────────
         if module == 'chat':
             # Лениво удаляем просроченные "исчезающие" сообщения (без крона)
-            cur.execute("DELETE FROM sa_messages WHERE expires_at IS NOT NULL AND expires_at <= NOW()")
+            if method != 'GET' or random.random() < 0.05:
+                cur.execute("DELETE FROM sa_messages WHERE expires_at IS NOT NULL AND expires_at <= NOW()")
 
             if method == 'GET':
                 action = params.get('action', 'messages')
@@ -127,17 +128,14 @@ def handler(event: dict, context) -> dict:
                         return {'statusCode': 400, 'headers': headers,
                                 'body': json.dumps({'error': 'chat_id required'})}
                     cur.execute(
-                        "SELECT cleared_until_id FROM chat_settings WHERE user_id = %s AND chat_id = %s",
-                        (user_id, chat_id)
-                    )
-                    cleared_row = cur.fetchone()
-                    cleared_until = int(cleared_row[0]) if cleared_row and cleared_row[0] else 0
-                    effective_since = max(int(since_id), cleared_until)
-                    cur.execute(
+                        "SELECT id, user_id, user_name, type, content, created_at, expires_at FROM ("
                         "SELECT id, user_id, user_name, type, content, created_at, expires_at "
-                        "FROM sa_messages WHERE chat_id = %s AND id > %s "
-                        "ORDER BY created_at ASC LIMIT 100",
-                        (chat_id, effective_since)
+                        "FROM sa_messages WHERE chat_id = %s "
+                        "AND id > GREATEST(%s::bigint, COALESCE((SELECT cleared_until_id FROM chat_settings WHERE user_id = %s AND chat_id = %s), 0)) "
+                        "AND (expires_at IS NULL OR expires_at > NOW()) "
+                        "ORDER BY created_at DESC LIMIT 100"
+                        ") t ORDER BY created_at ASC",
+                        (chat_id, int(since_id), user_id, chat_id)
                     )
                     rows = cur.fetchall()
                     messages = [
