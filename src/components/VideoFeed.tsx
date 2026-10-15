@@ -293,7 +293,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
         ) : filteredWithCounts.length > 0 ? filteredWithCounts.map((video, i) => {
           const distance = Math.abs(i - activeIndex);
           const preloadLevel: "full" | "meta" | "none" =
-            distance === 0 ? "full" : distance === 1 && !slowNetwork ? "meta" : "none";
+            distance === 0 ? "full" : distance === 1 ? (slowNetwork ? "none" : "full") : distance === 2 && !slowNetwork ? "meta" : "none";
           return (
             <div
               key={`${video.id}-${i}`}
