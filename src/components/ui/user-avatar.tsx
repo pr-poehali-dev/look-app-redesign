@@ -69,6 +69,8 @@ const UserAvatar = ({ src, name, className, imgClassName, alt }: UserAvatarProps
       {showImage ? (
         <img
           src={src}
+          loading="lazy"
+          decoding="async"
           alt={alt || display}
           onError={() => setFailed(true)}
           className={cn("w-full h-full object-cover", imgClassName)}
