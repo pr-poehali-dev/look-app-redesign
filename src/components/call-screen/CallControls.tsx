@@ -61,19 +61,12 @@ const CallControls = ({
           <span className="text-white/60 text-xs">Динамик</span>
         </button>
 
-        {mode === "video" ? (
+        {mode === "video" && (
           <button onClick={switchCamera} className="flex flex-col items-center gap-2">
             <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
               <Icon name="SwitchCamera" size={22} className="text-white" />
             </div>
             <span className="text-white/60 text-xs">Камера</span>
-          </button>
-        ) : (
-          <button className="flex flex-col items-center gap-2 opacity-50">
-            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
-              <Icon name="MoreHorizontal" size={22} className="text-white" />
-            </div>
-            <span className="text-white/60 text-xs">Ещё</span>
           </button>
         )}
       </div>
