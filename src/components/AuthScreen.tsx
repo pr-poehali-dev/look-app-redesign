@@ -3,6 +3,7 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { LegalScreen } from "@/components/SettingsScreen";
 import { useAuth } from "@/context/AuthContext";
+import GuideScreen from "@/components/profile/GuideScreen";
 
 interface AuthScreenProps {
   initialMode?: "login" | "register";
@@ -12,6 +13,7 @@ interface AuthScreenProps {
 const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => {
   const { login, register } = useAuth();
   const [mode, setMode] = useState<"login" | "register">(initialMode);
+  const [showGuide, setShowGuide] = useState(false);
   const [name, setName] = useState("");
   const [handle, setHandle] = useState("");
   const [email, setEmail] = useState("");
@@ -91,6 +93,14 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
     ? email.trim() && password
     : name.trim() && handle.trim() && emailValid && password.length >= 6 && phoneValid && !!birthDate && birthOk && consent;
 
+  if (showGuide) {
+    return (
+      <div className="fixed inset-0 bg-white z-50" style={{ maxWidth: 480, margin: "0 auto" }}>
+        <GuideScreen onBack={() => setShowGuide(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 bg-black overflow-y-auto" style={{ maxWidth: 480, margin: "0 auto" }}>
       <div className="min-h-full flex flex-col">
@@ -117,6 +127,14 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
           Лоок
         </h1>
         <p className="text-lg font-extrabold tracking-tight mt-1 slogan-shimmer">Смотри#Делись#Общайся#Будь собой</p>
+        <button
+          type="button"
+          onClick={() => setShowGuide(true)}
+          className="mt-4 flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 active:scale-[0.98] transition-all text-white font-semibold text-sm backdrop-blur-sm"
+        >
+          <Icon name="BookOpen" size={16} />
+          Инструкция
+        </button>
       </div>
 
       {/* Form */}
