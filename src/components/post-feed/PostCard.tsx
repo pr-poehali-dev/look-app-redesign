@@ -18,6 +18,7 @@ import { copyText } from "@/lib/copyText";
 import ReportButton from "@/components/ReportButton";
 import AddToBoardSheet from "@/components/products/AddToBoardSheet";
 import PostProductStrip from "@/components/products/PostProductStrip";
+import StoryTags from "@/components/StoryTags";
 import ProductDetailSheet from "@/components/products/ProductDetailSheet";
 
 const PostCard = ({ post }: { post: Post }) => {
@@ -216,6 +217,7 @@ const PostCard = ({ post }: { post: Post }) => {
 
         {/* Caption */}
         <div className="px-3 pb-1">
+          <StoryTags handle={post.handle} seriesTitle={post.seriesTitle} brand={post.brand} personalExperience={post.personalExperience} tone="soft" />
           {post.isText ? (
             <p className="text-white text-[16px] leading-relaxed whitespace-pre-wrap break-words py-2">
               <LinkifiedText text={post.caption} />

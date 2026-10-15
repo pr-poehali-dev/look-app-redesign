@@ -3,6 +3,21 @@ import os
 import psycopg2
 
 
+def _row_to_item(r) -> dict:
+    return {
+        'id': r[0], 'url': r[1], 'author': r[2], 'handle': r[3], 'description': r[4],
+        'hashtags': r[5] or '', 'category': r[6], 'type': r[7], 'likes': str(r[8]),
+        'comments': str(r[9]), 'shares': str(r[10]),
+        'avatar': r[1] if r[7] == 'image' else r[12],
+        'created_at': r[11].isoformat() if r[11] else None, 'thumbnail': r[13],
+        'template_id': r[15], 'has_products': bool(r[16]), 'views': int(r[17]),
+        'is_verified': bool(r[18]), 'is_ad': bool(r[19]), 'ad_label': r[20],
+        'age_rating': r[24], 'ad_erid': r[25], 'ad_advertiser': r[26],
+        'images': json.loads(r[27]) if r[27] else [], 'place': r[28],
+        'series_title': r[29], 'brand': r[30], 'personal_experience': bool(r[31]),
+    }
+
+
 def handler(event: dict, context) -> dict:
     """Лента видео с гибридными рекомендациями: контентная + коллаборативная фильтрация, подписки, watch-time сигналы (скорость/глубина просмотра, повторы), популярность, свежесть, элемент случайности против пузыря фильтров, репосты от подписок с пометкой "кто поделился", рекламные публикации, а также фильтрация скрытых авторов и видео "не интересно"."""
     if event.get('httpMethod') == 'OPTIONS':
@@ -44,7 +59,7 @@ def handler(event: dict, context) -> dict:
             f"COALESCE((SELECT COUNT(*) FROM {schema}.video_views vv WHERE vv.video_id = v.id), 0) AS views, "
             f"COALESCE(au.is_verified, FALSE) AS is_verified, "
             f"COALESCE(v.is_ad, FALSE) AS is_ad, v.ad_label, "
-            f"NULL::text AS reposted_by, NULL::text AS reposted_by_avatar, NULL::text AS reposted_by_id, v.age_rating, v.ad_erid, v.ad_advertiser, v.extra_images, v.place "
+            f"NULL::text AS reposted_by, NULL::text AS reposted_by_avatar, NULL::text AS reposted_by_id, v.age_rating, v.ad_erid, v.ad_advertiser, v.extra_images, v.place, v.series_title, v.brand, COALESCE(v.personal_experience, FALSE) "
             f"FROM {schema}.videos v "
             f"LEFT JOIN {schema}.legacy_posts lp ON lp.migrated_to_video_id = v.id "
             f"LEFT JOIN {schema}.legacy_users lu ON lu.id = lp.user_id "
@@ -72,9 +87,32 @@ def handler(event: dict, context) -> dict:
                 'template_id': r[15], 'has_products': bool(r[16]), 'views': int(r[17]),
                 'is_verified': bool(r[18]), 'is_ad': bool(r[19]), 'ad_label': r[20],
                 'age_rating': r[24], 'ad_erid': r[25], 'ad_advertiser': r[26],
-                'images': json.loads(r[27]) if r[27] else [], 'place': r[28],
+                'images': json.loads(r[27]) if r[27] else [], 'place': r[28], 'series_title': r[29], 'brand': r[30], 'personal_experience': bool(r[31]),
             }
             return {'statusCode': 200, 'headers': {'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'video': item})}
+
+        brand_q = (params.get('brand') or '').strip().lstrip('#@')[:80]
+        series_q = (params.get('series') or '').strip()[:100]
+        series_owner = (params.get('series_owner') or '').strip()
+        if brand_q or series_q:
+            extra, extra_args = "", []
+            if brand_q:
+                extra += "AND LOWER(v.brand) = LOWER(%s) "
+                extra_args.append(brand_q)
+            if series_q:
+                extra += "AND v.series_title = %s "
+                extra_args.append(series_q)
+                if series_owner:
+                    extra += "AND v.handle = %s "
+                    extra_args.append(series_owner)
+            order = "ORDER BY v.created_at ASC" if series_q else "ORDER BY v.created_at DESC"
+            cur.execute(
+                base_select.replace("WHERE (v.type = %s OR (%s = 'image' AND v.type = 'text')) AND", "WHERE", 1) + extra + order + " LIMIT 100",
+                tuple(extra_args)
+            )
+            rows = cur.fetchall()
+            return {'statusCode': 200, 'headers': {'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'videos': [_row_to_item(r) for r in rows]})}
 
         # Категория задана и это не персонализированная лента -> простая выдача по дате
         if category and category != 'all':
@@ -101,7 +139,7 @@ def handler(event: dict, context) -> dict:
             f"COALESCE((SELECT COUNT(*) FROM {schema}.video_views vv WHERE vv.video_id = v.id), 0) AS views, "
             f"COALESCE(au.is_verified, FALSE) AS is_verified, "
             f"COALESCE(v.is_ad, FALSE) AS is_ad, v.ad_label, "
-            f"ru.handle AS reposted_by, ru.avatar AS reposted_by_avatar, ru.id AS reposted_by_id, v.age_rating, v.ad_erid, v.ad_advertiser, v.extra_images, v.place "
+            f"ru.handle AS reposted_by, ru.avatar AS reposted_by_avatar, ru.id AS reposted_by_id, v.age_rating, v.ad_erid, v.ad_advertiser, v.extra_images, v.place, v.series_title, v.brand, COALESCE(v.personal_experience, FALSE) "
             f"FROM {schema}.reposts r "
             f"JOIN {schema}.videos v ON v.id = r.original_video_id "
             f"LEFT JOIN {schema}.app_users ru ON ru.id = r.user_id "
@@ -384,6 +422,9 @@ def handler(event: dict, context) -> dict:
             'ad_advertiser': r[26],
             'images': json.loads(r[27]) if r[27] else [],
             'place': r[28],
+            'series_title': r[29],
+            'brand': r[30],
+            'personal_experience': bool(r[31]),
             'reposted_by': r[21],
             'reposted_by_avatar': r[22],
             'city': author_city.get(r[14]),

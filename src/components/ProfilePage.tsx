@@ -11,6 +11,7 @@ import GuideScreen from "./profile/GuideScreen";
 import UserArticlesList from "./profile/UserArticlesList";
 import { useUserArticles } from "@/hooks/useArticles";
 import ReferralsScreen from "./profile/ReferralsScreen";
+import CollabsScreen from "./profile/CollabsScreen";
 import StoryViewerModal, { StoryViewerItem } from "./shared/StoryViewerModal";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
@@ -271,6 +272,7 @@ const ProfilePage = () => {
   const [showArticles, setShowArticles] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [showReferrals, setShowReferrals] = useState(false);
+  const [showCollabs, setShowCollabs] = useState(false);
   const { userVideos: stories, removeMedia, addMedia, refreshMedia } = useUserMedia();
   const { user, token, logout, updateUser } = useAuth();
   const { articles: myArticles, loading: myArticlesLoading } = useUserArticles(showArticles ? null : user?.id);
@@ -389,6 +391,7 @@ const ProfilePage = () => {
   if (showGuide) return <GuideScreen onBack={() => setShowGuide(false)} />;
   if (showBoards) return <BoardsScreen onBack={() => setShowBoards(false)} />;
   if (showReferrals) return <ReferralsScreen onBack={() => setShowReferrals(false)} />;
+  if (showCollabs) return <CollabsScreen onBack={() => setShowCollabs(false)} />;
 
   return (
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
@@ -515,7 +518,7 @@ const ProfilePage = () => {
       </div>
 
       {/* Аналитика + Магазин + Каталог + Доски + Партнёрка */}
-      <div className="grid grid-cols-4 md:grid-cols-7 gap-1.5 px-4 pb-4 md:px-3 md:pb-3">
+      <div className="grid grid-cols-4 md:grid-cols-8 gap-1.5 px-4 pb-4 md:px-3 md:pb-3">
         <button
           onClick={() => setShowAnalytics(true)}
           className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
@@ -550,6 +553,13 @@ const ProfilePage = () => {
         >
           <Icon name="FileText" size={15} />
           Статьи
+        </button>
+        <button
+          onClick={() => setShowCollabs(true)}
+          className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
+        >
+          <Icon name="Handshake" fallback="Gift" size={15} />
+          Бренды
         </button>
         <button
           onClick={() => setShowReferrals(true)}

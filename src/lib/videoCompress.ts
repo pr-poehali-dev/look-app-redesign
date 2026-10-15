@@ -243,6 +243,10 @@ export interface DirectUploadMeta {
   adAdvertiser?: string;
   extraImages?: string[];
   place?: string;
+  seriesTitle?: string;
+  brand?: string;
+  personalExperience?: boolean;
+  collabId?: number | null;
 }
 
 const isSlowConn = (): boolean => {
@@ -407,6 +411,10 @@ export async function uploadFileDirect(
       ad_advertiser: meta.isAd ? (meta.adAdvertiser || "") : "",
       extra_images: meta.extraImages || [],
       place: meta.place || "",
+      series_title: meta.seriesTitle || "",
+      brand: meta.brand || "",
+      personal_experience: !!meta.personalExperience,
+      collab_id: meta.collabId || null,
     },
   });
   const finalUrl = finish.url as string | undefined;

@@ -35,6 +35,9 @@ export interface Post {
   images?: string[];
   adErid?: string | null;
   adAdvertiser?: string | null;
+  seriesTitle?: string | null;
+  brand?: string | null;
+  personalExperience?: boolean;
   repostedBy?: string | null;
   repostedByAvatar?: string | null;
   article?: Article;

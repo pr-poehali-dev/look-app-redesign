@@ -1,5 +1,6 @@
 import Icon from "@/components/ui/icon";
 import PostExtras from "@/components/camera/PostExtras";
+import PostStoryFields from "@/components/camera/PostStoryFields";
 
 export type AgeRating = "0+" | "6+" | "12+" | "16+" | "18+";
 
@@ -9,9 +10,16 @@ export interface PublishCompliance {
   adAdvertiser: string;
   extraImages: string[];
   place: string;
+  seriesTitle: string;
+  brand: string;
+  personalExperience: boolean;
+  collabId: number | null;
 }
 
-export const DEFAULT_COMPLIANCE: PublishCompliance = { ageRating: "12+", adErid: "", adAdvertiser: "", extraImages: [], place: "" };
+export const DEFAULT_COMPLIANCE: PublishCompliance = {
+  ageRating: "12+", adErid: "", adAdvertiser: "", extraImages: [], place: "",
+  seriesTitle: "", brand: "", personalExperience: false, collabId: null,
+};
 
 const AGES: AgeRating[] = ["0+", "6+", "12+", "16+", "18+"];
 
@@ -30,6 +38,7 @@ const ComplianceFields = ({ isAd, setIsAd, value, onChange, isImage = true }: Pr
       onChange={(e) => onChange({ ...value, extraImages: e.extraImages, place: e.place })}
       allowImages={isImage}
     />
+    <PostStoryFields value={value} onChange={onChange} />
     <div>
       <p className="text-white/60 text-xs font-semibold uppercase mb-2">Возрастная маркировка</p>
       <div className="flex gap-1.5">

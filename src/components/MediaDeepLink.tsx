@@ -40,6 +40,9 @@ export const toVideo = (v: any): VideoData => ({
   adErid: v.ad_erid || null,
   adAdvertiser: v.ad_advertiser || null,
   place: v.place || null,
+  seriesTitle: v.series_title || null,
+  brand: v.brand || null,
+  personalExperience: !!v.personal_experience,
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,6 +73,9 @@ export const toPost = (v: any): Post => {
     adAdvertiser: v.ad_advertiser || null,
     images: Array.isArray(v.images) ? v.images : [],
     location: v.place || undefined,
+    seriesTitle: v.series_title || null,
+    brand: v.brand || null,
+    personalExperience: !!v.personal_experience,
   };
 };
 

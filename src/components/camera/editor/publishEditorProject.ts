@@ -155,6 +155,10 @@ export const publishEditorProject = async ({
         adAdvertiser: compliance.adAdvertiser,
         extraImages: compliance.extraImages,
         place: compliance.place,
+        seriesTitle: compliance.seriesTitle,
+        brand: compliance.brand,
+        personalExperience: compliance.personalExperience,
+        collabId: compliance.collabId,
       },
       (p) => setPublishProgress({ stage: "upload", percent: p }),
     );

@@ -161,6 +161,9 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
           adErid: v.ad_erid || null,
           adAdvertiser: v.ad_advertiser || null,
           place: v.place || null,
+          seriesTitle: v.series_title || null,
+          brand: v.brand || null,
+          personalExperience: !!v.personal_experience,
           repostedBy: v.reposted_by || null,
         });
         }));

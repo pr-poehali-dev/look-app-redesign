@@ -1,0 +1,4 @@
+{"tests": [
+  {"name": "CORS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+  {"name": "Requires login", "method": "GET", "path": "/?action=incoming", "expectedStatus": 401}
+]}

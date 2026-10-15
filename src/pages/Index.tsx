@@ -13,6 +13,7 @@ const MessagesScreen = lazy(() => import("@/components/MessagesScreen"));
 const UserProfileModal = lazy(() => import("@/components/UserProfileModal"));
 const SupportScreen = lazy(() => import("@/components/SettingsScreen").then(m => ({ default: m.SupportScreen })));
 const LegalScreen = lazy(() => import("@/components/SettingsScreen").then(m => ({ default: m.LegalScreen })));
+const StoryCollectionScreen = lazy(() => import("@/components/StoryCollectionScreen"));
 const ProductDetailSheet = lazy(() => import("@/components/products/ProductDetailSheet"));
 import { useUnread } from "@/context/UnreadContext";
 import { useAuth } from "@/context/AuthContext";
@@ -75,6 +76,7 @@ const Index = () => {
   const [pendingCommunityId, setPendingCommunityId] = useState<string | null>(initialCommunityFromUrl);
   const [pendingKind, setPendingKind] = useState<string>("community");
   const [profileHandle, setProfileHandle] = useState<string | null>(null);
+  const [collection, setCollection] = useState<{ brand?: string; series?: string; owner?: string } | null>(null);
   const [pendingDirectDraft, setPendingDirectDraft] = useState<string | null>(null);
   const [linkedProduct, setLinkedProduct] = useState<Product | null>(null);
   const [profileTab, setProfileTab] = useState<"media" | "shop">("media");
@@ -101,7 +103,7 @@ const Index = () => {
   // «Глубокий» экран, который закрывается кнопкой «Назад».
   // Между вкладками переключаемся нижним меню — их сюда НЕ включаем.
   const canGoBack =
-    showLive || showCamera || !!profileHandle;
+    showLive || showCamera || !!profileHandle || !!collection;
 
   // Видимая кнопка «Назад» — только для полноэкранных оверлеев.
   // Камеру исключаем: у неё уже есть свои кнопки закрытия/назад в шапке,
@@ -112,6 +114,7 @@ const Index = () => {
   const goBack = () => {
     if (showLive) { setShowLive(false); return; }
     if (showCamera) { setShowCamera(false); return; }
+    if (collection) { setCollection(null); return; }
     if (profileHandle) { setProfileHandle(null); return; }
   };
 
@@ -154,14 +157,26 @@ const Index = () => {
       if (detail?.handle) setPendingDirectHandle(detail.handle);
       setActiveTab("messages");
     };
+    const onBrand = (e: Event) => {
+      const brand = (e as CustomEvent).detail?.brand as string | undefined;
+      if (brand) setCollection({ brand });
+    };
+    const onSeries = (e: Event) => {
+      const d = (e as CustomEvent).detail as { series?: string; owner?: string };
+      if (d?.series) setCollection({ series: d.series, owner: d.owner });
+    };
     const onUseTemplate = () => setShowCamera(true);
     window.addEventListener("open-user-profile", onOpen);
     window.addEventListener("open-direct-message", onMessage);
     window.addEventListener("use-template", onUseTemplate);
+    window.addEventListener("open-brand", onBrand);
+    window.addEventListener("open-series", onSeries);
     return () => {
       window.removeEventListener("open-user-profile", onOpen);
       window.removeEventListener("open-direct-message", onMessage);
       window.removeEventListener("use-template", onUseTemplate);
+      window.removeEventListener("open-brand", onBrand);
+      window.removeEventListener("open-series", onSeries);
     };
   }, []);
 
@@ -549,6 +564,9 @@ const Index = () => {
         </div>
       </div>
       {linkedProduct && <Suspense fallback={null}><ProductDetailSheet product={linkedProduct} onClose={() => setLinkedProduct(null)} /></Suspense>}
+      {collection && (
+        <Suspense fallback={null}><StoryCollectionScreen collection={collection} onClose={() => setCollection(null)} /></Suspense>
+      )}
       {profileHandle && (
         <Suspense fallback={null}><UserProfileModal key={`${profileHandle}-${profileTab}`} handle={profileHandle} initialTab={profileTab} onClose={() => setProfileHandle(null)} /></Suspense>
       )}

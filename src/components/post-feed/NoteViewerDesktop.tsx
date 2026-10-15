@@ -16,6 +16,7 @@ import { copyText } from "@/lib/copyText";
 import ReportButton from "@/components/ReportButton";
 import AddToBoardSheet from "@/components/products/AddToBoardSheet";
 import PostProductStrip from "@/components/products/PostProductStrip";
+import StoryTags from "@/components/StoryTags";
 
 const CommentRow = ({
   c,
@@ -210,6 +211,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
           </div>
 
           <div className="flex-1 overflow-y-auto px-5 py-4" style={{ scrollbarWidth: "thin" }}>
+            <StoryTags handle={post.handle} seriesTitle={post.seriesTitle} brand={post.brand} personalExperience={post.personalExperience} tone="soft" />
             {post.caption && <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words"><LinkifiedText text={post.caption} /></p>}
             {post.hashtags?.length > 0 && (
               <p className="mt-2 text-[14px] nv-tag break-words">

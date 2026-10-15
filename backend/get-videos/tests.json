@@ -23,6 +23,18 @@
       "method": "GET",
       "path": "/?type=video&category=music",
       "expectedStatus": 200
+    },
+    {
+      "name": "GET by brand",
+      "method": "GET",
+      "path": "/?brand=test",
+      "expectedStatus": 200
+    },
+    {
+      "name": "GET by series",
+      "method": "GET",
+      "path": "/?series=test&series_owner=u1",
+      "expectedStatus": 200
     }
   ]
 }

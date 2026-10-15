@@ -1,6 +1,7 @@
 import { Dispatch, SetStateAction } from "react";
 import Icon from "@/components/ui/icon";
 import LinkifiedText from "@/components/ui/linkified-text";
+import StoryTags from "@/components/StoryTags";
 import type { VideoData } from "../VideoCard";
 
 interface VideoInfoOverlayProps {
@@ -37,6 +38,7 @@ const VideoInfoOverlay = ({
           </span>
         </button>
       )}
+      <StoryTags handle={video.handle} seriesTitle={video.seriesTitle} brand={video.brand} personalExperience={video.personalExperience} />
       <div className="flex items-center gap-2 mb-3">
         <button
           onClick={() => window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: video.handle } }))}

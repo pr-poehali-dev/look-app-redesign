@@ -202,13 +202,17 @@ def handler(event: dict, context) -> dict:
                 if is_ad and not ad_erid:
                     return {'statusCode': 400, 'headers': _cors(),
                             'body': json.dumps({'error': 'Для рекламы нужен токен ERID (маркировка по 38-ФЗ)'})}
+                series_title = (meta.get('series_title') or '').strip()[:100] or None
+                brand = (meta.get('brand') or '').strip().lstrip('#@')[:80] or None
+                personal_experience = bool(meta.get('personal_experience'))
+                collab_id = meta.get('collab_id')
                 ad_label = (meta.get('ad_label') or '').strip()[:60] or ('Реклама' if is_ad else None)
                 cur.execute("SELECT word FROM moderation_words")
                 low = f"{meta.get('description', '')} {meta.get('hashtags', '')}".lower().replace('ё', 'е')
                 flagged = any(w[0].lower().replace('ё', 'е') in low for w in cur.fetchall())
                 cur.execute(
-                    "INSERT INTO videos (url, thumbnail, author, handle, description, hashtags, category, type, user_id, template_id, is_ad, ad_label, hidden, hidden_reason, age_rating, ad_erid, ad_advertiser, extra_images, place) "
-                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+                    "INSERT INTO videos (url, thumbnail, author, handle, description, hashtags, category, type, user_id, template_id, is_ad, ad_label, hidden, hidden_reason, age_rating, ad_erid, ad_advertiser, extra_images, place, series_title, brand, personal_experience) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
                     (cdn_url, thumb_url,
                      meta.get('author', 'Я'), meta.get('handle', 'user'),
                      meta.get('description', ''), meta.get('hashtags', ''),
@@ -216,9 +220,14 @@ def handler(event: dict, context) -> dict:
                      meta.get('user_id', 'anonymous'), meta.get('template_id'),
                      is_ad, ad_label, flagged, 'auto_words' if flagged else None,
                      age_rating, ad_erid if is_ad else None, ad_advertiser if is_ad else None,
-                     extra_images, place),
+                     extra_images, place, series_title, brand, personal_experience),
                 )
                 video_id = cur.fetchone()[0]
+                if collab_id and str(meta.get('user_id', '')) != 'anonymous':
+                    cur.execute(
+                        "UPDATE brand_collabs SET status = 'published', video_id = %s, updated_at = NOW() "
+                        "WHERE id = %s AND author_user_id = %s AND status = 'accepted'",
+                        (video_id, int(collab_id), str(meta.get('user_id'))))
                 if flagged:
                     cur.execute(
                         "INSERT INTO reports (target_type, target_id, reason, comment, reporter_id, reporter_name, status) "

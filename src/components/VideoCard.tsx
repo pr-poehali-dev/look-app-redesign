@@ -45,6 +45,9 @@ export interface VideoData {
   adErid?: string | null;
   adAdvertiser?: string | null;
   place?: string | null;
+  seriesTitle?: string | null;
+  brand?: string | null;
+  personalExperience?: boolean;
   repostedBy?: string | null;
 }
 
