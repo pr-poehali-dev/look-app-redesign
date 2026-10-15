@@ -259,12 +259,34 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let raf = 0;
+    const commit = () => {
+      const h = container.clientHeight || 1;
+      const index = Math.round(container.scrollTop / h);
+      setActiveIndex((prev) => (prev === index ? prev : index));
+    };
     const handleScroll = () => {
-      const index = Math.round(container.scrollTop / container.clientHeight);
-      setActiveIndex(index);
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const h = container.clientHeight || 1;
+        const pos = container.scrollTop / h;
+        if (Math.abs(pos - Math.round(pos)) < 0.01) {
+          if (timer) { clearTimeout(timer); timer = null; }
+          commit();
+          return;
+        }
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => { timer = null; commit(); }, 90);
+      });
     };
     container.addEventListener("scroll", handleScroll, { passive: true });
-    return () => container.removeEventListener("scroll", handleScroll);
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+      if (timer) clearTimeout(timer);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, []);
 
   const scrollByDir = (dir: 1 | -1) => {
@@ -284,6 +306,9 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
           background: "var(--look-bg)",
           WebkitOverflowScrolling: "touch",
           touchAction: "pan-y",
+          overflowAnchor: "none",
+          willChange: "scroll-position",
+          transform: "translateZ(0)",
         }}
       >
         {!dbLoaded ? (
