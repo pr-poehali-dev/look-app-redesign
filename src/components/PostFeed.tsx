@@ -384,6 +384,10 @@ const PostFeed = () => {
         <div className="absolute inset-0">
           <ArticlesFeed topPad={headerH} />
         </div>
+      ) : categoryId === "tutorial" ? (
+        <div className="absolute inset-0">
+          <ArticlesFeed topPad={headerH} onlyTutorials />
+        </div>
       ) : viewMode === "masonry" ? (
         <div className="absolute inset-0">
           <MasonryFeed posts={categoryPosts} loading={loading} topPad={headerH} />

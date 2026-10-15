@@ -4,8 +4,9 @@ import { useArticles } from "@/hooks/useArticles";
 import ArticleCard from "@/components/post-feed/ArticleCard";
 import { Reader } from "@/components/profile/ArticlesScreen";
 
-const ArticlesFeed = ({ topPad }: { topPad: number }) => {
-  const { articles, loading } = useArticles("feed");
+const ArticlesFeed = ({ topPad, onlyTutorials = false }: { topPad: number; onlyTutorials?: boolean }) => {
+  const { articles: allArticles, loading } = useArticles("feed");
+  const articles = onlyTutorials ? allArticles.filter((a) => a.kind === "tutorial") : allArticles;
   const [openedId, setOpenedId] = useState<number | null>(null);
 
   return (
@@ -18,7 +19,7 @@ const ArticlesFeed = ({ topPad }: { topPad: number }) => {
         ) : articles.length === 0 ? (
           <div className="flex flex-col items-center py-20 gap-3 text-center">
             <Icon name="FileText" size={48} className="text-white/30" />
-            <p className="text-white/50 text-sm">Пока никто не опубликовал статьи. Напиши первую в профиле, раздел «Статьи».</p>
+            <p className="text-white/50 text-sm">{onlyTutorials ? "Пока нет туториалов. Создай первый в профиле, раздел «Статьи»." : "Пока никто не опубликовал статьи. Напиши первую в профиле, раздел «Статьи»."}</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
