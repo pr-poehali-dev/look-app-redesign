@@ -1,5 +1,6 @@
 import json
 import os
+import urllib.error
 import urllib.request
 
 APP_ID = 'db483c9f-ad96-40c5-ae85-a86e3f71b13e'
@@ -29,8 +30,13 @@ def send_push(user_ids, title, message, path='/', extra=None):
         method='POST',
     )
     try:
-        res = json.loads(urllib.request.urlopen(req, timeout=3).read() or b'{}')
+        raw = urllib.request.urlopen(req, timeout=4).read() or b'{}'
+        res = json.loads(raw)
+        print(f'onesignal ok ids={ids} resp={str(res)[:300]}')
         return int(res.get('recipients') or 0) if res.get('id') else 0
+    except urllib.error.HTTPError as e:
+        print(f'onesignal http {e.code} ids={ids} body={e.read()[:400]}')
+        return 0
     except Exception as e:
         print(f'onesignal error: {e}')
         return 0
