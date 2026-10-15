@@ -421,12 +421,14 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
             muted={muted}
             autoPlay={isActive}
             playsInline
-            preload={preloadLevel === "none" ? "none" : "metadata"}
+            preload={preloadLevel === "none" ? "none" : preloadLevel === "full" ? "auto" : "metadata"}
             onClick={handleVideoClick}
             x-webkit-airplay="allow"
             style={{
               touchAction: "manipulation",
               backgroundColor: "#000",
+              transform: "translateZ(0)",
+              backfaceVisibility: "hidden",
               ...(video.thumbnail ? { backgroundImage: `url(${video.thumbnail})`, backgroundSize: "cover", backgroundPosition: "center" } : {}),
             }}
           />

@@ -108,8 +108,13 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
       };
     });
 
+  const lastLoadKeyRef = useRef<string | null>(null);
   useEffect(() => {
-    setDbLoaded(false);
+    const loadKey = String(activeCategory);
+    const categoryChanged = lastLoadKeyRef.current !== null && lastLoadKeyRef.current !== loadKey;
+    const firstLoad = lastLoadKeyRef.current === null;
+    lastLoadKeyRef.current = loadKey;
+    if (firstLoad || categoryChanged) setDbLoaded(false);
     const isSubsCategory = activeCategory === "subs";
     const isNewCategory = activeCategory === "new";
     const uidParam = user?.id ? `&user_id=${encodeURIComponent(String(user.id))}` : "";
@@ -176,7 +181,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
         const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
         const list = data.videos || [];
         writeFeedCache(cacheKey, list.slice(0, 40));
-        applyVideos(list, !hadCache);
+        applyVideos(list, !hadCache && (firstLoad || categoryChanged));
       })
       .catch(e => console.error('VideoFeed fetch error:', e))
       .finally(() => setDbLoaded(true));
