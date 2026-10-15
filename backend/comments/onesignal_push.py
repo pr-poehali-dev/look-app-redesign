@@ -7,11 +7,30 @@ APP_ID = 'db483c9f-ad96-40c5-ae85-a86e3f71b13e'
 SITE = 'https://look.com.ru'
 
 
+def _log(ids, title, status, response):
+    dsn = os.environ.get('DATABASE_URL')
+    if not dsn:
+        return
+    try:
+        import psycopg2
+        c = psycopg2.connect(dsn)
+        c.autocommit = True
+        c.cursor().execute(
+            "INSERT INTO push_log (user_ids, title, status, response) VALUES (%s, %s, %s, %s)",
+            (','.join(ids), str(title)[:200], status, str(response)[:1500]))
+        c.close()
+    except Exception as e:
+        print(f'push_log error: {e}')
+
+
 def send_push(user_ids, title, message, path='/', extra=None):
     """Пуш через OneSignal по внешнему ID пользователя. Ошибки не прерывают основную логику."""
     key = os.environ.get('ONESIGNAL_REST_API_KEY')
     ids = [str(u) for u in dict.fromkeys(user_ids) if u and str(u) != 'anonymous'][:200]
-    if not key or not ids:
+    if not key:
+        _log(ids, title, 'no_key', '')
+        return 0
+    if not ids:
         return 0
     payload = {
         'app_id': APP_ID,
@@ -32,11 +51,11 @@ def send_push(user_ids, title, message, path='/', extra=None):
     try:
         raw = urllib.request.urlopen(req, timeout=4).read() or b'{}'
         res = json.loads(raw)
-        print(f'onesignal ok ids={ids} resp={str(res)[:300]}')
+        _log(ids, title, 'ok', res)
         return int(res.get('recipients') or 0) if res.get('id') else 0
     except urllib.error.HTTPError as e:
-        print(f'onesignal http {e.code} ids={ids} body={e.read()[:400]}')
+        _log(ids, title, f'http_{e.code}', e.read())
         return 0
     except Exception as e:
-        print(f'onesignal error: {e}')
+        _log(ids, title, 'error', e)
         return 0
