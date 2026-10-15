@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { isSlowNetwork } from "@/lib/network";
 
 const GET_VIDEOS_URL = "https://functions.poehali.dev/f58115ec-de09-405d-a2db-08fe1cd958e1";
 const GEN_THUMBNAIL_URL = "https://functions.poehali.dev/be575f5c-eb60-4522-ad3e-1b6527c85abb";
@@ -33,6 +34,7 @@ const ThumbnailWorker = () => {
   useEffect(() => {
     if (doneRef.current) return;
     doneRef.current = true;
+    if (isSlowNetwork()) return;
 
     const run = async () => {
       // Получаем все видео без thumbnail

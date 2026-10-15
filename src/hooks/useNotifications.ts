@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { pollMs } from "@/lib/network";
 import { useAuth } from "@/context/AuthContext";
 
 const NOTIFICATIONS_URL = "https://functions.poehali.dev/8ae7d03e-5a18-4ff2-87f1-69f512fbacc3";
@@ -36,7 +37,7 @@ export const useUnreadNotifications = () => {
   useEffect(() => {
     if (!user?.id) { setCount(0); return; }
     refresh();
-    intervalRef.current = setInterval(refresh, 20000);
+    intervalRef.current = setInterval(refresh, pollMs(20000));
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [user?.id, refresh]);
 

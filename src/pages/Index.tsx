@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
+import { pollMs } from "@/lib/network";
 import Icon from "@/components/ui/icon";
 import VideoFeed, { CATEGORIES } from "@/components/VideoFeed";
 const VideoGrid = lazy(() => import("@/components/VideoGrid"));
@@ -117,7 +118,7 @@ const Index = () => {
       }).catch(() => {});
     };
     ping();
-    const id = setInterval(ping, 30000);
+    const id = setInterval(ping, pollMs(30000));
     document.addEventListener("visibilitychange", ping);
     return () => { clearInterval(id); document.removeEventListener("visibilitychange", ping); };
   }, [user?.id]);

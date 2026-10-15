@@ -1,4 +1,5 @@
 import { canQueue, outboxAdd, outboxFlush, outboxForChat } from "@/lib/chatOutbox";
+import { pollMs } from "@/lib/network";
 import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { formatSeen } from "@/utils/formatSeen";
@@ -468,11 +469,11 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       if (typeof document !== "undefined" && document.hidden) return;
       fn();
     };
-    pollRef.current = setInterval(() => safeRun(fetchMessages), 4000);
+    pollRef.current = setInterval(() => safeRun(fetchMessages), pollMs(4000));
     fetchTyping();
-    typingPollRef.current = setInterval(() => safeRun(fetchTyping), 6000);
+    typingPollRef.current = setInterval(() => safeRun(fetchTyping), pollMs(6000));
     fetchReads();
-    readPollRef.current = setInterval(() => safeRun(fetchReads), 6000);
+    readPollRef.current = setInterval(() => safeRun(fetchReads), pollMs(6000));
     fetchSettings();
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
@@ -522,7 +523,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       } catch (e) { void e; }
     };
     load();
-    const t = setInterval(load, 15000);
+    const t = setInterval(load, pollMs(15000));
     return () => clearInterval(t);
   }, [chatId, chat.type, MY_ID, MY_NAME]);
 

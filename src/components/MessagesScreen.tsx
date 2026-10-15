@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { pollMs } from "@/lib/network";
 import Icon from "@/components/ui/icon";
 import { formatSeen } from "@/utils/formatSeen";
 import UserAvatar from "@/components/ui/user-avatar";
@@ -114,7 +115,7 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
     if (!user) return;
     const id = setInterval(() => {
       if (document.visibilityState === "visible" && !openChat) loadChats();
-    }, 5000);
+    }, pollMs(5000));
     return () => clearInterval(id);
   }, [user, openChat]);
 
