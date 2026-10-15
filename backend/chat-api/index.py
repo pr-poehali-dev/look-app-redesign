@@ -9,6 +9,7 @@ import psycopg2
 import boto3
 import requests
 import push as push_mod
+from onesignal_push import send_push
 
 _MSK_TZ = datetime.timezone(datetime.timedelta(hours=3))
 
@@ -691,6 +692,7 @@ def handler(event: dict, context) -> dict:
                         (user_id, client_msg_id)
                     )
                     row = cur.fetchone()
+                is_new_msg = False
                 if not row:
                     cur.execute(
                         "INSERT INTO sa_messages (chat_id, user_id, user_name, type, content, expires_at, client_msg_id) "
@@ -700,6 +702,7 @@ def handler(event: dict, context) -> dict:
                         (chat_id, user_id, user_name, msg_type, content, expires_at, client_msg_id)
                     )
                     row = cur.fetchone()
+                    is_new_msg = bool(row)
                     if not row:
                         cur.execute(
                             "SELECT id, created_at FROM sa_messages WHERE user_id = %s AND client_msg_id = %s",
@@ -707,6 +710,22 @@ def handler(event: dict, context) -> dict:
                         )
                         row = cur.fetchone()
                 conn.commit()
+                if is_new_msg and msg_type != 'system':
+                    try:
+                        cur.execute(
+                            "SELECT m.user_id FROM sa_chat_members m "
+                            "LEFT JOIN chat_settings s ON s.user_id = m.user_id AND s.chat_id = m.chat_id "
+                            "WHERE m.chat_id = %s AND m.user_id <> %s AND COALESCE(s.muted, FALSE) = FALSE "
+                            "AND COALESCE(s.blocked, FALSE) = FALSE LIMIT 200",
+                            (chat_id, user_id)
+                        )
+                        targets = [r[0] for r in cur.fetchall()]
+                        conn.commit()
+                        text_preview = str(content)[:100] if msg_type == 'text' else 'Вложение'
+                        send_push(targets, user_name or 'Новое сообщение', text_preview, '/?tab=messages')
+                    except Exception as e:
+                        conn.rollback()
+                        print(f'message push error: {e}')
                 return {'statusCode': 200, 'headers': headers,
                         'body': json.dumps({'id': row[0], 'time': _fmt_time(row[1]), 'ok': True})}
 

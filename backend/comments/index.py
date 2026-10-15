@@ -1,6 +1,7 @@
 import json
 import os
 import psycopg2
+from onesignal_push import send_push
 
 CORS = {
     'Access-Control-Allow-Origin': '*',
@@ -87,6 +88,33 @@ def handler(event: dict, context) -> dict:
                 )
                 count = cur.fetchone()[0]
                 conn.commit()
+                if liked:
+                    try:
+                        owner = None
+                        if target_type in ('video', 'post') and target_id.isdigit():
+                            vid = int(target_id) - (10000 if target_type == 'video' else 0)
+                            cur.execute(f"SELECT user_id FROM {schema}.videos WHERE id = %s", (vid,))
+                            r = cur.fetchone()
+                            owner = r[0] if r else None
+                        elif target_type == 'article' and target_id.isdigit():
+                            cur.execute(f"SELECT owner_user_id FROM {schema}.articles WHERE id = %s", (int(target_id),))
+                            r = cur.fetchone()
+                            owner = r[0] if r else None
+                        if owner and str(owner) != user_id and owner != 'anonymous':
+                            cur.execute(
+                                f"SELECT 1 FROM {schema}.notifications WHERE user_id = %s AND type = 'like' "
+                                f"AND entity_type = %s AND entity_id = %s AND created_at > NOW() - INTERVAL '1 hour' LIMIT 1",
+                                (owner, target_type, target_id))
+                            if not cur.fetchone():
+                                cur.execute(
+                                    f"INSERT INTO {schema}.notifications (user_id, type, title, message, entity_type, entity_id) "
+                                    f"VALUES (%s, 'like', %s, %s, %s, %s)",
+                                    (owner, 'Новый лайк', 'Вашу публикацию оценили', target_type, target_id))
+                                conn.commit()
+                                send_push([owner], 'Новый лайк', 'Вашу публикацию оценили')
+                    except Exception as e:
+                        conn.rollback()
+                        print(f'like notify error: {e}')
                 return _resp(200, {'count': count, 'liked': liked})
 
             return _resp(405, {'error': 'Method not allowed'})
@@ -275,6 +303,8 @@ def handler(event: dict, context) -> dict:
                         (uid_to, ntype, title, snippet, target_type, target_id))
                 if notify:
                     conn.commit()
+                    for uid_to, ntype, title in notify:
+                        send_push([uid_to], title, snippet)
             except Exception as e:
                 conn.rollback()
                 print(f'notify error: {e}')

@@ -1,6 +1,7 @@
 import json
 import os
 import psycopg2
+from onesignal_push import send_push
 from datetime import datetime, timezone
 from urllib.parse import unquote
 
@@ -11,6 +12,7 @@ def _notify(cur, user_ids, title, message, stream_id):
             "INSERT INTO notifications (user_id, type, title, message, entity_type, entity_id) "
             "VALUES (%s, 'stream', %s, %s, 'stream', %s)",
             (uid, title, message, str(stream_id)))
+    send_push(user_ids, title, message)
 
 
 def _followers(cur, author_id):

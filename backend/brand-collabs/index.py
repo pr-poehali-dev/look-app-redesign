@@ -1,6 +1,7 @@
 import json
 import os
 import psycopg2
+from onesignal_push import send_push
 
 CORS = {
     'Access-Control-Allow-Origin': '*',
@@ -100,6 +101,7 @@ def handler(event: dict, context) -> dict:
                 f"VALUES (%s, 'collab', %s, %s, 'collab', %s)",
                 (author_id, f'Предложение от бренда {brand_name}', f'Товар на обзор: {title}', str(cid)))
             conn.commit()
+            send_push([author_id], f'Предложение от бренда {brand_name}', f'Товар на обзор: {title}')
             return _resp(200, {'ok': True, 'id': cid})
 
         if action == 'respond' and method == 'POST':
@@ -122,6 +124,7 @@ def handler(event: dict, context) -> dict:
                 f"VALUES (%s, 'collab', %s, %s, 'collab', %s)",
                 (r[0], f'Автор {word} предложение', f'{r[1]}: {r[2]}', str(cid)))
             conn.commit()
+            send_push([r[0]], f'Автор {word} предложение', f'{r[1]}: {r[2]}')
             return _resp(200, {'ok': True, 'status': new_status})
 
         if action == 'cancel' and method == 'POST':
