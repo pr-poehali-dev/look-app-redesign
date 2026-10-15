@@ -4,6 +4,7 @@ import uuid
 import base64
 import boto3
 import psycopg2
+from concurrent.futures import ThreadPoolExecutor
 
 
 def _cors() -> dict:
@@ -26,6 +27,88 @@ def _s3():
 
 
 BUCKET = 'files'
+MIN_PART = 5 * 1024 * 1024
+
+
+def _read_part(s3, upload_id: str, n: int) -> bytes:
+    return s3.get_object(Bucket=BUCKET, Key=f"_chunks/{upload_id}/part-{n:05d}")['Body'].read()
+
+
+def _merge_simple(s3, upload_id: str, total_parts: int, key: str, content_type: str) -> None:
+    combined = bytearray()
+    for n in range(1, total_parts + 1):
+        combined.extend(_read_part(s3, upload_id, n))
+    s3.put_object(Bucket=BUCKET, Key=key, Body=bytes(combined), ContentType=content_type)
+
+
+def _merge_parts(s3, upload_id: str, total_parts: int, key: str, content_type: str) -> None:
+    """Склейка кусков: большие файлы собираются через multipart параллельно,
+    без загрузки всего файла в память. При любой ошибке — обычная склейка."""
+    if total_parts <= 3:
+        _merge_simple(s3, upload_id, total_parts, key, content_type)
+        return
+    mp_id = None
+    try:
+        sizes = {}
+        token = None
+        while True:
+            kw = {'Bucket': BUCKET, 'Prefix': f"_chunks/{upload_id}/"}
+            if token:
+                kw['ContinuationToken'] = token
+            r = s3.list_objects_v2(**kw)
+            for o in r.get('Contents', []):
+                sizes[int(o['Key'].rsplit('-', 1)[1])] = o['Size']
+            if not r.get('IsTruncated'):
+                break
+            token = r.get('NextContinuationToken')
+        if any(n not in sizes for n in range(1, total_parts + 1)):
+            raise RuntimeError('missing parts')
+
+        groups, cur, cur_size = [], [], 0
+        for n in range(1, total_parts + 1):
+            cur.append(n)
+            cur_size += sizes[n]
+            if cur_size >= MIN_PART:
+                groups.append(cur)
+                cur, cur_size = [], 0
+        if cur:
+            if groups:
+                groups[-1].extend(cur)
+            else:
+                groups.append(cur)
+
+        mp_id = s3.create_multipart_upload(Bucket=BUCKET, Key=key, ContentType=content_type)['UploadId']
+
+        def upload_group(idx: int):
+            data = b''.join(_read_part(s3, upload_id, n) for n in groups[idx])
+            r = s3.upload_part(Bucket=BUCKET, Key=key, UploadId=mp_id,
+                               PartNumber=idx + 1, Body=data)
+            return {'ETag': r['ETag'], 'PartNumber': idx + 1}
+
+        with ThreadPoolExecutor(max_workers=4) as ex:
+            done = list(ex.map(upload_group, range(len(groups))))
+        s3.complete_multipart_upload(Bucket=BUCKET, Key=key, UploadId=mp_id,
+                                     MultipartUpload={'Parts': done})
+    except Exception:
+        if mp_id:
+            try:
+                s3.abort_multipart_upload(Bucket=BUCKET, Key=key, UploadId=mp_id)
+            except Exception:
+                pass
+        _merge_simple(s3, upload_id, total_parts, key, content_type)
+
+
+def _cleanup_parts(s3, upload_id: str, total_parts: int) -> None:
+    keys = [{'Key': f"_chunks/{upload_id}/part-{n:05d}"} for n in range(1, total_parts + 1)]
+    for i in range(0, len(keys), 1000):
+        try:
+            s3.delete_objects(Bucket=BUCKET, Delete={'Objects': keys[i:i + 1000], 'Quiet': True})
+        except Exception:
+            for k in keys[i:i + 1000]:
+                try:
+                    s3.delete_object(Bucket=BUCKET, Key=k['Key'])
+                except Exception:
+                    pass
 
 
 def handler(event: dict, context) -> dict:
@@ -77,27 +160,14 @@ def handler(event: dict, context) -> dict:
         upload_id = body.get('upload_id')
         total_parts = int(body.get('total_parts') or 0)
         content_type = body.get('content_type') or 'application/octet-stream'
-        if content_type in ('video/quicktime', 'video/x-m4v') or key.lower().endswith('.mp4'):
-            content_type = 'video/mp4'
         if not key or not upload_id or total_parts < 1:
             return {'statusCode': 400, 'headers': _cors(),
                     'body': json.dumps({'error': 'bad params'})}
+        if content_type in ('video/quicktime', 'video/x-m4v') or key.lower().endswith('.mp4'):
+            content_type = 'video/mp4'
 
-        combined = bytearray()
-        for n in range(1, total_parts + 1):
-            part_key = f"_chunks/{upload_id}/part-{n:05d}"
-            obj = s3.get_object(Bucket=BUCKET, Key=part_key)
-            combined.extend(obj['Body'].read())
-
-        s3.put_object(Bucket=BUCKET, Key=key, Body=bytes(combined),
-                      ContentType=content_type)
-
-        for n in range(1, total_parts + 1):
-            try:
-                s3.delete_object(Bucket=BUCKET,
-                                 Key=f"_chunks/{upload_id}/part-{n:05d}")
-            except Exception:
-                pass
+        _merge_parts(s3, upload_id, total_parts, key, content_type)
+        _cleanup_parts(s3, upload_id, total_parts)
 
         cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
 
@@ -219,12 +289,7 @@ def handler(event: dict, context) -> dict:
         upload_id = body.get('upload_id')
         total_parts = int(body.get('total_parts') or 0)
         if upload_id and total_parts > 0:
-            for n in range(1, total_parts + 1):
-                try:
-                    s3.delete_object(Bucket=BUCKET,
-                                     Key=f"_chunks/{upload_id}/part-{n:05d}")
-                except Exception:
-                    pass
+            _cleanup_parts(s3, upload_id, total_parts)
         return {'statusCode': 200, 'headers': _cors(),
                 'body': json.dumps({'ok': True})}
 

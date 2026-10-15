@@ -70,10 +70,19 @@ export async function compressVideo(
     return { file, compressed: false };
   }
 
+  if (file.size > 600 * 1024 * 1024) {
+    return { file, compressed: false };
+  }
+
   let video: HTMLVideoElement;
   try {
     video = await loadVideo(file);
   } catch {
+    return { file, compressed: false };
+  }
+
+  if (isFinite(video.duration) && video.duration > 300) {
+    URL.revokeObjectURL(video.src);
     return { file, compressed: false };
   }
 
@@ -148,8 +157,9 @@ export async function compressVideo(
         if (recorder.state !== "inactive") recorder.stop();
         await stopped;
       } catch { /* ignore */ }
+      const playedAll = video.ended || duration <= 0 || video.currentTime >= duration - 1;
       cleanup();
-      if (chunks.length === 0) {
+      if (chunks.length === 0 || !playedAll) {
         resolve({ file, compressed: false });
         return;
       }
@@ -235,6 +245,11 @@ export interface DirectUploadMeta {
   place?: string;
 }
 
+const isSlowConn = (): boolean => {
+  const c = (navigator as unknown as { connection?: { effectiveType?: string; saveData?: boolean } }).connection;
+  return !!c && (!!c.saveData || c.effectiveType === "2g" || c.effectiveType === "slow-2g");
+};
+
 async function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -278,9 +293,9 @@ async function postJSON(payload: Record<string, unknown>, attempt = 1): Promise<
     }
     return raw;
   } catch (e) {
-    if (attempt < 3 && action === "chunk") {
+    if (attempt < 6 && (action === "chunk" || action === "init" || action === "abort")) {
       console.warn(`[upload] retry chunk attempt ${attempt + 1}`, e);
-      await new Promise((r) => setTimeout(r, 800 * attempt));
+      await new Promise((r) => setTimeout(r, Math.min(800 * attempt * attempt, 8000)));
       return postJSON(payload, attempt + 1);
     }
     throw e;
@@ -338,29 +353,35 @@ export async function uploadFileDirect(
   }
   console.info(`[upload] init ok: upload_id=${uploadId}, key=${key}`);
 
-  // 2) Грузим чанки по очереди
+  // 2) Грузим чанки параллельно (по 3), каждый с повторами
   const totalParts = Math.max(1, Math.ceil(file.size / CHUNK_SIZE));
   console.info(`[upload] chunks=${totalParts}, chunk_size=${CHUNK_SIZE}`);
-  try {
-    for (let i = 0; i < totalParts; i++) {
+  let doneParts = 0;
+  let nextPart = 0;
+  let failed: unknown = null;
+  const worker = async () => {
+    while (!failed) {
+      const i = nextPart++;
+      if (i >= totalParts) return;
       const start = i * CHUNK_SIZE;
       const end = Math.min(start + CHUNK_SIZE, file.size);
-      const slice = file.slice(start, end);
-      const data = await blobToBase64(slice);
-      await postJSON({
-        action: "chunk",
-        upload_id: uploadId,
-        part_number: i + 1,
-        data,
-      });
-      if (onProgress) {
-        onProgress(Math.round(((i + 1) / totalParts) * 95));
+      try {
+        const data = await blobToBase64(file.slice(start, end));
+        await postJSON({ action: "chunk", upload_id: uploadId, part_number: i + 1, data });
+      } catch (e) {
+        failed = e;
+        return;
       }
+      doneParts += 1;
+      if (onProgress) onProgress(Math.round((doneParts / totalParts) * 95));
     }
-  } catch (e) {
-    console.error("[upload] chunk loop failed:", e);
+  };
+  const concurrency = Math.min(totalParts, isSlowConn() ? 2 : 3);
+  await Promise.all(Array.from({ length: concurrency }, worker));
+  if (failed) {
+    console.error("[upload] chunk loop failed:", failed);
     try { await postJSON({ action: "abort", upload_id: uploadId, total_parts: totalParts }); } catch { /* ignore */ }
-    throw e;
+    throw failed;
   }
 
   // 3) Финал
