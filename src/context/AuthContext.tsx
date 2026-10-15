@@ -46,6 +46,13 @@ const readCachedUser = (): AppUser | null => {
   } catch { return null; }
 };
 
+type OneSignalApi = { login: (id: string) => Promise<void>; logout: () => Promise<void> };
+const withOneSignal = (fn: (os: OneSignalApi) => Promise<void>) => {
+  const w = window as unknown as { OneSignalDeferred?: Array<(os: OneSignalApi) => Promise<void>> };
+  w.OneSignalDeferred = w.OneSignalDeferred || [];
+  w.OneSignalDeferred.push(fn);
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const savedToken = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
   const cachedUser = savedToken ? readCachedUser() : null;
@@ -93,6 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("auth_user", JSON.stringify(data.user));
     localStorage.setItem("user_id", data.user.id);
     if (data.user.handle) localStorage.setItem("user_handle", data.user.handle);
+    withOneSignal((os) => os.login(String(data.user.id)));
     return null;
   };
 
@@ -111,6 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("auth_user", JSON.stringify(data.user));
     localStorage.setItem("user_id", data.user.id);
     if (data.user.handle) localStorage.setItem("user_handle", data.user.handle);
+    withOneSignal((os) => os.login(String(data.user.id)));
     return null;
   };
 
@@ -120,6 +129,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("auth_token", newToken);
     localStorage.setItem("auth_user", JSON.stringify(newUser));
     localStorage.setItem("user_id", newUser.id);
+    withOneSignal((os) => os.login(String(newUser.id)));
     if (newUser.handle) localStorage.setItem("user_handle", newUser.handle);
   };
 
@@ -130,6 +140,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem("auth_user");
     localStorage.removeItem("user_id");
     localStorage.removeItem("user_handle");
+    withOneSignal((os) => os.logout());
   };
 
   const updateUser = (u: Partial<AppUser>) => {
