@@ -3,7 +3,6 @@ import { promptAuth } from "@/lib/promptAuth";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import LinkifiedText from "@/components/ui/linkified-text";
-import UserAvatar from "@/components/ui/user-avatar";
 import { useComments } from "@/hooks/useComments";
 import { useLikes } from "@/hooks/useLikes";
 import { useSavedItem } from "@/hooks/useSaved";
@@ -12,11 +11,14 @@ import { useUserMedia } from "@/context/UserMediaContext";
 import { useAuth } from "@/context/AuthContext";
 import ReportButton from "@/components/ReportButton";
 import { toast } from "sonner";
-import { copyText } from "@/lib/copyText";
-import { trackVideoView, markNotInterested, markMoreLikeThis, hideAuthor } from "@/hooks/useFeedSignals";
+import { trackVideoView } from "@/hooks/useFeedSignals";
 import { useProductsByVideos, trackProductClick } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import AddToBoardSheet from "@/components/products/AddToBoardSheet";
+import VideoMoreSheet from "./video-card/VideoMoreSheet";
+import VideoShareSheet from "./video-card/VideoShareSheet";
+import VideoProductsSheet from "./video-card/VideoProductsSheet";
+import VideoCommentsSheet from "./video-card/VideoCommentsSheet";
 
 export interface VideoData {
   id: number;
@@ -743,131 +745,17 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         </button>
       </div>
 
-      {showMore && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] flex flex-col justify-end md:flex-row md:justify-end md:items-center md:bg-black/40"
-          onClick={() => setShowMore(false)}
-        >
-          <div
-            className="sheet-theme rounded-t-3xl px-4 pt-5 pb-10 md:rounded-2xl md:pb-5 md:mr-6 md:w-[320px] md:shadow-2xl"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-5">
-              <span className="text-white font-bold text-base">Ещё</span>
-              <button onClick={() => setShowMore(false)}>
-                <Icon name="X" size={20} className="text-white/60" />
-              </button>
-            </div>
-
-            {/* Сохранить в коллекцию */}
-            <button
-              onClick={() => {
-                toggleSaved();
-                setShowMore(false);
-              }}
-              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3 md:hidden"
-            >
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                <Icon
-                  name="Bookmark"
-                  size={20}
-                  className={saved ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"}
-                />
-              </div>
-              <span className="text-white text-sm font-medium">
-                {saved ? "Убрать из коллекции" : "Сохранить в коллекцию"}
-              </span>
-            </button>
-
-            {/* Добавить на доску */}
-            <button
-              onClick={() => {
-                setShowMore(false);
-                if (!user) { promptAuth(); return; }
-                setShowAddToBoard(true);
-              }}
-              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3"
-            >
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                <Icon name="Layers" size={20} className="text-white" />
-              </div>
-              <span className="text-white text-sm font-medium">Добавить на доску</span>
-            </button>
-
-            {/* Перейти в профиль */}
-            <button
-              onClick={() => {
-                setShowMore(false);
-                window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: video.handle } }));
-              }}
-              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3"
-            >
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                <Icon name="User" size={20} className="text-white" />
-              </div>
-              <span className="text-white text-sm font-medium">Перейти в профиль</span>
-            </button>
-
-            {/* Показать больше такого */}
-            <button
-              onClick={() => {
-                setShowMore(false);
-                markMoreLikeThis(video.dbId ?? video.id);
-                toast.success("Будем чаще показывать похожий контент");
-              }}
-              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3"
-            >
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                <Icon name="ThumbsUp" size={20} className="text-white" />
-              </div>
-              <span className="text-white text-sm font-medium">Показать больше такого</span>
-            </button>
-
-            {/* Не интересно */}
-            <button
-              onClick={() => {
-                setShowMore(false);
-                markNotInterested(video.dbId ?? video.id);
-                toast.success("Учли — покажем меньше такого контента");
-              }}
-              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3"
-            >
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                <Icon name="ThumbsDown" size={20} className="text-white" />
-              </div>
-              <span className="text-white text-sm font-medium">Не интересно</span>
-            </button>
-
-            {/* Скрыть автора */}
-            {!isSelf && (
-              <button
-                onClick={() => {
-                  setShowMore(false);
-                  hideAuthor(video.handle);
-                  toast.success(`Больше не будем показывать @${video.handle}`);
-                }}
-                className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3"
-              >
-                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                  <Icon name="EyeOff" size={20} className="text-white" />
-                </div>
-                <span className="text-white text-sm font-medium">Скрыть автора</span>
-              </button>
-            )}
-
-            {/* Жалоба */}
-            <button
-              onClick={() => { setShowMore(false); if (!user) { promptAuth(); return; } setShowReport(true); }}
-              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3"
-            >
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                <Icon name="Flag" size={20} className="text-[#fe2c55]" />
-              </div>
-              <span className="text-white text-sm font-medium">Пожаловаться</span>
-            </button>
-          </div>
-        </div>,
-        document.body
+      {showMore && (
+        <VideoMoreSheet
+          video={video}
+          user={user}
+          saved={saved}
+          isSelf={isSelf}
+          toggleSaved={toggleSaved}
+          setShowMore={setShowMore}
+          setShowAddToBoard={setShowAddToBoard}
+          setShowReport={setShowReport}
+        />
       )}
 
       <ReportButton
@@ -905,285 +793,48 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         document.body
       )}
 
-      {showShare && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] flex flex-col justify-end md:flex-row md:justify-end md:items-center md:bg-black/40"
-          onClick={() => setShowShare(false)}
-        >
-          <div
-            className="sheet-theme rounded-t-3xl px-4 pt-5 pb-10 md:rounded-2xl md:pb-5 md:mr-6 md:w-[360px] md:shadow-2xl max-h-[85vh] overflow-y-auto"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-5">
-              <span className="text-white font-bold text-base">Поделиться</span>
-              <button onClick={() => setShowShare(false)}>
-                <Icon name="X" size={20} className="text-white/60" />
-              </button>
-            </div>
-
-            {/* Share options */}
-            <div className="grid grid-cols-4 gap-4 mb-6">
-              {[
-                { icon: "MessageCircle", label: "Telegram", color: "#229ED9", href: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(`@${video.handle}: ${video.description}`)}` },
-                { icon: "Send", label: "WhatsApp", color: "#25D366", href: `https://wa.me/?text=${encodeURIComponent(`@${video.handle}: ${video.description}\n${shareUrl}`)}` },
-                { icon: "Share2", label: "VK", color: "#0077FF", href: `https://vk.com/share.php?url=${encodeURIComponent(shareUrl)}` },
-                { icon: "MessageSquare", label: "МАКС", color: "#7C66FC", href: `https://max.ru/share?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(`@${video.handle}: ${video.description}`)}` },
-              ].map(opt => (
-                <a
-                  key={opt.label}
-                  href={opt.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex flex-col items-center gap-2"
-                  onClick={() => setShowShare(false)}
-                >
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: opt.color + "22", border: `1.5px solid ${opt.color}55` }}>
-                    <Icon name={opt.icon} size={24} style={{ color: opt.color }} />
-                  </div>
-                  <span className="text-white/70 text-xs">{opt.label}</span>
-                </a>
-              ))}
-            </div>
-
-            {/* Repost */}
-            <button
-              onClick={handleRepost}
-              disabled={reposting}
-              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3 disabled:opacity-60"
-            >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${alreadyReposted && !repostResult ? "bg-white/10" : "bg-[#fe2c55]/20"}`}>
-                <Icon
-                  name={repostResult ? "Check" : "Repeat2"}
-                  fallback="Repeat"
-                  size={20}
-                  className={repostResult === "added" ? "text-green-400" : repostResult === "removed" ? "text-white/60" : alreadyReposted ? "text-white/60" : "text-[#fe2c55]"}
-                />
-              </div>
-              <div className="text-left">
-                <p className="text-white text-sm font-medium">
-                  {repostResult === "added" ? "Готово!" : repostResult === "removed" ? "Убрано!" : reposting ? (alreadyReposted ? "Убираем…" : "Репостим…") : alreadyReposted ? "Убрать репост" : "Репост к себе"}
-                </p>
-                <p className="text-white/40 text-xs">{alreadyReposted && !repostResult ? "Уже в твоём профиле" : "Видео появится в твоём профиле"}</p>
-              </div>
-            </button>
-
-            {/* Copy link */}
-            <button
-              onClick={() => {
-                copyText(shareUrl);
-                setCopied(true);
-                setTimeout(() => { setCopied(false); setShowShare(false); }, 1500);
-              }}
-              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3"
-            >
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                <Icon name={copied ? "Check" : "Link"} size={20} className={copied ? "text-green-400" : "text-white"} />
-              </div>
-              <span className="text-white text-sm font-medium">{copied ? "Скопировано!" : "Скопировать ссылку"}</span>
-            </button>
-
-            {/* Скачать */}
-            <button
-              onClick={() => { handleDownload(); }}
-              disabled={downloading}
-              className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mt-3 disabled:opacity-60"
-            >
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                {downloading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : downloadDone ? (
-                  <Icon name="Check" size={20} className="text-green-400" />
-                ) : (
-                  <Icon name="Download" size={20} className="text-white" />
-                )}
-              </div>
-              <span className="text-white text-sm font-medium">
-                {downloading ? "Скачивание…" : downloadDone ? "Готово!" : "Скачать"}
-              </span>
-            </button>
-          </div>
-        </div>,
-        document.body
+      {showShare && (
+        <VideoShareSheet
+          video={video}
+          shareUrl={shareUrl}
+          setShowShare={setShowShare}
+          handleRepost={handleRepost}
+          reposting={reposting}
+          alreadyReposted={alreadyReposted}
+          repostResult={repostResult}
+          copied={copied}
+          setCopied={setCopied}
+          handleDownload={handleDownload}
+          downloading={downloading}
+          downloadDone={downloadDone}
+        />
       )}
 
-      {showProducts && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] flex flex-col justify-end md:flex-row md:justify-end md:items-center md:bg-black/40"
-          onClick={() => setShowProducts(false)}
-        >
-          <div
-            className="sheet-theme rounded-t-3xl px-4 pt-5 pb-10 md:rounded-2xl md:pb-5 md:mr-6 md:w-[380px] md:shadow-2xl max-h-[70vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-white font-bold text-base flex items-center gap-2">
-                <Icon name="ShoppingBag" size={18} />
-                Товары из этого видео
-              </span>
-              <button onClick={() => setShowProducts(false)}>
-                <Icon name="X" size={20} className="text-white/60" />
-              </button>
-            </div>
-            {products.length === 0 ? (
-              <p className="text-white/40 text-sm py-6 text-center">Загружаем товары...</p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {products.map((p) => (
-                  <div key={p.id} className="flex flex-col gap-2 bg-white/5 rounded-2xl p-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 flex-shrink-0">
-                        {p.image && <img loading="lazy" decoding="async" src={p.image} alt={p.title} className="w-full h-full object-cover" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-semibold truncate">{p.title}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[#fe2c55] font-bold text-sm">{p.price.toLocaleString("ru-RU")} ₽</span>
-                          {p.old_price && p.old_price > p.price && (
-                            <span className="text-white/40 text-xs line-through">{p.old_price.toLocaleString("ru-RU")} ₽</span>
-                          )}
-                        </div>
-                        {p.promo_code && (
-                          <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#fe2c55]/20 text-[#fe2c55] text-[10px] font-bold">
-                            Промокод: {p.promo_code}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex flex-col gap-1.5 flex-shrink-0">
-                        <button
-                          onClick={() => handleBuyNow(p.id)}
-                          disabled={addingProductId === p.id}
-                          className="px-3 py-1.5 rounded-full bg-[#fe2c55] text-white text-xs font-bold active:scale-95 transition-transform disabled:opacity-50 whitespace-nowrap"
-                        >
-                          Перейти
-                        </button>
-                        <button
-                          onClick={() => handleAddToCart(p.id)}
-                          disabled={addingProductId === p.id}
-                          className="w-9 h-9 mx-auto rounded-full bg-white/10 flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
-                          title="В корзину"
-                        >
-                          {addingProductId === p.id
-                            ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            : <Icon name="ShoppingCart" size={15} className="text-white" />}
-                        </button>
-                      </div>
-                    </div>
-                    {p.owner_handle && !p.is_partner && (
-                      <button
-                        onClick={() => {
-                          setShowProducts(false);
-                          window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: p.owner_handle } }));
-                        }}
-                        className="flex items-center gap-1.5 self-start pl-1 text-white/60 active:text-white/90 transition-colors"
-                      >
-                        <Icon name="Store" size={12} />
-                        <span className="text-[11px] font-medium">Магазин @{p.owner_handle}</span>
-                        <Icon name="ChevronRight" size={12} />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>,
-        document.body
+      {showProducts && (
+        <VideoProductsSheet
+          products={products}
+          addingProductId={addingProductId}
+          setShowProducts={setShowProducts}
+          handleBuyNow={handleBuyNow}
+          handleAddToCart={handleAddToCart}
+        />
       )}
 
-      {showComments && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] flex flex-col justify-end md:flex-row md:justify-end md:bg-black/40"
-          onPointerDown={() => setShowComments(false)}
-        >
-          <div
-            className="sheet-theme rounded-t-3xl flex flex-col max-h-[70%] md:rounded-t-none md:rounded-l-3xl md:max-h-none md:h-full md:w-[400px] md:ml-auto md:shadow-2xl animate-in slide-in-from-bottom md:slide-in-from-right duration-300"
-            onPointerDown={e => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/10">
-              <span className="text-white font-bold text-base">{commentCount} комментариев</span>
-              <button onPointerDown={() => setShowComments(false)}>
-                <Icon name="X" size={20} className="text-white/60" />
-              </button>
-            </div>
-
-            {/* Comments list */}
-            <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-4" style={{ scrollbarWidth: "none" }}>
-              {allComments.map(c => (
-                <div key={c.id} className={`flex items-start gap-3 ${c.parentId ? "pl-9" : ""}`}>
-                  <div className="w-8 h-8 flex-shrink-0">
-                    <UserAvatar name={c.name} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-white font-semibold text-sm">{c.name}</span>
-                      <span className="text-white/30 text-xs">{c.time}</span>
-                    </div>
-                    <p className="text-white/80 text-sm break-words"><LinkifiedText text={c.text} /></p>
-                    <button
-                      type="button"
-                      onClick={() => startReply(c.id, c.name)}
-                      className="text-white/40 text-xs font-semibold mt-1"
-                    >
-                      Ответить
-                    </button>
-                  </div>
-                  <div className="flex-shrink-0 mt-1 flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); toggleCommentLike(c.id); }}
-                      className="p-1 flex flex-col items-center gap-0.5"
-                    >
-                      <Icon name="Heart" size={14} className={c.liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white/40"} />
-                      {c.likes > 0 && <span className="text-white/30 text-[10px]">{c.likes}</span>}
-                    </button>
-                    <ReportButton
-                      targetType="comment"
-                      targetId={c.id}
-                      className="p-1 text-white/40 hover:text-[#fe2c55]"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Input */}
-            <div className="flex flex-col border-t border-white/10 pb-8 md:pb-3">
-              {replyingTo && (
-                <div className="flex items-center justify-between px-4 pt-2 text-xs text-white/50">
-                  <span>Ответ для <span className="text-white/80 font-semibold">{replyingTo.name}</span></span>
-                  <button onClick={() => { setReplyingTo(null); setCommentText(""); }}>
-                    <Icon name="X" size={14} className="text-white/40" />
-                  </button>
-                </div>
-              )}
-              <div className="flex items-center gap-3 px-4 py-3">
-                <div className="flex-1 flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
-                  <input
-                    ref={commentInputRef}
-                    readOnly={!user}
-                    onFocus={() => { if (!user) { commentInputRef.current?.blur(); promptAuth(); } }}
-                    value={commentText}
-                    onChange={e => setCommentText(e.target.value)}
-                    placeholder={user ? "Написать комментарий..." : "Войдите, чтобы комментировать"}
-                    className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/40"
-                    onKeyDown={e => e.key === "Enter" && handleSendComment()}
-                    autoComplete="off"
-                    autoFocus={!!user}
-                  />
-                </div>
-                <button
-                  onClick={handleSendComment}
-                  disabled={!commentText.trim()}
-                  className="w-9 h-9 rounded-full bg-[#fe2c55] flex items-center justify-center disabled:opacity-40"
-                >
-                  <Icon name="Send" size={16} className="text-white" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
+      {showComments && (
+        <VideoCommentsSheet
+          user={user}
+          commentCount={commentCount}
+          allComments={allComments}
+          setShowComments={setShowComments}
+          startReply={startReply}
+          toggleCommentLike={toggleCommentLike}
+          replyingTo={replyingTo}
+          setReplyingTo={setReplyingTo}
+          commentText={commentText}
+          setCommentText={setCommentText}
+          commentInputRef={commentInputRef}
+          handleSendComment={handleSendComment}
+        />
       )}
 
       {showAddToBoard && (
