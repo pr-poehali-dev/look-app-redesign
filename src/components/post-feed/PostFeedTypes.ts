@@ -11,6 +11,7 @@ export interface Post {
   handle: string;
   avatar: string;
   image: string;
+  thumbnail?: string;
   caption: string;
   hashtags: string[];
   likes: number;

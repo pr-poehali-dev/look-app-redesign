@@ -60,9 +60,13 @@ const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
               <p className="text-white text-[14px] leading-snug line-clamp-8 whitespace-pre-wrap break-words">{post.caption}</p>
             </div>
           ) : post.isVideo ? (
-            <video src={post.image} className="absolute inset-0 w-full h-full object-cover" muted playsInline preload="metadata" />
+            post.thumbnail ? (
+              <img src={post.thumbnail} alt={post.caption} className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
+            ) : (
+              <video src={post.image.includes("#") ? post.image : `${post.image}#t=0.001`} className="absolute inset-0 w-full h-full object-cover" muted playsInline preload="metadata" />
+            )
           ) : (
-            <img src={post.image} alt={post.caption} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+            <img src={post.image} alt={post.caption} className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
           )}
           {post.isVideo && (
             <div className="absolute top-2 right-2 bg-black/40 rounded-full p-1.5">

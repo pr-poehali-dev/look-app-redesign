@@ -105,6 +105,7 @@ const PostFeed = () => {
         handle: (v.handle === "user" || !v.handle) ? (user?.handle || user?.name || "user") : v.handle,
         avatar: dbAvatar || (isMyPost ? (user?.avatar || "") : ""),
         image: v.url,
+        thumbnail: v.thumbnail || undefined,
         caption,
         hashtags: tags,
         likes: parseInt(v.likes) || 0,
