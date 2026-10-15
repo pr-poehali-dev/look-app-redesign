@@ -8,6 +8,7 @@ import ShopScreen from "./profile/ShopScreen";
 import CatalogScreen from "./profile/CatalogScreen";
 import BoardsScreen from "./profile/BoardsScreen";
 import ArticlesScreen from "./profile/ArticlesScreen";
+import GuideScreen from "./profile/GuideScreen";
 import UserArticlesList from "./profile/UserArticlesList";
 import { useUserArticles } from "@/hooks/useArticles";
 import ReferralsScreen from "./profile/ReferralsScreen";
@@ -270,6 +271,7 @@ const ProfilePage = () => {
   const [showCatalog, setShowCatalog] = useState(false);
   const [showBoards, setShowBoards] = useState(false);
   const [showArticles, setShowArticles] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   const [showReferrals, setShowReferrals] = useState(false);
   const { userVideos: stories, removeMedia, addMedia, refreshMedia } = useUserMedia();
   const { user, token, logout, updateUser } = useAuth();
@@ -393,6 +395,7 @@ const ProfilePage = () => {
   if (showShop) return <ShopScreen onBack={() => setShowShop(false)} />;
   if (showCatalog) return <CatalogScreen onBack={() => setShowCatalog(false)} />;
   if (showArticles) return <ArticlesScreen onBack={() => setShowArticles(false)} />;
+  if (showGuide) return <GuideScreen onBack={() => setShowGuide(false)} />;
   if (showBoards) return <BoardsScreen onBack={() => setShowBoards(false)} />;
   if (showReferrals) return <ReferralsScreen onBack={() => setShowReferrals(false)} />;
 
@@ -570,6 +573,13 @@ const ProfilePage = () => {
         >
           <Icon name="Link" size={15} />
           Партнёрка
+        </button>
+        <button
+          onClick={() => setShowGuide(true)}
+          className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
+        >
+          <Icon name="BookOpen" size={15} />
+          Инструкция
         </button>
       </div>
 
