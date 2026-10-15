@@ -427,8 +427,8 @@ const PostFeed = () => {
         /* Posts — прокрутка с привязкой, под фиксированной панелью сторис */
         <div
           ref={scrollRef}
-          className="h-full overflow-y-scroll snap-y snap-mandatory"
-          style={{ scrollbarWidth: "none" }}
+          className="h-full overflow-y-scroll snap-y snap-mandatory overscroll-y-contain"
+          style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
         >
           <div className="md:max-w-[620px] md:mx-auto">
             {/* Резерв под фиксированную панель сторис */}
