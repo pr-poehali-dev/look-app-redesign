@@ -26,10 +26,6 @@ export const initExternalLinks = () => {
 export const openInBrowser = (url: string) => {
   let u: URL;
   try { u = new URL(url, window.location.href); } catch { return; }
-  if (/Android/i.test(navigator.userAgent) && /^https?:$/.test(u.protocol)) {
-    const fallback = encodeURIComponent(u.href);
-    window.location.href = `intent://${u.host}${u.pathname}${u.search}${u.hash}#Intent;scheme=${u.protocol.replace(":", "")};action=android.intent.action.VIEW;S.browser_fallback_url=${fallback};end`;
-    return;
-  }
-  window.open(u.href, "_blank", "noopener,noreferrer");
+  const w = window.open(u.href, "_blank", "noopener,noreferrer");
+  if (!w) window.location.href = u.href;
 };
