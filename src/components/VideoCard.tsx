@@ -1,8 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { promptAuth } from "@/lib/promptAuth";
-import { createPortal } from "react-dom";
-import Icon from "@/components/ui/icon";
-import LinkifiedText from "@/components/ui/linkified-text";
 import { useComments } from "@/hooks/useComments";
 import { useLikes } from "@/hooks/useLikes";
 import { useSavedItem } from "@/hooks/useSaved";
@@ -19,6 +16,10 @@ import VideoMoreSheet from "./video-card/VideoMoreSheet";
 import VideoShareSheet from "./video-card/VideoShareSheet";
 import VideoProductsSheet from "./video-card/VideoProductsSheet";
 import VideoCommentsSheet from "./video-card/VideoCommentsSheet";
+import VideoMediaLayer from "./video-card/VideoMediaLayer";
+import VideoInfoOverlay from "./video-card/VideoInfoOverlay";
+import VideoActionButtons from "./video-card/VideoActionButtons";
+import VideoFullscreenPlayer from "./video-card/VideoFullscreenPlayer";
 
 export interface VideoData {
   id: number;
@@ -409,343 +410,59 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
     <div className="media-overlay-text look-card-root relative w-full h-full flex-shrink-0 snap-start overflow-hidden bg-black md:bg-transparent md:overflow-visible md:flex md:items-stretch md:justify-center">
       {/* Video + info column */}
       <div className="video-round-frame relative w-full h-full md:flex-none md:h-full md:w-auto md:aspect-[9/16] md:overflow-hidden md:rounded-2xl">
-      {isVideo ? (
-        <>
-          <video
-            key="main-video"
-            ref={videoRef}
-            src={preloadLevel === "none" ? undefined : (video.image.includes("#") ? video.image : `${video.image}#t=0.001`)}
-            poster={video.thumbnail || undefined}
-            className="absolute inset-0 w-full h-full object-cover md:rounded-2xl"
-            loop
-            muted={muted}
-            autoPlay={isActive}
-            playsInline
-            preload={preloadLevel === "none" ? "none" : preloadLevel === "full" ? "auto" : "metadata"}
-            onClick={handleVideoClick}
-            x-webkit-airplay="allow"
-            style={{
-              touchAction: "manipulation",
-              backgroundColor: "#000",
-              transform: "translateZ(0)",
-              backfaceVisibility: "hidden",
-              ...(video.thumbnail ? { backgroundImage: `url(${video.thumbnail})`, backgroundSize: "cover", backgroundPosition: "center" } : {}),
-            }}
-          />
-          <div
-            key="play-hint"
-            className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            style={{ display: preloadLevel === "none" ? "flex" : "none" }}
-          >
-            <div className="bg-black/40 rounded-full p-4">
-              <Icon name="Play" size={44} className="text-white ml-1" />
-            </div>
-          </div>
-
-          {showPauseIcon && (
-            <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-              <div className="bg-black/40 rounded-full p-5 backdrop-blur-sm">
-                <Icon name={paused ? "Play" : "Pause"} size={40} className="text-white" />
-              </div>
-            </div>
-          )}
-          {video.hasProducts && (
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowProducts(true); }}
-              onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowProducts(true); }}
-              className="absolute top-4 right-4 z-30 -translate-y-3 md:translate-y-0 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-full pl-2 pr-3 py-1.5 active:scale-95 transition-transform"
-              style={{ touchAction: "manipulation" }}
-              title="Товары в кадре"
-            >
-              <Icon name="ShoppingBag" size={14} className="text-white" />
-              <span className="text-white text-[11px] font-semibold">Товары в кадре</span>
-            </button>
-          )}
-          <div
-            className="absolute top-4 left-4 z-30 flex items-center gap-2 -translate-y-3 md:translate-y-0"
-            onMouseEnter={() => setShowVolume(true)}
-            onMouseLeave={() => setShowVolume(false)}
-            onClick={e => e.stopPropagation()}
-          >
-            <button
-              className="bg-black/40 rounded-full p-2 backdrop-blur-sm hover:bg-black/60 transition-colors cursor-pointer"
-              onClick={e => { e.stopPropagation(); setMuted(m => !m); }}
-              title={muted ? "Включить звук" : "Выключить звук"}
-            >
-              <Icon name={muted || volume === 0 ? "VolumeX" : "Volume2"} size={20} className="text-white" />
-            </button>
-            {showVolume && (
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.05}
-                value={muted ? 0 : volume}
-                onChange={e => {
-                  const val = Number(e.target.value);
-                  setVolume(val);
-                  setMuted(val === 0);
-                }}
-                className="volume-slider w-24 h-1 cursor-pointer accent-[#fe2c55]"
-                title="Громкость"
-              />
-            )}
-          </div>
-
-          {/* Полоса времени */}
-          <div
-            className="absolute left-0 right-0 z-30 px-3 flex items-center gap-2 bottom-[70px] md:bottom-3"
-            onClick={e => e.stopPropagation()}
-          >
-            <span className="text-white/80 text-[11px] tabular-nums w-9 text-right">{fmtTime(currentTime)}</span>
-            <div className="relative flex-1 flex items-center h-4">
-              {/* фон дорожки */}
-              <div className="absolute left-0 right-0 h-1 rounded-full bg-white/25" />
-              {/* буферизация (сколько загрузилось) */}
-              <div className="absolute left-0 h-1 rounded-full bg-white/50" style={{ width: `${Math.min(100, buffered)}%` }} />
-              {/* воспроизведено */}
-              <div className="absolute left-0 h-1 rounded-full bg-[#fe2c55]" style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }} />
-              <input
-                type="range"
-                min={0}
-                max={100}
-                step={0.1}
-                value={duration ? (currentTime / duration) * 100 : 0}
-                onPointerDown={() => setSeeking(true)}
-                onPointerUp={() => setSeeking(false)}
-                onChange={e => handleSeek(Number(e.target.value))}
-                className="video-progress relative w-full h-4 cursor-pointer bg-transparent"
-              />
-            </div>
-            <span className="text-white/80 text-[11px] tabular-nums w-9">{fmtTime(duration)}</span>
-          </div>
-        </>
-      ) : (
-        <img loading="lazy" decoding="async"
-          src={video.image}
-          alt={video.description}
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none md:rounded-2xl"
-        />
-      )}
+      <VideoMediaLayer
+        video={video}
+        isVideo={isVideo}
+        isActive={isActive}
+        preloadLevel={preloadLevel}
+        videoRef={videoRef}
+        muted={muted}
+        setMuted={setMuted}
+        volume={volume}
+        setVolume={setVolume}
+        showVolume={showVolume}
+        setShowVolume={setShowVolume}
+        paused={paused}
+        showPauseIcon={showPauseIcon}
+        handleVideoClick={handleVideoClick}
+        setShowProducts={setShowProducts}
+        currentTime={currentTime}
+        duration={duration}
+        buffered={buffered}
+        fmtTime={fmtTime}
+        setSeeking={setSeeking}
+        handleSeek={handleSeek}
+      />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
 
       {/* Bottom left info — внутри видео */}
-      <div className={`absolute bottom-28 md:bottom-20 left-4 z-10 transition-opacity duration-200 hover:opacity-100 active:opacity-100 ${expanded ? "opacity-100" : "opacity-60"}`} style={{ right: '80px' }}>
-        {video.repostedBy && (
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: video.repostedBy } }))}
-            className="flex items-center gap-1.5 mb-1.5 text-left"
-          >
-            <Icon name="Repeat2" fallback="Repeat" size={13} className="text-white/60" />
-            <span className="text-white/60 text-xs">
-              Репост от <span className="text-white/90 font-medium">@{video.repostedBy}</span>
-            </span>
-          </button>
-        )}
-        <div className="flex items-center gap-2 mb-3">
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: video.handle } }))}
-            className="flex items-center gap-1 font-bold text-white text-base active:opacity-70"
-          >
-            @{video.handle}
-            {video.isVerified && <Icon name="BadgeCheck" size={14} className="text-[#61d4f0]" />}
-          </button>
-          {video.isAd && (
-            <span className="px-1.5 py-0.5 rounded bg-white/15 text-white/70 text-[10px] font-semibold uppercase tracking-wide">
-              {video.adLabel || "Реклама"}
-            </span>
-          )}
-          {video.ageRating && (
-            <span className="px-1.5 py-0.5 rounded border border-white/30 text-white/70 text-[10px] font-semibold">
-              {video.ageRating}
-            </span>
-          )}
-          {isSelf ? null : !following ? (
-            <button
-              onClick={toggleFollow}
-              className="px-3 py-0.5 rounded-full border border-white text-white text-xs font-semibold hover:bg-white hover:text-black transition-all"
-            >
-              Подписаться
-            </button>
-          ) : (
-            <button
-              onClick={toggleFollow}
-              className="px-3 py-0.5 rounded-full bg-white/20 text-white text-xs font-semibold"
-            >
-              Вы подписаны
-            </button>
-          )}
-        </div>
-        {video.description && (() => {
-          const parts = video.description.split(/(#\S+)/g);
-          const isLong = video.description.length > 80;
-          return (
-            <div className="mb-3">
-              <p className={`text-white text-sm leading-snug ${expanded ? "" : "line-clamp-2"}`}>
-                {parts.map((part, i) =>
-                  part.startsWith('#')
-                    ? <span key={i} className="text-[#61d4f0] font-medium">{part}</span>
-                    : <LinkifiedText key={i} text={part} />
-                )}
-              </p>
-              {isLong && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); setExpanded(v => !v); }}
-                  className="text-white/60 text-sm font-semibold mt-0.5 active:opacity-70"
-                >
-                  {expanded ? "свернуть" : "ещё"}
-                </button>
-              )}
-            </div>
-          );
-        })()}
-        {video.place && (
-          <p className="flex items-center gap-1 text-white/70 text-xs mb-2">
-            <Icon name="MapPin" size={12} />
-            <span className="truncate">{video.place}</span>
-          </p>
-        )}
-        {video.isAd && video.adErid && (
-          <p className="text-white/50 text-[11px] mb-2 break-all">
-            Реклама{video.adAdvertiser ? ` · ${video.adAdvertiser}` : ""} · erid: {video.adErid}
-          </p>
-        )}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center animate-spin" style={{ animationDuration: "3s" }}>
-            <Icon name="Music" size={10} className="text-white" />
-          </div>
-          <span className="text-white/80 text-xs truncate max-w-[180px]">{video.song}</span>
-          {typeof video.views === "number" && video.views > 0 && (
-            <span className="text-white/50 text-xs">· {formatCount(video.views)} просмотров</span>
-          )}
-          {video.templateId && (
-            <button
-              onClick={(e) => { e.stopPropagation(); handleUseTemplate(); }}
-              onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); handleUseTemplate(); }}
-              className="flex items-center gap-1 bg-white/15 backdrop-blur-sm rounded-full px-2.5 py-1 active:scale-95 transition-transform"
-              style={{ touchAction: "manipulation" }}
-            >
-              <Icon name="Wand2" size={11} className="text-white" />
-              <span className="text-white text-[11px] font-semibold">Использовать шаблон</span>
-            </button>
-          )}
-        </div>
-      </div>
+      <VideoInfoOverlay
+        video={video}
+        expanded={expanded}
+        setExpanded={setExpanded}
+        isSelf={isSelf}
+        following={following}
+        toggleFollow={toggleFollow}
+        formatCount={formatCount}
+        handleUseTemplate={handleUseTemplate}
+      />
       </div>
 
-      {/* Right side actions — мобайл (внутри видео) */}
-      <div className="absolute right-2.5 bottom-32 flex flex-col items-center gap-5 z-30 md:hidden">
-        {/* Like */}
-        <button
-          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); toggleLike(); }}
-          onClick={() => toggleLike()}
-          className="flex flex-col items-center gap-1"
-          style={{ touchAction: "manipulation" }}
-          title="Нравится"
-        >
-          <div className="action-icon-mobile-bg w-10 h-10 rounded-full flex items-center justify-center">
-            <Icon
-              name="Heart"
-              size={26}
-              className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"}
-            />
-          </div>
-          <span className="action-count-text action-count-mobile-bg px-1.5 py-0.5 rounded-full text-white text-xs font-semibold">{formatCount(likeCount)}</span>
-        </button>
-
-        {/* Comment */}
-        <button
-          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setShowComments(true); }}
-          onClick={() => { setShowComments(true); }}
-          className="flex flex-col items-center gap-1"
-          style={{ touchAction: "manipulation" }}
-          title="Комментарии"
-        >
-          <div className="action-icon-mobile-bg w-10 h-10 rounded-full flex items-center justify-center">
-            <Icon name="MessageDots" size={26} className="action-icon-glyph" />
-          </div>
-          <span className="action-count-text action-count-mobile-bg px-1.5 py-0.5 rounded-full text-white text-xs font-semibold">{formatCount(commentCount)}</span>
-        </button>
-
-        {/* Send / Share */}
-        <button
-          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); if (guest) return needAuth(); setShowShare(true); }}
-          onClick={() => { if (guest) return needAuth(); setShowShare(true); }}
-          className="flex flex-col items-center gap-1"
-          style={{ touchAction: "manipulation" }}
-          title="Поделиться"
-        >
-          <div className="action-icon-mobile-bg w-10 h-10 rounded-full flex items-center justify-center">
-            <Icon name="ShareForward" size={26} className="action-icon-glyph" />
-          </div>
-          <span className="action-count-text action-count-mobile-bg px-1.5 py-0.5 rounded-full text-white text-xs font-semibold">{video.shares}</span>
-        </button>
-
-        {/* Ещё (в т.ч. сохранение в коллекцию) */}
-        <button
-          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); if (guest) return needAuth(); setShowMore(true); }}
-          onClick={() => { if (guest) return needAuth(); setShowMore(true); }}
-          className="flex flex-col items-center justify-center"
-          style={{ touchAction: "manipulation" }}
-          title="Ещё действия"
-        >
-          <div className="action-icon-mobile-bg w-10 h-10 rounded-full flex items-center justify-center">
-            <span className="action-count-text text-white text-xs font-bold leading-none">Ещё</span>
-          </div>
-        </button>
-      </div>
-
-      {/* Desktop right actions — вне видео, все 7 кнопок */}
-      <div className="desktop-actions-col hidden md:flex flex-col items-center gap-3 z-30 flex-shrink-0 justify-end pb-6 pl-2 pt-6" style={{ background: "var(--look-bg)" }}>
-        {/* Like */}
-        <button onClick={() => toggleLike()} className="flex flex-col items-center gap-1">
-          <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
-            <Icon
-              name="Heart"
-              size={24}
-              className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"}
-            />
-          </div>
-          <span className="action-count-text text-white text-xs font-semibold">{formatCount(likeCount)}</span>
-        </button>
-
-        {/* Comment */}
-        <button onClick={() => { setShowComments(true); }} className="flex flex-col items-center gap-1">
-          <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
-            <Icon name="MessageDots" size={24} className="action-icon-glyph" />
-          </div>
-          <span className="action-count-text text-white text-xs font-semibold">{formatCount(commentCount)}</span>
-        </button>
-
-        {/* Share */}
-        <button onClick={() => { if (guest) return needAuth(); setShowShare(true); }} className="flex flex-col items-center gap-1">
-          <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
-            <Icon name="ShareForward" size={22} className="action-icon-glyph" />
-          </div>
-          <span className="action-count-text text-white text-xs font-semibold">{video.shares}</span>
-        </button>
-
-        {/* Bookmark */}
-        <button onClick={toggleSaved} className="flex flex-col items-center gap-1" title="Сохранить в коллекцию">
-          <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
-            <Icon
-              name="Bookmark"
-              size={22}
-              className={saved ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"}
-            />
-          </div>
-          {!!video.saves && (
-            <span className="action-count-text text-white text-xs font-semibold">{formatCount(video.saves)}</span>
-          )}
-        </button>
-
-        {/* Ещё */}
-        <button onClick={() => { if (guest) return needAuth(); setShowMore(true); }} className="flex flex-col items-center gap-1" title="Ещё действия">
-          <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
-            <span className="action-count-text text-white text-xs font-semibold">Ещё</span>
-          </div>
-        </button>
-      </div>
+      <VideoActionButtons
+        video={video}
+        liked={liked}
+        likeCount={likeCount}
+        commentCount={commentCount}
+        saved={saved}
+        guest={guest}
+        needAuth={needAuth}
+        toggleLike={toggleLike}
+        toggleSaved={toggleSaved}
+        formatCount={formatCount}
+        setShowComments={setShowComments}
+        setShowShare={setShowShare}
+        setShowMore={setShowMore}
+      />
 
       {showMore && (
         <VideoMoreSheet
@@ -768,31 +485,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
         onOpenChange={setShowReport}
       />
 
-      {playerUrl && createPortal(
-        <div className="fixed inset-0 z-[10000] bg-black flex flex-col">
-          {/* Верхняя панель с кнопкой Назад */}
-          <div className="flex items-center gap-3 px-4 pt-10 pb-3 bg-gradient-to-b from-black/80 to-transparent">
-            <button
-              onClick={() => setPlayerUrl(null)}
-              className="w-10 h-10 rounded-full bg-white/15 backdrop-blur flex items-center justify-center active:scale-95 transition-transform"
-              aria-label="Назад"
-            >
-              <Icon name="ChevronLeft" size={24} className="text-white" />
-            </button>
-            <span className="text-white font-semibold text-sm">Назад в Лоок</span>
-          </div>
-          {/* Сам плеер */}
-          <div className="flex-1 flex items-center justify-center px-2">
-            <video
-              src={playerUrl}
-              controls
-              autoPlay
-              playsInline
-              className="max-w-full max-h-full rounded-lg"
-            />
-          </div>
-        </div>,
-        document.body
+      {playerUrl && (
+        <VideoFullscreenPlayer playerUrl={playerUrl} onClose={() => setPlayerUrl(null)} />
       )}
 
       {showShare && (
