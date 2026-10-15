@@ -272,8 +272,13 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
     <div className="relative w-full h-full look-feed-root" style={{ background: "var(--look-bg)" }}>
       <div
         ref={containerRef}
-        className="absolute inset-0 overflow-y-scroll snap-y snap-mandatory"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none", background: "var(--look-bg)" }}
+        className={`absolute inset-0 overflow-y-scroll snap-y snap-mandatory${user ? " overscroll-y-contain" : ""}`}
+        style={{
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+          background: "var(--look-bg)",
+          ...(user ? { WebkitOverflowScrolling: "touch", touchAction: "pan-y" } : {}),
+        }}
       >
         {!dbLoaded ? (
           <div className="w-full flex items-center justify-center" style={{ height: "100%" }}>
@@ -287,8 +292,8 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
             <div
               key={`${video.id}-${i}`}
               ref={(el) => { slideRefs.current[i] = el; }}
-              className="w-full snap-start flex md:items-center md:justify-center"
-              style={{ height: "100%", background: "var(--look-bg)" }}
+              className={`w-full snap-start flex md:items-center md:justify-center${user ? " snap-always" : ""}`}
+              style={{ height: "100%", background: "var(--look-bg)", ...(user ? { contain: "layout paint style" } : {}) }}
             >
               <div className="w-full md:w-auto md:h-[calc(100vh-24px)] h-full" style={{ background: "var(--look-bg)" }}>
                 {distance <= 2 && (
