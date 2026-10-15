@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { openInBrowser } from "@/lib/externalLinks";
 
 const PRODUCTS_URL = "https://functions.poehali.dev/c4d3aa37-b7c2-4047-880a-ab17127da315";
 
@@ -122,6 +123,15 @@ export const trackProductClick = (productId: number, videoId?: number, userId?: 
     headers: { "Content-Type": "application/json", ...(userId ? { "X-User-Id": userId } : {}) },
     body: JSON.stringify({ product_id: productId, video_id: videoId, ref, kind, source: getTrafficSource() }),
   }).catch(() => {});
+};
+
+export const hasProductLink = (p: Pick<Product, "product_url">): boolean =>
+  !!p.product_url && /^https?:\/\//i.test(p.product_url);
+
+export const openProductLink = (p: Product, videoId?: number, userId?: string) => {
+  if (!p.product_url || !hasProductLink(p)) return;
+  trackProductClick(p.id, videoId, userId, "external");
+  openInBrowser(p.product_url);
 };
 
 export interface ProductClickStat { views: number; external: number; sources: Record<string, number> }

@@ -5,10 +5,8 @@ import UserAvatar from "@/components/ui/user-avatar";
 import { Post, formatLikes } from "./PostFeedTypes";
 import { useLikes } from "@/hooks/useLikes";
 import ProductDetailSheet from "@/components/products/ProductDetailSheet";
-import { useProductsByVideos, trackProductClick, Product } from "@/hooks/useProducts";
-import { useCart } from "@/hooks/useCart";
+import { useProductsByVideos, openProductLink, hasProductLink, Product } from "@/hooks/useProducts";
 import { useAuth } from "@/context/AuthContext";
-import { toast } from "sonner";
 
 const ASPECTS = [3 / 4, 1, 4 / 5, 5 / 6, 4 / 3, 2 / 3];
 
@@ -26,26 +24,15 @@ const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
   const aspect = ASPECTS[hashId(post.id) % ASPECTS.length];
   const { count: likeCount } = useLikes(post.article ? "article" : "post", post.article ? post.article.id : post.id, post.likes);
   const { user } = useAuth();
-  const { addToCart } = useCart();
   const [showProducts, setShowProducts] = useState(false);
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
-  const [addingProductId, setAddingProductId] = useState<number | null>(null);
 
   const productVideoIds = post.hasProducts ? [post.id] : [];
   const productsByVideo = useProductsByVideos(productVideoIds);
   const products = productsByVideo[String(post.id)] || [];
 
-  const handleBuyNow = async (productId: number) => {
-    setAddingProductId(productId);
-    trackProductClick(productId, post.id, user?.id);
-    const ok = await addToCart(productId);
-    setAddingProductId(null);
-    if (ok) {
-      setShowProducts(false);
-      window.dispatchEvent(new CustomEvent("open-cart"));
-    } else {
-      toast.error("Войди в аккаунт, чтобы купить");
-    }
+  const handleGoToProduct = (p: Product) => {
+    openProductLink(p, post.id, user?.id);
   };
 
   return (
@@ -148,15 +135,14 @@ const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
                         </span>
                       )}
                     </div>
-                    <button
-                      onClick={() => handleBuyNow(p.id)}
-                      disabled={addingProductId === p.id}
-                      className="flex-shrink-0 px-3 py-1.5 rounded-full bg-[#fe2c55] text-white text-xs font-bold active:scale-95 transition-transform disabled:opacity-50 whitespace-nowrap"
-                    >
-                      {addingProductId === p.id
-                        ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        : "Перейти"}
-                    </button>
+                    {hasProductLink(p) && (
+                      <button
+                        onClick={() => handleGoToProduct(p)}
+                        className="flex-shrink-0 px-3 py-1.5 rounded-full bg-[#fe2c55] text-white text-xs font-bold active:scale-95 transition-transform whitespace-nowrap"
+                      >
+                        Перейти
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

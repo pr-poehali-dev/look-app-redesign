@@ -404,7 +404,7 @@ const EditorPublishStep = ({
                   <input
                     value={newUrl}
                     onChange={(e) => setNewUrl(e.target.value)}
-                    placeholder="Ссылка на товар (необязательно)"
+                    placeholder="Ссылка на сайт продавца, https://…"
                     className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
                   />
                   <div className="flex gap-2 pt-1">
@@ -419,7 +419,7 @@ const EditorPublishStep = ({
               )}
             </div>
           ) : products.length === 0 && (
-            <p className="text-white/30 text-xs">Добавь товары — под видео появится значок «Товары в кадре», зрители смогут купить прямо из ленты.</p>
+            <p className="text-white/30 text-xs">Добавь товары — под видео появится значок «Товары в кадре», зрители смогут перейти на сайт продавца.</p>
           )}
         </div>
 

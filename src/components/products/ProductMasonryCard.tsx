@@ -8,16 +8,13 @@ import ProductDetailSheet from "./ProductDetailSheet";
 
 interface Props {
   p: Product;
-  onAdd: (id: number) => void;
-  adding: boolean;
   hideOwner?: boolean;
   rating?: { avg: number; count: number };
 }
 
-const ProductMasonryCard = ({ p, onAdd, adding, hideOwner, rating }: Props) => {
+const ProductMasonryCard = ({ p, hideOwner, rating }: Props) => {
   const [showReviews, setShowReviews] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
-  const [liked, setLiked] = useState(false);
   const { user } = useAuth();
   const [gettingLink, setGettingLink] = useState(false);
 
@@ -25,11 +22,6 @@ const ProductMasonryCard = ({ p, onAdd, adding, hideOwner, rating }: Props) => {
     if (p.owner_handle && !p.is_partner) {
       window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: p.owner_handle } }));
     }
-  };
-
-  const handleLike = () => {
-    setLiked(true);
-    onAdd(p.id);
   };
 
   const shareReferral = async (e: React.MouseEvent) => {
@@ -58,18 +50,6 @@ const ProductMasonryCard = ({ p, onAdd, adding, hideOwner, rating }: Props) => {
             Промокод
           </span>
         )}
-
-        <button
-          onClick={handleLike}
-          disabled={adding}
-          className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-black/40 backdrop-blur flex items-center justify-center active:scale-90 transition-transform disabled:opacity-60"
-        >
-          {adding ? (
-            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <Icon name="Heart" size={16} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"} />
-          )}
-        </button>
       </div>
 
       <div className="p-2.5 flex flex-col gap-1.5">

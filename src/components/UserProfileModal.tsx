@@ -5,7 +5,6 @@ import UserAvatar from "@/components/ui/user-avatar";
 import { getAuthor } from "@/data/authors";
 import { useFollowing, useFollowerCount } from "@/hooks/useFollowing";
 import { useShopProducts } from "@/hooks/useProducts";
-import { useCart } from "@/hooks/useCart";
 import { useUserArticles } from "@/hooks/useArticles";
 import UserArticlesList from "@/components/profile/UserArticlesList";
 import ShopProductsGrid from "@/components/products/ShopProductsGrid";
@@ -42,13 +41,6 @@ const UserProfileModal = ({ handle, initialTab = "media", onClose }: Props) => {
   const { products: shopProducts, loading: shopLoading } = useShopProducts(realUser?.id);
   const { boards: userBoards, loading: boardsLoading } = useUserBoards(realUser?.id);
   const { articles: userArticles, loading: articlesLoading } = useUserArticles(realUser?.id);
-  const { addToCart } = useCart();
-  const [addingId, setAddingId] = useState<number | null>(null);
-  const handleAddToCart = async (id: number) => {
-    setAddingId(id);
-    await addToCart(id);
-    setAddingId(null);
-  };
   const [userMedia, setUserMedia] = useState<{ id: number; image: string; isVideo: boolean }[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
   const [notifMenu, setNotifMenu] = useState(false);
@@ -344,7 +336,7 @@ const UserProfileModal = ({ handle, initialTab = "media", onClose }: Props) => {
                 <p className="text-gray-400 text-sm">В магазине пока нет товаров</p>
               </div>
             ) : (
-              <ShopProductsGrid products={shopProducts} onAdd={handleAddToCart} addingId={addingId} />
+              <ShopProductsGrid products={shopProducts} />
             )
           ) : tab === "boards" ? (
             boardsLoading && userBoards.length === 0 ? (

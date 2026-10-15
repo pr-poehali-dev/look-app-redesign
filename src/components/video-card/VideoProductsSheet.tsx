@@ -1,16 +1,14 @@
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
-import type { Product } from "@/hooks/useProducts";
+import { hasProductLink, type Product } from "@/hooks/useProducts";
 
 interface Props {
   products: Product[];
-  addingProductId: number | null;
   setShowProducts: (v: boolean) => void;
-  handleBuyNow: (productId: number) => void;
-  handleAddToCart: (productId: number) => void;
+  handleGoToProduct: (product: Product) => void;
 }
 
-const VideoProductsSheet = ({ products, addingProductId, setShowProducts, handleBuyNow, handleAddToCart }: Props) => {
+const VideoProductsSheet = ({ products, setShowProducts, handleGoToProduct }: Props) => {
   return createPortal(
     <div
       className="fixed inset-0 z-[9999] flex flex-col justify-end md:flex-row md:justify-end md:items-center md:bg-black/40"
@@ -53,25 +51,14 @@ const VideoProductsSheet = ({ products, addingProductId, setShowProducts, handle
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-col gap-1.5 flex-shrink-0">
+                  {hasProductLink(p) && (
                     <button
-                      onClick={() => handleBuyNow(p.id)}
-                      disabled={addingProductId === p.id}
-                      className="px-3 py-1.5 rounded-full bg-[#fe2c55] text-white text-xs font-bold active:scale-95 transition-transform disabled:opacity-50 whitespace-nowrap"
+                      onClick={() => handleGoToProduct(p)}
+                      className="flex-shrink-0 px-3 py-1.5 rounded-full bg-[#fe2c55] text-white text-xs font-bold active:scale-95 transition-transform whitespace-nowrap"
                     >
                       Перейти
                     </button>
-                    <button
-                      onClick={() => handleAddToCart(p.id)}
-                      disabled={addingProductId === p.id}
-                      className="w-9 h-9 mx-auto rounded-full bg-white/10 flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
-                      title="В корзину"
-                    >
-                      {addingProductId === p.id
-                        ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        : <Icon name="ShoppingCart" size={15} className="text-white" />}
-                    </button>
-                  </div>
+                  )}
                 </div>
                 {p.owner_handle && !p.is_partner && (
                   <button

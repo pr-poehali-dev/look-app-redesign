@@ -1,7 +1,6 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { useCatalog } from "@/hooks/useProducts";
-import { useCart } from "@/hooks/useCart";
 import { useReviewSummary } from "@/hooks/useReviews";
 import ProductMasonryCard from "@/components/products/ProductMasonryCard";
 
@@ -20,16 +19,7 @@ const CATEGORIES = [
 const CatalogScreen = ({ onBack }: { onBack: () => void }) => {
   const [category, setCategory] = useState("all");
   const { products, loading } = useCatalog(category);
-  const { addToCart } = useCart();
   const ratings = useReviewSummary(products.map((p) => p.id));
-  const [addingId, setAddingId] = useState<number | null>(null);
-
-  const handleAdd = async (id: number) => {
-    setAddingId(id);
-    await addToCart(id);
-    setAddingId(null);
-  };
-
   return (
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
       <div className="flex items-center gap-3 px-4 pt-14 pb-4 bg-white border-b border-gray-100">
@@ -65,7 +55,7 @@ const CatalogScreen = ({ onBack }: { onBack: () => void }) => {
       ) : (
         <div className="columns-2 gap-3 px-4 pb-8">
           {products.map((p) => (
-            <ProductMasonryCard key={p.id} p={p} onAdd={handleAdd} adding={addingId === p.id} rating={ratings[String(p.id)]} />
+            <ProductMasonryCard key={p.id} p={p} rating={ratings[String(p.id)]} />
           ))}
         </div>
       )}

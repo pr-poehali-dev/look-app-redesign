@@ -155,16 +155,13 @@ const Index = () => {
       setActiveTab("messages");
     };
     const onUseTemplate = () => setShowCamera(true);
-    const onOpenCart = () => setActiveTab("profile");
     window.addEventListener("open-user-profile", onOpen);
     window.addEventListener("open-direct-message", onMessage);
     window.addEventListener("use-template", onUseTemplate);
-    window.addEventListener("open-cart", onOpenCart);
     return () => {
       window.removeEventListener("open-user-profile", onOpen);
       window.removeEventListener("open-direct-message", onMessage);
       window.removeEventListener("use-template", onUseTemplate);
-      window.removeEventListener("open-cart", onOpenCart);
     };
   }, []);
 

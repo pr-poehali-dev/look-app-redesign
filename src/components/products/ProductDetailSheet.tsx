@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { openInBrowser } from "@/lib/externalLinks";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
-import { Product, trackProductClick, buildProductLink } from "@/hooks/useProducts";
-import { useCart } from "@/hooks/useCart";
+import { Product, openProductLink, hasProductLink, buildProductLink } from "@/hooks/useProducts";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import ReviewsSheet from "./ReviewsSheet";
@@ -16,33 +14,12 @@ interface Props {
 
 const ProductDetailSheet = ({ product: p, videoId, onClose }: Props) => {
   const { user } = useAuth();
-  const { addToCart } = useCart();
-  const [busy, setBusy] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
 
-  const add = async (buyNow: boolean) => {
-    setBusy(true);
-    trackProductClick(p.id, videoId, user?.id);
-    const ok = await addToCart(p.id);
-    setBusy(false);
-    if (!ok) {
-      toast.error("Войди в аккаунт, чтобы добавить в корзину");
-      return;
-    }
-    if (buyNow) {
-      onClose();
-      window.dispatchEvent(new CustomEvent("open-cart"));
-    } else {
-      toast.success("Добавлено в корзину");
-    }
-  };
-
-  const isExternal = !!p.product_url && /^https?:\/\//i.test(p.product_url);
+  const isExternal = hasProductLink(p);
 
   const goExternal = () => {
-    if (!p.product_url) return;
-    trackProductClick(p.id, videoId, user?.id, "external");
-    openInBrowser(p.product_url);
+    openProductLink(p, videoId, user?.id);
   };
 
   const openShop = () => {
@@ -149,18 +126,8 @@ const ProductDetailSheet = ({ product: p, videoId, onClose }: Props) => {
             </button>
           )}
 
-          <div className="flex gap-2 pt-1">
-            {!isExternal && (
-              <button
-                onClick={() => add(false)}
-                disabled={busy || p.in_stock === false}
-                className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50 flex-shrink-0"
-                title="В корзину"
-              >
-                <Icon name="ShoppingCart" size={20} className="text-white" />
-              </button>
-            )}
-            {isExternal ? (
+          {isExternal && (
+            <div className="flex gap-2 pt-1">
               <button
                 onClick={goExternal}
                 disabled={p.in_stock === false}
@@ -169,16 +136,8 @@ const ProductDetailSheet = ({ product: p, videoId, onClose }: Props) => {
                 <Icon name="ExternalLink" size={17} />
                 Перейти на сайт продавца
               </button>
-            ) : (
-              <button
-                onClick={() => add(true)}
-                disabled={busy || p.in_stock === false}
-                className="flex-1 h-12 rounded-full bg-[#fe2c55] text-white text-sm font-bold active:scale-95 transition-transform disabled:opacity-50"
-              >
-                {busy ? "Подождите..." : "Купить сейчас"}
-              </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
       {showReviews && <ReviewsSheet productId={p.id} title={p.title} onClose={() => setShowReviews(false)} />}

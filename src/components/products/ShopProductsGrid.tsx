@@ -24,11 +24,9 @@ const SORTS: { id: Sort; label: string }[] = [
 
 interface Props {
   products: Product[];
-  onAdd: (id: number) => void;
-  addingId: number | null;
 }
 
-const ShopProductsGrid = ({ products, onAdd, addingId }: Props) => {
+const ShopProductsGrid = ({ products }: Props) => {
   const [category, setCategory] = useState("all");
   const [sort, setSort] = useState<Sort>("new");
   const [query, setQuery] = useState("");
@@ -101,7 +99,7 @@ const ShopProductsGrid = ({ products, onAdd, addingId }: Props) => {
       ) : (
         <div className="columns-2 gap-3 p-3">
           {visible.map((p) => (
-            <ProductMasonryCard key={p.id} p={p} onAdd={onAdd} adding={addingId === p.id} hideOwner />
+            <ProductMasonryCard key={p.id} p={p} hideOwner />
           ))}
         </div>
       )}

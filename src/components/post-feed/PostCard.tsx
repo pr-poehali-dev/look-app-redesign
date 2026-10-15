@@ -12,8 +12,7 @@ import { useSavedItem } from "@/hooks/useSaved";
 import { useFollowing } from "@/hooks/useFollowing";
 import { useMutedAuthor } from "@/hooks/useMutedAuthors";
 import { useAuth } from "@/context/AuthContext";
-import { useProductsByVideos, trackProductClick, Product } from "@/hooks/useProducts";
-import { useCart } from "@/hooks/useCart";
+import { useProductsByVideos, openProductLink, hasProductLink, Product } from "@/hooks/useProducts";
 import { toast } from "sonner";
 import { copyText } from "@/lib/copyText";
 import ReportButton from "@/components/ReportButton";
@@ -38,7 +37,6 @@ const PostCard = ({ post }: { post: Post }) => {
   const [showReport, setShowReport] = useState(false);
   const [showProducts, setShowProducts] = useState(false);
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
-  const [addingProductId, setAddingProductId] = useState<number | null>(null);
   const [commentText, setCommentText] = useState("");
   const [copied, setCopied] = useState(false);
   const shareUrl = `${window.location.origin}/?post=${post.id}`;
@@ -62,33 +60,14 @@ const PostCard = ({ post }: { post: Post }) => {
   const productVideoIds = post.hasProducts ? [post.id] : [];
   const productsByVideo = useProductsByVideos(productVideoIds);
   const products = productsByVideo[String(post.id)] || [];
-  const { addToCart } = useCart();
 
   const useTemplate = () => {
     try { sessionStorage.setItem("pending_template_id", post.templateId || ""); } catch { /* ignore */ }
     window.dispatchEvent(new CustomEvent("use-template", { detail: { templateId: post.templateId } }));
   };
 
-  const handleAddToCart = async (productId: number) => {
-    setAddingProductId(productId);
-    trackProductClick(productId, post.id, user?.id);
-    const ok = await addToCart(productId);
-    setAddingProductId(null);
-    if (ok) toast.success("Добавлено в корзину");
-    else toast.error("Войди в аккаунт, чтобы добавить в корзину");
-  };
-
-  const handleBuyNow = async (productId: number) => {
-    setAddingProductId(productId);
-    trackProductClick(productId, post.id, user?.id);
-    const ok = await addToCart(productId);
-    setAddingProductId(null);
-    if (ok) {
-      setShowProducts(false);
-      window.dispatchEvent(new CustomEvent("open-cart"));
-    } else {
-      toast.error("Войди в аккаунт, чтобы купить");
-    }
+  const handleGoToProduct = (p: Product) => {
+    openProductLink(p, post.id, user?.id);
   };
 
   const handleSendComment = () => {
@@ -515,25 +494,14 @@ const PostCard = ({ post }: { post: Post }) => {
                           </span>
                         )}
                       </div>
-                      <div className="flex flex-col gap-1.5 flex-shrink-0">
+                      {hasProductLink(p) && (
                         <button
-                          onClick={() => handleBuyNow(p.id)}
-                          disabled={addingProductId === p.id}
-                          className="px-3 py-1.5 rounded-full bg-[#fe2c55] text-white text-xs font-bold active:scale-95 transition-transform disabled:opacity-50 whitespace-nowrap"
+                          onClick={() => handleGoToProduct(p)}
+                          className="flex-shrink-0 px-3 py-1.5 rounded-full bg-[#fe2c55] text-white text-xs font-bold active:scale-95 transition-transform whitespace-nowrap"
                         >
                           Перейти
                         </button>
-                        <button
-                          onClick={() => handleAddToCart(p.id)}
-                          disabled={addingProductId === p.id}
-                          className="w-9 h-9 mx-auto rounded-full bg-white/10 flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
-                          title="В корзину"
-                        >
-                          {addingProductId === p.id
-                            ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            : <Icon name="ShoppingCart" size={15} className="text-white" />}
-                        </button>
-                      </div>
+                      )}
                     </div>
                     {p.owner_handle && !p.is_partner && (
                       <button

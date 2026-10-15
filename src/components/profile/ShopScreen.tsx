@@ -185,7 +185,7 @@ const ShopScreen = ({ onBack }: { onBack: () => void }) => {
           <input
             value={editing.productUrl}
             onChange={(e) => setEditing({ ...editing, productUrl: e.target.value })}
-            placeholder="Ссылка на товар на другом сайте, https://… (необязательно)"
+            placeholder="Ссылка на сайт продавца, https://…"
             className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none"
           />
           <button

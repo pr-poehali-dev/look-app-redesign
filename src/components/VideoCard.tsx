@@ -9,8 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import ReportButton from "@/components/ReportButton";
 import { toast } from "sonner";
 import { trackVideoView } from "@/hooks/useFeedSignals";
-import { useProductsByVideos, trackProductClick } from "@/hooks/useProducts";
-import { useCart } from "@/hooks/useCart";
+import { useProductsByVideos, openProductLink, type Product } from "@/hooks/useProducts";
 import AddToBoardSheet from "@/components/products/AddToBoardSheet";
 import VideoMoreSheet from "./video-card/VideoMoreSheet";
 import VideoShareSheet from "./video-card/VideoShareSheet";
@@ -91,14 +90,12 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
   const [showAddToBoard, setShowAddToBoard] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showProducts, setShowProducts] = useState(false);
-  const [addingProductId, setAddingProductId] = useState<number | null>(null);
 
   // Товары грузим ТОЛЬКО если у видео реально есть привязанные товары (экономим трафик)
   const dbVideoId = video.dbId ?? video.id;
   const productVideoIds = video.hasProducts ? [dbVideoId] : [];
   const productsByVideo = useProductsByVideos(productVideoIds);
   const products = productsByVideo[String(dbVideoId)] || [];
-  const { addToCart } = useCart();
 
   const handleUseTemplate = () => {
     // Сохраняем в sessionStorage — CameraScreen/MediaEditor монтируются позже клика,
@@ -108,26 +105,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
     toast.success("Шаблон открыт в конструкторе");
   };
 
-  const handleAddToCart = async (productId: number) => {
-    setAddingProductId(productId);
-    trackProductClick(productId, dbVideoId, user?.id);
-    const ok = await addToCart(productId);
-    setAddingProductId(null);
-    if (ok) toast.success("Добавлено в корзину");
-    else toast.error("Войди в аккаунт, чтобы добавить в корзину");
-  };
-
-  const handleBuyNow = async (productId: number) => {
-    setAddingProductId(productId);
-    trackProductClick(productId, dbVideoId, user?.id);
-    const ok = await addToCart(productId);
-    setAddingProductId(null);
-    if (ok) {
-      setShowProducts(false);
-      window.dispatchEvent(new CustomEvent("open-cart"));
-    } else {
-      toast.error("Войди в аккаунт, чтобы купить");
-    }
+  const handleGoToProduct = (p: Product) => {
+    openProductLink(p, dbVideoId, user?.id);
   };
   const [playerUrl, setPlayerUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -509,10 +488,8 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
       {showProducts && (
         <VideoProductsSheet
           products={products}
-          addingProductId={addingProductId}
           setShowProducts={setShowProducts}
-          handleBuyNow={handleBuyNow}
-          handleAddToCart={handleAddToCart}
+          handleGoToProduct={handleGoToProduct}
         />
       )}
 

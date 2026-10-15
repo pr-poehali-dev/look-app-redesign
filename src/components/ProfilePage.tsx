@@ -3,7 +3,6 @@ import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import SettingsScreen from "./SettingsScreen";
 import AnalyticsScreen from "./profile/AnalyticsScreen";
-import CartScreen from "./profile/CartScreen";
 import ShopScreen from "./profile/ShopScreen";
 import CatalogScreen from "./profile/CatalogScreen";
 import BoardsScreen from "./profile/BoardsScreen";
@@ -266,7 +265,6 @@ const ProfilePage = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showScreen, setShowScreen] = useState<"followers" | "following" | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
-  const [showCart, setShowCart] = useState(false);
   const [showShop, setShowShop] = useState(false);
   const [showCatalog, setShowCatalog] = useState(false);
   const [showBoards, setShowBoards] = useState(false);
@@ -336,12 +334,6 @@ const ProfilePage = () => {
     if (liveItems.length === 0) setMediaViewer(null);
   }, [stories, mediaViewer]);
 
-  // Кнопка «Купить» из ленты/видео открывает профиль сразу на экране корзины
-  useEffect(() => {
-    const onOpenCart = () => setShowCart(true);
-    window.addEventListener("open-cart", onOpenCart);
-    return () => window.removeEventListener("open-cart", onOpenCart);
-  }, []);
   const [deleteStoryId, setDeleteStoryId] = useState<number | null>(null);
   const [categoryEditId, setCategoryEditId] = useState<number | null>(null);
   const [savingCategory, setSavingCategory] = useState(false);
@@ -391,7 +383,6 @@ const ProfilePage = () => {
   if (showScreen === "followers") return <UserListScreen title="Подписчики" users={followersList} onBack={() => setShowScreen(null)} emptyText="Пока нет подписчиков" />;
   if (showScreen === "following") return <UserListScreen title="Подписки" users={followingUsers} onBack={() => setShowScreen(null)} emptyText="Ты пока ни на кого не подписан" showUnfollow />;
   if (showAnalytics) return <AnalyticsScreen onBack={() => setShowAnalytics(false)} />;
-  if (showCart) return <CartScreen onBack={() => setShowCart(false)} />;
   if (showShop) return <ShopScreen onBack={() => setShowShop(false)} />;
   if (showCatalog) return <CatalogScreen onBack={() => setShowCatalog(false)} />;
   if (showArticles) return <ArticlesScreen onBack={() => setShowArticles(false)} />;
@@ -523,7 +514,7 @@ const ProfilePage = () => {
         </button>
       </div>
 
-      {/* Аналитика + Магазин + Каталог + Корзина + Доски + Партнёрка */}
+      {/* Аналитика + Магазин + Каталог + Доски + Партнёрка */}
       <div className="grid grid-cols-4 md:grid-cols-7 gap-1.5 px-4 pb-4 md:px-3 md:pb-3">
         <button
           onClick={() => setShowAnalytics(true)}
@@ -545,13 +536,6 @@ const ProfilePage = () => {
         >
           <Icon name="LayoutGrid" size={15} />
           Каталог
-        </button>
-        <button
-          onClick={() => setShowCart(true)}
-          className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
-        >
-          <Icon name="ShoppingCart" size={15} />
-          Корзина
         </button>
         <button
           onClick={() => setShowBoards(true)}
