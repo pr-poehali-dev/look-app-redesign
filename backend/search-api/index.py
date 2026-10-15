@@ -174,9 +174,9 @@ def handler(event: dict, context) -> dict:
         elif kind == 'article':
             rows, fuzzy = run_search(
                 cur, f"{schema}.articles", ['title'],
-                "id, title, cover_image, views", "status = 'published'", p,
+                "id, title, cover_image, views, kind", "status = 'published'", p,
                 "created_at DESC", "views DESC NULLS LAST", sort, period, 'created_at')
-            items = [{'id': r[0], 'title': r[1], 'cover': r[2], 'views': r[3] or 0} for r in rows]
+            items = [{'id': r[0], 'title': r[1], 'cover': r[2], 'views': r[3] or 0, 'kind': r[4] or 'article'} for r in rows]
         else:
             type_cond = "type = 'video'" if kind == 'video' else "type IN ('image', 'text')"
             rows, fuzzy = run_search(

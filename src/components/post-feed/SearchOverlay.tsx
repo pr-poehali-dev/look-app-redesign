@@ -13,7 +13,7 @@ import UserProfileModal from "@/components/UserProfileModal";
 const SEARCH_URL = "https://functions.poehali.dev/7f681f12-fcd3-45e4-aa45-38fccd3d0760";
 
 interface VideoHit { id: number; url: string; thumbnail: string | null; author: string; handle: string; description: string; likes: string }
-interface ArticleHit { id: number; title: string; cover: string | null; views: number }
+interface ArticleHit { id: number; title: string; cover: string | null; views: number; kind?: string }
 interface PersonHit { id: string; name: string; handle: string; avatar: string | null; is_verified: boolean }
 
 const PRODUCTS_URL = "https://functions.poehali.dev/c4d3aa37-b7c2-4047-880a-ab17127da315";
@@ -149,6 +149,8 @@ const SearchOverlay = ({ posts, onClose, onOpenPost, initialQuery = "" }: Props)
   const results = postHits;
 
   const trendList = Array.from(new Set([...popularQueries, ...trending])).slice(0, 12);
+
+  const tutorialHits = articles.filter((a) => a.kind === "tutorial");
 
   const totalHits = postHits.length + videoHits.length + people.length + articles.length + products.length;
 
@@ -328,14 +330,27 @@ const SearchOverlay = ({ posts, onClose, onOpenPost, initialQuery = "" }: Props)
                 </div>
               )
             ) : resultTab === "posts" ? (
-              extraLoading && results.length === 0 ? (
+              extraLoading && results.length === 0 && tutorialHits.length === 0 ? (
                 <div className="flex justify-center py-16">
                   <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 </div>
-              ) : results.length > 0 ? (
+              ) : results.length > 0 || tutorialHits.length > 0 ? (
                 <div className="flex gap-2 items-start">
                   {[0, 1].map((col) => (
                     <div key={col} className="flex-1 min-w-0 flex flex-col gap-2">
+                      {tutorialHits.filter((_, i) => i % 2 === col).map((a) => (
+                        <button
+                          key={`t${a.id}`}
+                          onClick={() => { commitSearch(query); setOpenArticleId(a.id); }}
+                          className="rounded-2xl overflow-hidden bg-white/5 text-left active:opacity-90"
+                        >
+                          {a.cover && <img src={a.cover} alt={a.title} className="w-full aspect-square object-cover" loading="lazy" />}
+                          <div className="p-2">
+                            <p className="text-white text-[12px] leading-snug line-clamp-2">{a.title}</p>
+                            <span className="text-white/40 text-[10px]">Туториал</span>
+                          </div>
+                        </button>
+                      ))}
                       {results.filter((_, i) => i % 2 === col).map((p) => (
                         <button
                           key={p.id}
