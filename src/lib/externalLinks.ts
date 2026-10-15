@@ -16,6 +16,7 @@ export const initExternalLinks = () => {
       if (!isPhone()) return;
       const el = (e.target as HTMLElement | null)?.closest?.("a") as HTMLAnchorElement | null;
       if (!el || !el.href || !isExternal(el)) return;
+      if (el.dataset.lookOpened === "1") return;
       e.preventDefault();
       openInBrowser(el.href);
     },
@@ -26,6 +27,13 @@ export const initExternalLinks = () => {
 export const openInBrowser = (url: string) => {
   let u: URL;
   try { u = new URL(url, window.location.href); } catch { return; }
-  const w = window.open(u.href, "_blank", "noopener,noreferrer");
-  if (!w) window.location.href = u.href;
+  const a = document.createElement("a");
+  a.href = u.href;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  a.dataset.lookOpened = "1";
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => a.remove(), 0);
 };
