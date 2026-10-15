@@ -3,9 +3,16 @@ import Icon from "@/components/ui/icon";
 import NoteCard from "./NoteCard";
 import NoteViewer from "./NoteViewer";
 import { Post } from "./PostFeedTypes";
+import { Reader } from "@/components/profile/ArticlesScreen";
 
-const MasonryFeed = ({ posts, loading, topPad = 0, top }: { posts: Post[]; loading: boolean; topPad?: number; top?: React.ReactNode }) => {
-  const [opened, setOpened] = useState<Post | null>(null);
+const MasonryFeed = ({ posts, loading, topPad = 0 }: { posts: Post[]; loading: boolean; topPad?: number }) => {
+  const [openedPost, setOpenedPost] = useState<Post | null>(null);
+  const [openedArticleId, setOpenedArticleId] = useState<number | null>(null);
+  const opened = openedPost && !openedPost.article ? openedPost : null;
+  const setOpened = (p: Post | null) => {
+    if (p?.article) setOpenedArticleId(p.article.id);
+    else setOpenedPost(p);
+  };
   const left: Post[] = [];
   const right: Post[] = [];
   posts.forEach((p, i) => (i % 2 === 0 ? left : right).push(p));
@@ -14,7 +21,6 @@ const MasonryFeed = ({ posts, loading, topPad = 0, top }: { posts: Post[]; loadi
     <div className="h-full overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
       {topPad > 0 && <div style={{ height: topPad }} aria-hidden />}
       <div className="px-2 md:px-4 pt-2 pb-24">
-        {top}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
@@ -47,7 +53,12 @@ const MasonryFeed = ({ posts, loading, topPad = 0, top }: { posts: Post[]; loadi
           </>
         )}
       </div>
-      {opened && <NoteViewer post={opened} onClose={() => setOpened(null)} />}
+      {opened && <NoteViewer post={opened} onClose={() => setOpenedPost(null)} />}
+      {openedArticleId !== null && (
+        <div className="fixed inset-0 z-[150] bg-white">
+          <Reader id={openedArticleId} onBack={() => setOpenedArticleId(null)} onEdit={() => setOpenedArticleId(null)} />
+        </div>
+      )}
     </div>
   );
 };

@@ -8,7 +8,9 @@ import PostCard from "./post-feed/PostCard";
 import NoteViewer from "./post-feed/NoteViewer";
 import MasonryFeed from "./post-feed/MasonryFeed";
 import ArticlesFeed from "./post-feed/ArticlesFeed";
-import TutorialsStrip from "./post-feed/TutorialsStrip";
+import ArticleCard from "./post-feed/ArticleCard";
+import { Reader } from "@/components/profile/ArticlesScreen";
+import { useArticles } from "@/hooks/useArticles";
 import SearchOverlay from "./post-feed/SearchOverlay";
 import { Post, GET_PHOTOS_URL, formatTime, parseServerDate } from "./post-feed/PostFeedTypes";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
@@ -31,6 +33,8 @@ const SCOPES: { id: FeedScope; label: string }[] = [
 
 const PostFeed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const { articles: feedArticles } = useArticles("feed");
+  const [openedArticleId, setOpenedArticleId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const { user, token, updateUser } = useAuth();
   const { addMedia, removedIds, mediaVersion } = useUserMedia();
@@ -166,6 +170,23 @@ const PostFeed = () => {
     c.scrollTo({ top: c.scrollTop + dir * c.clientHeight * 0.85, behavior: "smooth" });
   };
 
+  const tutorialPosts: Post[] = useMemo(() => feedArticles.filter(a => a.kind === "tutorial").map(a => ({
+    id: -a.id,
+    author: a.author_name,
+    handle: a.author_handle || a.author_name,
+    avatar: a.author_avatar || "",
+    image: a.cover_image || "",
+    caption: a.title,
+    hashtags: [],
+    likes: 0,
+    comments: 0,
+    time: formatTime(a.created_at),
+    createdAt: a.created_at ? parseServerDate(a.created_at).getTime() : undefined,
+    category: "tutorial",
+    views: a.views,
+    article: a,
+  })), [feedArticles]);
+
   const imageCounts = useBulkCounts("post", posts.filter(p => !p.isVideo).map(p => p.id));
   const videoCounts = useBulkCounts("video", posts.filter(p => p.isVideo).map(p => p.id));
   const postsWithCounts = posts.map(p => {
@@ -178,7 +199,7 @@ const PostFeed = () => {
     };
   });
 
-  const visiblePosts = postsWithCounts.filter(p => !removedIds.has(p.id));
+  const visiblePosts = [...postsWithCounts.filter(p => !removedIds.has(p.id)), ...tutorialPosts].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
   const myHandle = (user?.handle || "").toLowerCase();
   const scopedPosts = useMemo(() => {
     const byNew = (a: Post, b: Post) => (b.createdAt ?? 0) - (a.createdAt ?? 0);
@@ -223,6 +244,7 @@ const PostFeed = () => {
 
   const seenHandles = new Set<string>();
   const storyUsers = scopedPosts.filter(p => {
+    if (p.article) return false;
     const key = (p.handle || p.author || "").toLowerCase().trim();
     if (!key || seenHandles.has(key)) return false;
     seenHandles.add(key);
@@ -230,7 +252,7 @@ const PostFeed = () => {
   }).slice(0, 12);
   const storiesByHandle = (handle: string): StoryViewerItem[] =>
     visiblePosts
-      .filter(p => (p.handle || p.author || "").toLowerCase().trim() === handle.toLowerCase().trim())
+      .filter(p => !p.article && (p.handle || p.author || "").toLowerCase().trim() === handle.toLowerCase().trim())
       .map(p => ({ id: p.id, label: p.handle, avatar: p.avatar, image: p.image, isVideo: p.isVideo }));
 
   return (
@@ -248,7 +270,7 @@ const PostFeed = () => {
       {showSearch && (
         <SearchOverlay
           initialQuery={searchSeed}
-          posts={categoryPosts}
+          posts={categoryPosts.filter(p => !p.article)}
           onClose={() => setShowSearch(false)}
           onOpenPost={(p) => { setShowSearch(false); setSearchOpenedPost(p); }}
         />
@@ -385,13 +407,9 @@ const PostFeed = () => {
         <div className="absolute inset-0">
           <ArticlesFeed topPad={headerH} />
         </div>
-      ) : categoryId === "tutorial" ? (
-        <div className="absolute inset-0">
-          <ArticlesFeed topPad={headerH} onlyTutorials />
-        </div>
       ) : viewMode === "masonry" ? (
         <div className="absolute inset-0">
-          <MasonryFeed posts={categoryPosts} loading={loading} topPad={headerH} top={categoryId === "recommend" || categoryId === "diy" ? <TutorialsStrip /> : undefined} />
+          <MasonryFeed posts={categoryPosts} loading={loading} topPad={headerH} />
         </div>
       ) : (
         /* Posts — прокрутка с привязкой, под фиксированной панелью сторис */
@@ -414,7 +432,13 @@ const PostFeed = () => {
                   className="snap-start snap-always flex flex-col "
                   style={{ height: `calc(100% - ${headerH}px)`, minHeight: `calc(100% - ${headerH}px)`, scrollMarginTop: headerH }}
                 >
-                  <PostCard post={post} />
+                  {post.article ? (
+                    <div className="flex-1 min-h-0 overflow-y-auto px-3 pt-3">
+                      <ArticleCard a={post.article} onOpen={() => setOpenedArticleId(post.article!.id)} />
+                    </div>
+                  ) : (
+                    <PostCard post={post} />
+                  )}
                 </div>
               ))
             )}
@@ -430,6 +454,12 @@ const PostFeed = () => {
           <Icon name="MapPin" size={14} className="text-white" />
           {user?.city} · сменить
         </button>
+      )}
+
+      {openedArticleId !== null && (
+        <div className="fixed inset-0 z-[150] bg-white">
+          <Reader id={openedArticleId} onBack={() => setOpenedArticleId(null)} onEdit={() => setOpenedArticleId(null)} />
+        </div>
       )}
 
       {/* Desktop nav arrows — только в режиме полноэкранной ленты */}

@@ -8,7 +8,7 @@ export const FEED_CATEGORIES: FeedCategory[] = [
   { id: "recommend", label: "Все", match: [] },
   { id: "lifehacks", label: "Советы", match: ["lifehacks"] },
   { id: "traveldiary", label: "Дневник путешествий", match: ["traveldiary"] },
-  { id: "diy", label: "Сделай сам", match: ["diy"] },
+  { id: "diy", label: "Сделай сам", match: ["diy", "tutorial"] },
   { id: "review", label: "Обзоры", match: ["review"] },
   { id: "tutorial", label: "Туториалы", match: ["tutorial"] },
   { id: "fashion", label: "Мода", match: ["fashion", "style"] },

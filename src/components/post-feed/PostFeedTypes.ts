@@ -1,3 +1,5 @@
+import type { Article } from "@/hooks/useArticles";
+
 export interface Story {
   id: number;
   handle: string;
@@ -35,6 +37,7 @@ export interface Post {
   adAdvertiser?: string | null;
   repostedBy?: string | null;
   repostedByAvatar?: string | null;
+  article?: Article;
 }
 
 export const GET_PHOTOS_URL = "https://functions.poehali.dev/f58115ec-de09-405d-a2db-08fe1cd958e1";

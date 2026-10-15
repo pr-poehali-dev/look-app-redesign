@@ -24,7 +24,7 @@ function hashId(id: number | string): number {
 
 const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
   const aspect = ASPECTS[hashId(post.id) % ASPECTS.length];
-  const { count: likeCount } = useLikes("post", post.id, post.likes);
+  const { count: likeCount } = useLikes(post.article ? "article" : "post", post.article ? post.article.id : post.id, post.likes);
   const { user } = useAuth();
   const { addToCart } = useCart();
   const [showProducts, setShowProducts] = useState(false);
@@ -67,6 +67,12 @@ const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
             )
           ) : (
             <img src={post.image} alt={post.caption} className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
+          )}
+          {post.article && (
+            <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full pl-1.5 pr-2 py-1">
+              <Icon name="ListChecks" size={11} className="text-white" />
+              <span className="text-white text-[10px] font-semibold">Туториал · {post.article.steps_count || 0} шагов</span>
+            </div>
           )}
           {post.isVideo && (
             <div className="absolute top-2 right-2 bg-black/40 rounded-full p-1.5">
