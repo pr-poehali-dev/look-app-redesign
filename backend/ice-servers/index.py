@@ -60,14 +60,14 @@ def handler(event: dict, context) -> dict:
                 username = f"{expiry}:webrtc"
                 digest = hmac.new(turn_secret.encode(), username.encode(), hashlib.sha1).digest()
                 credential = base64.b64encode(digest).decode()
-                ice_servers.append({
+                ice_servers.insert(0, {
                     'urls': urls,
                     'username': username,
                     'credential': credential,
                 })
                 has_turn = True
             elif turn_username and turn_password:
-                ice_servers.append({
+                ice_servers.insert(0, {
                     'urls': urls,
                     'username': turn_username,
                     'credential': turn_password,
