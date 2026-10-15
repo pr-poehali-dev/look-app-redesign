@@ -287,6 +287,27 @@ async function postJSON(payload: Record<string, unknown>, attempt = 1): Promise<
   }
 }
 
+async function makeImageThumb(file: File, maxSide = 640): Promise<string | undefined> {
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
+    const w = Math.max(1, Math.round(bmp.width * scale));
+    const h = Math.max(1, Math.round(bmp.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return undefined;
+    ctx.drawImage(bmp, 0, 0, w, h);
+    bmp.close?.();
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.72);
+    const b64 = dataUrl.split(",")[1];
+    return b64 || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function uploadExtraImage(file: File): Promise<string> {
   const reg = await uploadFileDirect(file, { category: "feed" } as DirectUploadMeta, undefined, true);
   return reg.url;
@@ -300,6 +321,10 @@ export async function uploadFileDirect(
 ): Promise<{ id: number; url: string; thumb?: string; type: string }> {
   const ext = (file.name.split(".").pop() || (file.type.startsWith("video") ? "mp4" : "jpg")).toLowerCase();
   const contentType = file.type || (file.type.startsWith("video") ? "video/mp4" : "image/jpeg");
+
+  if (!skipRegister && !meta.thumbData && file.type.startsWith("image/") && file.type !== "image/gif") {
+    meta = { ...meta, thumbData: await makeImageThumb(file) };
+  }
 
   console.info(`[upload] start: ${file.name}, ${(file.size / 1024 / 1024).toFixed(2)} MB, type=${contentType}`);
 

@@ -66,7 +66,7 @@ const NoteCard = ({ post, onOpen }: { post: Post; onOpen: () => void }) => {
               <video src={post.image.includes("#") ? post.image : `${post.image}#t=0.001`} className="absolute inset-0 w-full h-full object-cover" muted playsInline preload="metadata" />
             )
           ) : (
-            <img src={post.image} alt={post.caption} className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
+            <img src={post.thumbnail || post.image} alt={post.caption} className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
           )}
           {post.article && (
             <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full pl-1.5 pr-2 py-1">
