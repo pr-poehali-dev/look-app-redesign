@@ -5,7 +5,7 @@ interface LandingSidebarProps {
   onLocked: (reason: string) => void;
   onLogin: () => void;
   onHome: () => void;
-  onOpenDoc: (doc: "terms" | "privacy") => void;
+  onOpenDoc: (doc: "terms" | "privacy" | "guide") => void;
 }
 
 const ITEM =
@@ -53,6 +53,10 @@ const LandingSidebar = ({ onLocked, onLogin, onOpenDoc, onHome }: LandingSidebar
         </button>
         {locked("MessageCircle", "Чаты", "Войди, чтобы общаться в чатах и созваниваться с друзьями.")}
         {locked("User", "Профиль", "Войди, чтобы открыть свой профиль.")}
+        <button onClick={() => onOpenDoc("guide")} className={ITEM}>
+          <Icon name="BookOpen" size={22} className="opacity-80" />
+          <span className="text-sm opacity-90">Инструкция</span>
+        </button>
         {locked("LifeBuoy", "Поддержка", "Войди, чтобы написать в поддержку.")}
         <button onClick={() => onOpenDoc("terms")} className={ITEM}>
           <Icon name="FileText" size={22} className="opacity-80" />

@@ -6,6 +6,7 @@ import LandingFeed from "@/components/landing/LandingFeed";
 import VideoGrid from "@/components/VideoGrid";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LegalScreen } from "@/components/SettingsScreen";
+import GuideScreen from "@/components/profile/GuideScreen";
 import { CATEGORIES } from "@/components/VideoFeed";
 
 interface LandingProps {
@@ -18,7 +19,7 @@ const Landing = ({ onLogin, onRegister }: LandingProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [prompt, setPrompt] = useState<string | null>(null);
   const [openVideoId, setOpenVideoId] = useState<number | null>(null);
-  const [doc, setDoc] = useState<"terms" | "privacy" | null>(null);
+  const [doc, setDoc] = useState<"terms" | "privacy" | "guide" | null>(null);
   const isMobile = useIsMobile();
   const showGrid = !isMobile && category !== "new" && category !== "subs" && openVideoId === null;
 
@@ -37,7 +38,12 @@ const Landing = ({ onLogin, onRegister }: LandingProps) => {
       />
 
       <main className="relative h-full min-w-0 flex-1">
-        {doc && (
+        {doc === "guide" && (
+          <div className="absolute inset-0 z-30 bg-white">
+            <GuideScreen onBack={() => setDoc(null)} />
+          </div>
+        )}
+        {doc && doc !== "guide" && (
           <div className="absolute inset-0 z-30 bg-gray-100">
             <LegalScreen
               onBack={() => setDoc(null)}
