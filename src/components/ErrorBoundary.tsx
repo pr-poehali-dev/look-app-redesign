@@ -16,6 +16,9 @@ interface State {
 const isChunkLoadError = (message: string) =>
   /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|ChunkLoadError/i.test(message);
 
+const isDomMutationError = (message: string) =>
+  /removeChild|insertBefore|not a child of this node/i.test(message);
+
 const RELOAD_FLAG = "look_chunk_reload_ts";
 
 class ErrorBoundary extends React.Component<Props, State> {
@@ -26,7 +29,7 @@ class ErrorBoundary extends React.Component<Props, State> {
 
   static getDerivedStateFromError(error: unknown): State {
     const message = error instanceof Error ? error.message : String(error);
-    return { hasError: true, message, isChunkError: isChunkLoadError(message) };
+    return { hasError: true, message, isChunkError: isChunkLoadError(message) || isDomMutationError(message) };
   }
 
   componentDidCatch(error: unknown) {

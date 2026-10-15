@@ -5,7 +5,9 @@ import ErrorBoundary from './components/ErrorBoundary'
 import './index.css'
 import './i18n'
 import { installResilientFetch } from './lib/resilientFetch'
+import { installDomGuard } from './lib/domGuard'
 
+installDomGuard();
 installResilientFetch();
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
