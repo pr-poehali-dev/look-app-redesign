@@ -14,6 +14,7 @@ import { useArticles } from "@/hooks/useArticles";
 import SearchOverlay from "./post-feed/SearchOverlay";
 import { Post, GET_PHOTOS_URL, formatTime, parseServerDate } from "./post-feed/PostFeedTypes";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
+import { readFeedCache, writeFeedCache } from "@/lib/feedCache";
 import { useFollowingList } from "@/hooks/useFollowing";
 import { detectCity, normCity } from "@/lib/city";
 import { toast } from "sonner";
@@ -138,6 +139,16 @@ const PostFeed = () => {
     };
 
     const uidParam = user?.id ? `&user_id=${encodeURIComponent(String(user.id))}` : "";
+    const postsCacheKey = `posts_${user?.id || "anon"}`;
+    const cachedRaw = readFeedCache<{ img: unknown[]; vid: unknown[] }>(postsCacheKey);
+    if (cachedRaw) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const c1: Post[] = (cachedRaw.img || []).map((v: any) => mapPost(v, false));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const c2: Post[] = (cachedRaw.vid || []).map((v: any) => mapPost(v, true));
+      setPosts([...c1, ...c2]);
+      setLoading(false);
+    }
     Promise.all([
       fetch(`${GET_PHOTOS_URL}?type=image${uidParam}`).then(r => r.json()),
       fetch(`${GET_PHOTOS_URL}?type=video${uidParam}`).then(r => r.json()),
@@ -145,6 +156,7 @@ const PostFeed = () => {
       .then(([rawImages, rawVideos]) => {
         const imgData = typeof rawImages.body === 'string' ? JSON.parse(rawImages.body) : rawImages;
         const vidData = typeof rawVideos.body === 'string' ? JSON.parse(rawVideos.body) : rawVideos;
+        writeFeedCache(postsCacheKey, { img: (imgData.videos || []).slice(0, 30), vid: (vidData.videos || []).slice(0, 30) });
         const dbPosts: Post[] = (imgData.videos || []).map((v: any) => mapPost(v, false));
         const dbVideoPosts: Post[] = (vidData.videos || []).map((v: any) => mapPost(v, true));
         const seen = new Set<string>();

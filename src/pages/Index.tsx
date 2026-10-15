@@ -64,6 +64,19 @@ const Index = () => {
   const [pendingDirectHandle, setPendingDirectHandle] = useState<string | null>(null);
   const { totalUnread } = useUnread();
 
+  useEffect(() => {
+    const c = (navigator as unknown as { connection?: { saveData?: boolean } }).connection;
+    if (c?.saveData) return;
+    const run = () => {
+      import("@/components/PostFeed");
+      import("@/components/MessagesScreen");
+      import("@/components/ProfilePage");
+    };
+    const w = window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
+    if (w.requestIdleCallback) w.requestIdleCallback(run, { timeout: 4000 });
+    else setTimeout(run, 2500);
+  }, []);
+
   const handleLogout = () => {
     if (confirm("Выйти из аккаунта?")) logout();
   };

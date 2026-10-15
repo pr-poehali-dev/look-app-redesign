@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
 import { useFollowingList } from "@/hooks/useFollowing";
 import { useHiddenAuthors } from "@/hooks/useFeedSignals";
+import { readFeedCache, writeFeedCache } from "@/lib/feedCache";
 
 export const CATEGORIES = [
   { id: "lifehacks", label: "Советы по образу жизни" },
@@ -60,7 +61,13 @@ interface VideoFeedProps {
 
 const GET_VIDEOS_URL = "https://functions.poehali.dev/f58115ec-de09-405d-a2db-08fe1cd958e1";
 
+const isSlowNetwork = () => {
+  const c = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+  return !!c && (!!c.saveData || c.effectiveType === "slow-2g" || c.effectiveType === "2g" || c.effectiveType === "3g");
+};
+
 const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoFeedProps) => {
+  const slowNetwork = isSlowNetwork();
   void activeTab;
   const containerRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -109,12 +116,10 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
     const url = activeCategory && activeCategory !== "all" && !isSubsCategory && !isNewCategory
       ? `${GET_VIDEOS_URL}?type=video&category=${activeCategory}${uidParam}`
       : `${GET_VIDEOS_URL}?type=video&t=${mediaVersion}${isNewCategory ? "" : uidParam}`;
-    fetch(url)
-      .then(r => r.json())
-      .then(raw => {
-        const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
+    const cacheKey = `videos_${activeCategory}_${user?.id || "anon"}`;
+    const applyVideos = (list: unknown[], resetScroll: boolean) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setDbVideos((data.videos || []).map((v: any) => {
+        setDbVideos((list || []).map((v: any) => {
           const baseDesc = (v.description || "").trim();
           const tagsArr = (v.hashtags || "")
             .split(/[\s,]+/)
@@ -154,8 +159,24 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
           repostedBy: v.reposted_by || null,
         });
         }));
-        setActiveIndex(0);
-        if (containerRef.current) containerRef.current.scrollTop = 0;
+        if (resetScroll) {
+          setActiveIndex(0);
+          if (containerRef.current) containerRef.current.scrollTop = 0;
+        }
+    };
+    const cached = readFeedCache<unknown[]>(cacheKey);
+    const hadCache = !!(cached && cached.length);
+    if (cached && hadCache) {
+      applyVideos(cached, true);
+      setDbLoaded(true);
+    }
+    fetch(url)
+      .then(r => r.json())
+      .then(raw => {
+        const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
+        const list = data.videos || [];
+        writeFeedCache(cacheKey, list.slice(0, 40));
+        applyVideos(list, !hadCache);
       })
       .catch(e => console.error('VideoFeed fetch error:', e))
       .finally(() => setDbLoaded(true));
@@ -261,7 +282,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
         ) : filteredWithCounts.length > 0 ? filteredWithCounts.map((video, i) => {
           const distance = Math.abs(i - activeIndex);
           const preloadLevel: "full" | "meta" | "none" =
-            distance === 0 ? "full" : distance === 1 ? "meta" : "none";
+            distance === 0 ? "full" : distance === 1 && !slowNetwork ? "meta" : "none";
           return (
             <div
               key={`${video.id}-${i}`}

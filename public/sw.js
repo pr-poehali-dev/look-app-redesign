@@ -1,6 +1,14 @@
-const VERSION = "v2";
+const VERSION = "v3";
 const SHELL = `shell-${VERSION}`;
 const STATIC = `static-${VERSION}`;
+
+const trimCache = async (name, max) => {
+  const cache = await caches.open(name);
+  const keys = await cache.keys();
+  if (keys.length > max) {
+    await Promise.all(keys.slice(0, keys.length - max).map((k) => cache.delete(k)));
+  }
+};
 
 self.addEventListener("install", () => self.skipWaiting());
 
@@ -19,13 +27,16 @@ self.addEventListener("fetch", (e) => {
 
   if (req.mode === "navigate") {
     e.respondWith(
-      fetch(req)
-        .then((res) => {
+      caches.match("/").then((cachedShell) => {
+        const network = fetch(req).then((res) => {
           const copy = res.clone();
           caches.open(SHELL).then((c) => c.put("/", copy));
           return res;
-        })
-        .catch(() => caches.match("/").then((r) => r || Response.error()))
+        });
+        if (!cachedShell) return network.catch(() => Response.error());
+        const timeout = new Promise((resolve) => setTimeout(() => resolve(cachedShell), 2500));
+        return Promise.race([network.catch(() => cachedShell), timeout]);
+      })
     );
     return;
   }
@@ -43,7 +54,7 @@ self.addEventListener("fetch", (e) => {
       return fetch(req).then((res) => {
         if (res.ok || res.type === "opaque") {
           const copy = res.clone();
-          caches.open(STATIC).then((c) => c.put(req, copy));
+          caches.open(STATIC).then((c) => c.put(req, copy).then(() => trimCache(STATIC, 300)));
         }
         return res;
       });
