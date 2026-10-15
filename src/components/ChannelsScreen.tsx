@@ -14,8 +14,16 @@ interface Props {
 
 const ChannelsScreen = ({ onBack, initialChannelId, onInitialConsumed }: Props) => {
   const { user } = useAuth();
-  const [channels, setChannels] = useState<Channel[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cacheKey = `channels_cache_v1_${user?.id || "anon"}`;
+  const [channels, setChannels] = useState<Channel[]>(() => {
+    try {
+      const arr = JSON.parse(localStorage.getItem(cacheKey) || "[]");
+      return Array.isArray(arr) ? arr : [];
+    } catch { return []; }
+  });
+  const [loading, setLoading] = useState(() => {
+    try { return !localStorage.getItem(cacheKey); } catch { return true; }
+  });
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
@@ -36,7 +44,9 @@ const ChannelsScreen = ({ onBack, initialChannelId, onInitialConsumed }: Props) 
       .then(r => r.json())
       .then(raw => {
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-        setChannels((data.communities || []).filter((c: Channel) => c.kind === "channel"));
+        const list = (data.communities || []).filter((c: Channel) => c.kind === "channel");
+        setChannels(list);
+        try { localStorage.setItem(cacheKey, JSON.stringify(list)); } catch { /* ignore */ }
       })
       .catch(() => {})
       .finally(() => setLoading(false));

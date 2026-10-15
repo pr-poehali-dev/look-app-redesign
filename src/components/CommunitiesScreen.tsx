@@ -33,8 +33,16 @@ interface Props {
 
 const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Props) => {
   const { user } = useAuth();
-  const [communities, setCommunities] = useState<Community[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cacheKey = `communities_cache_v1_${user?.id || "anon"}`;
+  const [communities, setCommunities] = useState<Community[]>(() => {
+    try {
+      const arr = JSON.parse(localStorage.getItem(cacheKey) || "[]");
+      return Array.isArray(arr) ? arr : [];
+    } catch { return []; }
+  });
+  const [loading, setLoading] = useState(() => {
+    try { return !localStorage.getItem(cacheKey); } catch { return true; }
+  });
   const [category, setCategory] = useState("Все");
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
@@ -45,6 +53,7 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
   const [openChat, setOpenChat] = useState<Chat | null>(null);
   const [groupCall, setGroupCall] = useState<{ communityId: string; name: string; mode: "audio" | "video" } | null>(null);
   const [settingsCom, setSettingsCom] = useState<Community | null>(null);
+  const [freshLoaded, setFreshLoaded] = useState(false);
 
   const loadCommunities = () => {
     if (!user) return;
@@ -54,7 +63,10 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
       .then(r => r.json())
       .then(raw => {
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-        setCommunities((data.communities || []).filter((c: Community) => c.kind !== "channel"));
+        const list = (data.communities || []).filter((c: Community) => c.kind !== "channel");
+        setCommunities(list);
+        setFreshLoaded(true);
+        try { localStorage.setItem(cacheKey, JSON.stringify(list)); } catch { /* ignore */ }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -64,7 +76,7 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
 
   const [invitedConsumed, setInvitedConsumed] = useState(false);
   useEffect(() => {
-    if (!initialCommunityId || invitedConsumed || loading || !user) return;
+    if (!initialCommunityId || invitedConsumed || loading || !freshLoaded || !user) return;
     const com = communities.find(c => c.id === initialCommunityId);
     if (!com) {
       // Сообщество не найдено или скрыто
