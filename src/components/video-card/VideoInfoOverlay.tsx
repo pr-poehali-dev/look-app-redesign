@@ -1,4 +1,5 @@
 import { Dispatch, SetStateAction } from "react";
+import PlaceDetails from "@/components/post-feed/PlaceDetails";
 import Icon from "@/components/ui/icon";
 import LinkifiedText from "@/components/ui/linkified-text";
 import StoryTags from "@/components/StoryTags";
@@ -96,7 +97,9 @@ const VideoInfoOverlay = ({
           </div>
         );
       })()}
-      {video.place && (
+      {video.place && (video.address || video.workHours || video.tips) ? (
+        <PlaceDetails place={video.place} address={video.address} workHours={video.workHours} tips={video.tips} tone="light" />
+      ) : video.place && (
         <p className="flex items-center gap-1 text-white/70 text-xs mb-2">
           <Icon name="MapPin" size={12} />
           <span className="truncate">{video.place}</span>

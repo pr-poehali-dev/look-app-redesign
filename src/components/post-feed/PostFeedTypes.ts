@@ -20,6 +20,9 @@ export interface Post {
   comments: number;
   time: string;
   location?: string;
+  address?: string | null;
+  workHours?: string | null;
+  tips?: string | null;
   city?: string | null;
   createdAt?: number;
   isVideo?: boolean;

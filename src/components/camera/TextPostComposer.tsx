@@ -20,6 +20,9 @@ const TextPostComposer = ({ onClose }: Props) => {
   const [text, setText] = useState("");
   const [hashtags, setHashtags] = useState("");
   const [place, setPlace] = useState("");
+  const [address, setAddress] = useState("");
+  const [workHours, setWorkHours] = useState("");
+  const [tips, setTips] = useState("");
   const [category, setCategory] = useState("everyday");
   const [age, setAge] = useState<AgeRating>("12+");
   const [saving, setSaving] = useState(false);
@@ -36,6 +39,9 @@ const TextPostComposer = ({ onClose }: Props) => {
           text,
           hashtags,
           place,
+          address,
+          work_hours: workHours,
+          tips,
           category,
           age_rating: age,
           user_id: user.id,
@@ -117,6 +123,29 @@ const TextPostComposer = ({ onClose }: Props) => {
             className="flex-1 bg-transparent py-2 text-white text-sm placeholder:text-white/30 outline-none"
           />
         </div>
+        {place.trim() && (
+          <>
+            <input
+              value={address}
+              onChange={(e) => setAddress(e.target.value.slice(0, 200))}
+              placeholder="Адрес: ул. Рубинштейна, 15"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+            />
+            <input
+              value={workHours}
+              onChange={(e) => setWorkHours(e.target.value.slice(0, 120))}
+              placeholder="Время работы: ежедневно 9:00–22:00"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+            />
+            <textarea
+              value={tips}
+              onChange={(e) => setTips(e.target.value.slice(0, 500))}
+              placeholder="Лайфхак от своих"
+              rows={2}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none resize-none"
+            />
+          </>
+        )}
 
         <div>
           <p className="text-white/60 text-xs font-semibold uppercase mb-2">Возрастная маркировка</p>

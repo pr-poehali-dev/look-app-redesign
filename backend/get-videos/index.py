@@ -15,6 +15,7 @@ def _row_to_item(r) -> dict:
         'age_rating': r[24], 'ad_erid': r[25], 'ad_advertiser': r[26],
         'images': json.loads(r[27]) if r[27] else [], 'place': r[28],
         'series_title': r[29], 'brand': r[30], 'personal_experience': bool(r[31]),
+        'address': r[32], 'work_hours': r[33], 'tips': r[34],
     }
 
 
@@ -59,7 +60,7 @@ def handler(event: dict, context) -> dict:
             f"COALESCE((SELECT COUNT(*) FROM {schema}.video_views vv WHERE vv.video_id = v.id), 0) AS views, "
             f"COALESCE(au.is_verified, FALSE) AS is_verified, "
             f"COALESCE(v.is_ad, FALSE) AS is_ad, v.ad_label, "
-            f"NULL::text AS reposted_by, NULL::text AS reposted_by_avatar, NULL::text AS reposted_by_id, v.age_rating, v.ad_erid, v.ad_advertiser, v.extra_images, v.place, v.series_title, v.brand, COALESCE(v.personal_experience, FALSE) "
+            f"NULL::text AS reposted_by, NULL::text AS reposted_by_avatar, NULL::text AS reposted_by_id, v.age_rating, v.ad_erid, v.ad_advertiser, v.extra_images, v.place, v.series_title, v.brand, COALESCE(v.personal_experience, FALSE), v.address, v.work_hours, v.tips "
             f"FROM {schema}.videos v "
             f"LEFT JOIN {schema}.legacy_posts lp ON lp.migrated_to_video_id = v.id "
             f"LEFT JOIN {schema}.legacy_users lu ON lu.id = lp.user_id "
@@ -88,6 +89,7 @@ def handler(event: dict, context) -> dict:
                 'is_verified': bool(r[18]), 'is_ad': bool(r[19]), 'ad_label': r[20],
                 'age_rating': r[24], 'ad_erid': r[25], 'ad_advertiser': r[26],
                 'images': json.loads(r[27]) if r[27] else [], 'place': r[28], 'series_title': r[29], 'brand': r[30], 'personal_experience': bool(r[31]),
+                'address': r[32], 'work_hours': r[33], 'tips': r[34],
             }
             return {'statusCode': 200, 'headers': {'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'video': item})}
 
@@ -139,7 +141,7 @@ def handler(event: dict, context) -> dict:
             f"COALESCE((SELECT COUNT(*) FROM {schema}.video_views vv WHERE vv.video_id = v.id), 0) AS views, "
             f"COALESCE(au.is_verified, FALSE) AS is_verified, "
             f"COALESCE(v.is_ad, FALSE) AS is_ad, v.ad_label, "
-            f"ru.handle AS reposted_by, ru.avatar AS reposted_by_avatar, ru.id AS reposted_by_id, v.age_rating, v.ad_erid, v.ad_advertiser, v.extra_images, v.place, v.series_title, v.brand, COALESCE(v.personal_experience, FALSE) "
+            f"ru.handle AS reposted_by, ru.avatar AS reposted_by_avatar, ru.id AS reposted_by_id, v.age_rating, v.ad_erid, v.ad_advertiser, v.extra_images, v.place, v.series_title, v.brand, COALESCE(v.personal_experience, FALSE), v.address, v.work_hours, v.tips "
             f"FROM {schema}.reposts r "
             f"JOIN {schema}.videos v ON v.id = r.original_video_id "
             f"LEFT JOIN {schema}.app_users ru ON ru.id = r.user_id "
@@ -425,6 +427,9 @@ def handler(event: dict, context) -> dict:
             'series_title': r[29],
             'brand': r[30],
             'personal_experience': bool(r[31]),
+            'address': r[32],
+            'work_hours': r[33],
+            'tips': r[34],
             'reposted_by': r[21],
             'reposted_by_avatar': r[22],
             'city': author_city.get(r[14]),

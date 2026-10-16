@@ -197,6 +197,9 @@ def handler(event: dict, context) -> dict:
                 extra = [u for u in (meta.get('extra_images') or []) if isinstance(u, str) and u.startswith('https://')][:9]
                 extra_images = json.dumps(extra) if extra and media_type == 'image' else None
                 place = (meta.get('place') or '').strip()[:120] or None
+                address = (meta.get('address') or '').strip()[:200] or None
+                work_hours = (meta.get('work_hours') or '').strip()[:120] or None
+                tips = (meta.get('tips') or '').strip()[:500] or None
                 ad_erid = (meta.get('ad_erid') or '').strip()[:100] or None
                 ad_advertiser = (meta.get('ad_advertiser') or '').strip()[:200] or None
                 if is_ad and not ad_erid:
@@ -211,8 +214,8 @@ def handler(event: dict, context) -> dict:
                 low = f"{meta.get('description', '')} {meta.get('hashtags', '')}".lower().replace('ё', 'е')
                 flagged = any(w[0].lower().replace('ё', 'е') in low for w in cur.fetchall())
                 cur.execute(
-                    "INSERT INTO videos (url, thumbnail, author, handle, description, hashtags, category, type, user_id, template_id, is_ad, ad_label, hidden, hidden_reason, age_rating, ad_erid, ad_advertiser, extra_images, place, series_title, brand, personal_experience) "
-                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+                    "INSERT INTO videos (url, thumbnail, author, handle, description, hashtags, category, type, user_id, template_id, is_ad, ad_label, hidden, hidden_reason, age_rating, ad_erid, ad_advertiser, extra_images, place, series_title, brand, personal_experience, address, work_hours, tips) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
                     (cdn_url, thumb_url,
                      meta.get('author', 'Я'), meta.get('handle', 'user'),
                      meta.get('description', ''), meta.get('hashtags', ''),
@@ -220,7 +223,8 @@ def handler(event: dict, context) -> dict:
                      meta.get('user_id', 'anonymous'), meta.get('template_id'),
                      is_ad, ad_label, flagged, 'auto_words' if flagged else None,
                      age_rating, ad_erid if is_ad else None, ad_advertiser if is_ad else None,
-                     extra_images, place, series_title, brand, personal_experience),
+                     extra_images, place, series_title, brand, personal_experience,
+                     address, work_hours, tips),
                 )
                 video_id = cur.fetchone()[0]
                 if collab_id and str(meta.get('user_id', '')) != 'anonymous':
@@ -268,6 +272,9 @@ def handler(event: dict, context) -> dict:
             return {'statusCode': 400, 'headers': _cors(), 'body': json.dumps({'error': 'Напишите хотя бы пару слов'})}
         age_rating = body.get('age_rating') if body.get('age_rating') in ('0+', '6+', '12+', '16+', '18+') else '12+'
         place = (body.get('place') or '').strip()[:120] or None
+        address = (body.get('address') or '').strip()[:200] or None
+        work_hours = (body.get('work_hours') or '').strip()[:120] or None
+        tips = (body.get('tips') or '').strip()[:500] or None
         hashtags = (body.get('hashtags') or '').strip()[:300]
         category = (body.get('category') or 'everyday').strip()[:40]
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
@@ -277,10 +284,10 @@ def handler(event: dict, context) -> dict:
             low = f"{text} {hashtags}".lower().replace('ё', 'е')
             flagged = any(w[0].lower().replace('ё', 'е') in low for w in cur.fetchall())
             cur.execute(
-                "INSERT INTO videos (url, author, handle, description, hashtags, category, type, user_id, hidden, hidden_reason, age_rating, place) "
-                "VALUES ('', %s, %s, %s, %s, %s, 'text', %s, %s, %s, %s, %s) RETURNING id",
+                "INSERT INTO videos (url, author, handle, description, hashtags, category, type, user_id, hidden, hidden_reason, age_rating, place, address, work_hours, tips) "
+                "VALUES ('', %s, %s, %s, %s, %s, 'text', %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
                 ((body.get('author') or 'Пользователь')[:100], (body.get('handle') or 'user')[:100], text, hashtags, category,
-                 user_id, flagged, 'auto_words' if flagged else None, age_rating, place))
+                 user_id, flagged, 'auto_words' if flagged else None, age_rating, place, address, work_hours, tips))
             post_id = cur.fetchone()[0]
             if flagged:
                 cur.execute(

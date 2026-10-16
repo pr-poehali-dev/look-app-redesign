@@ -12,7 +12,7 @@ import UserProfileModal from "@/components/UserProfileModal";
 
 const SEARCH_URL = "https://functions.poehali.dev/7f681f12-fcd3-45e4-aa45-38fccd3d0760";
 
-interface VideoHit { id: number; url: string; thumbnail: string | null; author: string; handle: string; description: string; likes: string }
+interface VideoHit { id: number; url: string; thumbnail: string | null; author: string; handle: string; description: string; likes: string; place?: string | null; saves?: number }
 interface ArticleHit { id: number; title: string; cover: string | null; views: number; kind?: string }
 interface PersonHit { id: string; name: string; handle: string; avatar: string | null; is_verified: boolean }
 
@@ -50,7 +50,7 @@ const SearchOverlay = ({ posts, onClose, onOpenPost, initialQuery = "" }: Props)
   const [popularQueries, setPopularQueries] = useState<string[]>([]);
   const { user } = useAuth();
   const [postHits, setPostHits] = useState<Post[]>([]);
-  const [sort, setSort] = useState<"new" | "popular">("new");
+  const [sort, setSort] = useState<"best" | "new" | "popular">("best");
   const [period, setPeriod] = useState<"all" | "day" | "week" | "month">("all");
   const [fuzzy, setFuzzy] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -198,7 +198,7 @@ const SearchOverlay = ({ posts, onClose, onOpenPost, initialQuery = "" }: Props)
               </div>
             )}
             <div className="flex items-center gap-2 mb-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-              {([["new", "Новые"], ["popular", "Популярные"]] as const).map(([k, l]) => (
+              {([["best", "Лучшие"], ["new", "Новые"], ["popular", "Популярные"]] as const).map(([k, l]) => (
                 <button key={k} onClick={() => setSort(k)} className={`px-3 py-1 rounded-full text-[11px] flex-shrink-0 border ${sort === k ? "border-white text-white" : "border-white/15 text-white/50"}`}>{l}</button>
               ))}
               <span className="w-px h-4 bg-white/15 flex-shrink-0" />
@@ -260,6 +260,12 @@ const SearchOverlay = ({ posts, onClose, onOpenPost, initialQuery = "" }: Props)
                       </div>
                       <div className="p-2">
                         <p className="text-white text-[12px] leading-snug line-clamp-2">{v.description || "Видео"}</p>
+                        {v.place && (
+                          <p className="flex items-center gap-1 text-[#22e0a1] text-[10px] mt-0.5 truncate">
+                            <Icon name="MapPin" size={10} className="flex-shrink-0" />
+                            <span className="truncate">{v.place}</span>
+                          </p>
+                        )}
                         <span className="text-white/40 text-[10px]">@{v.handle}</span>
                       </div>
                     </button>

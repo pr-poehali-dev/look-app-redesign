@@ -245,6 +245,9 @@ export interface DirectUploadMeta {
   adAdvertiser?: string;
   extraImages?: string[];
   place?: string;
+  address?: string;
+  workHours?: string;
+  tips?: string;
   seriesTitle?: string;
   brand?: string;
   personalExperience?: boolean;
@@ -417,6 +420,9 @@ export async function uploadFileDirect(
       ad_advertiser: meta.isAd ? (meta.adAdvertiser || "") : "",
       extra_images: meta.extraImages || [],
       place: meta.place || "",
+      address: meta.address || "",
+      work_hours: meta.workHours || "",
+      tips: meta.tips || "",
       series_title: meta.seriesTitle || "",
       brand: meta.brand || "",
       personal_experience: !!meta.personalExperience,

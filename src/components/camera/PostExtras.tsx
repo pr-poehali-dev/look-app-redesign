@@ -5,9 +5,12 @@ import { uploadExtraImage } from "@/lib/videoCompress";
 export interface PostExtrasValue {
   extraImages: string[];
   place: string;
+  address: string;
+  workHours: string;
+  tips: string;
 }
 
-export const DEFAULT_EXTRAS: PostExtrasValue = { extraImages: [], place: "" };
+export const DEFAULT_EXTRAS: PostExtrasValue = { extraImages: [], place: "", address: "", workHours: "", tips: "" };
 
 interface Props {
   value: PostExtrasValue;
@@ -53,6 +56,29 @@ const PostExtras = ({ value, onChange, allowImages }: Props) => {
           placeholder="Например: Кофейня «Дрейф», Санкт-Петербург"
           className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
         />
+        {value.place.trim() && (
+          <div className="flex flex-col gap-2 mt-2">
+            <input
+              value={value.address}
+              onChange={(e) => onChange({ ...value, address: e.target.value.slice(0, 200) })}
+              placeholder="Адрес: ул. Рубинштейна, 15"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+            />
+            <input
+              value={value.workHours}
+              onChange={(e) => onChange({ ...value, workHours: e.target.value.slice(0, 120) })}
+              placeholder="Время работы: ежедневно 9:00–22:00"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
+            />
+            <textarea
+              value={value.tips}
+              onChange={(e) => onChange({ ...value, tips: e.target.value.slice(0, 500) })}
+              placeholder="Лайфхак от своих: приходите к открытию, столики у окна свободны до 11"
+              rows={2}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none resize-none"
+            />
+          </div>
+        )}
       </div>
 
       {allowImages && (

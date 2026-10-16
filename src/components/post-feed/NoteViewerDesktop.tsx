@@ -1,3 +1,4 @@
+import PlaceDetails from "./PlaceDetails";
 import PhotoCarousel from "@/components/post-feed/PhotoCarousel";
 import { useEffect, useRef, useState } from "react";
 import { promptAuth } from "@/lib/promptAuth";
@@ -140,7 +141,10 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
         <div className="flex-1 min-w-0 nv-media flex items-center justify-center">
           {post.isText ? (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#2a1f3d] to-[#1a2a3a] px-10">
-              <p className="text-white text-xl leading-relaxed whitespace-pre-wrap break-words max-h-full overflow-y-auto">{post.caption}</p>
+              <div className="max-h-full overflow-y-auto">
+                <p className="text-white text-xl leading-relaxed whitespace-pre-wrap break-words">{post.caption}</p>
+                <PlaceDetails place={post.location} address={post.address} workHours={post.workHours} tips={post.tips} tone="light" />
+              </div>
             </div>
           ) : post.isVideo ? (
             <video

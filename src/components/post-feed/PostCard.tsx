@@ -9,6 +9,7 @@ import { Post, formatLikes } from "./PostFeedTypes";
 import { useComments } from "@/hooks/useComments";
 import { useLikes } from "@/hooks/useLikes";
 import { useSavedItem } from "@/hooks/useSaved";
+import PlaceDetails from "./PlaceDetails";
 import { useFollowing } from "@/hooks/useFollowing";
 import { useMutedAuthor } from "@/hooks/useMutedAuthors";
 import { useAuth } from "@/context/AuthContext";
@@ -236,6 +237,7 @@ const PostCard = ({ post }: { post: Post }) => {
           {!post.isText && post.caption.length > 90 && expanded && (
             <button onClick={() => setExpanded(false)} className="text-white/40 text-[13px] ml-1">свернуть</button>
           )}
+          <PlaceDetails place={post.location} address={post.address} workHours={post.workHours} tips={post.tips} />
           {post.isAd && post.adErid && (
             <p className="text-white/40 text-[11px] mt-1 break-all">
               Реклама{post.adAdvertiser ? ` · ${post.adAdvertiser}` : ""} · erid: {post.adErid}

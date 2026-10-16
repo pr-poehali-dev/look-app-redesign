@@ -68,12 +68,15 @@ def fuzzy_match(blob: str, p: dict) -> bool:
     return bool(p['include'] or p['phrases'])
 
 
-def run_search(cur, table, fields, select_sql, base_cond, p, order_new, order_pop, sort, period, date_col, limit=30):
+def run_search(cur, table, fields, select_sql, base_cond, p, order_new, order_pop, sort, period, date_col, limit=30, order_best=None):
     conds, args = build_where(fields, p)
     where = [base_cond] if base_cond else []
     if period in PERIODS and date_col:
         where.append(f"{date_col} > NOW() - INTERVAL '{PERIODS[period]}'")
-    order = order_pop if sort == 'popular' else order_new
+    if sort == 'best':
+        order = order_best or order_pop
+    else:
+        order = order_pop if sort == 'popular' else order_new
     sql = f"SELECT {select_sql} FROM {table} {'WHERE ' + ' AND '.join(where + conds) if (where or conds) else ''} ORDER BY {order} LIMIT {limit}"
     cur.execute(sql, args)
     rows = cur.fetchall()
@@ -93,7 +96,7 @@ def run_search(cur, table, fields, select_sql, base_cond, p, order_new, order_po
 
 
 def handler(event: dict, context) -> dict:
-    """Поиск: ?q=текст&kind=post|video|people|article|suggest&sort=new|popular&period=day|week|month|all. Поддерживает "фразу", -исключение, формы слов, опечатки"""
+    """Поиск: ?q=текст&kind=post|video|people|article|suggest&sort=best|new|popular&period=day|week|month|all. Поддерживает "фразу", -исключение, формы слов, опечатки"""
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': {
             'Access-Control-Allow-Origin': '*',
@@ -179,14 +182,20 @@ def handler(event: dict, context) -> dict:
             items = [{'id': r[0], 'title': r[1], 'cover': r[2], 'views': r[3] or 0, 'kind': r[4] or 'article'} for r in rows]
         else:
             type_cond = "type = 'video'" if kind == 'video' else "type IN ('image', 'text')"
+            best = (
+                f"((COALESCE(likes, 0) + 2 * COALESCE(comments, 0) + 3 * (SELECT COUNT(*) FROM {schema}.saves sv "
+                f"WHERE sv.target_id = videos.id::text)) / POWER(EXTRACT(EPOCH FROM (NOW() - created_at)) / 86400.0 + 2, 0.3)) DESC, created_at DESC"
+            )
             rows, fuzzy = run_search(
-                cur, f"{schema}.videos", ['description', 'hashtags', 'author', 'handle'],
-                "id, url, thumbnail, author, handle, description, likes, comments, created_at, type, user_id",
+                cur, f"{schema}.videos", ['description', 'hashtags', 'author', 'handle', 'place', 'address', 'tips'],
+                "id, url, thumbnail, author, handle, description, likes, comments, created_at, type, user_id, place, address, work_hours, tips, "
+                f"(SELECT COUNT(*) FROM {schema}.saves sv WHERE sv.target_id = videos.id::text)",
                 f"{type_cond} AND (hidden IS NULL OR hidden = FALSE)" + ("" if adult else " AND age_rating <> '18+'"), p,
-                "created_at DESC", "likes DESC NULLS LAST, created_at DESC", sort, period, 'created_at')
+                "created_at DESC", "likes DESC NULLS LAST, created_at DESC", sort, period, 'created_at', 30, best)
             items = [{'id': r[0], 'url': r[1], 'thumbnail': r[2], 'author': r[3], 'handle': r[4],
                       'description': r[5], 'likes': str(r[6]), 'comments': str(r[7]),
-                      'created_at': r[8].isoformat() if r[8] else None, 'type': r[9]} for r in rows]
+                      'created_at': r[8].isoformat() if r[8] else None, 'type': r[9],
+                      'place': r[11], 'address': r[12], 'work_hours': r[13], 'tips': r[14], 'saves': int(r[15] or 0)} for r in rows]
     finally:
         cur.close()
         conn.close()

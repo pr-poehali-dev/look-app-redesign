@@ -10,6 +10,9 @@ export interface PublishCompliance {
   adAdvertiser: string;
   extraImages: string[];
   place: string;
+  address: string;
+  workHours: string;
+  tips: string;
   seriesTitle: string;
   brand: string;
   personalExperience: boolean;
@@ -17,7 +20,7 @@ export interface PublishCompliance {
 }
 
 export const DEFAULT_COMPLIANCE: PublishCompliance = {
-  ageRating: "12+", adErid: "", adAdvertiser: "", extraImages: [], place: "",
+  ageRating: "12+", adErid: "", adAdvertiser: "", extraImages: [], place: "", address: "", workHours: "", tips: "",
   seriesTitle: "", brand: "", personalExperience: false, collabId: null,
 };
 
@@ -34,8 +37,8 @@ interface Props {
 const ComplianceFields = ({ isAd, setIsAd, value, onChange, isImage = true }: Props) => (
   <div className="flex flex-col gap-3">
     <PostExtras
-      value={{ extraImages: value.extraImages, place: value.place }}
-      onChange={(e) => onChange({ ...value, extraImages: e.extraImages, place: e.place })}
+      value={{ extraImages: value.extraImages, place: value.place, address: value.address, workHours: value.workHours, tips: value.tips }}
+      onChange={(e) => onChange({ ...value, extraImages: e.extraImages, place: e.place, address: e.address, workHours: e.workHours, tips: e.tips })}
       allowImages={isImage}
     />
     <PostStoryFields value={value} onChange={onChange} />
