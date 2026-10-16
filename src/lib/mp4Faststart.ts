@@ -6,7 +6,7 @@ interface Box {
 
 const CONTAINERS = new Set(["moov", "trak", "mdia", "minf", "stbl", "edts"]);
 
-async function readBytes(file: Blob, start: number, len: number): Promise<Uint8Array> {
+async function readBytes(file: Blob, start: number, len: number): Promise<Uint8Array<ArrayBuffer>> {
   return new Uint8Array(await file.slice(start, start + len).arrayBuffer());
 }
 
