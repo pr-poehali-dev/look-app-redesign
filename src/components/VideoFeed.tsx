@@ -319,8 +319,6 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
           WebkitOverflowScrolling: "touch",
           touchAction: "pan-y",
           overflowAnchor: "none",
-          willChange: "scroll-position",
-          transform: "translateZ(0)",
         }}
       >
         {!dbLoaded ? (
@@ -337,7 +335,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
               key={`${video.id}-${i}`}
               ref={(el) => { slideRefs.current[i] = el; }}
               className={`w-full snap-start snap-always flex md:items-center md:justify-center`}
-              style={{ height: "100%", background: "var(--look-bg)", contain: "layout paint style" }}
+              style={{ height: "100%", background: "var(--look-bg)" }}
             >
               <div className="w-full md:w-auto md:h-[calc(100vh-24px)] h-full" style={{ background: "var(--look-bg)" }}>
                 {distance <= 2 && (
