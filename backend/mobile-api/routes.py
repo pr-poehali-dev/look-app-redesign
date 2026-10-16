@@ -19,7 +19,9 @@ ROUTES = {
     "legacy-otp-verify": "https://functions.poehali.dev/b9c5bff7-0a7d-43c6-9e65-4d6365a68447",
     "password-reset": "https://functions.poehali.dev/050dfa15-1d92-4aaf-9b87-55d04c9affa7",
     "ice-servers": "https://functions.poehali.dev/53c7b2af-c5ea-4c37-bc28-154737d35d87",
+    "search": "https://functions.poehali.dev/7f681f12-fcd3-45e4-aa45-38fccd3d0760",
+    "brand-collabs": "https://functions.poehali.dev/c8abec04-3371-4a40-9aa7-892ac2f3c18b",
+    "boards": "https://functions.poehali.dev/4b244d4d-3141-468d-93cc-3b1f106390ca",
     "admin": "https://functions.poehali.dev/c578b52c-b9b6-47b3-9bcf-b6ab8405c4d7",
     "analytics": "https://functions.poehali.dev/7b5c6c18-7098-4f9b-bf3c-e6ac50574c06"
 }
-
