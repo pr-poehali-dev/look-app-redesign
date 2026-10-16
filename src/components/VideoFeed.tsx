@@ -329,7 +329,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
           const distance = Math.abs(i - activeIndex);
           const holdNeighbors = !neighborsReady && activeIndex === 0;
           const preloadLevel: "full" | "meta" | "none" =
-            distance === 0 ? "full" : holdNeighbors ? "none" : distance === 1 ? (slowNetwork ? "none" : "full") : distance === 2 && !slowNetwork ? "meta" : "none";
+            distance === 0 ? "full" : holdNeighbors ? "none" : distance === 1 && !slowNetwork ? "meta" : "none";
           return (
             <div
               key={`${video.id}-${i}`}
@@ -338,7 +338,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
               style={{ height: "100%", background: "var(--look-bg)" }}
             >
               <div className="w-full md:w-auto md:h-[calc(100vh-24px)] h-full" style={{ background: "var(--look-bg)" }}>
-                {distance <= 2 && (
+                {distance <= 1 && (
                   <VideoCard video={video} isActive={activeIndex === i} preloadLevel={preloadLevel} />
                 )}
               </div>
