@@ -332,7 +332,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
             distance === 0 ? "full" : holdNeighbors ? "none" : distance === 1 && !slowNetwork ? "meta" : "none";
           return (
             <div
-              key={`${video.id}-${i}`}
+              key={video.id}
               ref={(el) => { slideRefs.current[i] = el; }}
               className={`w-full snap-start snap-always flex md:items-center md:justify-center`}
               style={{ height: "100%", background: "var(--look-bg)" }}
