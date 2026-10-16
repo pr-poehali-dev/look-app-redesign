@@ -59,13 +59,13 @@ const withOneSignal = (fn: (os: OneSignalApi) => Promise<void>) => {
   });
 };
 
-const bindOneSignal = (id: string) =>
-  withOneSignal(async (os) => {
-    await os.login(id);
-    if (os.Notifications && !os.Notifications.permission && Notification.permission === "default") {
-      await os.Notifications.requestPermission();
-    }
-  });
+const bindOneSignal = (id: string) => {
+  setTimeout(() => {
+    withOneSignal(async (os) => {
+      await Promise.race([os.login(id), new Promise<void>((r) => setTimeout(r, 8000))]);
+    });
+  }, 4000);
+};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const savedToken = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;

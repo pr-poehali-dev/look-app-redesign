@@ -92,17 +92,17 @@
       window.OneSignalDeferred = window.OneSignalDeferred || [];
 
       OneSignalDeferred.push(async function (OneSignal) {
-        await OneSignal.init({
-          appId: "db483c9f-ad96-40c5-ae85-a86e3f71b13e",
-          serviceWorkerPath: "/OneSignalSDKWorker.js",
-          serviceWorkerParam: { scope: "/" },
-          notifyButton: { enable: false },
-        });
-
-        const uid = localStorage.getItem("user_id");
-        if (uid) {
-          await OneSignal.login(uid);
-          console.log("[OneSignal] auto-login uid =", uid);
+        try {
+          await OneSignal.init({
+            appId: "db483c9f-ad96-40c5-ae85-a86e3f71b13e",
+            serviceWorkerPath: "/OneSignalSDKWorker.js",
+            serviceWorkerParam: { scope: "/" },
+            notifyButton: { enable: false },
+          });
+          var uid = localStorage.getItem("user_id");
+          if (uid) await OneSignal.login(uid);
+        } catch (e) {
+          console.warn("[OneSignal] init failed", e);
         }
       });
     </script>
