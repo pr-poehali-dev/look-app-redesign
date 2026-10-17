@@ -27,6 +27,10 @@ export const initExternalLinks = () => {
 export const openInBrowser = (url: string) => {
   let u: URL;
   try { u = new URL(url, window.location.href); } catch { return; }
+  try {
+    const w = window.open(u.href, "_system");
+    if (w) { try { w.opener = null; } catch { /* ignore */ } return; }
+  } catch { /* ignore */ }
   const a = document.createElement("a");
   a.href = u.href;
   a.target = "_blank";
