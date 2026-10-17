@@ -38,6 +38,11 @@ export const usePullToRefresh = (
         startY.current = null;
         return;
       }
+      const rect = el.getBoundingClientRect();
+      if (e.touches[0].clientY - rect.top > Math.min(180, rect.height * 0.25)) {
+        startY.current = null;
+        return;
+      }
       startY.current = e.touches[0].clientY;
       startX.current = e.touches[0].clientX;
     };
