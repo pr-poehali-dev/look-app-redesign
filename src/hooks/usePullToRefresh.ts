@@ -1,8 +1,8 @@
 import { RefObject, useEffect, useRef, useState } from "react";
 
-const THRESHOLD = 80;
-const MAX_PULL = 120;
-const DEAD_ZONE = 24;
+const THRESHOLD = 110;
+const MAX_PULL = 140;
+const DEAD_ZONE = 50;
 
 export const usePullToRefresh = (
   ref: RefObject<HTMLElement>,
@@ -53,7 +53,7 @@ export const usePullToRefresh = (
         locked.current = true; pullRef.current = 0; setPull(0); return;
       }
       if (dy <= DEAD_ZONE) return;
-      const v = Math.min(MAX_PULL, (dy - DEAD_ZONE) * 0.5);
+      const v = Math.min(MAX_PULL, (dy - DEAD_ZONE) * 0.4);
       pullRef.current = v;
       setPull(v);
     };
