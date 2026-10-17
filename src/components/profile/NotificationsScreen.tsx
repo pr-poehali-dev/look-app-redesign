@@ -1,4 +1,7 @@
+import { useRef } from "react";
 import Icon from "@/components/ui/icon";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import PullIndicator from "@/components/ui/pull-indicator";
 import { useNotificationsList, AppNotification } from "@/hooks/useNotifications";
 
 const TYPE_ICON: Record<string, string> = {
@@ -46,11 +49,14 @@ const NotificationRow = ({ n, onRead }: { n: AppNotification; onRead: (id: numbe
 };
 
 const NotificationsScreen = ({ onBack }: { onBack: () => void }) => {
-  const { notifications, loading, markRead, markAllRead } = useNotificationsList();
+  const { notifications, loading, refresh, markRead, markAllRead } = useNotificationsList();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { pull, refreshing } = usePullToRefresh(scrollRef, () => refresh());
   const hasUnread = notifications.some((n) => !n.is_read);
 
   return (
-    <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
+    <div ref={scrollRef} className="h-full bg-white overflow-y-scroll overscroll-y-contain" style={{ scrollbarWidth: "none" }}>
+      <PullIndicator pull={pull} refreshing={refreshing} />
       <div className="flex items-center gap-3 px-4 pt-14 pb-4 bg-white border-b border-gray-100">
         <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
         <span className="flex-1 text-center text-black font-bold text-lg pr-7">Уведомления</span>

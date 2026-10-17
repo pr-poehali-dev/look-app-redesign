@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import PullIndicator from "@/components/ui/pull-indicator";
 import { pollMs } from "@/lib/network";
 import Icon from "@/components/ui/icon";
 import { formatSeen } from "@/utils/formatSeen";
@@ -88,6 +90,9 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
   useEffect(() => {
     loadChats();
   }, [user]);
+
+  const chatsScrollRef = useRef<HTMLDivElement>(null);
+  const { pull, refreshing } = usePullToRefresh(chatsScrollRef, () => loadChats());
 
   useEffect(() => {
     if (!user || !search.trim()) {
@@ -386,7 +391,8 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
         );
       })()}
 
-      <div className="flex-1 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
+      <div ref={chatsScrollRef} className="flex-1 overflow-y-scroll overscroll-y-contain" style={{ scrollbarWidth: "none" }}>
+        <PullIndicator pull={pull} refreshing={refreshing} />
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
