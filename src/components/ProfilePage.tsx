@@ -14,6 +14,8 @@ import ReferralsScreen from "./profile/ReferralsScreen";
 import CollabsScreen from "./profile/CollabsScreen";
 import StoryViewerModal, { StoryViewerItem } from "./shared/StoryViewerModal";
 import { useUserMedia } from "@/context/UserMediaContext";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import PullIndicator from "@/components/ui/pull-indicator";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useFollowingList, useFollowerCount, useFollowing } from "@/hooks/useFollowing";
@@ -277,6 +279,8 @@ const ProfilePage = () => {
   const [showReferrals, setShowReferrals] = useState(false);
   const [showCollabs, setShowCollabs] = useState(false);
   const { userVideos: stories, removeMedia, addMedia, refreshMedia } = useUserMedia();
+  const profileScrollRef = useRef<HTMLDivElement>(null);
+  const { pull, refreshing } = usePullToRefresh(profileScrollRef, () => refreshMedia(true));
   const { user, token, logout, updateUser } = useAuth();
   const { articles: myArticles, loading: myArticlesLoading } = useUserArticles(showArticles ? null : user?.id);
   const { theme, toggle: toggleTheme } = useTheme();
@@ -397,7 +401,8 @@ const ProfilePage = () => {
   if (showCollabs) return <CollabsScreen onBack={() => setShowCollabs(false)} />;
 
   return (
-    <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
+    <div ref={profileScrollRef} className="h-full bg-white overflow-y-scroll overscroll-y-contain" style={{ scrollbarWidth: "none" }}>
+      <PullIndicator pull={pull} refreshing={refreshing} />
       {viewingStory !== null && (
         <StoryViewerModal
           items={stories.map((s): StoryViewerItem => ({ id: s.id, image: s.url, isVideo: s.type === "video", label: s.label, avatar: user?.avatar || undefined }))}

@@ -3,6 +3,8 @@ import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { useAuth } from "@/context/AuthContext";
 import { useUserMedia } from "@/context/UserMediaContext";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import PullIndicator from "@/components/ui/pull-indicator";
 import StoryViewerModal, { StoryViewerItem } from "./shared/StoryViewerModal";
 import PostCard from "./post-feed/PostCard";
 import NoteViewer from "./post-feed/NoteViewer";
@@ -38,7 +40,7 @@ const PostFeed = () => {
   const [openedArticleId, setOpenedArticleId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const { user, token, updateUser } = useAuth();
-  const { addMedia, removedIds, mediaVersion } = useUserMedia();
+  const { addMedia, removedIds, mediaVersion, refreshMedia } = useUserMedia();
   const myStoryInputRef = useRef<HTMLInputElement>(null);
   const followingHandles = useFollowingList();
   const [scope, setScope] = useState<FeedScope>("recommend");
@@ -181,6 +183,7 @@ const PostFeed = () => {
   const [storyHandle, setStoryHandle] = useState<string | null>(null);
   const [storyOrigin, setStoryOrigin] = useState<DOMRect | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { pull, refreshing } = usePullToRefresh(scrollRef, () => refreshMedia(true));
 
   const scrollByDir = (dir: 1 | -1) => {
     const c = scrollRef.current;
@@ -436,6 +439,7 @@ const PostFeed = () => {
           className="h-full overflow-y-scroll snap-y snap-mandatory overscroll-y-contain"
           style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
         >
+          <PullIndicator pull={pull} refreshing={refreshing} />
           <div className="md:max-w-[620px] md:mx-auto">
             {/* Резерв под фиксированную панель сторис */}
             <div className="flex-shrink-0" style={{ height: headerH }} aria-hidden />

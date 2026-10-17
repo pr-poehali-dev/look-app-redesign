@@ -2,6 +2,8 @@ import { useRef, useState, useEffect } from "react";
 import VideoCard, { VideoData } from "./VideoCard";
 import Icon from "@/components/ui/icon";
 import { useUserMedia } from "@/context/UserMediaContext";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import PullIndicator from "@/components/ui/pull-indicator";
 import { useAuth } from "@/context/AuthContext";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
 import { useFollowingList } from "@/hooks/useFollowing";
@@ -81,7 +83,8 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
   const [dbVideos, setDbVideos] = useState<(VideoData & { category: string })[]>([]);
   const [dbLoaded, setDbLoaded] = useState(false);
 
-  const { userVideos, mediaVersion } = useUserMedia();
+  const { userVideos, mediaVersion, refreshMedia } = useUserMedia();
+  const { pull, refreshing } = usePullToRefresh(containerRef, () => refreshMedia(true));
   const { user } = useAuth();
   const followingHandles = useFollowingList();
   const hiddenAuthors = useHiddenAuthors();
@@ -309,6 +312,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
 
   return (
     <div className="relative w-full h-full look-feed-root" style={{ background: "var(--look-bg)" }}>
+      <PullIndicator pull={pull} refreshing={refreshing} />
       <div
         ref={containerRef}
         className={`absolute inset-0 overflow-y-scroll snap-y snap-mandatory overscroll-y-contain`}
