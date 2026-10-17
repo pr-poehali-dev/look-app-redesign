@@ -157,6 +157,12 @@ html,
 body,
 #root {
   background: var(--look-bg);
+  overscroll-behavior-y: none;
+}
+
+html,
+body {
+  overscroll-behavior: none;
 }
 html.theme-light body {
   background: var(--look-bg);
