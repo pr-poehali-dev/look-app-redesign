@@ -1,8 +1,8 @@
 import { RefObject, useEffect, useRef, useState } from "react";
 
-const THRESHOLD = 110;
-const MAX_PULL = 140;
-const DEAD_ZONE = 50;
+const THRESHOLD = 160;
+const MAX_PULL = 190;
+const DEAD_ZONE = 90;
 
 export const usePullToRefresh = (
   ref: RefObject<HTMLElement>,
