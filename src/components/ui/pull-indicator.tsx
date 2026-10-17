@@ -7,7 +7,7 @@ interface PullIndicatorProps {
 
 const PullIndicator = ({ pull, refreshing }: PullIndicatorProps) => {
   if (pull <= 0 && !refreshing) return null;
-  const ready = pull >= 70;
+  const ready = pull >= 80;
   return (
     <div
       className="pointer-events-none fixed left-1/2 z-[60] flex h-10 w-10 items-center justify-center rounded-full bg-black/70 text-white shadow-lg"

@@ -1,7 +1,8 @@
 import { RefObject, useEffect, useRef, useState } from "react";
 
-const THRESHOLD = 70;
-const MAX_PULL = 110;
+const THRESHOLD = 80;
+const MAX_PULL = 120;
+const DEAD_ZONE = 24;
 
 export const usePullToRefresh = (
   ref: RefObject<HTMLElement>,
@@ -11,6 +12,8 @@ export const usePullToRefresh = (
   const [pull, setPull] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const startY = useRef<number | null>(null);
+  const startX = useRef(0);
+  const locked = useRef(false);
   const pullRef = useRef(0);
   const busy = useRef(false);
   const cb = useRef(onRefresh);
@@ -20,24 +23,45 @@ export const usePullToRefresh = (
     const el = ref.current;
     if (!el || !enabled) return;
 
+    const innerScrolled = (target: EventTarget | null) => {
+      let n = target as HTMLElement | null;
+      while (n && n !== el) {
+        if (n.scrollTop > 0) return true;
+        n = n.parentElement;
+      }
+      return false;
+    };
+
     const onStart = (e: TouchEvent) => {
-      if (busy.current || e.touches.length !== 1 || el.scrollTop > 0) { startY.current = null; return; }
+      locked.current = false;
+      if (busy.current || e.touches.length !== 1 || el.scrollTop > 0 || innerScrolled(e.target)) {
+        startY.current = null;
+        return;
+      }
       startY.current = e.touches[0].clientY;
+      startX.current = e.touches[0].clientX;
     };
 
     const onMove = (e: TouchEvent) => {
-      if (startY.current === null) return;
-      if (el.scrollTop > 0) { startY.current = null; pullRef.current = 0; setPull(0); return; }
+      if (startY.current === null || locked.current) return;
+      if (el.scrollTop > 0 || innerScrolled(e.target)) {
+        locked.current = true; pullRef.current = 0; setPull(0); return;
+      }
       const dy = e.touches[0].clientY - startY.current;
-      if (dy <= 0) { if (pullRef.current) { pullRef.current = 0; setPull(0); } return; }
-      const v = Math.min(MAX_PULL, dy * 0.5);
+      const dx = Math.abs(e.touches[0].clientX - startX.current);
+      if (dy < -6 || dx > Math.abs(dy)) {
+        locked.current = true; pullRef.current = 0; setPull(0); return;
+      }
+      if (dy <= DEAD_ZONE) return;
+      const v = Math.min(MAX_PULL, (dy - DEAD_ZONE) * 0.5);
       pullRef.current = v;
       setPull(v);
     };
 
     const onEnd = async () => {
-      const reached = pullRef.current >= THRESHOLD;
+      const reached = !locked.current && pullRef.current >= THRESHOLD;
       startY.current = null;
+      locked.current = false;
       pullRef.current = 0;
       if (!reached || busy.current) { setPull(0); return; }
       busy.current = true;
