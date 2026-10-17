@@ -57,6 +57,7 @@ export const toPost = (v: any): Post => {
     handle: v.handle || "user",
     avatar: v.avatar || "",
     image: v.url,
+    thumbnail: v.thumbnail || undefined,
     caption: desc || (v.type === "video" ? "Видео" : "Фото"),
     hashtags: (desc.match(/#\S+/g) || []).map((t: string) => t.slice(1)),
     likes: parseInt(v.likes) || 0,

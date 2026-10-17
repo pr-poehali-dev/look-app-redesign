@@ -158,7 +158,7 @@ const PostCard = ({ post }: { post: Post }) => {
       {/* Photo / Video */}
       <div className={`w-full min-h-0 overflow-hidden flex items-center justify-center ${post.isText ? "flex-shrink-0" : "flex-1 bg-black"}`}>
         {post.isText ? null : post.isVideo ? (
-          <video src={post.image} className="max-w-full max-h-full w-auto h-auto object-contain" controls playsInline loop />
+          <video src={post.image.includes("#") ? post.image : `${post.image}#t=0.001`} poster={post.thumbnail || undefined} preload="metadata" className="max-w-full max-h-full w-auto h-auto object-contain" controls playsInline loop />
         ) : post.images && post.images.length > 0 ? (
           <PhotoCarousel images={[post.image, ...post.images]} alt={post.caption} />
         ) : (

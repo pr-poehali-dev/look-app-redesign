@@ -7,6 +7,7 @@ export interface StoryViewerItem {
   id: number | string;
   image: string;
   isVideo?: boolean;
+  thumbnail?: string;
   label: string;
   avatar?: string;
 }
@@ -158,6 +159,7 @@ const StoryViewerModal = ({ items, startIndex, onClose, originRect }: Props) => 
             ref={videoRef}
             key={item.id}
             src={item.image}
+            poster={item.thumbnail || undefined}
             className="absolute inset-0 w-full h-full object-cover"
             autoPlay
             playsInline

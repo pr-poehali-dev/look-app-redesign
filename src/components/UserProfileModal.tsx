@@ -41,7 +41,7 @@ const UserProfileModal = ({ handle, initialTab = "media", onClose }: Props) => {
   const { products: shopProducts, loading: shopLoading } = useShopProducts(realUser?.id);
   const { boards: userBoards, loading: boardsLoading } = useUserBoards(realUser?.id);
   const { articles: userArticles, loading: articlesLoading } = useUserArticles(realUser?.id);
-  const [userMedia, setUserMedia] = useState<{ id: number; image: string; isVideo: boolean }[]>([]);
+  const [userMedia, setUserMedia] = useState<{ id: number; image: string; isVideo: boolean; thumbnail?: string }[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
   const [notifMenu, setNotifMenu] = useState(false);
   const [moreMenu, setMoreMenu] = useState(false);
@@ -110,9 +110,10 @@ const UserProfileModal = ({ handle, initialTab = "media", onClose }: Props) => {
             const raw2 = await res.json();
             const d = typeof raw2.body === "string" ? JSON.parse(raw2.body) : raw2;
             if (!cancelled && Array.isArray(d.videos)) {
-              const media = d.videos.map((v: { id: number; url: string; type: string }) => ({
+              const media = d.videos.map((v: { id: number; url: string; type: string; thumbnail?: string }) => ({
                 id: v.id,
                 image: v.url,
+                thumbnail: v.thumbnail || undefined,
                 isVideo: v.type === "video" || /\.(mp4|mov|webm|m4v)(\?|$)/i.test(v.url || ""),
               }));
               setUserMedia(media);
@@ -149,7 +150,7 @@ const UserProfileModal = ({ handle, initialTab = "media", onClose }: Props) => {
 
   // Объединяем медиа из БД пользователя с галереей по умолчанию (из authors.ts)
   const gallery = userMedia.length > 0
-    ? userMedia.map((m) => ({ image: m.image, isVideo: m.isVideo, views: undefined as string | undefined }))
+    ? userMedia.map((m) => ({ image: m.image, thumbnail: m.thumbnail, isVideo: m.isVideo, views: undefined as string | undefined }))
     : data.gallery;
 
   const displayName = realUser?.name || data.name;
@@ -426,7 +427,7 @@ const UserProfileModal = ({ handle, initialTab = "media", onClose }: Props) => {
 
       {opened && (
         <StoryViewerModal
-          items={gallery.map((g, i): StoryViewerItem => ({ id: i, image: g.image, isVideo: g.isVideo, label: displayHandle, avatar: displayAvatar || undefined }))}
+          items={gallery.map((g, i): StoryViewerItem => ({ id: i, image: g.image, isVideo: g.isVideo, thumbnail: (g as { thumbnail?: string }).thumbnail, label: displayHandle, avatar: displayAvatar || undefined }))}
           startIndex={openedItem ?? 0}
           originRect={openedOrigin}
           onClose={() => { setOpenedItem(null); setOpenedOrigin(null); }}

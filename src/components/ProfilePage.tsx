@@ -79,6 +79,8 @@ interface Story {
   type: "image" | "video" | "text";
   label: string;
   description?: string;
+  thumbnail?: string;
+  thumb?: string;
 }
 
 interface MediaCounts { likes: Record<string, number>; comments: Record<string, number>; saves: Record<string, number>; downloads: Record<string, number>; views: Record<string, number> }
@@ -186,6 +188,7 @@ const MediaViewer = ({ items, startIndex, onClose, onDelete, isRepostView, count
           <video
             key={item.id}
             src={item.url}
+            poster={item.thumbnail || item.thumb || undefined}
             className="max-w-full max-h-full w-auto h-auto object-contain"
             autoPlay
             controls
