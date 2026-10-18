@@ -1065,3 +1065,14 @@ html.theme-light .nv-tag {
   color: #fe2c55 !important;
   stroke: #fe2c55 !important;
 }
+
+.story-video::-webkit-media-controls,
+.story-video::-webkit-media-controls-enclosure,
+.story-video::-webkit-media-controls-panel,
+.story-video::-webkit-media-controls-overlay-play-button,
+.story-video::-webkit-media-controls-start-playback-button {
+  display: none !important;
+  -webkit-appearance: none;
+  opacity: 0 !important;
+  pointer-events: none;
+}

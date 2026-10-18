@@ -80,10 +80,14 @@ const StoryViewer = ({ stories, startIndex, onClose }: { stories: Story[]; start
           ref={videoRef}
           key={story.id}
           src={story.url}
-          className="w-full h-full object-cover"
+          className="story-video w-full h-full object-cover"
           autoPlay
           muted={false}
           playsInline
+          preload="auto"
+          controls={false}
+          disablePictureInPicture
+          disableRemotePlayback
           onPlay={startProgress}
           onLoadedData={() => videoRef.current?.play()}
         />

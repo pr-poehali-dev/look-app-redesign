@@ -160,9 +160,13 @@ const StoryViewerModal = ({ items, startIndex, onClose, originRect }: Props) => 
             key={item.id}
             src={item.image}
             poster={item.thumbnail || undefined}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="story-video absolute inset-0 w-full h-full object-cover"
             autoPlay
             playsInline
+            preload="auto"
+            controls={false}
+            disablePictureInPicture
+            disableRemotePlayback
             onPlay={startProgress}
             onLoadedData={() => videoRef.current?.play()}
           />
