@@ -28,7 +28,7 @@ const LiveStreamStartForm = ({
           <Icon name="Radio" size={40} className="text-[#fe2c55]" />
         </div>
         <div className="text-center">
-          <h2 className="text-white font-bold text-2xl mb-2">Прямой эфир</h2>
+          <h2 className="text-white font-bold text-2xl mb-2">Прямая трансляция</h2>
           <p className="text-white/50 text-sm">Начни трансляцию — зрители уже ждут</p>
         </div>
         <button onClick={onOpenForm}
@@ -43,12 +43,12 @@ const LiveStreamStartForm = ({
   return (
     <div className="relative z-20 flex-1 flex flex-col items-center justify-center gap-4 px-6">
       <div className="w-full max-w-sm bg-black/60 backdrop-blur-md rounded-2xl p-5 flex flex-col gap-3">
-        <p className="text-white font-bold text-lg">Настрой эфир</p>
+        <p className="text-white font-bold text-lg">Настрой трансляцию</p>
         <input
           autoFocus
           value={streamTitle}
           onChange={(e) => onTitleChange(e.target.value)}
-          placeholder="Название эфира..."
+          placeholder="Название трансляции..."
           maxLength={80}
           className="w-full bg-white/10 text-white placeholder-white/40 px-4 py-3 rounded-xl outline-none text-sm"
         />
@@ -69,7 +69,7 @@ const LiveStreamStartForm = ({
         <button onClick={onStartLive}
           className="w-full py-3.5 rounded-xl bg-[#fe2c55] text-white font-bold text-base active:scale-95 transition-all flex items-center justify-center gap-2">
           <Icon name="Radio" size={18} />
-          В эфир
+          Начать
         </button>
         <button onClick={onCancelForm}
           className="w-full py-2.5 rounded-xl text-white/60 text-sm">

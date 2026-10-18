@@ -441,7 +441,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
             className="w-full py-4 rounded-2xl bg-[#fe2c55] text-white font-bold text-lg flex items-center justify-center gap-3 active:scale-95 transition-transform"
           >
             <div className="w-3 h-3 rounded-full bg-white animate-pulse" />
-            Начать эфир
+            Начать трансляцию
           </button>
         </div>
       ) : (

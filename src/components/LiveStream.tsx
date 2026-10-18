@@ -248,10 +248,10 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
 
   const startLive = async () => {
     if (!user) {
-      alert("Войди, чтобы запустить эфир");
+      alert("Войди, чтобы запустить трансляцию");
       return;
     }
-    const title = streamTitle.trim() || `Эфир ${user.name}`;
+    const title = streamTitle.trim() || `Трансляция ${user.name}`;
     try {
       const res = await fetch(STREAMS_API, {
         method: "POST",

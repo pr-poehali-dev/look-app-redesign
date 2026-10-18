@@ -45,7 +45,7 @@ const TABS = [
   { id: "profile", icon: "User", label: "Профиль" },
 ];
 
-const LIVE_CATEGORY = { id: "live", label: "Эфиры" };
+const LIVE_CATEGORY = { id: "live", label: "Трансляции" };
 
 const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 

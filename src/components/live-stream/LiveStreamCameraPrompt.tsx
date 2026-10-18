@@ -15,7 +15,7 @@ const LiveStreamCameraPrompt = ({ camState, camErrorMsg, onClose, onStart }: Pro
           <Icon name="X" size={18} className="text-white" />
         </button>
         <div className="text-6xl mb-6">📸</div>
-        <h2 className="text-white font-bold text-2xl mb-3 text-center">Прямой эфир</h2>
+        <h2 className="text-white font-bold text-2xl mb-3 text-center">Прямая трансляция</h2>
         <p className="text-white/50 text-sm text-center mb-8 leading-relaxed">
           Нажми кнопку — браузер спросит разрешение на камеру. Выбери <span className="text-white font-semibold">«Разрешить»</span>.
         </p>

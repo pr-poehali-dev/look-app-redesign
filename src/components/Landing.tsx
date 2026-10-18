@@ -89,12 +89,12 @@ const Landing = ({ onLogin, onRegister }: LandingProps) => {
                 <button
                   onClick={() => {
                     setMenuOpen(false);
-                    setPrompt("Войди, чтобы смотреть эфиры.");
+                    setPrompt("Войди, чтобы смотреть трансляции.");
                   }}
                   className="flex items-center gap-1 rounded-full bg-black/10 px-3 py-1 text-sm font-medium text-[#0d2a18]"
                 >
                   <Icon name="Radio" size={13} />
-                  Эфиры
+                  Трансляции
                 </button>
                 {CATEGORIES.map((c) => {
                   const on = c.id === category;

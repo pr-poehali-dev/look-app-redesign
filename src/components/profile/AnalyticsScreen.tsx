@@ -70,7 +70,7 @@ const AnalyticsScreen = ({ onBack }: { onBack: () => void }) => {
             <StatCard icon="MessageCircle" label="Комментариев" value={data.total_comments ?? 0} />
             <StatCard icon="ShoppingBag" label="Переходов по товарам" value={data.product_clicks} />
             <StatCard icon="Wand2" label="Твои шаблоны использовали" value={data.template_uses_by_others} />
-            <StatCard icon="Radio" label="Проведено эфиров" value={data.live_count} />
+            <StatCard icon="Radio" label="Проведено трансляций" value={data.live_count} />
           </div>
 
           <p className="text-gray-400 text-xs mt-5 mb-2 uppercase font-semibold">Твои публикации</p>

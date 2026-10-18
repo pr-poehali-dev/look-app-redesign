@@ -24,7 +24,7 @@ const NOTIFICATIONS = [
   { label: "Комментарии", value: true },
   { label: "Новые подписчики", value: true },
   { label: "Упоминания", value: false },
-  { label: "Прямые эфиры", value: true },
+  { label: "Прямые трансляции", value: true },
   { label: "Сообщения", value: false },
 ];
 

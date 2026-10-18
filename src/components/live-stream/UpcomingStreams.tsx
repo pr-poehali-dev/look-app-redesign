@@ -77,7 +77,7 @@ const UpcomingStreams = () => {
   };
 
   const submit = async () => {
-    if (!user) { toast.error("Войдите в аккаунт, чтобы анонсировать эфир"); return; }
+    if (!user) { toast.error("Войдите в аккаунт, чтобы анонсировать трансляцию"); return; }
     setSaving(true);
     const data = await call("schedule", {
       title,
@@ -87,7 +87,7 @@ const UpcomingStreams = () => {
     });
     setSaving(false);
     if (data.error) { toast.error(data.error); return; }
-    toast.success("Эфир анонсирован, подписчики получат уведомление");
+    toast.success("Трансляция анонсирована, подписчики получат уведомление");
     setShowForm(false);
     setTitle("");
     setWhen("");
@@ -114,7 +114,7 @@ const UpcomingStreams = () => {
   return (
     <div className="px-4 mb-4">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-white/40 text-xs font-semibold uppercase tracking-widest">Скоро в эфире</p>
+        <p className="text-white/40 text-xs font-semibold uppercase tracking-widest">Ближайшие трансляции</p>
         <button onClick={() => setShowForm((v) => !v)} className="text-[#fe2c55] text-xs font-semibold flex items-center gap-1">
           <Icon name={showForm ? "X" : "CalendarPlus"} size={14} />
           {showForm ? "Закрыть" : "Анонсировать"}
@@ -126,7 +126,7 @@ const UpcomingStreams = () => {
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value.slice(0, 120))}
-            placeholder="Тема эфира"
+            placeholder="Тема трансляции"
             className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
           />
           <input
@@ -152,14 +152,14 @@ const UpcomingStreams = () => {
             disabled={!title.trim() || !when || saving}
             className="w-full py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-bold disabled:opacity-40"
           >
-            {saving ? "Сохраняем..." : "Анонсировать эфир"}
+            {saving ? "Сохраняем..." : "Анонсировать трансляцию"}
           </button>
           <p className="text-white/30 text-[11px]">Подписчики получат уведомление сразу, а те, кто нажмёт «Напомнить», ещё и за 15 минут до начала</p>
         </div>
       )}
 
       {list.length === 0 ? (
-        <p className="text-white/30 text-sm">Запланированных эфиров пока нет</p>
+        <p className="text-white/30 text-sm">Запланированных трансляций пока нет</p>
       ) : (
         <div className="flex flex-col gap-2">
           {list.map((s) => (

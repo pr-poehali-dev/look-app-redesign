@@ -210,7 +210,7 @@ const WatchStream = ({ channel, onBack }: { channel: LiveChannel; onBack: () => 
         {connecting && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60">
             <div className="w-12 h-12 rounded-full border-2 border-white/20 border-t-[#fe2c55] animate-spin" />
-            <p className="text-white/70 text-sm">Подключение к эфиру...</p>
+            <p className="text-white/70 text-sm">Подключение к трансляции...</p>
           </div>
         )}
       </div>
@@ -335,11 +335,11 @@ const LiveList = () => {
           id: s.id,
           user_id: s.user_id,
           handle: s.user_name || s.user_id,
-          name: s.user_name || "Эфир",
+          name: s.user_name || "Трансляция",
           thumb: s.thumb || s.user_avatar || "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/c96bc59d-e416-4e11-adf2-a308d67a562d.jpg",
           category: s.category || "Общее",
           viewers: s.viewers || 0,
-          title: s.title || "Прямой эфир",
+          title: s.title || "Прямая трансляция",
           tags: s.tags || [],
         }));
         setChannels(list);
@@ -366,14 +366,14 @@ const LiveList = () => {
       <div className="px-4 pt-14 pb-4 border-b border-white/8">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-white font-bold text-xl">Прямые эфиры</h2>
+            <h2 className="text-white font-bold text-xl">Прямые трансляции</h2>
             <p className="text-white/40 text-xs mt-0.5">
               {loading ? "Загрузка..." : `${channels.length} ${channels.length === 1 ? "трансляция" : channels.length < 5 ? "трансляции" : "трансляций"} сейчас`}
             </p>
           </div>
           <div className="flex items-center gap-1.5 bg-[#fe2c55]/20 border border-[#fe2c55]/40 px-3 py-1.5 rounded-full">
             <div className="w-1.5 h-1.5 rounded-full bg-[#fe2c55] animate-pulse" />
-            <span className="text-[#fe2c55] text-xs font-bold">В ЭФИРЕ</span>
+            <span className="text-[#fe2c55] text-xs font-bold">ТРАНСЛЯЦИЯ</span>
           </div>
         </div>
       </div>
@@ -403,7 +403,7 @@ const LiveList = () => {
       {/* Featured — big card */}
       {filtered.length > 0 && (
       <div className="px-4 mb-4">
-        <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-3">Топ эфир</p>
+        <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-3">Топ трансляций</p>
         <button
           onClick={() => setWatching(filtered[0])}
           className="relative w-full rounded-2xl overflow-hidden aspect-video"
@@ -440,7 +440,7 @@ const LiveList = () => {
         {filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <Icon name="Radio" size={40} className="text-white/20" />
-            <p className="text-white/40 text-sm">Нет эфиров в этой категории</p>
+            <p className="text-white/40 text-sm">Нет трансляций в этой категории</p>
           </div>
         )}
         <div className="flex flex-col gap-3">
