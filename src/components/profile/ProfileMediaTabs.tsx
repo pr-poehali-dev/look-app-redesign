@@ -80,10 +80,10 @@ const ProfileMediaTabs = ({ tab, setTab, stories, setMediaViewer, setCategoryEdi
             </div>
           ) : (
             <div className="grid grid-cols-3 md:grid-cols-4 gap-1 bg-gray-200 p-1">
-              {videos.map((item) => (
+              {videos.map((item, idx) => (
                 <div key={item.id} className="relative aspect-square overflow-hidden cursor-pointer" style={{ background: "linear-gradient(135deg, #0a2e1a 0%, #1a1a1a 100%)" }} onClick={() => setMediaViewer({ tab: "video", id: item.id })}>
                   {(item.thumb || item.thumbnail) ? (
-                    <img loading="lazy" decoding="async" src={item.thumb || item.thumbnail} alt="" className="w-full h-full object-cover rounded-md" />
+                    <img loading={idx < 12 ? "eager" : "lazy"} decoding="async" src={item.thumb || item.thumbnail} alt="" className="w-full h-full object-cover rounded-md" />
                   ) : (item.url ? (
                     <video
                       src={`${item.url}#t=0.1`}
@@ -138,14 +138,14 @@ const ProfileMediaTabs = ({ tab, setTab, stories, setMediaViewer, setCategoryEdi
             </div>
           ) : (
             <div className="grid grid-cols-3 md:grid-cols-4 gap-1 bg-gray-200 p-1">
-              {photos.map((item) => (
+              {photos.map((item, idx) => (
                 <div key={item.id} className="relative aspect-square overflow-hidden bg-gray-200 cursor-pointer" onClick={() => setMediaViewer({ tab: item.type === "text" ? "text" : "image", id: item.id })}>
                   {item.type === "text" ? (
                     <div className="w-full h-full rounded-md p-2 bg-gradient-to-br from-[#2a1f3d] to-[#1a2a3a] flex items-center">
                       <p className="text-white text-[11px] leading-snug line-clamp-6 break-words">{item.description}</p>
                     </div>
                   ) : (
-                    <img loading="lazy" decoding="async" src={item.url} alt="" className="w-full h-full object-cover rounded-md" />
+                    <img loading={idx < 12 ? "eager" : "lazy"} decoding="async" src={item.url} alt="" className="w-full h-full object-cover rounded-md" />
                   )}
                 </div>
               ))}
@@ -165,7 +165,7 @@ const ProfileMediaTabs = ({ tab, setTab, stories, setMediaViewer, setCategoryEdi
             </div>
           ) : (
             <div className="grid grid-cols-3 md:grid-cols-4 gap-1 bg-gray-200 p-1">
-              {reposts.map((item) => (
+              {reposts.map((item, idx) => (
                 <div
                   key={item.id}
                   className="relative aspect-square overflow-hidden cursor-pointer"
@@ -173,9 +173,9 @@ const ProfileMediaTabs = ({ tab, setTab, stories, setMediaViewer, setCategoryEdi
                   onClick={() => setMediaViewer({ tab: item.type, id: item.id, onlyReposts: true })}
                 >
                   {(item.thumb || item.thumbnail) ? (
-                    <img loading="lazy" decoding="async" src={item.thumb || item.thumbnail} alt="" className="w-full h-full object-cover rounded-md" />
+                    <img loading={idx < 12 ? "eager" : "lazy"} decoding="async" src={item.thumb || item.thumbnail} alt="" className="w-full h-full object-cover rounded-md" />
                   ) : item.type === "image" ? (
-                    <img loading="lazy" decoding="async" src={item.url} alt="" className="w-full h-full object-cover rounded-md" />
+                    <img loading={idx < 12 ? "eager" : "lazy"} decoding="async" src={item.url} alt="" className="w-full h-full object-cover rounded-md" />
                   ) : item.url ? (
                     <video src={`${item.url}#t=0.1`} className="w-full h-full object-cover rounded-md pointer-events-none" muted playsInline preload="metadata" />
                   ) : null}
