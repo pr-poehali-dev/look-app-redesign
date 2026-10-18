@@ -281,7 +281,7 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
   const cols = total <= 1 ? "1fr" : total <= 2 ? "1fr 1fr" : total <= 4 ? "1fr 1fr" : "1fr 1fr 1fr";
 
   return (
-    <div className="fixed inset-0 z-50 bg-zinc-950 flex flex-col overflow-hidden">
+    <div data-no-ptr className="fixed inset-0 z-50 bg-zinc-950 flex flex-col overflow-hidden">
       <div className="flex items-center justify-between px-4 pt-14 pb-3 bg-black/30">
         <div>
           <p className="text-white font-bold text-lg">{roomName}</p>

@@ -11,6 +11,7 @@ import Landing from "./components/Landing";
 import AutoTranslator from "./components/AutoTranslator";
 import { fetchIceServers } from "@/lib/webrtc-config";
 import OfflineBanner from "@/components/OfflineBanner";
+import PullToRefresh from "@/components/PullToRefresh";
 import VerifyEmailScreen from "./components/app/VerifyEmailScreen";
 import AuthenticatedApp from "./components/app/AuthenticatedApp";
 import { useIncomingCall } from "./components/app/useIncomingCall";
@@ -216,6 +217,7 @@ const App = () => (
       <Sonner />
       <AutoTranslator />
       <OfflineBanner />
+      <PullToRefresh />
       <ThemeProvider>
         <AuthProvider>
           <Suspense fallback={<ScreenFallback />}>

@@ -115,7 +115,7 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller }: CallS
   }, [mode]);
 
   return (
-    <div
+    <div data-no-ptr
       className="fixed inset-0 z-50 flex flex-col overflow-hidden"
       style={{
         maxWidth: 480,

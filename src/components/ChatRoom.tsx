@@ -1394,7 +1394,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden" style={{ backgroundColor: themeBg[chatTheme] || themeBg.default }}>
+    <div data-no-ptr className="h-full flex flex-col overflow-hidden" style={{ backgroundColor: themeBg[chatTheme] || themeBg.default }}>
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImage} />
       <input ref={docRef} type="file" className="hidden" onChange={handleDoc} />
 

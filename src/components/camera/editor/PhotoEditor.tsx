@@ -488,7 +488,7 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
   })();
 
   return (
-    <div className="fixed inset-0 z-[300] bg-black flex flex-col">
+    <div data-no-ptr className="fixed inset-0 z-[300] bg-black flex flex-col">
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 flex-shrink-0">
         <button onClick={onCancel} className="text-white/80 text-sm font-medium px-3 py-1.5">Отмена</button>

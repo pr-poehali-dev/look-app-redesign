@@ -399,7 +399,7 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
 
   // ── Основной экран: видео + UI ──
   return (
-    <div className="relative w-full h-full bg-black flex flex-col overflow-hidden">
+    <div data-no-ptr className="relative w-full h-full bg-black flex flex-col overflow-hidden">
 
       <div className="absolute inset-0 bg-zinc-950">
         <video
