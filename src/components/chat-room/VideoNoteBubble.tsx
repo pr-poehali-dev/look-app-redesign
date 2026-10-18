@@ -35,7 +35,7 @@ const VideoNoteBubble = ({ isMe, mediaUrl, duration, time, transcript, transcrib
               className="w-full h-full object-cover rounded-full"
               style={{ clipPath: "circle(50%)" }}
               playsInline
-              preload="auto"
+              preload="metadata"
               onLoadedData={(e) => { const v = e.currentTarget; if (v.paused && v.currentTime === 0) v.currentTime = 0.1; }}
               onPlay={() => setPlaying(true)}
               onPause={() => setPlaying(false)}
