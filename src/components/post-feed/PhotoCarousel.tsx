@@ -35,7 +35,7 @@ const PhotoCarousel = ({ images, alt = "" }: Props) => {
             <img
               src={u}
               alt={alt}
-              loading={i === 0 ? "eager" : "lazy"}
+              loading="eager"
               className="max-w-full max-h-full w-auto h-auto object-contain"
             />
           </div>

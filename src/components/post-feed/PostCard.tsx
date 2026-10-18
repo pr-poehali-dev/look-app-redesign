@@ -1,4 +1,5 @@
 import PhotoCarousel from "@/components/post-feed/PhotoCarousel";
+import StickyImage from "./StickyImage";
 import { useState, useRef } from "react";
 import { promptAuth } from "@/lib/promptAuth";
 import { createPortal } from "react-dom";
@@ -162,7 +163,7 @@ const PostCard = ({ post }: { post: Post }) => {
         ) : post.images && post.images.length > 0 ? (
           <PhotoCarousel images={[post.image, ...post.images]} alt={post.caption} />
         ) : (
-          <img loading="lazy" decoding="async" src={post.image} alt={post.caption} className="max-w-full max-h-full w-auto h-auto object-contain" />
+          <StickyImage src={post.image} alt={post.caption} className="max-w-full max-h-full w-auto h-auto object-contain" />
         )}
       </div>
 
