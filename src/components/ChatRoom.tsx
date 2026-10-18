@@ -527,6 +527,8 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     return () => clearInterval(t);
   }, [chatId, chat.type, MY_ID, MY_NAME]);
 
+  const [farFromBottom, setFarFromBottom] = useState(false);
+  const [newBelow, setNewBelow] = useState(0);
   const settledChatRef = useRef<string | number | null>(null);
   const prevCountRef = useRef(0);
   useLayoutEffect(() => {
@@ -539,14 +541,34 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       el.scrollIntoView({ behavior: "auto", block: "end" });
       return;
     }
-    const grew = messages.length > prevCountRef.current;
+    const added = messages.length - prevCountRef.current;
+    const grew = added > 0;
     prevCountRef.current = messages.length;
     if (!grew) return;
     const box = el.parentElement;
     const nearBottom = !box || box.scrollHeight - box.scrollTop - box.clientHeight < 400;
     const mine = String(messages[messages.length - 1]?.user_id ?? "") === String(MY_ID);
     if (nearBottom || mine) el.scrollIntoView({ behavior: "smooth", block: "end" });
+    else if (!mine) setNewBelow(n => n + added);
   }, [messages, chatId, MY_ID]);
+
+  useEffect(() => {
+    setFarFromBottom(false);
+    setNewBelow(0);
+  }, [chatId]);
+
+  const onMessagesScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const b = e.currentTarget;
+    const dist = b.scrollHeight - b.scrollTop - b.clientHeight;
+    const far = dist > 300;
+    setFarFromBottom(prev => (prev === far ? prev : far));
+    if (dist < 120) setNewBelow(n => (n === 0 ? n : 0));
+  };
+
+  const scrollToBottom = () => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    setNewBelow(0);
+  };
 
   // Переключение камеры (фронт/тыл) во время подготовки видеосообщения
   useEffect(() => {
@@ -1560,7 +1582,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-scroll px-3 py-4 flex flex-col gap-2" style={{ scrollbarWidth: "none" }}>
+      <div onScroll={onMessagesScroll} className="flex-1 overflow-y-scroll px-3 py-4 flex flex-col gap-2" style={{ scrollbarWidth: "none" }}>
         {messages.length === 0 && (
           <div className="flex-1 flex items-center justify-center">
             <p className="text-white/20 text-sm">Начни общение первым!</p>
@@ -1597,6 +1619,22 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
             </div>
           );
         })}
+        {(farFromBottom || newBelow > 0) && (
+          <div className="sticky bottom-1 h-0 flex justify-end overflow-visible pointer-events-none">
+            <button
+              onClick={scrollToBottom}
+              className="pointer-events-auto -translate-y-full relative w-10 h-10 rounded-full bg-[#2a2a2a]/95 border border-white/15 shadow-lg flex items-center justify-center"
+              aria-label="Вниз"
+            >
+              <Icon name="ChevronDown" size={22} className="text-white" />
+              {newBelow > 0 && (
+                <span className="absolute -top-2 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[#fe2c55] text-white text-[11px] font-bold flex items-center justify-center">
+                  {newBelow > 99 ? "99+" : newBelow}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
         <div ref={bottomRef} />
       </div>
 
