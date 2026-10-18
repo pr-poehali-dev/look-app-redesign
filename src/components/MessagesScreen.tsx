@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { isSlowNetwork } from "@/lib/network";
 import { pollMs } from "@/lib/network";
 import Icon from "@/components/ui/icon";
 import { formatSeen } from "@/utils/formatSeen";
@@ -42,6 +43,8 @@ interface MessagesScreenProps {
   onDirectConsumed?: () => void;
 }
 
+const warmedAvatars = new Set<string>();
+
 const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, initialDirectHandle, initialDraft, onDirectConsumed }: MessagesScreenProps = {}) => {
   const [tab, setTab] = useState<Tab>(initialCommunityId ? (initialKind === "channel" ? "channels" : "communities") : "chats");
   const [openChat, setOpenChat] = useState<Chat | null>(null);
@@ -77,13 +80,28 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
           avatar: c.avatar || "",
           unread: c.unread || 0,
         }));
-        setChats(dbChats);
+        setChats(prev => (JSON.stringify(prev) === JSON.stringify(dbChats) ? prev : dbChats));
         try { localStorage.setItem(chatsCacheKey, JSON.stringify(dbChats)); } catch { /* ignore */ }
         refreshUnread();
       })
       .catch(() => { /* оставляем показанный кэш */ })
       .finally(() => setLoading(false));
   };
+
+  useEffect(() => {
+    const limit = isSlowNetwork() ? 8 : 25;
+    chats.slice(0, limit).forEach((c) => {
+      const list = c.type === "group" && c.avatars ? c.avatars : [c.avatar];
+      list.forEach((src) => {
+        if (src && !warmedAvatars.has(src)) {
+          warmedAvatars.add(src);
+          const img = new Image();
+          img.decoding = "async";
+          img.src = src;
+        }
+      });
+    });
+  }, [chats]);
 
   useEffect(() => {
     loadChats();
