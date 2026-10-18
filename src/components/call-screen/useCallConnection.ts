@@ -1094,6 +1094,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
   };
 
   return {
+    isCaller: isCaller.current,
     seconds,
     muted,
     speakerOn,

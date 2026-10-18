@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useCallConnection } from "./call-screen/useCallConnection";
+import { useCallRingtone } from "./call-screen/useCallRingtone";
 import CallBackground from "./call-screen/CallBackground";
 import CallHeader from "./call-screen/CallHeader";
 import CallControls from "./call-screen/CallControls";
@@ -21,6 +22,7 @@ interface CallScreenProps {
 
 const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller }: CallScreenProps) => {
   const {
+    isCaller: amCaller,
     seconds,
     muted,
     speakerOn,
@@ -44,6 +46,8 @@ const CallScreen = ({ name, avatar, mode, myId, peerId, onEnd, isCaller }: CallS
     toggleCamera,
     toggleSpeaker,
   } = useCallConnection({ name, mode, myId, peerId, onEnd, isCaller });
+
+  useCallRingtone(amCaller && (status === "connecting" || status === "ringing"));
 
   const [controlsVisible, setControlsVisible] = useState(true);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
