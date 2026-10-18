@@ -66,6 +66,58 @@ const isSlowNetwork = () => {
   return !!c && (!!c.saveData || c.effectiveType === "slow-2g" || c.effectiveType === "2g" || c.effectiveType === "3g");
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mapDbVideo = (v: any): VideoData & { category: string } => {
+          const baseDesc = (v.description || "").trim();
+          const tagsArr = (v.hashtags || "")
+            .split(/[\s,]+/)
+            .map((t: string) => t.trim().replace(/^#+/, ""))
+            .filter(Boolean);
+          // Если хэштеги уже встречаются в описании — не дублируем
+          const hasTagsInDesc = /#\S+/.test(baseDesc);
+          const tagsText = !hasTagsInDesc && tagsArr.length
+            ? (baseDesc ? " " : "") + tagsArr.map((t: string) => `#${t}`).join(" ")
+            : "";
+          const fullDesc = (baseDesc + tagsText).trim();
+return ({
+          id: v.id + 10000,
+          dbId: v.id,
+          image: v.url,
+          thumbnail: v.thumbnail || undefined,
+          isVideo: v.type === 'video',
+          author: v.author || "Автор",
+          handle: v.handle || "user",
+          description: fullDesc,
+          song: "Look — Original Sound",
+          likes: v.likes || "0",
+          comments: v.comments || "0",
+          shares: v.shares || "0",
+          category: v.category || "all",
+          avatar: v.avatar || "",
+          templateId: v.template_id || null,
+          hasProducts: !!v.has_products,
+          views: typeof v.views === "number" ? v.views : undefined,
+          isVerified: !!v.is_verified,
+          isAd: !!v.is_ad,
+          adLabel: v.ad_label || null,
+          ageRating: v.age_rating || null,
+          adErid: v.ad_erid || null,
+          adAdvertiser: v.ad_advertiser || null,
+          place: v.place || null,
+          address: v.address || null,
+          workHours: v.work_hours || null,
+          tips: v.tips || null,
+          seriesTitle: v.series_title || null,
+          brand: v.brand || null,
+          personalExperience: !!v.personal_experience,
+          repostedBy: v.reposted_by || null,
+        });
+};
+
+const mapDbVideos = (list: unknown[]) => (list || []).map(mapDbVideo);
+
+const videoSig = (l: (VideoData & { category: string })[]) => l.map(v => `${v.id}:${v.likes}:${v.comments}:${v.image}`).join("|");
+
 const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoFeedProps) => {
   const slowNetwork = isSlowNetwork();
   void activeTab;
@@ -78,11 +130,16 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
     const t = setTimeout(() => setNeighborsReady(true), 1200);
     return () => clearTimeout(t);
   }, [activeIndex]);
-  const [dbVideos, setDbVideos] = useState<(VideoData & { category: string })[]>([]);
-  const [dbLoaded, setDbLoaded] = useState(false);
-
   const { userVideos, mediaVersion } = useUserMedia();
   const { user } = useAuth();
+  const [dbVideos, setDbVideos] = useState<(VideoData & { category: string })[]>(() => {
+    const c = readFeedCache<unknown[]>(`videos_${activeCategory}_${user?.id || "anon"}`);
+    return c && c.length ? mapDbVideos(c) : [];
+  });
+  const [dbLoaded, setDbLoaded] = useState(() => {
+    const c = readFeedCache<unknown[]>(`videos_${activeCategory}_${user?.id || "anon"}`);
+    return !!(c && c.length);
+  });
   const followingHandles = useFollowingList();
   const hiddenAuthors = useHiddenAuthors();
 
@@ -120,7 +177,8 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
     const categoryChanged = lastLoadKeyRef.current !== null && lastLoadKeyRef.current !== loadKey;
     const firstLoad = lastLoadKeyRef.current === null;
     lastLoadKeyRef.current = loadKey;
-    if (firstLoad || categoryChanged) setDbLoaded(false);
+    const cachedNow = readFeedCache<unknown[]>(`videos_${activeCategory}_${user?.id || "anon"}`);
+    if ((firstLoad && !(cachedNow && cachedNow.length)) || categoryChanged) setDbLoaded(false);
     const isSubsCategory = activeCategory === "subs";
     const isNewCategory = activeCategory === "new";
     const uidParam = user?.id ? `&user_id=${encodeURIComponent(String(user.id))}` : "";
@@ -129,53 +187,8 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
       : `${GET_VIDEOS_URL}?type=video&t=${mediaVersion}${isNewCategory ? "" : uidParam}`;
     const cacheKey = `videos_${activeCategory}_${user?.id || "anon"}`;
     const applyVideos = (list: unknown[], resetScroll: boolean) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setDbVideos((list || []).map((v: any) => {
-          const baseDesc = (v.description || "").trim();
-          const tagsArr = (v.hashtags || "")
-            .split(/[\s,]+/)
-            .map((t: string) => t.trim().replace(/^#+/, ""))
-            .filter(Boolean);
-          // Если хэштеги уже встречаются в описании — не дублируем
-          const hasTagsInDesc = /#\S+/.test(baseDesc);
-          const tagsText = !hasTagsInDesc && tagsArr.length
-            ? (baseDesc ? " " : "") + tagsArr.map((t: string) => `#${t}`).join(" ")
-            : "";
-          const fullDesc = (baseDesc + tagsText).trim();
-          return ({
-          id: v.id + 10000,
-          dbId: v.id,
-          image: v.url,
-          thumbnail: v.thumbnail || undefined,
-          isVideo: v.type === 'video',
-          author: v.author || "Автор",
-          handle: v.handle || "user",
-          description: fullDesc,
-          song: "Look — Original Sound",
-          likes: v.likes || "0",
-          comments: v.comments || "0",
-          shares: v.shares || "0",
-          category: v.category || "all",
-          avatar: v.avatar || "",
-          templateId: v.template_id || null,
-          hasProducts: !!v.has_products,
-          views: typeof v.views === "number" ? v.views : undefined,
-          isVerified: !!v.is_verified,
-          isAd: !!v.is_ad,
-          adLabel: v.ad_label || null,
-          ageRating: v.age_rating || null,
-          adErid: v.ad_erid || null,
-          adAdvertiser: v.ad_advertiser || null,
-          place: v.place || null,
-          address: v.address || null,
-          workHours: v.work_hours || null,
-          tips: v.tips || null,
-          seriesTitle: v.series_title || null,
-          brand: v.brand || null,
-          personalExperience: !!v.personal_experience,
-          repostedBy: v.reposted_by || null,
-        });
-        }));
+        const next = mapDbVideos(list);
+        setDbVideos(prev => (videoSig(prev) === videoSig(next) ? prev : next));
         if (resetScroll) {
           setActiveIndex(0);
           if (containerRef.current) containerRef.current.scrollTop = 0;
@@ -184,7 +197,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
     const cached = readFeedCache<unknown[]>(cacheKey);
     const hadCache = !!(cached && cached.length);
     if (cached && hadCache) {
-      applyVideos(cached, true);
+      applyVideos(cached, firstLoad || categoryChanged);
       setDbLoaded(true);
     }
     fetch(url)
