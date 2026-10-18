@@ -1,3 +1,4 @@
+import { readFeedCache, writeFeedCache } from "@/lib/feedCache";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -39,18 +40,22 @@ const parseBody = async (res: Response) => {
 
 export const useArticles = (mode: "feed" | "mine") => {
   const { user } = useAuth();
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cacheKey = `articles_feed_${user?.id || "anon"}`;
+  const [articles, setArticles] = useState<Article[]>(() => (mode === "feed" ? readFeedCache<Article[]>(cacheKey) || [] : []));
+  const [loading, setLoading] = useState(() => !(mode === "feed" && readFeedCache(cacheKey)));
 
   const refresh = useCallback(async () => {
     if (mode === "mine" && !user?.id) { setArticles([]); setLoading(false); return; }
     const url = mode === "feed" ? `${ARTICLES_URL}?action=feed` : `${ARTICLES_URL}?action=user&user_id=${encodeURIComponent(user!.id)}`;
     try {
       const data = await parseBody(await fetch(url));
-      setArticles(data.articles || []);
+      const next: Article[] = data.articles || [];
+      if (mode === "feed") writeFeedCache(cacheKey, next.slice(0, 30));
+      const sig = (l: Article[]) => l.map(a => `${a.id}:${a.title}:${a.cover_image}`).join("|");
+      setArticles(prev => (sig(prev) === sig(next) ? prev : next));
     } catch { /* ignore */ }
     setLoading(false);
-  }, [mode, user?.id]);
+  }, [mode, user?.id, cacheKey]);
 
   useEffect(() => { refresh(); }, [refresh]);
 

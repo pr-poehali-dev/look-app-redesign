@@ -529,6 +529,9 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
 
   const [farFromBottom, setFarFromBottom] = useState(false);
   const [newBelow, setNewBelow] = useState(0);
+  const [firstUnreadId, setFirstUnreadId] = useState<number | string | null>(null);
+  const initialUnreadRef = useRef(chat.unread || 0);
+  const listRef = useRef<HTMLDivElement>(null);
   const settledChatRef = useRef<string | number | null>(null);
   const prevCountRef = useRef(0);
   useLayoutEffect(() => {
@@ -538,7 +541,22 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     if (settledChatRef.current !== chatId) {
       settledChatRef.current = chatId;
       prevCountRef.current = messages.length;
-      el.scrollIntoView({ behavior: "auto", block: "end" });
+      let targetId: number | string | null = null;
+      let left = initialUnreadRef.current;
+      if (left > 0) {
+        for (let i = messages.length - 1; i >= 0; i--) {
+          if (String(messages[i].user_id) === String(MY_ID)) continue;
+          left--;
+          if (left === 0) { targetId = messages[i].id; break; }
+        }
+      }
+      const target = targetId !== null ? listRef.current?.querySelector(`[data-mid="${targetId}"]`) : null;
+      if (target) {
+        setFirstUnreadId(targetId);
+        target.scrollIntoView({ behavior: "auto", block: "start" });
+      } else {
+        el.scrollIntoView({ behavior: "auto", block: "end" });
+      }
       return;
     }
     const added = messages.length - prevCountRef.current;
@@ -555,6 +573,9 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   useEffect(() => {
     setFarFromBottom(false);
     setNewBelow(0);
+    setFirstUnreadId(null);
+    initialUnreadRef.current = chat.unread || 0;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatId]);
 
   const onMessagesScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -1582,7 +1603,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       )}
 
       {/* Messages */}
-      <div onScroll={onMessagesScroll} className="flex-1 overflow-y-scroll px-3 py-4 flex flex-col gap-2" style={{ scrollbarWidth: "none" }}>
+      <div ref={listRef} onScroll={onMessagesScroll} className="flex-1 overflow-y-scroll px-3 py-4 flex flex-col gap-2" style={{ scrollbarWidth: "none" }}>
         {messages.length === 0 && (
           <div className="flex-1 flex items-center justify-center">
             <p className="text-white/20 text-sm">Начни общение первым!</p>
@@ -1604,7 +1625,15 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
             onContextMenu: (e: React.MouseEvent) => { e.preventDefault(); setConfirmDelete(msg.id); },
           } : {};
           return (
-            <div key={msg.id} className={`flex items-end gap-2 ${isMe ? "justify-end" : "justify-start"}`}>
+            <div key={msg.id} className="contents">
+              {firstUnreadId !== null && String(firstUnreadId) === String(msg.id) && (
+                <div className="flex items-center gap-2 my-1 scroll-mt-2">
+                  <div className="flex-1 h-px bg-white/15" />
+                  <span className="text-[11px] text-white/50">Новые сообщения</span>
+                  <div className="flex-1 h-px bg-white/15" />
+                </div>
+              )}
+            <div data-mid={msg.id} className={`flex items-end gap-2 ${isMe ? "justify-end" : "justify-start"}`}>
               {!isMe && (
                 <div className="w-7 h-7 flex-shrink-0">
                   <UserAvatar name={msg.user_name} />
@@ -1616,6 +1645,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                 )}
                 {renderMsg(msg)}
               </div>
+            </div>
             </div>
           );
         })}
