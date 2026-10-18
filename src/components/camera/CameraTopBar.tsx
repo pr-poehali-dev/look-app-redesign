@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 
 const MODES = ["Фото", "Видео", "Пост", "Прямой эфир", "Конструктор"];
@@ -33,6 +34,12 @@ const CameraTopBar = ({
   onModeChange,
   onStopRecording,
 }: CameraTopBarProps) => {
+  const activeModeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    activeModeRef.current?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [mode]);
+
   return (
     <>
       {/* Top bar */}
@@ -74,22 +81,25 @@ const CameraTopBar = ({
       </div>
 
       {/* Mode selector */}
-      <div className="relative z-20 flex justify-center gap-8 pb-2">
-        {MODES.map((m) => (
-          <button
-            key={m}
-            onClick={() => {
-              onModeChange(m);
-              onStopRecording();
-              if (timerRef.current) clearInterval(timerRef.current);
-            }}
-            className={`text-sm font-semibold pb-1 transition-all ${
-              mode === m ? "text-white border-b-2 border-white" : "text-white/40"
-            }`}
-          >
-            {m}
-          </button>
-        ))}
+      <div className="relative z-20 flex overflow-x-auto pb-2 px-5" style={{ scrollbarWidth: "none" }}>
+        <div className="flex w-max mx-auto gap-6">
+          {MODES.map((m) => (
+            <button
+              key={m}
+              ref={mode === m ? activeModeRef : undefined}
+              onClick={() => {
+                onModeChange(m);
+                onStopRecording();
+                if (timerRef.current) clearInterval(timerRef.current);
+              }}
+              className={`text-sm font-semibold pb-1 whitespace-nowrap flex-shrink-0 transition-all ${
+                mode === m ? "text-white border-b-2 border-white" : "text-white/40"
+              }`}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
       </div>
     </>
   );
