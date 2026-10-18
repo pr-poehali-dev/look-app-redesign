@@ -1,3 +1,4 @@
+import { pollMs } from "@/lib/network";
 import UpcomingStreams from "@/components/live-stream/UpcomingStreams";
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
@@ -350,7 +351,9 @@ const LiveList = () => {
       }
     };
     load();
-    const t = setInterval(load, 10000);
+    const t = setInterval(() => {
+      if (document.visibilityState === "visible") load();
+    }, pollMs(10000));
     return () => clearInterval(t);
   }, []);
 

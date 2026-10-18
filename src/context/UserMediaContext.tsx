@@ -54,7 +54,13 @@ const GUEST_MEDIA: UserMediaContextType = {
 };
 
 export const UserMediaProvider = ({ userId, token, children }: { userId: string; token: string | null; children: ReactNode }) => {
-  const [userVideos, setUserVideos] = useState<UserVideo[]>([]);
+  const mediaCacheKey = `user_media_${userId}`;
+  const [userVideos, setUserVideos] = useState<UserVideo[]>(() => {
+    try {
+      const raw = localStorage.getItem(mediaCacheKey);
+      return raw ? (JSON.parse(raw) as UserVideo[]) : [];
+    } catch { return []; }
+  });
   const [loading, setLoading] = useState(true);
   const [removedIds, setRemovedIds] = useState<Set<number>>(new Set());
   const [mediaVersion, setMediaVersion] = useState(0);
@@ -67,6 +73,7 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
       const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
       if (data.videos) {
         setUserVideos(data.videos);
+        try { localStorage.setItem(mediaCacheKey, JSON.stringify(data.videos.slice(0, 60))); } catch { /* ignore */ }
         // Счётчик двигаем только на реальных изменениях (загрузка/удаление/репост),
         // а не на первом автозапросе при монтировании — иначе главная лента (VideoFeed),
         // которая использует mediaVersion как параметр кэш-бастинга, перезапускает
