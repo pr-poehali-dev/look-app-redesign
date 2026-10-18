@@ -149,6 +149,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
           ) : post.isVideo ? (
             <video
               src={post.image}
+              poster={post.thumbnail || undefined}
               className="max-w-full max-h-full w-full h-full object-contain"
               controls
               autoPlay
