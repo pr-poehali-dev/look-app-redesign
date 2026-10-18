@@ -127,11 +127,12 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
   const [neighborsReady, setNeighborsReady] = useState(false);
   useEffect(() => {
     setNeighborsReady(false);
-    const t = setTimeout(() => setNeighborsReady(true), 1200);
+    const t = setTimeout(() => setNeighborsReady(true), slowNetwork ? 1200 : 500);
     return () => clearTimeout(t);
   }, [activeIndex]);
   const { userVideos, mediaVersion } = useUserMedia();
   const { user } = useAuth();
+  const warmedRef = useRef<Set<string>>(new Set());
   const [dbVideos, setDbVideos] = useState<(VideoData & { category: string })[]>(() => {
     const c = readFeedCache<unknown[]>(`videos_${activeCategory}_${user?.id || "anon"}`);
     return c && c.length ? mapDbVideos(c) : [];
@@ -211,6 +212,28 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
       .catch(e => console.error('VideoFeed fetch error:', e))
       .finally(() => setDbLoaded(true));
   }, [activeCategory, mediaVersion, user?.id]);
+
+  useEffect(() => {
+    const first = dbVideos.slice(0, slowNetwork ? 2 : 4);
+    first.forEach((v) => {
+      if (v.thumbnail && !warmedRef.current.has(v.thumbnail)) {
+        warmedRef.current.add(v.thumbnail);
+        const img = new Image();
+        img.decoding = "async";
+        img.src = v.thumbnail;
+      }
+    });
+    const head = first[0];
+    if (head?.image && !slowNetwork && !warmedRef.current.has(head.image)) {
+      warmedRef.current.add(head.image);
+      const link = document.createElement("link");
+      link.rel = "preload";
+      link.as = "video";
+      link.href = head.image;
+      document.head.appendChild(link);
+      setTimeout(() => link.remove(), 8000);
+    }
+  }, [dbVideos, slowNetwork]);
 
   // Дедупликация: убираем повторы по URL видео, чтобы один ролик не появлялся
   // дважды (например, из локального состояния и из БД одновременно).
