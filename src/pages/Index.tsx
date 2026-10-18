@@ -541,7 +541,7 @@ const Index = () => {
                       <Icon
                         name={tab.icon as "Home"}
                         size={24}
-                        className={activeTab === tab.id ? "text-white" : "text-white/50"}
+                        className={activeTab === tab.id ? "text-white" : "text-white/50 opacity-50"}
                       />
                       {tab.id === "messages" && totalUnread > 0 && (
                         <div className="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-[#fe2c55] flex items-center justify-center">
@@ -552,7 +552,7 @@ const Index = () => {
                       )}
                     </div>
                     {tab.label && (
-                      <span className={`text-[10px] font-medium ${activeTab === tab.id ? "text-white" : "text-white/50"}`}>
+                      <span className={`text-[10px] font-medium transition-opacity ${activeTab === tab.id ? "text-white opacity-100" : "text-white/50 opacity-50"}`}>
                         {tab.label}
                       </span>
                     )}
