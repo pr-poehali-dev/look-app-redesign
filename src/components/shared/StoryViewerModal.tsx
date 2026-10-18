@@ -100,6 +100,27 @@ const StoryViewerModal = ({ items, startIndex, onClose, originRect }: Props) => 
   }, [index]);
 
   useEffect(() => {
+    const next = items[index + 1];
+    if (!next) return;
+    if (next.thumbnail) {
+      const img = new Image();
+      img.src = next.thumbnail;
+    }
+    if (next.isVideo) {
+      const v = document.createElement("video");
+      v.preload = "auto";
+      v.muted = true;
+      v.playsInline = true;
+      v.src = next.image;
+      v.load();
+      return () => { v.removeAttribute("src"); v.load(); };
+    }
+    const img = new Image();
+    img.src = next.image;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, items]);
+
+  useEffect(() => {
     if (items.length === 0) onClose();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items.length]);
