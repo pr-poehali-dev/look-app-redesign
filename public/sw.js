@@ -1,4 +1,5 @@
-const VERSION = "v3";
+const VERSION = "v4";
+const API = `api-${VERSION}`;
 const SHELL = `shell-${VERSION}`;
 const STATIC = `static-${VERSION}`;
 
@@ -15,7 +16,7 @@ self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => {
   e.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== SHELL && k !== STATIC).map((k) => caches.delete(k)))
+      Promise.all(keys.filter((k) => k !== SHELL && k !== STATIC && k !== API).map((k) => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
@@ -37,6 +38,26 @@ self.addEventListener("fetch", (e) => {
         const timeout = new Promise((resolve) => setTimeout(() => resolve(cachedShell), 2500));
         return Promise.race([network.catch(() => cachedShell), timeout]);
       })
+    );
+    return;
+  }
+
+  if (url.hostname === "functions.poehali.dev" && !/signal|poll|call|presence|typing|auth|token/i.test(url.search + url.pathname) && !req.headers.get("range")) {
+    e.respondWith(
+      (async () => {
+        const cache = await caches.open(API);
+        const cached = await cache.match(req);
+        const network = fetch(req).then((res) => {
+          if (res.ok) {
+            const copy = res.clone();
+            cache.put(req, copy).then(() => trimCache(API, 120));
+          }
+          return res;
+        });
+        if (!cached) return network;
+        const timeout = new Promise((resolve) => setTimeout(() => resolve(cached), 4000));
+        return Promise.race([network.catch(() => cached), timeout]);
+      })()
     );
     return;
   }

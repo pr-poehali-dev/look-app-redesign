@@ -107,23 +107,39 @@ export const UserMediaProvider = ({ userId, token, children }: { userId: string;
     reader.onload = async () => {
       const base64 = (reader.result as string).split(",")[1];
       try {
-        const res = await fetch(UPLOAD_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            file: base64,
-            type: file.type,
-            ext,
-            user_id: userId,
-            category,
-            description,
-            hashtags,
-          }),
+        const body = JSON.stringify({
+          file: base64,
+          type: file.type,
+          ext,
+          user_id: userId,
+          category,
+          description,
+          hashtags,
         });
-        const raw = await res.json();
-        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-        if (data.url) {
-          setUserVideos(s => s.map(v => v.id === tempId ? { ...v, id: Number(data.id), url: data.url, description, hashtags, category } : v));
+        let data: { url?: string; id?: number | string } = {};
+        let finalUrl = "";
+        for (let attempt = 0; attempt < 4; attempt++) {
+          if (!navigator.onLine) {
+            await new Promise<void>(r => {
+              const done = () => { window.removeEventListener("online", done); r(); };
+              window.addEventListener("online", done);
+              setTimeout(done, 15000);
+            });
+          }
+          try {
+            const res = await fetch(UPLOAD_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body,
+            });
+            const raw = await res.json();
+            data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+            if (data.url) { finalUrl = data.url; break; }
+          } catch { /* retry */ }
+          await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+        }
+        if (finalUrl) {
+          setUserVideos(s => s.map(v => v.id === tempId ? { ...v, id: Number(data.id), url: finalUrl, description, hashtags, category } : v));
           setMediaVersion(v => v + 1);
         }
       } catch {
