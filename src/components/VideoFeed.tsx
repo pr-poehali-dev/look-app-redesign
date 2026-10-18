@@ -246,6 +246,27 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
     seenUrls.add(key);
     return true;
   });
+  const heldThumbsRef = useRef<Map<string, HTMLImageElement>>(new Map());
+  useEffect(() => {
+    const held = heldThumbsRef.current;
+    const from = Math.max(0, activeIndex - 3);
+    const to = activeIndex + (slowNetwork ? 3 : 6);
+    allVideos.slice(from, to + 1).forEach((v) => {
+      if (v.thumbnail && !held.has(v.thumbnail)) {
+        const img = new Image();
+        img.decoding = "sync";
+        img.src = v.thumbnail;
+        held.set(v.thumbnail, img);
+      }
+    });
+    while (held.size > 60) {
+      const k = held.keys().next().value;
+      if (k === undefined) break;
+      held.delete(k);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIndex, dbVideos.length]);
+
   const filtered =
     activeCategory === "all"
       ? allVideos
@@ -365,7 +386,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
           const distance = Math.abs(i - activeIndex);
           const holdNeighbors = !neighborsReady && activeIndex === 0;
           const preloadLevel: "full" | "meta" | "none" =
-            distance === 0 ? "full" : holdNeighbors ? "none" : distance === 1 && !slowNetwork ? (i > activeIndex ? "full" : "meta") : "none";
+            distance === 0 ? "full" : holdNeighbors ? "none" : distance === 1 && !slowNetwork ? (i > activeIndex ? "full" : "meta") : distance === 2 && !slowNetwork ? "meta" : "none";
           return (
             <div
               key={video.id}
