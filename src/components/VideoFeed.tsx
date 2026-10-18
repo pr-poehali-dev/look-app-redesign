@@ -75,7 +75,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
   const [neighborsReady, setNeighborsReady] = useState(false);
   useEffect(() => {
     setNeighborsReady(false);
-    const t = setTimeout(() => setNeighborsReady(true), 3000);
+    const t = setTimeout(() => setNeighborsReady(true), 1200);
     return () => clearTimeout(t);
   }, [activeIndex]);
   const [dbVideos, setDbVideos] = useState<(VideoData & { category: string })[]>([]);
@@ -329,7 +329,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
           const distance = Math.abs(i - activeIndex);
           const holdNeighbors = !neighborsReady && activeIndex === 0;
           const preloadLevel: "full" | "meta" | "none" =
-            distance === 0 ? "full" : holdNeighbors ? "none" : distance === 1 && !slowNetwork ? "meta" : "none";
+            distance === 0 ? "full" : holdNeighbors ? "none" : distance === 1 && !slowNetwork ? (i > activeIndex ? "full" : "meta") : "none";
           return (
             <div
               key={video.id}
