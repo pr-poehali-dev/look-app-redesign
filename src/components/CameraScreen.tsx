@@ -433,7 +433,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
         onRemoveTrack={() => { setSelectedTrack(null); removeUploadedAudio(); }}
       />
 
-      {mode === "Прямой эфир" ? (
+      {mode === "Трансляция" ? (
         <div className="relative z-20 flex flex-col items-center gap-4 px-8 pb-14 pt-4">
           <p className="text-white/50 text-sm text-center">Зрители увидят твой экран в реальном времени</p>
           <button

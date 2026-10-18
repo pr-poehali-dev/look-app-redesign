@@ -368,7 +368,7 @@ const LiveList = () => {
           <div>
             <h2 className="text-white font-bold text-xl">Прямые эфиры</h2>
             <p className="text-white/40 text-xs mt-0.5">
-              {loading ? "Загрузка..." : `${channels.length} ${channels.length === 1 ? "эфир" : channels.length < 5 ? "эфира" : "эфиров"} сейчас`}
+              {loading ? "Загрузка..." : `${channels.length} ${channels.length === 1 ? "трансляция" : channels.length < 5 ? "трансляции" : "трансляций"} сейчас`}
             </p>
           </div>
           <div className="flex items-center gap-1.5 bg-[#fe2c55]/20 border border-[#fe2c55]/40 px-3 py-1.5 rounded-full">
@@ -436,7 +436,7 @@ const LiveList = () => {
 
       {/* List */}
       <div className="px-4">
-        <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-3">Все эфиры</p>
+        <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-3">Все трансляции</p>
         {filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <Icon name="Radio" size={40} className="text-white/20" />

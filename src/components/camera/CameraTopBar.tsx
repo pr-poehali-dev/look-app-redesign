@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 
-const MODES = ["Фото", "Видео", "Пост", "Прямой эфир", "Конструктор"];
+const MODES = ["Фото", "Видео", "Пост", "Трансляция", "Конструктор"];
 
 interface CameraTopBarProps {
   flash: boolean;
