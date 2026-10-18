@@ -31,11 +31,12 @@ const VideoNoteBubble = ({ isMe, mediaUrl, duration, time, transcript, transcrib
           {mediaUrl && (
             <video
               ref={videoRef}
-              src={mediaUrl}
+              src={mediaUrl.includes("#") ? mediaUrl : `${mediaUrl}#t=0.1`}
               className="w-full h-full object-cover rounded-full"
               style={{ clipPath: "circle(50%)" }}
               playsInline
-              preload="metadata"
+              preload="auto"
+              onLoadedData={(e) => { const v = e.currentTarget; if (v.paused && v.currentTime === 0) v.currentTime = 0.1; }}
               onPlay={() => setPlaying(true)}
               onPause={() => setPlaying(false)}
               onEnded={() => setPlaying(false)}
