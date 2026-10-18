@@ -296,15 +296,44 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           });
         }
       };
-      if (v.readyState >= 2) {
-        tryPlay();
-      } else {
-        v.addEventListener("canplay", tryPlay, { once: true });
-      }
+      v.muted = muted || volume === 0;
+      tryPlay();
+      if (v.readyState < 2) v.addEventListener("canplay", tryPlay, { once: true });
     } else {
       v.pause();
+      if (!isActive && v.readyState >= 1 && v.currentTime > 0.05) {
+        try { v.currentTime = 0; } catch { /* ignore */ }
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive, paused]);
+
+  const primedRef = useRef(false);
+  const isActiveRef = useRef(isActive);
+  isActiveRef.current = isActive;
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || isActive || preloadLevel !== "full" || primedRef.current) return;
+    const prime = () => {
+      if (primedRef.current || v.readyState < 2) return;
+      primedRef.current = true;
+      v.muted = true;
+      v.play()
+        .then(() => {
+          if (isActiveRef.current) return;
+          v.pause();
+          try { v.currentTime = 0; } catch { /* ignore */ }
+        })
+        .catch(() => { primedRef.current = false; });
+    };
+    prime();
+    v.addEventListener("canplay", prime);
+    return () => v.removeEventListener("canplay", prime);
+  }, [isActive, preloadLevel]);
+
+  useEffect(() => {
+    if (!isActive) primedRef.current = false;
+  }, [video.image, isActive]);
 
   useEffect(() => {
     const v = videoRef.current;
