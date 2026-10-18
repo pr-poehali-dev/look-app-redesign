@@ -1,4 +1,5 @@
 import { useState } from "react";
+import StickyImage from "./StickyImage";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
@@ -48,12 +49,12 @@ const NoteCard = ({ post, onOpen, priority = false }: { post: Post; onOpen: () =
             </div>
           ) : post.isVideo ? (
             post.thumbnail ? (
-              <img src={post.thumbnail} alt={post.caption} className="absolute inset-0 w-full h-full object-cover" loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} decoding="async" />
+              <StickyImage fill eager={priority} src={post.thumbnail} alt={post.caption} className="w-full h-full object-cover" />
             ) : (
               <video src={post.image.includes("#") ? post.image : `${post.image}#t=0.001`} className="absolute inset-0 w-full h-full object-cover" muted playsInline preload="metadata" />
             )
           ) : (
-            <img src={post.thumbnail || post.image} alt={post.caption} className="absolute inset-0 w-full h-full object-cover" loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} decoding="async" />
+            <StickyImage fill eager={priority} src={post.thumbnail || post.image} alt={post.caption} className="w-full h-full object-cover" />
           )}
           {post.article && (
             <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full pl-1.5 pr-2 py-1">

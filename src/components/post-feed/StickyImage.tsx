@@ -5,9 +5,11 @@ interface StickyImageProps {
   alt?: string;
   className?: string;
   eager?: boolean;
+  fill?: boolean;
+  wrapClassName?: string;
 }
 
-const StickyImage = ({ src, alt, className, eager = false }: StickyImageProps) => {
+const StickyImage = ({ src, alt, className, eager = false, fill = false, wrapClassName }: StickyImageProps) => {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [near, setNear] = useState(eager);
 
@@ -32,8 +34,8 @@ const StickyImage = ({ src, alt, className, eager = false }: StickyImageProps) =
   }, [near]);
 
   return (
-    <div ref={wrapRef} className="w-full h-full flex items-center justify-center">
-      {near && <img src={src} alt={alt} decoding="sync" loading="eager" className={className} />}
+    <div ref={wrapRef} className={wrapClassName ?? (fill ? "absolute inset-0" : "w-full h-full flex items-center justify-center")}>
+      {near && <img src={src} alt={alt} decoding="sync" loading="eager" fetchPriority={eager ? "high" : "auto"} className={className} />}
     </div>
   );
 };
