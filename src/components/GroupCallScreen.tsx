@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import { RTC_CONFIG, fetchIceServers } from "@/lib/webrtc-config";
 import { HQ_AUDIO_CONSTRAINTS, applyAudioTrackTuning, boostOpusInSdp, tuneAudioSenders, unlockMobileAudio, tuneRemoteAudioElement } from "@/lib/audioConstraints";
 import { useSpeakingDetector } from "@/hooks/useSpeakingDetector";
+import { useCallRingtone } from "@/components/call-screen/useCallRingtone";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
@@ -30,6 +31,7 @@ const GroupCallScreen = ({ roomId, roomName, mode, myId, myName, onEnd }: GroupC
   const [status, setStatus] = useState<"connecting" | "connected">("connecting");
   const [speakerOn, setSpeakerOn] = useState(true);
   const [myStream, setMyStream] = useState<MediaStream | null>(null);
+  useCallRingtone(status === "connecting");
   const audioElsRef = useRef<Set<HTMLMediaElement>>(new Set());
   const mySpeaking = useSpeakingDetector(muted ? null : myStream);
 
