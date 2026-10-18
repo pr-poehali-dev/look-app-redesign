@@ -281,6 +281,28 @@ const PostFeed = () => {
     seenHandles.add(key);
     return true;
   }).slice(0, 12);
+  useEffect(() => {
+    const urls = [user?.avatar, ...storyUsers.slice(0, isSlowNetwork() ? 5 : 12).map(p => p.avatar)];
+    urls.forEach((src) => {
+      if (src && !warmedRef.current.has(src)) {
+        warmedRef.current.add(src);
+        const img = new Image();
+        img.decoding = "async";
+        img.src = src;
+      }
+    });
+    const first = storyUsers[0];
+    if (first && !isSlowNetwork()) {
+      const src = first.thumbnail || (first.isVideo ? "" : first.image);
+      if (src && !warmedRef.current.has(src)) {
+        warmedRef.current.add(src);
+        const img = new Image();
+        img.src = src;
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [posts, user?.avatar, scope]);
+
   const storiesByHandle = (handle: string): StoryViewerItem[] =>
     visiblePosts
       .filter(p => !p.article && (p.handle || p.author || "").toLowerCase().trim() === handle.toLowerCase().trim())
