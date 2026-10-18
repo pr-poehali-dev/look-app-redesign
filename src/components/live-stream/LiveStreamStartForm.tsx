@@ -29,12 +29,12 @@ const LiveStreamStartForm = ({
         </div>
         <div className="text-center">
           <h2 className="text-white font-bold text-2xl mb-2">Прямой эфир</h2>
-          <p className="text-white/50 text-sm">Начни трансляцию — зрители уже ждут</p>
+          <p className="text-white/50 text-sm">Начни эфир — зрители уже ждут</p>
         </div>
         <button onClick={onOpenForm}
           className="w-full py-4 rounded-2xl bg-[#fe2c55] text-white font-bold text-lg active:scale-95 transition-all flex items-center justify-center gap-3">
           <Icon name="Radio" size={22} />
-          Начать трансляцию
+          Начать эфир
         </button>
       </div>
     );
