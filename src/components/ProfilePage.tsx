@@ -160,7 +160,7 @@ const ProfilePage = () => {
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
       {viewingStory !== null && (
         <StoryViewerModal
-          items={stories.map((s): StoryViewerItem => ({ id: s.id, image: s.url, isVideo: s.type === "video", label: s.label, avatar: user?.avatar || undefined }))}
+          items={stories.map((s): StoryViewerItem => ({ id: s.id, image: s.url, isVideo: s.type === "video", thumbnail: s.thumbnail || s.thumb || undefined, label: s.label, avatar: user?.avatar || undefined }))}
           startIndex={viewingStory}
           originRect={storyOrigin}
           onClose={() => { setViewingStory(null); setStoryOrigin(null); }}
