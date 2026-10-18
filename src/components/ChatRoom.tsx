@@ -1036,6 +1036,25 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       let info: { name?: string; size?: number; mime?: string; data?: string } = {};
       try { info = JSON.parse(msg.content); } catch { void 0; }
       const sizeKb = info.size ? Math.max(1, Math.round(info.size / 1024)) : 0;
+      const isVideoFile = !!info.data && (/^video\//i.test(info.mime || "") || /\.(mp4|mov|webm|m4v|avi|mkv|3gp)$/i.test(info.name || ""));
+      if (isVideoFile) {
+        return (
+          <div className={`max-w-[70%] rounded-2xl overflow-hidden ${isMe ? "rounded-br-sm" : "rounded-bl-sm"}`}>
+            <video
+              src={info.data!.includes("#") ? info.data : `${info.data}#t=0.1`}
+              className="w-full object-cover max-h-56 bg-black"
+              controls
+              playsInline
+              preload="auto"
+            />
+            <div className="bg-[#1a1a1a] px-3 py-1.5 flex justify-end items-center gap-1.5">
+              <DisappearBadge msg={msg} />
+              <span className="text-white/30 text-[10px]">{msg.time}</span>
+              {isMe && <Ticks msg={msg} />}
+            </div>
+          </div>
+        );
+      }
       return (
         <div className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl max-w-[78%] ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
           <a
