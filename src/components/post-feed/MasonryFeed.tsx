@@ -35,10 +35,10 @@ const MasonryFeed = ({ posts, loading, topPad = 0 }: { posts: Post[]; loading: b
             {/* Мобильная — как было, 2 колонки на всю ширину экрана */}
             <div className="flex gap-2 items-start md:hidden">
               <div className="flex-1 min-w-0">
-                {left.map((p) => <NoteCard key={p.id} post={p} onOpen={() => setOpened(p)} />)}
+                {left.map((p, i) => <NoteCard key={p.id} post={p} priority={i < 3} onOpen={() => setOpened(p)} />)}
               </div>
               <div className="flex-1 min-w-0">
-                {right.map((p) => <NoteCard key={p.id} post={p} onOpen={() => setOpened(p)} />)}
+                {right.map((p, i) => <NoteCard key={p.id} post={p} priority={i < 3} onOpen={() => setOpened(p)} />)}
               </div>
             </div>
 

@@ -15,6 +15,7 @@ import SearchOverlay from "./post-feed/SearchOverlay";
 import { Post, GET_PHOTOS_URL, formatTime, parseServerDate } from "./post-feed/PostFeedTypes";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
 import { readFeedCache, writeFeedCache } from "@/lib/feedCache";
+import { isSlowNetwork } from "@/lib/network";
 import { useFollowingList } from "@/hooks/useFollowing";
 import { detectCity, normCity } from "@/lib/city";
 import { toast } from "sonner";
@@ -174,6 +175,21 @@ const PostFeed = () => {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [user, mediaVersion]);
+
+  const warmedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const slow = isSlowNetwork();
+    const limit = slow ? 4 : 10;
+    posts.slice(0, limit).forEach((p) => {
+      const src = p.thumbnail || (p.isVideo ? "" : p.image);
+      if (src && !warmedRef.current.has(src)) {
+        warmedRef.current.add(src);
+        const img = new Image();
+        img.decoding = "async";
+        img.src = src;
+      }
+    });
+  }, [posts]);
 
   const [storyHandle, setStoryHandle] = useState<string | null>(null);
   const [storyOrigin, setStoryOrigin] = useState<DOMRect | null>(null);
