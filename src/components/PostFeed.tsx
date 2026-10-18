@@ -32,12 +32,70 @@ const SCOPES: { id: FeedScope; label: string }[] = [
   { id: "nearby", label: "Рядом" },
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mapPost = (v: any, isVideo: boolean, user: ReturnType<typeof useAuth>["user"]): Post => {
+  const desc: string = v.description || "";
+  const hashtagsField: string = v.hashtags || "";
+  const tags = hashtagsField
+    ? (hashtagsField.match(/#\S+/g) || hashtagsField.split(/[\s,]+/).filter(Boolean).map((t: string) => t.replace(/^#/, ""))).map((t: string) => t.replace(/^#/, ""))
+    : (desc.match(/#\S+/g) || []).map((t: string) => t.slice(1));
+  const caption = desc || (v.type === "text" ? "Пост" : isVideo ? "Видео" : "Фото");
+  // Аватарка: берём из БД если есть. Подставляем свою — только если это пост текущего пользователя
+  const isMyPost = (v.handle && user?.handle && v.handle === user.handle)
+    || (v.author && user?.name && v.author === user.name)
+    || v.author === "Я";
+  const dbAvatar = v.avatar || v.user_avatar || null;
+  const createdAt = v.created_at ? parseServerDate(v.created_at).getTime() : undefined;
+  return {
+    id: v.id,
+    author: (v.author === "Я" || !v.author) ? (user?.name || "Пользователь") : v.author,
+    handle: (v.handle === "user" || !v.handle) ? (user?.handle || user?.name || "user") : v.handle,
+    avatar: dbAvatar || (isMyPost ? (user?.avatar || "") : ""),
+    image: v.url,
+    thumbnail: v.thumbnail || undefined,
+    caption,
+    hashtags: tags,
+    likes: parseInt(v.likes) || 0,
+    comments: parseInt(v.comments) || 0,
+    time: formatTime(v.created_at),
+    createdAt,
+    isVideo,
+    isText: v.type === "text",
+    category: v.category || null,
+    templateId: v.template_id || null,
+    hasProducts: !!v.has_products,
+    views: typeof v.views === "number" ? v.views : undefined,
+    city: v.city || null,
+    isVerified: !!v.is_verified,
+    isAd: !!v.is_ad,
+    adLabel: v.ad_label || null,
+    images: Array.isArray(v.images) ? v.images : [],
+    location: v.place || undefined,
+    address: v.address || null,
+    workHours: v.work_hours || null,
+    tips: v.tips || null,
+    seriesTitle: v.series_title || null,
+    brand: v.brand || null,
+    personalExperience: !!v.personal_experience,
+    ageRating: v.age_rating || null,
+    adErid: v.ad_erid || null,
+    adAdvertiser: v.ad_advertiser || null,
+    repostedBy: v.reposted_by || null,
+    repostedByAvatar: v.reposted_by_avatar || null,
+  };
+};
+
 const PostFeed = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const { user, token, updateUser } = useAuth();
+  const [posts, setPosts] = useState<Post[]>(() => {
+    const raw = readFeedCache<{ img: unknown[]; vid: unknown[] }>(`posts_${user?.id || "anon"}`);
+    if (!raw) return [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return [...(raw.img || []).map((v: any) => mapPost(v, false, user)), ...(raw.vid || []).map((v: any) => mapPost(v, true, user))];
+  });
   const { articles: feedArticles } = useArticles("feed");
   const [openedArticleId, setOpenedArticleId] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { user, token, updateUser } = useAuth();
+  const [loading, setLoading] = useState(() => !readFeedCache(`posts_${user?.id || "anon"}`));
   const { addMedia, removedIds, mediaVersion } = useUserMedia();
   const myStoryInputRef = useRef<HTMLInputElement>(null);
   const followingHandles = useFollowingList();
@@ -91,70 +149,8 @@ const PostFeed = () => {
   }, [viewMode]);
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mapPost = (v: any, isVideo: boolean): Post => {
-      const desc: string = v.description || "";
-      const hashtagsField: string = v.hashtags || "";
-      const tags = hashtagsField
-        ? (hashtagsField.match(/#\S+/g) || hashtagsField.split(/[\s,]+/).filter(Boolean).map((t: string) => t.replace(/^#/, ""))).map((t: string) => t.replace(/^#/, ""))
-        : (desc.match(/#\S+/g) || []).map((t: string) => t.slice(1));
-      const caption = desc || (v.type === "text" ? "Пост" : isVideo ? "Видео" : "Фото");
-      // Аватарка: берём из БД если есть. Подставляем свою — только если это пост текущего пользователя
-      const isMyPost = (v.handle && user?.handle && v.handle === user.handle)
-        || (v.author && user?.name && v.author === user.name)
-        || v.author === "Я";
-      const dbAvatar = v.avatar || v.user_avatar || null;
-      const createdAt = v.created_at ? parseServerDate(v.created_at).getTime() : undefined;
-      return {
-        id: v.id,
-        author: (v.author === "Я" || !v.author) ? (user?.name || "Пользователь") : v.author,
-        handle: (v.handle === "user" || !v.handle) ? (user?.handle || user?.name || "user") : v.handle,
-        avatar: dbAvatar || (isMyPost ? (user?.avatar || "") : ""),
-        image: v.url,
-        thumbnail: v.thumbnail || undefined,
-        caption,
-        hashtags: tags,
-        likes: parseInt(v.likes) || 0,
-        comments: parseInt(v.comments) || 0,
-        time: formatTime(v.created_at),
-        createdAt,
-        isVideo,
-        isText: v.type === "text",
-        category: v.category || null,
-        templateId: v.template_id || null,
-        hasProducts: !!v.has_products,
-        views: typeof v.views === "number" ? v.views : undefined,
-        city: v.city || null,
-        isVerified: !!v.is_verified,
-        isAd: !!v.is_ad,
-        adLabel: v.ad_label || null,
-        images: Array.isArray(v.images) ? v.images : [],
-        location: v.place || undefined,
-        address: v.address || null,
-        workHours: v.work_hours || null,
-        tips: v.tips || null,
-        seriesTitle: v.series_title || null,
-        brand: v.brand || null,
-        personalExperience: !!v.personal_experience,
-        ageRating: v.age_rating || null,
-        adErid: v.ad_erid || null,
-        adAdvertiser: v.ad_advertiser || null,
-        repostedBy: v.reposted_by || null,
-        repostedByAvatar: v.reposted_by_avatar || null,
-      };
-    };
-
     const uidParam = user?.id ? `&user_id=${encodeURIComponent(String(user.id))}` : "";
     const postsCacheKey = `posts_${user?.id || "anon"}`;
-    const cachedRaw = readFeedCache<{ img: unknown[]; vid: unknown[] }>(postsCacheKey);
-    if (cachedRaw) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const c1: Post[] = (cachedRaw.img || []).map((v: any) => mapPost(v, false));
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const c2: Post[] = (cachedRaw.vid || []).map((v: any) => mapPost(v, true));
-      setPosts([...c1, ...c2]);
-      setLoading(false);
-    }
     Promise.all([
       fetch(`${GET_PHOTOS_URL}?type=image${uidParam}`).then(r => r.json()),
       fetch(`${GET_PHOTOS_URL}?type=video${uidParam}`).then(r => r.json()),
@@ -163,8 +159,8 @@ const PostFeed = () => {
         const imgData = typeof rawImages.body === 'string' ? JSON.parse(rawImages.body) : rawImages;
         const vidData = typeof rawVideos.body === 'string' ? JSON.parse(rawVideos.body) : rawVideos;
         writeFeedCache(postsCacheKey, { img: (imgData.videos || []).slice(0, 30), vid: (vidData.videos || []).slice(0, 30) });
-        const dbPosts: Post[] = (imgData.videos || []).map((v: any) => mapPost(v, false));
-        const dbVideoPosts: Post[] = (vidData.videos || []).map((v: any) => mapPost(v, true));
+        const dbPosts: Post[] = (imgData.videos || []).map((v: unknown) => mapPost(v, false, user));
+        const dbVideoPosts: Post[] = (vidData.videos || []).map((v: unknown) => mapPost(v, true, user));
         const seen = new Set<string>();
         const deduped = [...dbPosts, ...dbVideoPosts].filter(p => {
           if (!p.image) return true;
@@ -172,9 +168,10 @@ const PostFeed = () => {
           seen.add(p.image);
           return true;
         });
-        setPosts(deduped);
+        const sig = (list: Post[]) => list.map(p => `${p.id}:${p.likes}:${p.comments}:${p.image}`).join("|");
+        setPosts(prev => (sig(prev) === sig(deduped) ? prev : deduped));
       })
-      .catch(() => setPosts([]))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [user, mediaVersion]);
 
