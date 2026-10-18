@@ -1,6 +1,6 @@
 import { canQueue, outboxAdd, outboxFlush, outboxForChat } from "@/lib/chatOutbox";
 import { pollMs } from "@/lib/network";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { formatSeen } from "@/utils/formatSeen";
 import LinkifiedText from "@/components/ui/linkified-text";
@@ -527,9 +527,26 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     return () => clearInterval(t);
   }, [chatId, chat.type, MY_ID, MY_NAME]);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  const settledChatRef = useRef<string | number | null>(null);
+  const prevCountRef = useRef(0);
+  useLayoutEffect(() => {
+    const el = bottomRef.current;
+    if (!el) return;
+    if (messages.length === 0) return;
+    if (settledChatRef.current !== chatId) {
+      settledChatRef.current = chatId;
+      prevCountRef.current = messages.length;
+      el.scrollIntoView({ behavior: "auto", block: "end" });
+      return;
+    }
+    const grew = messages.length > prevCountRef.current;
+    prevCountRef.current = messages.length;
+    if (!grew) return;
+    const box = el.parentElement;
+    const nearBottom = !box || box.scrollHeight - box.scrollTop - box.clientHeight < 400;
+    const mine = String(messages[messages.length - 1]?.user_id ?? "") === String(MY_ID);
+    if (nearBottom || mine) el.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages, chatId, MY_ID]);
 
   // Переключение камеры (фронт/тыл) во время подготовки видеосообщения
   useEffect(() => {
