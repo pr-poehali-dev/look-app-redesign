@@ -27,7 +27,7 @@ const VideoInfoOverlay = ({
   handleUseTemplate,
 }: VideoInfoOverlayProps) => {
   return (
-    <div className={`absolute bottom-28 md:bottom-20 left-4 z-10 transition-opacity duration-200 hover:opacity-100 active:opacity-100 ${expanded ? "opacity-100" : "opacity-60"}`} style={{ right: '80px' }}>
+    <div className={`absolute bottom-24 md:bottom-20 left-3 md:left-4 z-10 transition-opacity duration-200 hover:opacity-100 active:opacity-100 ${expanded ? "opacity-100" : "opacity-60"}`} style={{ right: '64px' }}>
       {video.repostedBy && (
         <button
           onClick={() => window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: video.repostedBy } }))}
@@ -40,10 +40,10 @@ const VideoInfoOverlay = ({
         </button>
       )}
       <StoryTags handle={video.handle} seriesTitle={video.seriesTitle} brand={video.brand} personalExperience={video.personalExperience} />
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-3">
         <button
           onClick={() => window.dispatchEvent(new CustomEvent("open-user-profile", { detail: { handle: video.handle } }))}
-          className="flex items-center gap-1 font-bold text-white text-base active:opacity-70"
+          className="flex items-center gap-1 font-bold text-white text-sm md:text-base active:opacity-70"
         >
           @{video.handle}
           {video.isVerified && <Icon name="BadgeCheck" size={14} className="text-[#61d4f0]" />}
@@ -61,14 +61,14 @@ const VideoInfoOverlay = ({
         {isSelf ? null : !following ? (
           <button
             onClick={toggleFollow}
-            className="px-3 py-0.5 rounded-full border border-white text-white text-xs font-semibold hover:bg-white hover:text-black transition-all"
+            className="px-2 md:px-3 py-0.5 rounded-full border border-white text-white text-[11px] md:text-xs font-semibold hover:bg-white hover:text-black transition-all"
           >
             Подписаться
           </button>
         ) : (
           <button
             onClick={toggleFollow}
-            className="px-3 py-0.5 rounded-full bg-white/20 text-white text-xs font-semibold"
+            className="px-2 md:px-3 py-0.5 rounded-full bg-white/20 text-white text-[11px] md:text-xs font-semibold"
           >
             Вы подписаны
           </button>
@@ -78,8 +78,8 @@ const VideoInfoOverlay = ({
         const parts = video.description.split(/(#\S+)/g);
         const isLong = video.description.length > 80;
         return (
-          <div className="mb-3">
-            <p className={`text-white text-sm leading-snug ${expanded ? "" : "line-clamp-2"}`}>
+          <div className="mb-2 md:mb-3">
+            <p className={`text-white text-[13px] md:text-sm leading-snug ${expanded ? "" : "line-clamp-2"}`}>
               {parts.map((part, i) =>
                 part.startsWith('#')
                   ? <span key={i} className="text-[#61d4f0] font-medium">{part}</span>
@@ -89,7 +89,7 @@ const VideoInfoOverlay = ({
             {isLong && (
               <button
                 onClick={(e) => { e.stopPropagation(); setExpanded(v => !v); }}
-                className="text-white/60 text-sm font-semibold mt-0.5 active:opacity-70"
+                className="text-white/60 text-[13px] md:text-sm font-semibold mt-0.5 active:opacity-70"
               >
                 {expanded ? "свернуть" : "ещё"}
               </button>
@@ -114,9 +114,9 @@ const VideoInfoOverlay = ({
         <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center animate-spin" style={{ animationDuration: "3s" }}>
           <Icon name="Music" size={10} className="text-white" />
         </div>
-        <span className="text-white/80 text-xs truncate max-w-[180px]">{video.song}</span>
+        <span className="text-white/80 text-[11px] md:text-xs truncate max-w-[180px]">{video.song}</span>
         {typeof video.views === "number" && video.views > 0 && (
-          <span className="text-white/50 text-xs">· {formatCount(video.views)} просмотров</span>
+          <span className="text-white/50 text-[11px] md:text-xs">· {formatCount(video.views)} просмотров</span>
         )}
         {video.templateId && (
           <button
