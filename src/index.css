@@ -580,14 +580,10 @@ html.theme-light .action-count-text {
 /* Мобайл: тёмная полупрозрачная подложка под иконкой/цифрой действий —
    держит белый цвет читаемым и на светлом, и на тёмном видео, без тени. */
 .action-icon-mobile-bg {
-  background: rgba(0, 0, 0, 0.32) !important;
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  background: transparent !important;
 }
 .action-count-mobile-bg {
-  background: rgba(0, 0, 0, 0.28) !important;
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  background: transparent !important;
 }
 @media (min-width: 768px) {
   .action-icon-mobile-bg,

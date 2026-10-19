@@ -520,19 +520,19 @@ const Index = () => {
 
         {/* Bottom Tab Bar (mobile only) */}
         <div className="media-overlay-text absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black to-transparent md:hidden">
-          <div className="flex items-center justify-around px-2 pb-6 pt-2">
+          <div className="flex items-center justify-around px-2 pb-3 pt-1">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => tab.id === "add" ? setShowCamera(true) : setActiveTab(tab.id)}
-                className="flex flex-col items-center gap-1 min-w-[52px]"
+                className="flex flex-col items-center gap-0.5 min-w-[48px]"
               >
                 {tab.id === "add" ? (
-                  <div className="relative flex items-center h-7">
-                    <div className="w-10 h-7 rounded-lg absolute left-0" style={{ background: "var(--look-accent)", opacity: 0.6 }} />
-                    <div className="w-10 h-7 rounded-lg absolute right-0" style={{ background: "var(--look-accent)" }} />
-                    <div className="w-10 h-7 rounded-lg flex items-center justify-center relative z-10 mx-auto" style={{ background: "#ffffff", border: "1.5px solid rgba(0,0,0,0.15)" }}>
-                      <Icon name="Plus" size={18} strokeWidth={3} className="add-tab-plus-icon" style={{ color: "#1f6b3a" }} />
+                  <div className="relative flex items-center h-6">
+                    <div className="w-9 h-6 rounded-lg absolute left-0" style={{ background: "var(--look-accent)", opacity: 0.6 }} />
+                    <div className="w-9 h-6 rounded-lg absolute right-0" style={{ background: "var(--look-accent)" }} />
+                    <div className="w-9 h-6 rounded-lg flex items-center justify-center relative z-10 mx-auto" style={{ background: "#ffffff", border: "1.5px solid rgba(0,0,0,0.15)" }}>
+                      <Icon name="Plus" size={16} strokeWidth={3} className="add-tab-plus-icon" style={{ color: "#1f6b3a" }} />
                     </div>
                   </div>
                 ) : (
@@ -540,7 +540,7 @@ const Index = () => {
                     <div className="relative">
                       <Icon
                         name={tab.icon as "Home"}
-                        size={24}
+                        size={22}
                         className={activeTab === tab.id ? "text-white" : "text-white/50 opacity-50"}
                       />
                       {tab.id === "messages" && totalUnread > 0 && (
