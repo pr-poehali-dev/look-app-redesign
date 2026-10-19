@@ -205,7 +205,7 @@ const StoryViewerModal = ({ items, startIndex, onClose, originRect }: Props) => 
         {index > 0 && (
           <button
             onClick={(e) => { e.stopPropagation(); goPrev(); }}
-            className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 rounded-full p-2 transition-opacity duration-200"
+            className="hidden md:block absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 rounded-full p-2 transition-opacity duration-200"
             style={{ opacity: opened ? 1 : 0 }}
           >
             <Icon name="ChevronLeft" size={26} className="text-white" />
@@ -213,7 +213,7 @@ const StoryViewerModal = ({ items, startIndex, onClose, originRect }: Props) => 
         )}
         <button
           onClick={(e) => { e.stopPropagation(); goNext(); }}
-          className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 rounded-full p-2 transition-opacity duration-200"
+          className="hidden md:block absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 rounded-full p-2 transition-opacity duration-200"
           style={{ opacity: opened ? 1 : 0 }}
         >
           <Icon name="ChevronRight" size={26} className="text-white" />
