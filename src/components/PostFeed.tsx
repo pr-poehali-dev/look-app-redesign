@@ -306,7 +306,7 @@ const PostFeed = () => {
   const storiesByHandle = (handle: string): StoryViewerItem[] =>
     visiblePosts
       .filter(p => !p.article && (p.handle || p.author || "").toLowerCase().trim() === handle.toLowerCase().trim())
-      .map(p => ({ id: p.id, label: p.handle, avatar: p.avatar, image: p.image, isVideo: p.isVideo }));
+      .map(p => ({ id: p.id, label: p.handle, avatar: p.avatar, image: p.image, isVideo: p.isVideo, thumbnail: p.thumbnail }));
 
   return (
     <div className="relative h-full bg-black">

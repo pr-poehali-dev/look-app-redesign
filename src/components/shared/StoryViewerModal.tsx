@@ -74,6 +74,15 @@ const StoryViewerModal = ({ items, startIndex, onClose, originRect }: Props) => 
     if (index > 0) setIndex(i => i - 1);
   };
 
+  const playSafe = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.play().catch(() => {
+      v.muted = true;
+      v.play().catch(() => {});
+    });
+  };
+
   const startProgress = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     setProgress(0);
@@ -189,7 +198,7 @@ const StoryViewerModal = ({ items, startIndex, onClose, originRect }: Props) => 
             disablePictureInPicture
             disableRemotePlayback
             onPlay={startProgress}
-            onLoadedData={() => videoRef.current?.play()}
+            onLoadedData={playSafe}
           />
         ) : (
           <img loading="lazy" decoding="async" key={item.id} src={item.image} className="absolute inset-0 w-full h-full object-cover" alt="" />
