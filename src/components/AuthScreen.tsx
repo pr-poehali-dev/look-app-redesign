@@ -142,11 +142,11 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
         {/* Tabs */}
         <div className="flex bg-gray-100 rounded-xl p-1 mb-1">
           <button
-            onClick={() => { setMode("login"); setError(""); }}
+            onClick={() => { setMode("login"); setError(""); setPassword(""); setShowPassword(false); }}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "login" ? "bg-white text-black shadow-sm" : "text-gray-400"}`}
           >Войти</button>
           <button
-            onClick={() => { setMode("register"); setError(""); }}
+            onClick={() => { setMode("register"); setError(""); setName(""); setHandle(""); setEmail(""); setPhone(""); setPassword(""); setBirthDate(""); setConsent(false); setShowPassword(false); }}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "register" ? "bg-white text-black shadow-sm" : "text-gray-400"}`}
           >Регистрация</button>
         </div>
@@ -157,6 +157,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Имя <span className="text-[#fe2c55]">*</span></label>
               <input
                 value={name}
+                autoComplete="off"
                 onChange={e => setName(e.target.value)}
                 placeholder="Как тебя зовут?"
                 className="w-full px-4 py-3 rounded-xl bg-gray-100 text-black text-sm outline-none focus:ring-2 focus:ring-[#8b5cf6]/30"
@@ -168,6 +169,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
                 <span className="text-gray-400 text-sm">@</span>
                 <input
                   value={handle}
+                  autoComplete="off"
                   onChange={e => setHandle(e.target.value.replace(/[^a-z0-9_.]/gi, ""))}
                   placeholder="nickname"
                   className="flex-1 py-3 bg-transparent text-black text-sm outline-none ml-1"
@@ -178,6 +180,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Номер телефона <span className="text-[#fe2c55]">*</span></label>
               <input
                 value={phone}
+                autoComplete="off"
                 onChange={e => setPhone(formatPhone(e.target.value))}
                 type="tel"
                 inputMode="tel"
@@ -210,6 +213,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
           <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email <span className="text-[#fe2c55]">*</span></label>
           <input
             value={email}
+            autoComplete={mode === "register" ? "off" : "username"}
             onChange={e => setEmail(e.target.value.replace(/\s/g, ""))}
             type="email"
             placeholder="example@mail.com"
@@ -225,6 +229,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
           <div className="flex items-center bg-gray-100 rounded-xl px-4">
             <input
               value={password}
+              autoComplete={mode === "register" ? "new-password" : "current-password"}
               onChange={e => setPassword(e.target.value)}
               type={showPassword ? "text" : "password"}
               placeholder={mode === "register" ? "Минимум 6 символов" : "Пароль"}
