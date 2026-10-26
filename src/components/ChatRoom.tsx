@@ -1,6 +1,7 @@
 import { canQueue, outboxAdd, outboxFlush, outboxForChat } from "@/lib/chatOutbox";
 import { pollMs } from "@/lib/network";
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import Icon from "@/components/ui/icon";
 import { formatSeen } from "@/utils/formatSeen";
 import LinkifiedText from "@/components/ui/linkified-text";
@@ -136,9 +137,10 @@ interface ChatRoomProps {
 }
 
 const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const MY_ID = user?.id || "anon";
-  const MY_NAME = user?.name || user?.handle || "Пользователь";
+  const MY_NAME = user?.name || user?.handle || t("cr.user");
   const rawChatId = String(chat.id);
   const chatId = rawChatId.startsWith("mock_") || rawChatId.startsWith("chat_") || rawChatId.startsWith("dm_") || rawChatId.startsWith("community_") || rawChatId.startsWith("com_")
     ? rawChatId
@@ -238,27 +240,27 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
 
   const exportChat = () => {
     const lines = messages.map(m => `[${m.time}] ${m.user_name}: ${m.type === "text" ? m.content : `[${m.type}]`}`).join("\n");
-    const blob = new Blob([lines || "Чат пуст"], { type: "text/plain;charset=utf-8" });
+    const blob = new Blob([lines || t("cr.chatEmpty")], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = `chat_${displayName || chatId}.txt`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast("Чат экспортирован");
+    showToast(t("cr.chatExported"));
   };
 
   const addToHomescreen = () => {
-    showToast("Добавь сайт через меню браузера → На главный экран");
+    showToast(t("cr.addHomeHint"));
   };
 
   const markAllRead = () => {
     const maxId = messages.reduce((m, msg) => msg.id > m ? msg.id : m, 0);
     if (maxId > 0) {
       markRead(maxId);
-      showToast("Все сообщения прочитаны");
+      showToast(t("cr.allRead"));
     } else {
-      showToast("Нет сообщений");
+      showToast(t("cr.noMessages"));
     }
   };
 
@@ -278,13 +280,13 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
           body: JSON.stringify({ action: "delete_chat", chat_id: String(chat.id), for_all: true }),
         }).catch(() => {});
       }
-      showToast("Чат удалён");
+      showToast(t("cr.chatDeleted"));
       setTimeout(() => {
         if (onDeleted) onDeleted(chat.id);
         else onBack();
       }, 400);
     } catch {
-      showToast("Не удалось удалить");
+      showToast(t("cr.delFail"));
     }
   };
 
@@ -302,9 +304,9 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       setMessages([]);
       lastIdRef.current = cleared;
       lastSentReadRef.current = cleared;
-      showToast(forAll ? "Чат очищен у всех" : "Чат очищен");
+      showToast(forAll ? t("cr.clearedAll") : t("cr.cleared"));
     } catch {
-      showToast("Не удалось очистить");
+      showToast(t("cr.clearFail"));
     }
   };
 
@@ -313,7 +315,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     setMuted(next);
     saveSetting("muted", next);
     setShowMute(false);
-    showToast(next ? `Без звука: ${option}` : "Уведомления включены");
+    showToast(next ? `${t("cr.mute")}: ${option}` : t("cr.notifOn"));
   };
 
   const toggleBlock = () => {
@@ -321,14 +323,14 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     setBlocked(next);
     saveSetting("blocked", next);
     setShowBlock(false);
-    showToast(next ? "Контакт заблокирован" : "Контакт разблокирован");
+    showToast(next ? t("cr.blockedT") : t("cr.unblockedT"));
   };
 
   const setDisappear = (val: string) => {
     setDisappearTimer(val);
     saveSetting("disappear", val);
     setShowDisappear(false);
-    showToast(val === "off" ? "Исчезающие выключены" : `Исчезают через ${val}`);
+    showToast(val === "off" ? t("cr.disappearOff") : `${t("cr.disappearing")}: ${val}`);
   };
 
   const applyTheme = (val: string) => {
@@ -723,7 +725,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       }, 1000);
     } catch (e) {
       console.error("[ChatRoom] mic access failed", e);
-      showToast("Нет доступа к микрофону");
+      showToast(t("cr.noMic"));
     }
   };
 
@@ -752,7 +754,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     voiceChunksRef.current = [];
     const ext = mimeFull.includes("mp4") ? "m4a" : "webm";
     try {
-      showToast("Отправляем голосовое...");
+      showToast(t("cr.sendingVoice"));
       const url = await uploadChatMedia(blob, ext, mimeFull.split(";")[0]);
       const payload = JSON.stringify({ duration: durSecs, url, transcript: liveText || "" });
       const msgId = await sendMsg(payload, "voice");
@@ -762,7 +764,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       }
     } catch (e) {
       console.error("[ChatRoom] voice upload failed", e);
-      showToast("Не удалось отправить голосовое");
+      showToast(t("cr.voiceFail"));
     }
   };
 
@@ -770,10 +772,10 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     setTranscribingId(msgId);
     try {
       const text = await transcribeBlobOnServer(blob);
-      setTranscripts((p) => ({ ...p, [msgId]: text || "Речь не распознана" }));
+      setTranscripts((p) => ({ ...p, [msgId]: text || t("cr.noSpeech") }));
     } catch (e) {
       console.error("[ChatRoom] transcribe failed", e);
-      showToast("Не удалось распознать речь");
+      showToast(t("cr.speechFail"));
     }
     setTranscribingId(null);
   };
@@ -785,10 +787,10 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       const res = await fetch(mediaUrl);
       const blob = await res.blob();
       const text = await transcribeBlobOnServer(blob);
-      setTranscripts((p) => ({ ...p, [msgId]: text || "Речь не распознана" }));
+      setTranscripts((p) => ({ ...p, [msgId]: text || t("cr.noSpeech") }));
     } catch (e) {
       console.error("[ChatRoom] transcribe by url failed", e);
-      showToast("Не удалось распознать речь");
+      showToast(t("cr.speechFail"));
     }
     setTranscribingId(null);
   };
@@ -809,7 +811,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       }
     } catch (e) {
       console.error("[ChatRoom] camera access failed", e);
-      showToast("Нет доступа к камере");
+      showToast(t("cr.noCam"));
       setVideoNoteOpen(false);
     }
   };
@@ -876,7 +878,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
           videoNoteVideoRef.current.play().catch(() => {});
         }
       })
-      .catch(() => showToast("Нет доступа к камере"));
+      .catch(() => showToast(t("cr.noCam")));
   };
 
   const sendVideoNote = async () => {
@@ -889,7 +891,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     videoNoteLiveTextRef.current = "";
     closeVideoNote();
     try {
-      showToast("Отправляем видеосообщение...");
+      showToast(t("cr.sendingVideo"));
       const url = await uploadChatMedia(blob, ext, mimeFull.split(";")[0]);
       const payload = JSON.stringify({ duration: dur, url, transcript: liveText || "" });
       const msgId = await sendMsg(payload, "video_note");
@@ -899,7 +901,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       }
     } catch (e) {
       console.error("[ChatRoom] video note upload failed", e);
-      showToast("Не удалось отправить видео-сообщение");
+      showToast(t("cr.videoFail"));
     }
   };
 
@@ -918,7 +920,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     if (!file) return;
     const MAX = 8 * 1024 * 1024;
     if (file.size > MAX) {
-      showToast("Файл слишком большой (макс. 8 МБ)");
+      showToast(t("cr.fileBig"));
       e.target.value = "";
       return;
     }
@@ -940,16 +942,16 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
   const sendLocation = () => {
     setShowAttach(false);
     if (!navigator.geolocation) {
-      showToast("Геолокация недоступна");
+      showToast(t("cr.geoNA"));
       return;
     }
-    showToast("Определяем местоположение...");
+    showToast(t("cr.geoWait"));
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
         sendMsg(JSON.stringify({ lat: latitude, lng: longitude }), "location");
       },
-      () => showToast("Не удалось получить координаты"),
+      () => showToast(t("cr.geoFail")),
       { enableHighAccuracy: true, timeout: 8000 }
     );
   };
@@ -966,7 +968,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       setContactList(users);
       setShowContactPicker(true);
     } catch {
-      showToast("Не удалось загрузить контакты");
+      showToast(t("cr.contactsFail"));
     }
   };
 
@@ -1042,7 +1044,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
 
   const DisappearBadge = ({ msg }: { msg: Message }) =>
     msg.expires_at ? (
-      <Icon name="Timer" size={11} className="text-white/40 flex-shrink-0" aria-label="Исчезающее сообщение" />
+      <Icon name="Timer" size={11} className="text-white/40 flex-shrink-0" aria-label={t("cr.disappearMsg")} />
     ) : null;
 
   const renderMsg = (msg: Message) => {
@@ -1055,7 +1057,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       }
       return (
         <div className={`px-4 py-2.5 rounded-2xl max-w-[78%] ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
-          <p className="text-white text-sm">📊 Опрос</p>
+          <p className="text-white text-sm">📊 {t("cr.poll")}</p>
           <div className="flex items-center justify-end gap-1 mt-1">
             <DisappearBadge msg={msg} />
             <span className="text-white/40 text-[10px]">{msg.time}</span>
@@ -1126,9 +1128,9 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
             <Icon name="FileText" size={18} className="text-white" />
           </a>
           <div className="flex-1 min-w-0">
-            <p className="text-white text-sm font-medium truncate">{info.name || "Файл"}</p>
+            <p className="text-white text-sm font-medium truncate">{info.name || t("cr.file")}</p>
             <div className="flex items-center gap-1.5">
-              <span className="text-white/60 text-[11px]">{sizeKb} КБ</span>
+              <span className="text-white/60 text-[11px]">{sizeKb} {t("cr.kb")}</span>
               <span className="text-white/40 text-[10px]">·</span>
               <DisappearBadge msg={msg} />
               <span className="text-white/40 text-[10px]">{msg.time}</span>
@@ -1148,7 +1150,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
             <Icon name="MapPin" size={32} className="text-[#fe2c55]" />
           </div>
           <div className="px-3 py-2">
-            <p className="text-white text-sm font-medium">Геолокация</p>
+            <p className="text-white text-sm font-medium">{t("cr.location")}</p>
             <p className="text-white/60 text-[11px]">{loc.lat?.toFixed(4)}, {loc.lng?.toFixed(4)}</p>
             <div className="flex items-center justify-end gap-1.5 mt-1">
               <DisappearBadge msg={msg} />
@@ -1168,9 +1170,9 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
             <UserAvatar src={info.avatar} name={info.name || "?"} alt={info.name || ""} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white text-sm font-medium truncate">{info.name || "Контакт"}</p>
+            <p className="text-white text-sm font-medium truncate">{info.name || t("cr.contact")}</p>
             <div className="flex items-center gap-1.5">
-              <span className="text-white/60 text-[11px]">Контакт</span>
+              <span className="text-white/60 text-[11px]">{t("cr.contact")}</span>
               <span className="text-white/40 text-[10px]">·</span>
               <DisappearBadge msg={msg} />
               <span className="text-white/40 text-[10px]">{msg.time}</span>
@@ -1292,16 +1294,16 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
         const d2 = typeof raw2.body === "string" ? JSON.parse(raw2.body) : raw2;
         setPinnedMessage(d2.pinned || null);
       } else {
-        alert("Не удалось закрепить");
+        alert(t("cr.pinFail"));
       }
     } catch {
-      alert("Не удалось закрепить");
+      alert(t("cr.pinFail"));
     }
   };
 
   const unpinMessage = async () => {
     if (!user || !communityId) return;
-    if (!confirm("Открепить сообщение?")) return;
+    if (!confirm(t("cr.unpinQ"))) return;
     try {
       const res = await fetch(`${API}?module=community`, {
         method: "POST",
@@ -1318,7 +1320,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
 
   const leaveGroup = async () => {
     if (!user || !communityId) return;
-    if (!confirm("Покинуть группу?")) return;
+    if (!confirm(t("cr.leaveQ"))) return;
     try {
       const res = await fetch(`${API}?module=community`, {
         method: "POST",
@@ -1331,20 +1333,20 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
         onDeleted?.(chat.id);
         onBack();
       } else {
-        alert("Не удалось покинуть группу");
+        alert(t("cr.leaveFail"));
       }
     } catch {
-      alert("Не удалось покинуть группу");
+      alert(t("cr.leaveFail"));
     }
   };
 
   const cleanName = (n?: string) => (n && n !== "Гость" ? n : "");
   const displayName = !isGroup
-    ? (cleanName(peerInfo?.name) || cleanName(chat.name) || "Собеседник")
+    ? (cleanName(peerInfo?.name) || cleanName(chat.name) || t("cr.peer"))
     : chat.name;
   const displayAvatar = !isGroup && peerInfo?.avatar ? peerInfo.avatar : chat.avatar;
   const displayOnline = !isGroup && peerInfo ? !!peerInfo.online : chat.online;
-  const statusText = displayOnline ? "в сети" : (!isGroup && peerInfo ? formatSeen(peerInfo.seenAgo) : "был(а) недавно");
+  const statusText = displayOnline ? t("cr.online") : (!isGroup && peerInfo ? formatSeen(peerInfo.seenAgo) : t("cr.seenRecent"));
 
   // Извлечь peerId для DM-чата (используем нормализованный chatId, не сырой chat.id)
   const getPeerId = (): string => {
@@ -1366,7 +1368,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     }
     const peerId = getPeerId();
     if (!peerId || peerId === MY_ID || peerId === chatId) {
-      alert("Не удалось определить собеседника для звонка");
+      alert(t("cr.callFail"));
       return;
     }
     const roomId = `call_${[MY_ID, peerId].sort().join("_")}`;
@@ -1408,7 +1410,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       const raw = await res.json();
       const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
       if (data.ok) {
-        setToast(data.converted ? "Создан групповой чат" : `Добавлено: ${data.added}`);
+        setToast(data.converted ? t("cr.groupCreated") : `${t("cr.add")}: ${data.added}`);
         setShowAddMembers(false);
         setSelectedNewMembers([]);
         setAddMembersSearch("");
@@ -1416,10 +1418,10 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
           onDeleted(chat.id);
         }
       } else {
-        setToast(data.error || "Не удалось добавить");
+        setToast(data.error || t("cr.addFail"));
       }
     } catch {
-      setToast("Ошибка сети");
+      setToast(t("cr.netErr"));
     } finally {
       setAddingMembers(false);
       setTimeout(() => setToast(""), 2500);
@@ -1460,7 +1462,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
 
       {/* Header */}
       <div className="flex items-center gap-3 px-3 pt-14 md:pt-3 pb-3 border-b border-white/8" style={{ background: "var(--look-sidebar-bg)" }}>
-        <button onClick={onBack} className="text-white/60 hover:text-white transition-colors flex-shrink-0" title="Назад">
+        <button onClick={onBack} className="text-white/60 hover:text-white transition-colors flex-shrink-0" title={t("cr.back")}>
           <Icon name="ChevronLeft" size={26} className="text-white" />
         </button>
         <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 relative">
@@ -1471,7 +1473,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
           <p className="text-white font-semibold text-sm">{displayName}</p>
           {typingUsers.length > 0 ? (
             <p className="text-[#61d4f0] text-xs flex items-center gap-1">
-              <span>{isGroup ? `${typingUsers[0].name} печатает` : "печатает"}</span>
+              <span>{isGroup ? `${typingUsers[0].name} ${t("cr.typing")}` : t("cr.typing")}</span>
               <span className="inline-flex gap-0.5">
                 <span className="w-1 h-1 rounded-full bg-[#61d4f0] animate-bounce" style={{ animationDelay: "0ms" }} />
                 <span className="w-1 h-1 rounded-full bg-[#61d4f0] animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -1489,14 +1491,14 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
           <button onClick={() => startCall("audio")} className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center">
             <Icon name="Phone" size={17} className="text-white" />
           </button>
-          <button onClick={() => setShowAddMembers(true)} className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center" title="Добавить участников">
+          <button onClick={() => setShowAddMembers(true)} className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center" title={t("cr.addMembers")}>
             <Icon name="UserPlus" size={17} className="text-white" />
           </button>
           {isGroup && (
             <button
               onClick={() => setShowPolls(true)}
               className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center"
-              title={communityIsAdmin ? "Создать опрос" : "Опросы"}
+              title={communityIsAdmin ? t("cr.createPoll") : t("cr.polls")}
             >
               <Icon name="BarChart3" size={17} className="text-white" />
             </button>
@@ -1514,27 +1516,27 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                       {isGroup ? (
                         <button onClick={() => { setMenuOpen(false); setShowMembersScreen(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5 flex items-center gap-2">
                           <Icon name="Users" size={15} className="text-white/60" />
-                          <span>Участники группы</span>
+                          <span>{t("cr.groupMembers")}</span>
                         </button>
                       ) : (
-                        <button onClick={() => { setMenuOpen(false); setShowProfile(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Просмотр контакта</button>
+                        <button onClick={() => { setMenuOpen(false); setShowProfile(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{t("cr.viewContact")}</button>
                       )}
-                      <button onClick={() => { setMenuOpen(false); setShowSearch(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Поиск</button>
-                      <button onClick={() => { setMenuOpen(false); setShowReport(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Пожаловаться</button>
+                      <button onClick={() => { setMenuOpen(false); setShowSearch(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{t("cr.search")}</button>
+                      <button onClick={() => { setMenuOpen(false); setShowReport(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{t("cr.report")}</button>
                       {!isGroup && (
-                        <button onClick={() => { setMenuOpen(false); setShowBlock(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{blocked ? "Разблокировать" : "Заблокировать"}</button>
+                        <button onClick={() => { setMenuOpen(false); setShowBlock(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{blocked ? t("cr.unblock") : t("cr.block")}</button>
                       )}
-                      <button onClick={() => { setMenuOpen(false); setShowMute(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Без звука</button>
-                      <button onClick={() => { setMenuOpen(false); setShowDisappear(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Исчезающие сообщения</button>
-                      <button onClick={() => { setMenuOpen(false); setShowTheme(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Тема чата</button>
+                      <button onClick={() => { setMenuOpen(false); setShowMute(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{t("cr.mute")}</button>
+                      <button onClick={() => { setMenuOpen(false); setShowDisappear(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{t("cr.disappearing")}</button>
+                      <button onClick={() => { setMenuOpen(false); setShowTheme(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{t("cr.chatTheme")}</button>
                       {isGroup && (
                         <button onClick={() => { setMenuOpen(false); leaveGroup(); }} className="w-full text-left px-4 py-3 text-[#fe2c55] text-sm hover:bg-white/5 flex items-center gap-2">
                           <Icon name="LogOut" size={15} />
-                          <span>Покинуть группу</span>
+                          <span>{t("cr.leaveGroup")}</span>
                         </button>
                       )}
                       <button onClick={() => setSubmenuOpen(true)} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5 flex items-center justify-between">
-                        <span>Ещё</span>
+                        <span>{t("cr.more")}</span>
                         <Icon name="ChevronRight" size={16} className="text-white/50" />
                       </button>
                     </>
@@ -1542,17 +1544,17 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                     <>
                       <button onClick={() => setSubmenuOpen(false)} className="w-full text-left px-4 py-3 text-white/60 text-xs hover:bg-white/5 flex items-center gap-2 border-b border-white/8">
                         <Icon name="ChevronLeft" size={14} />
-                        <span>Назад</span>
+                        <span>{t("cr.back")}</span>
                       </button>
-                      <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); setShowMedia(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Медиа, ссылки и докум.</button>
-                      <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); markAllRead(); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Отметить как прочитанное</button>
-                      <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); setConfirmClear(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Очистить чат</button>
-                      <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); exportChat(); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Экспорт чата</button>
-                      <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); addToHomescreen(); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">Добавить иконку на экран</button>
+                      <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); setShowMedia(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{t("cr.mediaLinksShort")}</button>
+                      <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); markAllRead(); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{t("cr.markRead")}</button>
+                      <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); setConfirmClear(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{t("cr.clearChat")}</button>
+                      <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); exportChat(); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{t("cr.exportChat")}</button>
+                      <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); addToHomescreen(); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{t("cr.addIcon")}</button>
                       <div className="my-1 h-px bg-white/8" />
                       <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); setConfirmDeleteChat(true); }} className="w-full text-left px-4 py-3 text-[#fe2c55] text-sm hover:bg-white/5 flex items-center gap-2">
                         <Icon name="Trash2" size={15} />
-                        <span>Удалить чат</span>
+                        <span>{t("cr.deleteChat")}</span>
                       </button>
                     </>
                   )}
@@ -1568,12 +1570,12 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
         <div className="flex items-center gap-2 px-3 py-2 bg-[#0c1318] border-b border-white/8">
           <div className="w-1 h-9 rounded bg-[#61d4f0]" />
           <div className="flex-1 min-w-0">
-            <div className="text-[#61d4f0] text-xs font-medium">Закреплённое сообщение</div>
+            <div className="text-[#61d4f0] text-xs font-medium">{t("cr.pinnedMsg")}</div>
             <div className="text-white/70 text-xs truncate">
-              {pinnedMessage.type === "image" ? "📷 Фото" :
-                pinnedMessage.type === "voice" ? "🎤 Голосовое" :
-                pinnedMessage.type === "file" ? "📎 Файл" :
-                pinnedMessage.type === "sticker" ? "🎨 Стикер" :
+              {pinnedMessage.type === "image" ? `📷 ${t("cr.photo")}` :
+                pinnedMessage.type === "voice" ? `🎤 ${t("cr.voice")}` :
+                pinnedMessage.type === "file" ? `📎 ${t("cr.file")}` :
+                pinnedMessage.type === "sticker" ? `🎨 ${t("cr.sticker")}` :
                 pinnedMessage.content || ""}
             </div>
           </div>
@@ -1593,7 +1595,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
             autoFocus
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Поиск по сообщениям..."
+            placeholder={t("cr.searchMsgs")}
             className="flex-1 bg-transparent text-white text-base outline-none placeholder-white/30"
           />
           <button onClick={() => { setShowSearch(false); setSearchQuery(""); }} className="text-white/60 text-xs">
@@ -1606,7 +1608,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       <div ref={listRef} onScroll={onMessagesScroll} className="flex-1 overflow-y-scroll px-3 py-4 flex flex-col gap-2" style={{ scrollbarWidth: "none" }}>
         {messages.length === 0 && (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-white/20 text-sm">Начни общение первым!</p>
+            <p className="text-white/20 text-sm">{t("cr.startFirst")}</p>
           </div>
         )}
         {messages.map((msg, i) => {
@@ -1629,7 +1631,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
               {firstUnreadId !== null && String(firstUnreadId) === String(msg.id) && (
                 <div className="flex items-center gap-2 my-1 scroll-mt-2">
                   <div className="flex-1 h-px bg-white/15" />
-                  <span className="text-[11px] text-white/50">Новые сообщения</span>
+                  <span className="text-[11px] text-white/50">{t("cr.newMsgs")}</span>
                   <div className="flex-1 h-px bg-white/15" />
                 </div>
               )}
@@ -1654,7 +1656,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
             <button
               onClick={scrollToBottom}
               className="pointer-events-auto -translate-y-full relative w-10 h-10 rounded-full bg-[#2a2a2a]/95 border border-white/15 shadow-lg flex items-center justify-center"
-              aria-label="Вниз"
+              aria-label={t("cr.down")}
             >
               <Icon name="ChevronDown" size={22} className="text-white" />
               {newBelow > 0 && (
@@ -1674,8 +1676,8 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
           {/* Tabs */}
           <div className="flex items-center gap-1 px-3 pt-2.5">
             {([
-              { id: "emoji", label: "Эмодзи", icon: "Smile" },
-              { id: "stickers", label: "Стикеры", icon: "Sticker" },
+              { id: "emoji", label: t("cr.emoji"), icon: "Smile" },
+              { id: "stickers", label: t("cr.stickers"), icon: "Sticker" },
               { id: "gif", label: "GIF", icon: "Film" },
             ] as const).map((t) => (
               <button
@@ -1742,7 +1744,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                   <input
                     value={gifQuery}
                     onChange={(e) => setGifQuery(e.target.value)}
-                    placeholder="Поиск GIF..."
+                    placeholder={t("cr.searchGif")}
                     className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/30"
                   />
                 </div>
@@ -1764,9 +1766,9 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
               </div>
               <div className="px-3 py-2 max-h-52 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
                 {gifLoading && gifResults.length === 0 ? (
-                  <div className="flex items-center justify-center py-8 text-white/40 text-sm">Загрузка...</div>
+                  <div className="flex items-center justify-center py-8 text-white/40 text-sm">{t("cr.loading")}</div>
                 ) : gifResults.length === 0 ? (
-                  <div className="flex items-center justify-center py-8 text-white/40 text-sm">Ничего не найдено</div>
+                  <div className="flex items-center justify-center py-8 text-white/40 text-sm">{t("cr.nothingFound")}</div>
                 ) : (
                   <div className="grid grid-cols-3 gap-1.5">
                     {gifResults.map((g) => (
@@ -1790,13 +1792,13 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       {showAttach && (
         <div className="bg-[#111] border-t border-white/8 px-4 py-4 grid grid-cols-4 gap-4">
           {[
-            { icon: "Image", label: "Фото", action: () => fileRef.current?.click(), show: true },
-            { icon: "FileText", label: "Файл", action: () => docRef.current?.click(), show: true },
-            { icon: "MapPin", label: "Геолокация", action: sendLocation, show: true },
-            { icon: "Contact", label: "Контакт", action: openContactPicker, show: true },
-            { icon: "Video", label: "Видеосообщение", action: openVideoNote, show: true },
-            { icon: "BarChart3", label: "Опрос", action: () => { setShowAttach(false); setShowPolls(true); }, show: isGroup && communityIsAdmin },
-            { icon: "ListChecks", label: "Опросы", action: () => { setShowAttach(false); setShowPolls(true); }, show: isGroup && !communityIsAdmin },
+            { icon: "Image", label: t("cr.photo"), action: () => fileRef.current?.click(), show: true },
+            { icon: "FileText", label: t("cr.file"), action: () => docRef.current?.click(), show: true },
+            { icon: "MapPin", label: t("cr.location"), action: sendLocation, show: true },
+            { icon: "Contact", label: t("cr.contact"), action: openContactPicker, show: true },
+            { icon: "Video", label: t("cr.videoMsg"), action: openVideoNote, show: true },
+            { icon: "BarChart3", label: t("cr.poll"), action: () => { setShowAttach(false); setShowPolls(true); }, show: isGroup && communityIsAdmin },
+            { icon: "ListChecks", label: t("cr.polls"), action: () => { setShowAttach(false); setShowPolls(true); }, show: isGroup && !communityIsAdmin },
           ].filter(item => item.show).map((item) => (
             <button key={item.label} onClick={item.action} className="flex flex-col items-center gap-2">
               <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
@@ -1851,7 +1853,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
               value={input}
               onChange={(e) => { setInput(e.target.value); if (e.target.value.trim()) sendTyping(); }}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-              placeholder="Сообщение..."
+              placeholder={t("cr.message")}
               rows={1}
               className="flex-1 bg-transparent text-white text-base outline-none resize-none placeholder-white/30 max-h-32 leading-snug"
               style={{ scrollbarWidth: "none" }}
@@ -1884,14 +1886,14 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
         <div className="fixed inset-0 z-[60] bg-black/80 flex items-end sm:items-center justify-center" onClick={() => setShowContactPicker(false)}>
           <div className="bg-[#1a1a1a] w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-5 max-h-[70vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <p className="text-white text-base font-semibold">Выбери контакт</p>
+              <p className="text-white text-base font-semibold">{t("cr.pickContact")}</p>
               <button onClick={() => setShowContactPicker(false)} className="text-white/60">
                 <Icon name="X" size={20} />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto -mx-2" style={{ scrollbarWidth: "none" }}>
               {contactList.length === 0 ? (
-                <p className="text-white/40 text-sm text-center py-8">Контактов нет</p>
+                <p className="text-white/40 text-sm text-center py-8">{t("cr.noContacts")}</p>
               ) : (
                 contactList.map((c) => (
                   <button
@@ -1920,7 +1922,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                 className="w-full flex items-center gap-3 px-4 py-3 text-white text-sm hover:bg-white/5 rounded-lg"
               >
                 <Icon name="Pin" size={18} className="text-[#61d4f0]" />
-                <span>Закрепить сообщение</span>
+                <span>{t("cr.pinMsg")}</span>
               </button>
             )}
             <button
@@ -1928,13 +1930,13 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
               className="w-full flex items-center gap-3 px-4 py-3 text-[#fe2c55] text-sm hover:bg-white/5 rounded-lg"
             >
               <Icon name="Trash2" size={18} />
-              <span>Удалить сообщение</span>
+              <span>{t("cr.delMsg")}</span>
             </button>
             <button
               onClick={() => setConfirmDelete(null)}
               className="w-full px-4 py-3 text-white/60 text-sm hover:bg-white/5 rounded-lg"
             >
-              Отмена
+              {t("cr.cancel")}
             </button>
           </div>
         </div>
@@ -1956,24 +1958,24 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                   className="mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-green-500/15 text-green-400 text-sm font-semibold"
                 >
                   <Icon name="PhoneCall" size={18} />
-                  Позвонить на телефон
+                  {t("cr.callPhone")}
                 </a>
               )}
               <div className="grid grid-cols-3 gap-3 mt-6 w-full">
                 <button onClick={() => { setShowProfile(false); startCall("audio"); }} className="flex flex-col items-center gap-1 py-3 bg-white/5 rounded-xl">
                   <Icon name="Phone" size={20} className="text-white" />
-                  <span className="text-white/70 text-xs">Звонок</span>
+                  <span className="text-white/70 text-xs">{t("cr.call")}</span>
                 </button>
                 <button onClick={() => { setShowProfile(false); startCall("video"); }} className="flex flex-col items-center gap-1 py-3 bg-white/5 rounded-xl">
                   <Icon name="Video" size={20} className="text-white" />
-                  <span className="text-white/70 text-xs">Видео</span>
+                  <span className="text-white/70 text-xs">{t("cr.video")}</span>
                 </button>
                 <button onClick={() => { setShowProfile(false); setShowMute(true); }} className="flex flex-col items-center gap-1 py-3 bg-white/5 rounded-xl">
                   <Icon name={muted ? "BellOff" : "Bell"} size={20} className="text-white" />
-                  <span className="text-white/70 text-xs">{muted ? "Без звука" : "Звук"}</span>
+                  <span className="text-white/70 text-xs">{muted ? t("cr.mute") : t("cr.sound")}</span>
                 </button>
               </div>
-              <button onClick={() => setShowProfile(false)} className="mt-5 w-full py-3 rounded-xl bg-white/10 text-white text-sm">Закрыть</button>
+              <button onClick={() => setShowProfile(false)} className="mt-5 w-full py-3 rounded-xl bg-white/10 text-white text-sm">{t("cr.close")}</button>
             </div>
           </div>
         </div>
@@ -1983,12 +1985,12 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       {showReport && (
         <div className="fixed inset-0 z-[60] bg-black/80 flex items-end sm:items-center justify-center px-4" onClick={() => setShowReport(false)}>
           <div className="bg-[#1a1a1a] w-full sm:max-w-sm rounded-3xl p-5" onClick={(e) => e.stopPropagation()}>
-            <p className="text-white text-base font-semibold mb-1">Пожаловаться</p>
-            <p className="text-white/50 text-sm mb-4">Выбери причину жалобы</p>
-            {["Спам", "Мошенничество", "Оскорбления", "Неприемлемый контент", "Другое"].map(r => (
-              <button key={r} onClick={() => { setShowReport(false); showToast("Жалоба отправлена"); }} className="w-full text-left px-3 py-3 text-white text-sm hover:bg-white/5 rounded-lg">{r}</button>
+            <p className="text-white text-base font-semibold mb-1">{t("cr.report")}</p>
+            <p className="text-white/50 text-sm mb-4">{t("cr.pickReason")}</p>
+            {[[t("cr.spam"),"spam"],[t("cr.fraud"),"fraud"],[t("cr.abuse"),"abuse"],[t("cr.inappropriate"),"inappropriate"],[t("cr.other"),"other"]].map(([r, rk]) => (
+              <button key={r} onClick={() => { setShowReport(false); showToast(t("cr.reportSent")); }} className="w-full text-left px-3 py-3 text-white text-sm hover:bg-white/5 rounded-lg">{t(`cr.${rk}`)}</button>
             ))}
-            <button onClick={() => setShowReport(false)} className="mt-3 w-full py-2.5 rounded-xl bg-white/10 text-white text-sm">Отмена</button>
+            <button onClick={() => setShowReport(false)} className="mt-3 w-full py-2.5 rounded-xl bg-white/10 text-white text-sm">{t("cr.cancel")}</button>
           </div>
         </div>
       )}
@@ -1997,11 +1999,11 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       {showBlock && (
         <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center px-6" onClick={() => setShowBlock(false)}>
           <div className="bg-[#1a1a1a] rounded-2xl p-5 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
-            <p className="text-white text-base font-semibold mb-2">{blocked ? "Разблокировать?" : "Заблокировать?"}</p>
-            <p className="text-white/50 text-sm mb-5">{blocked ? `${displayName} снова сможет писать тебе.` : `${displayName} не сможет писать и звонить тебе.`}</p>
+            <p className="text-white text-base font-semibold mb-2">{blocked ? t("cr.unblockQ") : t("cr.blockQ")}</p>
+            <p className="text-white/50 text-sm mb-5">{blocked ? t("cr.unblockText", { name: displayName }) : t("cr.blockText", { name: displayName })}</p>
             <div className="flex gap-2">
-              <button onClick={() => setShowBlock(false)} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm">Отмена</button>
-              <button onClick={toggleBlock} className="flex-1 py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold">{blocked ? "Разблокировать" : "Заблокировать"}</button>
+              <button onClick={() => setShowBlock(false)} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm">{t("cr.cancel")}</button>
+              <button onClick={toggleBlock} className="flex-1 py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold">{blocked ? t("cr.unblock") : t("cr.block")}</button>
             </div>
           </div>
         </div>
@@ -2011,16 +2013,16 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       {showMute && (
         <div className="fixed inset-0 z-[60] bg-black/80 flex items-end sm:items-center justify-center px-4" onClick={() => setShowMute(false)}>
           <div className="bg-[#1a1a1a] w-full sm:max-w-sm rounded-3xl p-5" onClick={(e) => e.stopPropagation()}>
-            <p className="text-white text-base font-semibold mb-4">Отключить уведомления</p>
+            <p className="text-white text-base font-semibold mb-4">{t("cr.muteTitle")}</p>
             {[
-              { v: "8 часов", l: "На 8 часов" },
-              { v: "1 неделя", l: "На неделю" },
-              { v: "Всегда", l: "Навсегда" },
-              { v: "off", l: "Включить уведомления" },
+              { v: "8 часов", l: t("cr.mute8") },
+              { v: "1 неделя", l: t("cr.muteWeek") },
+              { v: "Всегда", l: t("cr.muteForever") },
+              { v: "off", l: t("cr.enableNotif") },
             ].map(o => (
               <button key={o.v} onClick={() => toggleMute(o.v)} className="w-full text-left px-3 py-3 text-white text-sm hover:bg-white/5 rounded-lg">{o.l}</button>
             ))}
-            <button onClick={() => setShowMute(false)} className="mt-3 w-full py-2.5 rounded-xl bg-white/10 text-white text-sm">Отмена</button>
+            <button onClick={() => setShowMute(false)} className="mt-3 w-full py-2.5 rounded-xl bg-white/10 text-white text-sm">{t("cr.cancel")}</button>
           </div>
         </div>
       )}
@@ -2029,20 +2031,20 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       {showDisappear && (
         <div className="fixed inset-0 z-[60] bg-black/80 flex items-end sm:items-center justify-center px-4" onClick={() => setShowDisappear(false)}>
           <div className="bg-[#1a1a1a] w-full sm:max-w-sm rounded-3xl p-5" onClick={(e) => e.stopPropagation()}>
-            <p className="text-white text-base font-semibold mb-1">Исчезающие сообщения</p>
-            <p className="text-white/50 text-sm mb-4">Текущая настройка: {disappearTimer === "off" ? "выключено" : disappearTimer}</p>
+            <p className="text-white text-base font-semibold mb-1">{t("cr.disappearing")}</p>
+            <p className="text-white/50 text-sm mb-4">{t("cr.currentSetting")} {disappearTimer === "off" ? t("cr.offLower") : disappearTimer}</p>
             {[
-              { v: "off", l: "Выключено" },
-              { v: "24 часа", l: "24 часа" },
-              { v: "7 дней", l: "7 дней" },
-              { v: "90 дней", l: "90 дней" },
+              { v: "off", l: t("cr.offCap") },
+              { v: "24 часа", l: t("cr.h24") },
+              { v: "7 дней", l: t("cr.d7") },
+              { v: "90 дней", l: t("cr.d90") },
             ].map(o => (
               <button key={o.v} onClick={() => setDisappear(o.v)} className={`w-full text-left px-3 py-3 text-sm hover:bg-white/5 rounded-lg flex items-center justify-between ${disappearTimer === o.v ? "text-[#fe2c55]" : "text-white"}`}>
                 <span>{o.l}</span>
                 {disappearTimer === o.v && <Icon name="Check" size={16} />}
               </button>
             ))}
-            <button onClick={() => setShowDisappear(false)} className="mt-3 w-full py-2.5 rounded-xl bg-white/10 text-white text-sm">Закрыть</button>
+            <button onClick={() => setShowDisappear(false)} className="mt-3 w-full py-2.5 rounded-xl bg-white/10 text-white text-sm">{t("cr.close")}</button>
           </div>
         </div>
       )}
@@ -2051,14 +2053,14 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       {showTheme && (
         <div className="fixed inset-0 z-[60] bg-black/80 flex items-end sm:items-center justify-center px-4" onClick={() => setShowTheme(false)}>
           <div className="bg-[#1a1a1a] w-full sm:max-w-sm rounded-3xl p-5" onClick={(e) => e.stopPropagation()}>
-            <p className="text-white text-base font-semibold mb-4">Тема чата</p>
+            <p className="text-white text-base font-semibold mb-4">{t("cr.chatTheme")}</p>
             <div className="grid grid-cols-3 gap-3">
               {[
-                { v: "default", l: "Стандарт" },
-                { v: "dark", l: "Чёрный" },
-                { v: "blue", l: "Синий" },
-                { v: "purple", l: "Фиолет" },
-                { v: "green", l: "Зелёный" },
+                { v: "default", l: t("cr.themeDefault") },
+                { v: "dark", l: t("cr.themeBlack") },
+                { v: "blue", l: t("cr.themeBlue") },
+                { v: "purple", l: t("cr.themePurple") },
+                { v: "green", l: t("cr.themeGreen") },
               ].map(t => (
                 <button key={t.v} onClick={() => applyTheme(t.v)} className={`flex flex-col items-center gap-2 p-2 rounded-xl border-2 ${chatTheme === t.v ? "border-[#fe2c55]" : "border-transparent"}`}>
                   <div className="w-full h-16 rounded-lg" style={{ backgroundColor: themeBg[t.v] }} />
@@ -2066,7 +2068,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                 </button>
               ))}
             </div>
-            <button onClick={() => setShowTheme(false)} className="mt-4 w-full py-2.5 rounded-xl bg-white/10 text-white text-sm">Закрыть</button>
+            <button onClick={() => setShowTheme(false)} className="mt-4 w-full py-2.5 rounded-xl bg-white/10 text-white text-sm">{t("cr.close")}</button>
           </div>
         </div>
       )}
@@ -2075,15 +2077,15 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       {showMedia && (
         <div className="fixed inset-0 z-[60] bg-black/80 flex items-end sm:items-center justify-center px-4" onClick={() => setShowMedia(false)}>
           <div className="bg-[#1a1a1a] w-full sm:max-w-md rounded-3xl p-5 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <p className="text-white text-base font-semibold mb-4">Медиа, ссылки и документы</p>
+            <p className="text-white text-base font-semibold mb-4">{t("cr.mediaLinksDocs")}</p>
             {(() => {
               const imgs = messages.filter(m => m.type === "image");
               const links = messages.filter(m => m.type === "text" && /(https?:\/\/[^\s]+)/i.test(m.content));
               return (
                 <>
-                  <p className="text-white/50 text-xs mb-2 uppercase">Медиа ({imgs.length})</p>
+                  <p className="text-white/50 text-xs mb-2 uppercase">{t("cr.media")} ({imgs.length})</p>
                   {imgs.length === 0 ? (
-                    <p className="text-white/30 text-sm mb-4">Нет медиафайлов</p>
+                    <p className="text-white/30 text-sm mb-4">{t("cr.noMedia")}</p>
                   ) : (
                     <div className="grid grid-cols-3 gap-1 mb-4">
                       {imgs.map(m => (
@@ -2091,9 +2093,9 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                       ))}
                     </div>
                   )}
-                  <p className="text-white/50 text-xs mb-2 uppercase">Ссылки ({links.length})</p>
+                  <p className="text-white/50 text-xs mb-2 uppercase">{t("cr.links")} ({links.length})</p>
                   {links.length === 0 ? (
-                    <p className="text-white/30 text-sm">Нет ссылок</p>
+                    <p className="text-white/30 text-sm">{t("cr.noLinks")}</p>
                   ) : (
                     <div className="flex flex-col gap-2">
                       {links.map(m => {
@@ -2106,7 +2108,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                 </>
               );
             })()}
-            <button onClick={() => setShowMedia(false)} className="mt-5 w-full py-2.5 rounded-xl bg-white/10 text-white text-sm">Закрыть</button>
+            <button onClick={() => setShowMedia(false)} className="mt-5 w-full py-2.5 rounded-xl bg-white/10 text-white text-sm">{t("cr.close")}</button>
           </div>
         </div>
       )}
@@ -2115,17 +2117,17 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       {confirmClear && (
         <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center px-6" onClick={() => setConfirmClear(false)}>
           <div className="bg-[#1a1a1a] rounded-2xl p-5 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <p className="text-white text-base font-semibold mb-2">Очистить чат?</p>
-            <p className="text-white/50 text-sm mb-5">Выбери, как очистить переписку.</p>
+            <p className="text-white text-base font-semibold mb-2">{t("cr.clearQ")}</p>
+            <p className="text-white/50 text-sm mb-5">{t("cr.clearHow")}</p>
             <div className="flex flex-col gap-2">
               <button onClick={() => clearChat(false)} className="w-full py-3 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/15">
-                Очистить только у меня
+                {t("cr.clearMe")}
               </button>
               <button onClick={() => clearChat(true)} className="w-full py-3 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold hover:opacity-90">
-                Очистить у всех
+                {t("cr.clearAll")}
               </button>
               <button onClick={() => setConfirmClear(false)} className="w-full py-2.5 rounded-xl text-white/60 text-sm">
-                Отмена
+                {t("cr.cancel")}
               </button>
             </div>
           </div>
@@ -2138,12 +2140,12 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
           <div className="bg-[#1a1a1a] rounded-2xl p-5 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2 mb-2">
               <Icon name="Trash2" size={18} className="text-[#fe2c55]" />
-              <p className="text-white text-base font-semibold">Удалить чат?</p>
+              <p className="text-white text-base font-semibold">{t("cr.deleteChatQ")}</p>
             </div>
-            <p className="text-white/50 text-sm mb-5">Чат «{displayName}» исчезнет у всех участников вместе со всей перепиской. Это действие нельзя отменить.</p>
+            <p className="text-white/50 text-sm mb-5">{t("cr.deleteChatText", { name: displayName })}</p>
             <div className="flex gap-2">
-              <button onClick={() => setConfirmDeleteChat(false)} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm">Отмена</button>
-              <button onClick={deleteChat} className="flex-1 py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold">Удалить</button>
+              <button onClick={() => setConfirmDeleteChat(false)} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm">{t("cr.cancel")}</button>
+              <button onClick={deleteChat} className="flex-1 py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold">{t("cr.delete")}</button>
             </div>
           </div>
         </div>
@@ -2166,31 +2168,31 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
             <div className="bg-[#1a1a1a] w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
               <div className="px-5 pt-5 pb-3">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-white font-bold text-lg">Добавить участников</span>
+                  <span className="text-white font-bold text-lg">{t("cr.addMembers")}</span>
                   <button onClick={() => setShowAddMembers(false)}>
                     <Icon name="X" size={22} className="text-white/60" />
                   </button>
                 </div>
                 {!isGroup && (
-                  <p className="text-white/50 text-xs mb-3">Чат станет групповым после добавления</p>
+                  <p className="text-white/50 text-xs mb-3">{t("cr.becomesGroup")}</p>
                 )}
                 <div className="flex items-center gap-2 bg-white/10 rounded-xl px-4 py-2.5">
                   <Icon name="Search" size={16} className="text-white/40" />
                   <input
                     value={addMembersSearch}
                     onChange={e => setAddMembersSearch(e.target.value)}
-                    placeholder="Имя, @ник или номер"
+                    placeholder={t("cr.nameNickPhone")}
                     className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/30"
                     autoFocus
                   />
                 </div>
                 {selectedNewMembers.length > 0 && (
-                  <div className="mt-3 text-white/60 text-xs">Выбрано: {selectedNewMembers.length}</div>
+                  <div className="mt-3 text-white/60 text-xs">{t("cr.selected")} {selectedNewMembers.length}</div>
                 )}
               </div>
               <div className="flex-1 overflow-y-auto px-2 pb-2" style={{ scrollbarWidth: "none" }}>
                 {filtered.length === 0 ? (
-                  <div className="text-center text-white/40 text-sm py-8">Никого не нашли</div>
+                  <div className="text-center text-white/40 text-sm py-8">{t("cr.noOne")}</div>
                 ) : (
                   filtered.map(u => {
                     const selected = selectedNewMembers.includes(u.id);
@@ -2221,7 +2223,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                   disabled={selectedNewMembers.length === 0 || addingMembers}
                   className="w-full py-3.5 rounded-xl bg-[#fe2c55] text-white font-bold text-base disabled:opacity-40"
                 >
-                  {addingMembers ? "Добавляем..." : `Добавить${selectedNewMembers.length > 0 ? ` (${selectedNewMembers.length})` : ""}`}
+                  {addingMembers ? t("cr.adding") : `${t("cr.add")}${selectedNewMembers.length > 0 ? ` (${selectedNewMembers.length})` : ""}`}
                 </button>
               </div>
             </div>
@@ -2266,13 +2268,13 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                   <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center">
                     <Icon name="RotateCcw" size={22} className="text-white" />
                   </div>
-                  <span className="text-white/50 text-xs">Ещё раз</span>
+                  <span className="text-white/50 text-xs">{t("cr.again")}</span>
                 </button>
                 <button onClick={sendVideoNote} className="flex flex-col items-center gap-1.5">
                   <div className="w-16 h-16 rounded-full bg-[#fe2c55] flex items-center justify-center shadow-[0_0_20px_rgba(254,44,85,0.4)]">
                     <Icon name="Send" size={26} className="text-white" />
                   </div>
-                  <span className="text-white/70 text-xs">Отправить</span>
+                  <span className="text-white/70 text-xs">{t("cr.send")}</span>
                 </button>
               </>
             ) : (
@@ -2299,7 +2301,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
               </>
             )}
           </div>
-          <p className="text-white/30 text-xs mt-6">Круглое видеосообщение · до {MAX_VIDEO_NOTE_SEC} сек</p>
+          <p className="text-white/30 text-xs mt-6">{t("cr.roundVideo")} {MAX_VIDEO_NOTE_SEC} {t("cr.sec")}</p>
         </div>
       )}
     </div>

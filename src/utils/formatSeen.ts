@@ -1,23 +1,50 @@
+import i18n from "@/i18n";
+
+const MONTHS_RU = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+
+const plural = (n: number, one: string, few: string, many: string) => {
+  const n10 = n % 10, n100 = n % 100;
+  return n10 === 1 && n100 !== 11 ? one : n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14) ? few : many;
+};
+
 export const formatSeen = (sec?: number | null): string => {
+  const lang = (i18n.language || "ru").slice(0, 2);
+  if (lang === "en") {
+    if (sec == null) return "last seen long ago";
+    if (sec < 120) return "last seen just now";
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `last seen ${min} min ago`;
+    const h = Math.floor(min / 60);
+    if (h < 24) return `last seen ${h} h ago`;
+    const d = Math.floor(h / 24);
+    if (d === 1) return "last seen yesterday";
+    if (d < 7) return `last seen ${d} d ago`;
+    const dt = new Date(Date.now() - sec * 1000);
+    return `last seen ${dt.toLocaleDateString("en-US", { day: "numeric", month: "long", ...(dt.getFullYear() === new Date().getFullYear() ? {} : { year: "numeric" }) })}`;
+  }
+  if (lang === "zh") {
+    if (sec == null) return "很久之前在线";
+    if (sec < 120) return "刚刚在线";
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min} 分钟前在线`;
+    const h = Math.floor(min / 60);
+    if (h < 24) return `${h} 小时前在线`;
+    const d = Math.floor(h / 24);
+    if (d === 1) return "昨天在线";
+    if (d < 7) return `${d} 天前在线`;
+    const dt = new Date(Date.now() - sec * 1000);
+    return `${dt.getMonth() + 1}月${dt.getDate()}日在线`;
+  }
   if (sec == null) return "был(а) давно";
   if (sec < 120) return "был(а) только что";
   const min = Math.floor(sec / 60);
-  if (min < 60) {
-    const m10 = min % 10, m100 = min % 100;
-    const w = m10 === 1 && m100 !== 11 ? "минуту" : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? "минуты" : "минут";
-    return `был(а) ${min} ${w} назад`;
-  }
+  if (min < 60) return `был(а) ${min} ${plural(min, "минуту", "минуты", "минут")} назад`;
   const h = Math.floor(min / 60);
-  if (h < 24) {
-    const h10 = h % 10, h100 = h % 100;
-    const w = h10 === 1 && h100 !== 11 ? "час" : h10 >= 2 && h10 <= 4 && (h100 < 12 || h100 > 14) ? "часа" : "часов";
-    return `был(а) ${h} ${w} назад`;
-  }
+  if (h < 24) return `был(а) ${h} ${plural(h, "час", "часа", "часов")} назад`;
   const d = Math.floor(h / 24);
   if (d === 1) return "был(а) вчера";
   if (d < 7) return `был(а) ${d} дн. назад`;
   const dt = new Date(Date.now() - sec * 1000);
-  const months = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
   const sameYear = dt.getFullYear() === new Date().getFullYear();
-  return `был(а) ${dt.getDate()} ${months[dt.getMonth()]}${sameYear ? "" : " " + dt.getFullYear()}`;
+  return `был(а) ${dt.getDate()} ${MONTHS_RU[dt.getMonth()]}${sameYear ? "" : " " + dt.getFullYear()}`;
 };
