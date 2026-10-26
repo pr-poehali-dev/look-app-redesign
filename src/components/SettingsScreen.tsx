@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { SavedItem, useSavedFolders, DEFAULT_FOLDER } from "@/hooks/useSaved";
 import SavedItemViewer from "@/components/SavedItemViewer";
 import QrScannerScreen from "@/components/QrScannerScreen";
+import LanguageScreen from "@/components/settings/LanguageScreen";
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -1223,6 +1224,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   );
   if (screen === "notifications") return <NotificationsScreen onBack={() => setScreen(null)} />;
   if (screen === "edit_profile") return <EditProfileScreen onBack={() => setScreen(null)} />;
+  if (screen === "language") return <LanguageScreen onBack={() => setScreen(null)} />;
   if (screen === "support") return <SupportScreen onBack={() => setScreen(null)} />;
   if (screen === "terms") return <LegalScreen onBack={() => setScreen(null)} title="Условия использования" settingKey="terms_of_use" fallback="Используя приложение Look, вы соглашаетесь с нашими условиями использования." />;
   if (screen === "privacy") return <LegalScreen onBack={() => setScreen(null)} title="Политика конфиденциальности" settingKey="privacy_policy" fallback="Мы уважаем вашу конфиденциальность." />;
@@ -1288,6 +1290,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
         <Row icon="UserPen" label="Редактировать профиль" onPress={() => setScreen("edit_profile")} />
         <Row icon="Star" label="Подписка и тарифы" onPress={() => setScreen("subscription")} />
         <Row icon="Bookmark" label="Коллекции" onPress={() => setScreen("saved")} />
+        <Row icon="Languages" label="Язык" onPress={() => setScreen("language")} />
         <Row icon="Ban" label="Заблокированные" onPress={() => setScreen("blocked")} />
         <Row icon="QrCode" label="Мой QR-код" onPress={() => setScreen("qr")} />
         <Row icon="ScanLine" label="Сканировать QR" onPress={() => setScreen("scan_qr")} />
