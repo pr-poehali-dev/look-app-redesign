@@ -19,6 +19,9 @@ const loaders: Record<string, () => Promise<{ default: Dict }>> = {
 type Rule = [RegExp, string, string];
 
 const RULES: Rule[] = [
+  [/^·?\s*(\d+)\s*просмотр\S*$/, "· $1 views", "· $1 次浏览"],
+  [/^·?\s*(\d+)\s*отз\.$/, "· $1 reviews", "· $1 条评价"],
+  [/^(.+?) (назначил админом|снял админ-права с|удалил из группы|заблокировал|разблокировал|передал владельца|закрепил сообщение|открепил сообщение) ?(.*)$/, "$1 $2 $3", "$1 $2 $3"],
   [/^(\d+)\s*мин(?:\.|ут[ыу]?)?\s*назад$/, "$1 min ago", "$1 分钟前"],
   [/^(\d+)\s*(?:ч|час|часа|часов)\s*назад$/, "$1 h ago", "$1 小时前"],
   [/^(\d+)\s*(?:д|дн\.?|дня|дней|день)\s*назад$/, "$1 d ago", "$1 天前"],
@@ -87,6 +90,8 @@ const lookup = (raw: string): string | null => {
   if (!t) return null;
   const hit = dict[t];
   if (hit) return raw.replace(t, hit);
+  const tag = t.match(/^(\+?\s*)#(\S+)$/);
+  if (tag && dict[tag[2]]) return raw.replace(t, `${tag[1]}#${dict[tag[2]].replace(/\s+/g, "")}`);
   for (const [re, en, zh] of RULES) {
     const m = t.match(re);
     if (m) return raw.replace(t, fill(active === "zh" ? zh : en, m));
@@ -94,13 +99,31 @@ const lookup = (raw: string): string | null => {
   return null;
 };
 
+const applyToNode = (node: Text, raw: string): boolean => {
+  const res = lookup(raw);
+  if (res && res !== raw) {
+    node.nodeValue = res;
+    return true;
+  }
+  return false;
+};
+
 const translateTextNode = (node: Text) => {
   const v = node.nodeValue;
   if (!v || !CYR.test(v)) return;
   const parent = node.parentElement;
   if (!parent || SKIP_TAGS.has(parent.tagName) || parent.closest("[data-no-translate]")) return;
-  const res = lookup(v);
-  if (res && res !== v) node.nodeValue = res;
+  if (applyToNode(node, v)) return;
+  const kids = Array.from(parent.childNodes);
+  if (kids.length > 1 && kids.every((k) => k.nodeType === Node.TEXT_NODE)) {
+    const texts = kids as Text[];
+    const joined = texts.map((k) => k.nodeValue || "").join("");
+    const res = lookup(joined);
+    if (res && res !== joined) {
+      texts[0].nodeValue = res;
+      for (let i = 1; i < texts.length; i++) texts[i].nodeValue = "";
+    }
+  }
 };
 
 const translateAttrs = (el: Element) => {
@@ -150,6 +173,28 @@ const startObserver = () => {
   });
 };
 
+const translateMessage = (msg: unknown): unknown => {
+  if (active === "ru" || typeof msg !== "string" || !CYR.test(msg)) return msg;
+  const whole = lookup(msg);
+  if (whole) return whole;
+  return msg
+    .split(/(\n|(?<=[.!?])\s+)/)
+    .map((part) => (CYR.test(part) ? lookup(part) || part : part))
+    .join("");
+};
+
+let dialogsPatched = false;
+const patchDialogs = () => {
+  if (dialogsPatched) return;
+  dialogsPatched = true;
+  const a = window.alert.bind(window);
+  const c = window.confirm.bind(window);
+  const p = window.prompt.bind(window);
+  window.alert = (m?: unknown) => a(translateMessage(m) as string);
+  window.confirm = (m?: string) => c(translateMessage(m) as string);
+  window.prompt = (m?: string, d?: string) => p(translateMessage(m) as string, d);
+};
+
 const apply = async (code: string) => {
   active = code;
   observer?.disconnect();
@@ -170,8 +215,13 @@ const apply = async (code: string) => {
 
 export const AutoTranslator = () => {
   useEffect(() => {
+    patchDialogs();
     let stored = "ru";
-    try { stored = localStorage.getItem("app_lang") || "ru"; } catch { /* ignore */ }
+    try {
+      const q = new URLSearchParams(window.location.search).get("lang");
+      if (q && (q === "ru" || loaders[q])) localStorage.setItem("app_lang", q);
+      stored = localStorage.getItem("app_lang") || "ru";
+    } catch { /* ignore */ }
     if (loaders[stored]) apply(stored);
 
     const onChange = (e: Event) => {

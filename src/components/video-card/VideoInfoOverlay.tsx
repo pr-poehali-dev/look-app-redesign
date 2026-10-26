@@ -116,7 +116,7 @@ const VideoInfoOverlay = ({
         </div>
         <span className="text-white/80 text-[11px] md:text-xs truncate max-w-[180px]">{video.song}</span>
         {typeof video.views === "number" && video.views > 0 && (
-          <span className="text-white/50 text-[11px] md:text-xs">· {formatCount(video.views)} просмотров</span>
+          <span className="text-white/50 text-[11px] md:text-xs">{`· ${formatCount(video.views)} просмотров`}</span>
         )}
         {video.templateId && (
           <button

@@ -366,7 +366,7 @@ const CameraPreview = ({
                             }}
                             className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/40 text-xs hover:bg-white/10 hover:text-white/70 transition-colors"
                           >
-                            <span className="text-white/25">+</span> #{tag}
+                            <span className="text-white/25">+</span>{" #" + tag}
                           </button>
                         ))}
                       </div>
