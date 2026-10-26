@@ -151,5 +151,50 @@
     "logout": "Log out",
     "logoutConfirm": "Log out of your account?",
     "title": "Settings"
+  },
+  "pr": {
+    "followers": "Followers",
+    "following": "Following",
+    "likes": "Likes",
+    "noFollowers": "No followers yet",
+    "noFollowing": "You are not following anyone yet",
+    "settings": "Settings",
+    "scanQr": "Scan QR",
+    "lightTheme": "Light theme",
+    "darkTheme": "Dark theme",
+    "logout": "Log out",
+    "logoutConfirm": "Log out of your account?",
+    "analytics": "Analytics",
+    "shop": "Shop",
+    "catalog": "Catalog",
+    "boards": "Boards",
+    "articles": "Articles",
+    "brands": "Brands",
+    "partner": "Partner program",
+    "guide": "Guide"
+  },
+  "ms": {
+    "chats": "Chats",
+    "calls": "Calls",
+    "communities": "Communities",
+    "channels": "Channels",
+    "searchPh": "Search by name, @username or phone",
+    "newChat": "New chat",
+    "online": "online",
+    "typing": "typing",
+    "noMessages": "No messages",
+    "now": "now",
+    "desktopTitle": "Look for desktop",
+    "desktopText": "Select a chat to start messaging.",
+    "encrypted": "Messages are end-to-end encrypted."
+  },
+  "ch": {
+    "photo": "Photo",
+    "file": "File",
+    "location": "Location",
+    "contact": "Contact",
+    "poll": "Poll",
+    "polls": "Polls",
+    "message": "Message..."
   }
 }

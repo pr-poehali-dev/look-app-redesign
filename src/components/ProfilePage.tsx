@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo, useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import Icon from "@/components/ui/icon";
 import SettingsScreen from "./SettingsScreen";
 import AnalyticsScreen from "./profile/AnalyticsScreen";
@@ -25,6 +26,7 @@ import ProfileMediaTabs, { ProfileTab, MediaViewerState } from "./profile/Profil
 const AUTH_URL = "https://functions.poehali.dev/075d6280-020a-48ce-a5e4-64eb3291a01e";
 
 const ProfilePage = () => {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<ProfileTab>("videos");
   const [showSettings, setShowSettings] = useState(false);
   const [showScreen, setShowScreen] = useState<"followers" | "following" | null>(null);
@@ -145,8 +147,8 @@ const ProfilePage = () => {
   };
 
   if (showSettings) return <SettingsScreen onBack={() => setShowSettings(false)} />;
-  if (showScreen === "followers") return <ProfileUserList title="Подписчики" users={followersList} onBack={() => setShowScreen(null)} emptyText="Пока нет подписчиков" />;
-  if (showScreen === "following") return <ProfileUserList title="Подписки" users={followingUsers} onBack={() => setShowScreen(null)} emptyText="Ты пока ни на кого не подписан" showUnfollow />;
+  if (showScreen === "followers") return <ProfileUserList title={t("pr.followers")} users={followersList} onBack={() => setShowScreen(null)} emptyText={t("pr.noFollowers")} />;
+  if (showScreen === "following") return <ProfileUserList title={t("pr.following")} users={followingUsers} onBack={() => setShowScreen(null)} emptyText={t("pr.noFollowing")} showUnfollow />;
   if (showAnalytics) return <AnalyticsScreen onBack={() => setShowAnalytics(false)} />;
   if (showShop) return <ShopScreen onBack={() => setShowShop(false)} />;
   if (showCatalog) return <CatalogScreen onBack={() => setShowCatalog(false)} />;
@@ -209,9 +211,9 @@ const ProfilePage = () => {
 
         <div className="flex flex-1 justify-around">
           {[
-            { value: String(totalLikes), label: "Лайки", action: null },
-            { value: String(followersCount), label: "Подписчики", action: "followers" },
-            { value: String(followingHandles.length), label: "Подписки", action: "following" },
+            { value: String(totalLikes), label: t("pr.likes"), action: null },
+            { value: String(followersCount), label: t("pr.followers"), action: "followers" },
+            { value: String(followingHandles.length), label: t("pr.following"), action: "following" },
           ].map((s, i) => (
             <div key={s.label} className="flex items-center">
               {i > 0 && <div className="w-px h-8 md:h-6 bg-gray-200 mr-4 md:mr-3" />}
@@ -246,7 +248,7 @@ const ProfilePage = () => {
           onClick={() => setShowSettings(true)}
           className="flex-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-sm md:text-xs"
         >
-          Настройки
+          {t("pr.settings")}
         </button>
         <button
           type="button"
@@ -258,22 +260,22 @@ const ProfilePage = () => {
             setTimeout(fire, 60);
             setTimeout(fire, 200);
           }}
-          title="Сканировать QR"
-          aria-label="Сканировать QR"
+          title={t("pr.scanQr")}
+          aria-label={t("pr.scanQr")}
           className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer"
         >
           <Icon name="ScanLine" size={18} className="text-white pointer-events-none" />
         </button>
         <button
           onClick={toggleTheme}
-          title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
+          title={theme === "dark" ? t("pr.lightTheme") : t("pr.darkTheme")}
           className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
         >
           <Icon name={theme === "dark" ? "Sun" : "Moon"} size={18} className="text-gray-600" />
         </button>
         <button
-          onClick={() => { if (confirm("Выйти из аккаунта?")) logout(); }}
-          title="Выйти"
+          onClick={() => { if (confirm(t("pr.logoutConfirm"))) logout(); }}
+          title={t("pr.logout")}
           className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-red-50 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
         >
           <Icon name="LogOut" size={18} className="text-red-500" />
@@ -287,56 +289,56 @@ const ProfilePage = () => {
           className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
         >
           <Icon name="BarChart3" size={15} />
-          Аналитика
+          {t("pr.analytics")}
         </button>
         <button
           onClick={() => setShowShop(true)}
           className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
         >
           <Icon name="Store" size={15} />
-          Магазин
+          {t("pr.shop")}
         </button>
         <button
           onClick={() => setShowCatalog(true)}
           className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
         >
           <Icon name="LayoutGrid" size={15} />
-          Каталог
+          {t("pr.catalog")}
         </button>
         <button
           onClick={() => setShowBoards(true)}
           className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
         >
           <Icon name="Layers" size={15} />
-          Доски
+          {t("pr.boards")}
         </button>
         <button
           onClick={() => setShowArticles(true)}
           className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
         >
           <Icon name="FileText" size={15} />
-          Статьи
+          {t("pr.articles")}
         </button>
         <button
           onClick={() => setShowCollabs(true)}
           className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
         >
           <Icon name="Handshake" fallback="Gift" size={15} />
-          Бренды
+          {t("pr.brands")}
         </button>
         <button
           onClick={() => setShowReferrals(true)}
           className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
         >
           <Icon name="Link" size={15} />
-          Партнёрка
+          {t("pr.partner")}
         </button>
         <button
           onClick={() => setShowGuide(true)}
           className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
         >
           <Icon name="BookOpen" size={15} />
-          Инструкция
+          {t("pr.guide")}
         </button>
       </div>
 

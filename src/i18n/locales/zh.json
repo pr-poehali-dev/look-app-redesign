@@ -151,5 +151,50 @@
     "logout": "退出",
     "logoutConfirm": "退出账号？",
     "title": "设置"
+  },
+  "pr": {
+    "followers": "粉丝",
+    "following": "关注",
+    "likes": "获赞",
+    "noFollowers": "暂无粉丝",
+    "noFollowing": "你还没有关注任何人",
+    "settings": "设置",
+    "scanQr": "扫描二维码",
+    "lightTheme": "浅色主题",
+    "darkTheme": "深色主题",
+    "logout": "退出",
+    "logoutConfirm": "退出账号？",
+    "analytics": "数据分析",
+    "shop": "商店",
+    "catalog": "目录",
+    "boards": "灵感板",
+    "articles": "文章",
+    "brands": "品牌",
+    "partner": "合作计划",
+    "guide": "使用指南"
+  },
+  "ms": {
+    "chats": "聊天",
+    "calls": "通话",
+    "communities": "社群",
+    "channels": "频道",
+    "searchPh": "按名称、@用户名或手机号搜索",
+    "newChat": "新聊天",
+    "online": "在线",
+    "typing": "正在输入",
+    "noMessages": "暂无消息",
+    "now": "刚刚",
+    "desktopTitle": "Look 电脑版",
+    "desktopText": "选择一个聊天开始交流。",
+    "encrypted": "消息已端到端加密。"
+  },
+  "ch": {
+    "photo": "照片",
+    "file": "文件",
+    "location": "位置",
+    "contact": "联系人",
+    "poll": "投票",
+    "polls": "投票",
+    "message": "消息..."
   }
 }

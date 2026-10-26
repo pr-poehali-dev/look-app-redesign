@@ -3,6 +3,7 @@ import { isSlowNetwork } from "@/lib/network";
 import { pollMs } from "@/lib/network";
 import Icon from "@/components/ui/icon";
 import { formatSeen } from "@/utils/formatSeen";
+import { useTranslation } from "react-i18next";
 import UserAvatar from "@/components/ui/user-avatar";
 import ChatRoom from "./ChatRoom";
 import CommunitiesScreen from "./CommunitiesScreen";
@@ -46,6 +47,7 @@ interface MessagesScreenProps {
 const warmedAvatars = new Set<string>();
 
 const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, initialDirectHandle, initialDraft, onDirectConsumed }: MessagesScreenProps = {}) => {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>(initialCommunityId ? (initialKind === "channel" ? "channels" : "communities") : "chats");
   const [openChat, setOpenChat] = useState<Chat | null>(null);
   const [search, setSearch] = useState("");
@@ -300,12 +302,12 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
       {/* Sidebar со списком чатов (на десктопе — фиксированная ширина) */}
       <div className="flex flex-col h-full md:w-[380px] md:flex-shrink-0 md:border-r md:border-white/8 w-full overflow-hidden">
       <div className="flex items-center justify-between px-4 pt-14 md:pt-4 pb-3">
-        <h2 className="text-white font-bold text-xl">Чаты</h2>
+        <h2 className="text-white font-bold text-xl">{t("ms.chats")}</h2>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setTab("calls")}
             className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
-            title="Звонки"
+            title={t("ms.calls")}
           >
             <Icon name="Phone" size={17} className="text-white" />
           </button>
@@ -314,14 +316,14 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#00d4ff] to-[#8b5cf6] hover:opacity-90 active:scale-95 transition-all cursor-pointer text-white text-sm font-medium"
           >
             <Icon name="Users" size={15} className="text-white" />
-            Сообщества
+            {t("ms.communities")}
           </button>
           <button
             onClick={() => setTab("channels")}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] hover:opacity-90 active:scale-95 transition-all cursor-pointer text-white text-sm font-medium"
           >
             <Icon name="Megaphone" size={15} className="text-white" />
-            Каналы
+            {t("ms.channels")}
           </button>
         </div>
       </div>
@@ -332,7 +334,7 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Поиск по имени, @нику или номеру"
+            placeholder={t("ms.searchPh")}
             className="flex-1 bg-transparent text-white text-base outline-none placeholder-white/30"
           />
           {search && (
@@ -372,7 +374,7 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
         if (peopleFiltered.length === 0 && !searchLoading) return null;
         return (
           <div className="px-2 pb-2">
-            <div className="px-3 pb-1 text-white/40 text-[11px] font-semibold uppercase tracking-wide">Новый чат</div>
+            <div className="px-3 pb-1 text-white/40 text-[11px] font-semibold uppercase tracking-wide">{t("ms.newChat")}</div>
             {searchLoading && peopleFiltered.length === 0 ? (
               <div className="flex items-center justify-center py-4">
                 <div className="w-5 h-5 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
@@ -394,7 +396,7 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
                     <p className="text-white font-semibold text-sm truncate">{u.name}</p>
                     <p className="text-white/40 text-xs truncate">
                       {u.handle ? `@${u.handle}` : (u.phone || "")}
-                      <span className={`ml-2 ${u.online ? "text-green-400" : ""}`}>{u.online ? "в сети" : formatSeen(u.seen_ago)}</span>
+                      <span className={`ml-2 ${u.online ? "text-green-400" : ""}`}>{u.online ? t("ms.online") : formatSeen(u.seen_ago)}</span>
                     </p>
                   </div>
                   <Icon name="MessageCircle" size={16} className="text-white/30 flex-shrink-0" />
@@ -446,7 +448,7 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
                     {chat.type === "group" && <Icon name="Users" size={11} className="text-white/30" />}
                     {chat.type === "personal" && (
                       <span className={`text-[10px] ml-1 ${chat.online ? "text-green-400" : "text-white/30"}`}>
-                        {chat.online ? "в сети" : formatSeen(chat.seenAgo)}
+                        {chat.online ? t("ms.online") : formatSeen(chat.seenAgo)}
                       </span>
                     )}
                   </div>
@@ -455,7 +457,7 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
                 <div className="flex items-center justify-between">
                   {chat.typing ? (
                     <span className="text-[#61d4f0] text-xs truncate flex items-center gap-1.5">
-                      <span>{chat.type === "group" ? `${chat.typing} печатает` : "печатает"}</span>
+                      <span>{chat.type === "group" ? `${chat.typing} ${t("ms.typing")}` : t("ms.typing")}</span>
                       <span className="inline-flex gap-0.5">
                         <span className="w-1 h-1 rounded-full bg-[#61d4f0] animate-bounce" style={{ animationDelay: "0ms" }} />
                         <span className="w-1 h-1 rounded-full bg-[#61d4f0] animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -463,7 +465,7 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
                       </span>
                     </span>
                   ) : (
-                    <span className="text-white/50 text-xs truncate">{chat.lastMsg || "Нет сообщений"}</span>
+                    <span className="text-white/50 text-xs truncate">{chat.lastMsg || t("ms.noMessages")}</span>
                   )}
                   {chat.unread > 0 && (
                     <span className="ml-2 min-w-[18px] h-[18px] rounded-full bg-[#fe2c55] text-white text-[10px] font-bold flex items-center justify-center px-1 flex-shrink-0">
@@ -499,10 +501,10 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
             <div className="w-32 h-32 rounded-full bg-white/5 flex items-center justify-center mb-6">
               <Icon name="MessageCircle" size={56} className="text-white/30" />
             </div>
-            <h3 className="text-white text-2xl font-light mb-3">Look для компьютера</h3>
+            <h3 className="text-white text-2xl font-light mb-3">{t("ms.desktopTitle")}</h3>
             <p className="text-white/50 text-sm leading-relaxed max-w-md">
-              Выберите чат, чтобы начать общение.<br />
-              Сообщения защищены сквозным шифрованием.
+              {t("ms.desktopText")}<br />
+              {t("ms.encrypted")}
             </p>
             <div className="mt-8 flex items-center gap-2 text-white/30 text-xs">
               <Icon name="Lock" size={12} />

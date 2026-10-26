@@ -1,4 +1,5 @@
 import { RefObject } from "react";
+import { useTranslation } from "react-i18next";
 import Icon from "@/components/ui/icon";
 
 interface ChatRoomInputBarProps {
@@ -46,18 +47,19 @@ const ChatRoomInputBar = ({
   setShowEmoji,
   sending,
 }: ChatRoomInputBarProps) => {
+  const { t } = useTranslation();
   return (
     <>
       {/* Attach panel */}
       {showAttach && (
         <div className="bg-[#111] border-t border-white/8 px-4 py-4 grid grid-cols-4 gap-4">
           {[
-            { icon: "Image", label: "Фото", action: () => fileRef.current?.click(), show: true },
-            { icon: "FileText", label: "Файл", action: () => docRef.current?.click(), show: true },
-            { icon: "MapPin", label: "Геолокация", action: sendLocation, show: true },
-            { icon: "Contact", label: "Контакт", action: openContactPicker, show: true },
-            { icon: "BarChart3", label: "Опрос", action: () => { setShowAttach(false); setShowPolls(true); }, show: isGroup && communityIsAdmin },
-            { icon: "ListChecks", label: "Опросы", action: () => { setShowAttach(false); setShowPolls(true); }, show: isGroup && !communityIsAdmin },
+            { icon: "Image", label: t("ch.photo"), action: () => fileRef.current?.click(), show: true },
+            { icon: "FileText", label: t("ch.file"), action: () => docRef.current?.click(), show: true },
+            { icon: "MapPin", label: t("ch.location"), action: sendLocation, show: true },
+            { icon: "Contact", label: t("ch.contact"), action: openContactPicker, show: true },
+            { icon: "BarChart3", label: t("ch.poll"), action: () => { setShowAttach(false); setShowPolls(true); }, show: isGroup && communityIsAdmin },
+            { icon: "ListChecks", label: t("ch.polls"), action: () => { setShowAttach(false); setShowPolls(true); }, show: isGroup && !communityIsAdmin },
           ].filter(item => item.show).map((item) => (
             <button key={item.label} onClick={item.action} className="flex flex-col items-center gap-2">
               <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
@@ -94,7 +96,7 @@ const ChatRoomInputBar = ({
               value={input}
               onChange={(e) => { setInput(e.target.value); if (e.target.value.trim()) sendTyping(); }}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-              placeholder="Сообщение..."
+              placeholder={t("ch.message")}
               rows={1}
               className="flex-1 bg-transparent text-white text-base outline-none resize-none placeholder-white/30 max-h-32 leading-snug"
               style={{ scrollbarWidth: "none" }}
