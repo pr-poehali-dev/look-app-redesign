@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import PushToggle from "@/components/profile/PushToggle";
 import { QRCodeCanvas } from "qrcode.react";
 import Icon from "@/components/ui/icon";
@@ -1147,6 +1148,7 @@ const DeleteAccountScreen = ({ onBack }: { onBack: () => void }) => {
 };
 
 const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const lsGet = (k: string, def: string) => { try { return localStorage.getItem(k) ?? def; } catch { return def; } };
   const lsSet = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* ignore */ } };
@@ -1261,7 +1263,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
         <button onClick={onBack} className="p-1">
           <Icon name="ArrowLeft" size={22} className="text-black" />
         </button>
-        <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">Настройки</span>
+        <span className="flex-1 text-center text-black font-bold text-lg md:text-base pr-7">{t("set.title")}</span>
       </div>
 
       {user?.email && emailVerified === false && (
@@ -1287,17 +1289,17 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
       )}
 
       <div className="mt-2">
-        <Row icon="UserPen" label="Редактировать профиль" onPress={() => setScreen("edit_profile")} />
-        <Row icon="Star" label="Подписка и тарифы" onPress={() => setScreen("subscription")} />
-        <Row icon="Bookmark" label="Коллекции" onPress={() => setScreen("saved")} />
-        <Row icon="Languages" label="Язык" onPress={() => setScreen("language")} />
-        <Row icon="Ban" label="Заблокированные" onPress={() => setScreen("blocked")} />
-        <Row icon="QrCode" label="Мой QR-код" onPress={() => setScreen("qr")} />
-        <Row icon="ScanLine" label="Сканировать QR" onPress={() => setScreen("scan_qr")} />
-        <Row icon="Trash2" label="Удалить аккаунт и данные" onPress={() => setScreen("delete_account")} />
+        <Row icon="UserPen" label={t("set.editProfile")} onPress={() => setScreen("edit_profile")} />
+        <Row icon="Star" label={t("set.subscription")} onPress={() => setScreen("subscription")} />
+        <Row icon="Bookmark" label={t("set.collections")} onPress={() => setScreen("saved")} />
+        <Row icon="Languages" label={t("set.language")} onPress={() => setScreen("language")} />
+        <Row icon="Ban" label={t("set.blocked")} onPress={() => setScreen("blocked")} />
+        <Row icon="QrCode" label={t("set.myQr")} onPress={() => setScreen("qr")} />
+        <Row icon="ScanLine" label={t("set.scanQr")} onPress={() => setScreen("scan_qr")} />
+        <Row icon="Trash2" label={t("set.deleteAccount")} onPress={() => setScreen("delete_account")} />
       </div>
 
-      <SectionHeader title="Privacy" />
+      <SectionHeader title={t("set.privacy")} />
       <div>
         <div className="relative">
           <button
@@ -1305,9 +1307,9 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
             className="w-full flex items-center gap-4 px-4 py-4 bg-white border-b border-gray-100"
           >
             <Icon name="Eye" size={22} className="text-[#8b5cf6] flex-shrink-0" />
-            <span className="flex-1 text-black text-base text-left leading-tight">Кто видит публикации</span>
+            <span className="flex-1 text-black text-base text-left leading-tight">{t("set.whoSees")}</span>
             <div className="flex items-center gap-1 bg-gray-100 rounded-xl px-3 py-1.5">
-              <span className="text-gray-500 text-sm">{whoSees}</span>
+              <span className="text-gray-500 text-sm">{whoSees === "Все" ? t("set.all") : whoSees === "Подписчики" ? t("set.followers") : t("set.onlyMe")}</span>
               <Icon name="ChevronDown" size={14} className="text-gray-400" />
             </div>
           </button>
@@ -1319,7 +1321,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
                   onClick={() => { setWhoSees(opt); setShowWhoSees(false); }}
                   className={`w-full text-left px-4 py-3 text-sm border-b border-gray-50 last:border-0 ${whoSees === opt ? "text-[#8b5cf6] font-semibold" : "text-black"}`}
                 >
-                  {opt}
+                  {opt === "Все" ? t("set.all") : opt === "Подписчики" ? t("set.followers") : t("set.onlyMe")}
                 </button>
               ))}
             </div>
@@ -1327,31 +1329,31 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
         </div>
         <div className="flex items-center gap-4 px-4 py-4 bg-white border-b border-gray-100">
           <Icon name="Users" size={22} className="text-[#8b5cf6] flex-shrink-0" />
-          <span className="flex-1 text-black text-base">Показывать подписки</span>
+          <span className="flex-1 text-black text-base">{t("set.showSubs")}</span>
           <Toggle value={showSubscriptions} onChange={() => setShowSubscriptions(!showSubscriptions)} />
         </div>
         <div className="flex items-center gap-4 px-4 py-4 bg-white border-b border-gray-100">
           <Icon name="MessageCircle" size={22} className="text-[#8b5cf6] flex-shrink-0" />
-          <span className="flex-1 text-black text-base">Показывать кнопку чата</span>
+          <span className="flex-1 text-black text-base">{t("set.showChat")}</span>
           <Toggle value={showChatButton} onChange={() => setShowChatButton(!showChatButton)} />
         </div>
-        <Row icon="Bell" label="Уведомления" onPress={() => setScreen("notifications")} />
+        <Row icon="Bell" label={t("set.notifications")} onPress={() => setScreen("notifications")} />
       </div>
 
       <div className="md:hidden">
-        <SectionHeader title="General" />
+        <SectionHeader title={t("set.general")} />
         <div>
-          <Row icon="LifeBuoy" label="Поддержка" onPress={() => setScreen("support")} />
-          <Row icon="Info" label="Условия использования" onPress={() => setScreen("terms")} />
-          <Row icon="Info" label="Политика конфиденциальности" onPress={() => setScreen("privacy")} />
+          <Row icon="LifeBuoy" label={t("set.support")} onPress={() => setScreen("support")} />
+          <Row icon="Info" label={t("set.terms")} onPress={() => setScreen("terms")} />
+          <Row icon="Info" label={t("set.privacyPolicy")} onPress={() => setScreen("privacy")} />
           <button
             onClick={() => {
-              if (confirm("Выйти из аккаунта?")) logout();
+              if (confirm(t("set.logoutConfirm"))) logout();
             }}
             className="w-full flex items-center gap-4 px-4 py-4 bg-white border-b border-gray-100 active:bg-gray-50"
           >
             <Icon name="LogOut" size={22} className="text-[#fe2c55] flex-shrink-0" />
-            <span className="flex-1 text-[#fe2c55] font-semibold text-base text-left">Выйти</span>
+            <span className="flex-1 text-[#fe2c55] font-semibold text-base text-left">{t("set.logout")}</span>
           </button>
         </div>
       </div>

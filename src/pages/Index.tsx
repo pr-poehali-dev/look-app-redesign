@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
+import { useTranslation } from "react-i18next";
 import { pollMs } from "@/lib/network";
 import Icon from "@/components/ui/icon";
 import VideoFeed, { CATEGORIES } from "@/components/VideoFeed";
@@ -38,11 +39,11 @@ const prefetchTabs = () => {
 const isPhone = () => typeof window !== "undefined" && window.innerWidth < 768;
 
 const TABS = [
-  { id: "home", icon: "Home", label: "Главная" },
-  { id: "feed", icon: "LayoutList", label: "Лента" },
-  { id: "add", icon: "Plus", label: "" },
-  { id: "messages", icon: "MessageCircle", label: "Чаты" },
-  { id: "profile", icon: "User", label: "Профиль" },
+  { id: "home", icon: "Home", label: "Главная", key: "home" },
+  { id: "feed", icon: "LayoutList", label: "Лента", key: "feed" },
+  { id: "add", icon: "Plus", label: "", key: "create" },
+  { id: "messages", icon: "MessageCircle", label: "Чаты", key: "chats" },
+  { id: "profile", icon: "User", label: "Профиль", key: "profile" },
 ];
 
 const LIVE_CATEGORY = { id: "live", label: "Трансляции" };
@@ -50,6 +51,7 @@ const LIVE_CATEGORY = { id: "live", label: "Трансляции" };
 const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
 const Index = () => {
+  const { t } = useTranslation();
   useEffect(() => { prefetchTabs(); }, []);
   const { user, logout } = useAuth();
   const [phone, setPhone] = useState(isPhone);
@@ -291,7 +293,7 @@ const Index = () => {
                   </div>
                 )}
                 <span className={`text-sm ${active ? "text-white font-bold" : "text-white/90"}`}>
-                  {isAdd ? "Создать" : tab.label}
+                  {isAdd ? t("tabs.create") : t(`tabs.${tab.key}`)}
                 </span>
               </button>
             );
@@ -394,7 +396,7 @@ const Index = () => {
                   className="cat-toggle-text cat-toggle-mobile-bg pointer-events-auto px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap text-white md:bg-white md:text-black flex items-center gap-1"
                 >
                   {activeCategory === LIVE_CATEGORY.id && <Icon name="Radio" size={13} className="text-[#fe2c55]" />}
-                  {activeCategory === LIVE_CATEGORY.id ? LIVE_CATEGORY.label : (CATEGORIES.find((c) => c.id === activeCategory)?.label || "Все")}
+                  {activeCategory === LIVE_CATEGORY.id ? t("tabs.live") : t(`cat.${activeCategory}`, { defaultValue: CATEGORIES.find((c) => c.id === activeCategory)?.label || t("cat.all") })}
                   <Icon name={(activeCategory === "all" && gridOpenVideoId !== null) ? "ArrowLeft" : (mobileCatOpen ? "ChevronUp" : "ChevronDown")} size={14} className="cat-toggle-icon md:text-black text-white" />
                 </button>
                 {mobileCatOpen && (
@@ -419,7 +421,7 @@ const Index = () => {
                         }}
                       >
                         <Icon name="Radio" size={13} />
-                        {LIVE_CATEGORY.label}
+                        {t("tabs.live")}
                       </button>
                       {CATEGORIES.map((cat) => {
                         const active = activeCategory === cat.id;
@@ -441,7 +443,7 @@ const Index = () => {
                                 : theme === "dark" ? "rgba(255,255,255,0.9)" : "#0d2a18",
                             }}
                           >
-                            {cat.label}
+                            {t(`cat.${cat.id}`, { defaultValue: cat.label })}
                           </button>
                         );
                       })}
@@ -553,7 +555,7 @@ const Index = () => {
                     </div>
                     {tab.label && (
                       <span className={`text-[10px] font-medium transition-opacity ${activeTab === tab.id ? "text-white opacity-100" : "text-white/50 opacity-50"}`}>
-                        {tab.label}
+                        {t(`tabs.${tab.key}`)}
                       </span>
                     )}
                   </>
