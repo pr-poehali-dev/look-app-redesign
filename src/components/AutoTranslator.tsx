@@ -19,6 +19,15 @@ const loaders: Record<string, () => Promise<{ default: Dict }>> = {
 type Rule = [RegExp, string, string];
 
 const RULES: Rule[] = [
+  [/^Заблокировать (.+)\? Пользователь не сможет войти в приложение\.$/, "Block $1? The user will not be able to log in to the app.", "屏蔽 $1？该用户将无法登录应用。"],
+  [/^Удалить (\d+) битых записей со ссылками на short-video\.ru\? Это действие необратимо\.$/, "Delete $1 broken records with links to short-video.ru? This cannot be undone.", "删除 $1 条指向 short-video.ru 的失效记录？此操作不可撤销。"],
+  [/^Удалено: (\d+)$/, "Deleted: $1", "已删除：$1"],
+  [/^Перенести (\d+) legacy-видео на наш CDN\? Будет идти в фоне партиями по 5 шт, неудачные пометятся как скрытые\.$/, "Move $1 legacy videos to our CDN? It runs in the background in batches of 5; failed ones will be marked hidden.", "将 $1 个旧视频迁移到我们的 CDN？将在后台每批 5 个进行，失败的会被标记为隐藏。"],
+  [/^Удалить (\d+) записей навсегда\?$/, "Delete $1 records permanently?", "永久删除 $1 条记录？"],
+  [/^Скрыть (\d+) записей\?$/, "Hide $1 records?", "隐藏 $1 条记录？"],
+  [/^Показать (\d+) записей\?$/, "Show $1 records?", "显示 $1 条记录？"],
+  [/^Найдено (\d+) legacy-записей$/, "Found $1 legacy records", "找到 $1 条旧记录"],
+  [/^\(было (.+) ₽\)$/, "(was $1 ₽)", "（原价 $1 ₽）"],
   [/^·?\s*(\d+)\s*просмотр\S*$/, "· $1 views", "· $1 次浏览"],
   [/^·?\s*(\d+)\s*отз\.$/, "· $1 reviews", "· $1 条评价"],
   [/^(.+?) (назначил админом|снял админ-права с|удалил из группы|заблокировал|разблокировал|передал владельца|закрепил сообщение|открепил сообщение) ?(.*)$/, "$1 $2 $3", "$1 $2 $3"],
@@ -88,7 +97,7 @@ const fill = (tpl: string, m: RegExpMatchArray) => tpl.replace(/\$(\d)/g, (_, n)
 const lookup = (raw: string): string | null => {
   const t = raw.trim();
   if (!t) return null;
-  const hit = dict[t];
+  const hit = dict[t] || dict[t.replace(/\u2011/g, "-")];
   if (hit) return raw.replace(t, hit);
   const tag = t.match(/^(\+?\s*)#(\S+)$/);
   if (tag && dict[tag[2]]) return raw.replace(t, `${tag[1]}#${dict[tag[2]].replace(/\s+/g, "")}`);

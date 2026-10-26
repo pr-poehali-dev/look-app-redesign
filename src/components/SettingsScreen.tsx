@@ -397,7 +397,11 @@ const LegalScreen = ({ onBack, title, settingKey, fallback }: { onBack: () => vo
           {loading ? (
             <p className="text-gray-400 text-sm">Загрузка...</p>
           ) : (
-            <p className="text-gray-600 text-sm md:text-xs leading-relaxed whitespace-pre-wrap">{text}</p>
+            <div className="text-gray-600 text-sm md:text-xs leading-relaxed">
+              {text.split("\n").map((line, i) => (
+                <p key={i} className="whitespace-pre-wrap min-h-[1em]">{line || "\u00a0"}</p>
+              ))}
+            </div>
           )}
         </div>
       </div>
