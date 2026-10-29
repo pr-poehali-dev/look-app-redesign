@@ -282,29 +282,8 @@ const ProfilePage = () => {
         </button>
       </div>
 
-      {/* Аналитика + Магазин + Каталог + Доски + Партнёрка */}
-      <div className="grid grid-cols-4 md:grid-cols-8 gap-1.5 px-4 pb-4 md:px-3 md:pb-3">
-        <button
-          onClick={() => setShowAnalytics(true)}
-          className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
-        >
-          <Icon name="BarChart3" size={15} />
-          {t("pr.analytics")}
-        </button>
-        <button
-          onClick={() => setShowShop(true)}
-          className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
-        >
-          <Icon name="Store" size={15} />
-          {t("pr.shop")}
-        </button>
-        <button
-          onClick={() => setShowCatalog(true)}
-          className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
-        >
-          <Icon name="LayoutGrid" size={15} />
-          {t("pr.catalog")}
-        </button>
+      {/* Доски + Статьи + Инструкция */}
+      <div className="grid grid-cols-3 gap-1.5 px-4 pb-4 md:px-3 md:pb-3">
         <button
           onClick={() => setShowBoards(true)}
           className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
@@ -318,20 +297,6 @@ const ProfilePage = () => {
         >
           <Icon name="FileText" size={15} />
           {t("pr.articles")}
-        </button>
-        <button
-          onClick={() => setShowCollabs(true)}
-          className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
-        >
-          <Icon name="Handshake" fallback="Gift" size={15} />
-          {t("pr.brands")}
-        </button>
-        <button
-          onClick={() => setShowReferrals(true)}
-          className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
-        >
-          <Icon name="Link" size={15} />
-          {t("pr.partner")}
         </button>
         <button
           onClick={() => setShowGuide(true)}
