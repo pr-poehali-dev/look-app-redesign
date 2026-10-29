@@ -174,7 +174,7 @@ def handler(event: dict, context) -> dict:
             if not row: return err('Токен недействителен', 401)
             if row[8]: return err('Аккаунт заблокирован. Обратитесь в поддержку: support@look.com.ru', 403)
             links_val = row[7] if row[7] is not None else []
-            return ok({'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'email': row[3], 'avatar': row[4], 'phone': row[5], 'gender': row[6], 'links': links_val, 'city': row[9], 'is_adult': ((calc_age(row[10]) >= 18) if row[10] else (row[11] >= 18 if row[11] else None)), 'birth_set': bool(row[10] or row[11]), 'birth_date': row[10].isoformat() if row[10] else None}})
+            return ok({'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'email': row[3], 'avatar': row[4], 'phone': row[5], 'gender': row[6], 'links': links_val, 'city': row[9], 'is_adult': ((calc_age(row[10]) >= 18) if row[10] else (row[11] >= 18 if row[11] else None)), 'birth_set': bool(row[10] or row[11]), 'birth_date': row[10].isoformat() if row[10] else None, 'age_confirmed': row[11]}})
 
         if action == 'qr_create':
             code = secrets.token_urlsafe(16)
@@ -457,6 +457,28 @@ def handler(event: dict, context) -> dict:
             return ok({'ok': True, 'reposted': True})
 
         # смена категории видео
+        if action == 'set_age':
+            token = body.get('token') or ''
+            if not token:
+                return err('Нет токена', 401)
+            if not body.get('age14'):
+                return err('Сервис доступен с 14 лет')
+            level = 18 if body.get('age18') else 14
+            conn = get_conn(); cur = conn.cursor()
+            try:
+                cur.execute("SELECT id, birth_date, age_confirmed FROM app_users WHERE token=%s", (token,))
+                row = cur.fetchone()
+                if not row:
+                    return err('Токен недействителен', 401)
+                if row[1] is not None or row[2] is not None:
+                    return err('Возраст уже подтверждён. Для изменения обратитесь в поддержку', 403)
+                cur.execute("UPDATE app_users SET age_confirmed=%s, consent_at=COALESCE(consent_at, NOW()), consent_version=COALESCE(consent_version, %s) WHERE id=%s",
+                            (level, CONSENT_VERSION, row[0]))
+                conn.commit()
+            finally:
+                cur.close(); conn.close()
+            return ok({'ok': True, 'is_adult': level >= 18})
+
         if action == 'set_birth_date':
             token = body.get('token') or ''
             birth = parse_birth(body.get('birth_date'))

@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import PushToggle from "@/components/profile/PushToggle";
 import { QRCodeCanvas } from "qrcode.react";
 import Icon from "@/components/ui/icon";
-import BirthDateInput from "@/components/ui/birth-date-input";
 import { detectCity } from "@/lib/city";
 import UserAvatar from "@/components/ui/user-avatar";
 import { useAuth } from "@/context/AuthContext";
@@ -438,7 +437,6 @@ const EditProfileScreen = ({ onBack }: { onBack: () => void }) => {
     return p.startsWith("+7") ? p.slice(2).trim() : p;
   });
   const [links, setLinks] = useState<ProfileLinkObj[]>(normalizeLinks(user?.links));
-  const [birth, setBirth] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [avatarLoading, setAvatarLoading] = useState(false);
@@ -477,17 +475,6 @@ const EditProfileScreen = ({ onBack }: { onBack: () => void }) => {
     setError("");
     try {
       const token = localStorage.getItem("auth_token") || "";
-      if (!user?.birth_set && birth) {
-        const bres = await fetch(AUTH_API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "set_birth_date", token, birth_date: birth }),
-        });
-        const braw = await bres.json();
-        const bdata = typeof braw.body === "string" ? JSON.parse(braw.body) : braw;
-        if (bdata.error) { setError(bdata.error); setSaving(false); return; }
-        updateUser({ birth_set: true, is_adult: !!bdata.is_adult, birth_date: birth });
-      }
       const phoneClean = phone.replace(/[^\d]/g, "");
       const phoneFull = phoneClean ? "+7" + phoneClean : "";
       const body: Record<string, unknown> = {
@@ -609,25 +596,36 @@ const EditProfileScreen = ({ onBack }: { onBack: () => void }) => {
           )}
         </div>
 
-        {/* Дата рождения */}
+        {/* Возраст */}
         <div className="px-4 pt-5">
-          <label className="text-black text-base">Дата рождения</label>
+          <label className="text-black text-base">Возраст</label>
           {user?.birth_set ? (
             <>
               <div className="mt-2 px-3 py-3 bg-gray-50 text-black text-base rounded-md flex items-center justify-between">
-                <span>{user.birth_date ? user.birth_date.split("-").reverse().join(".") : "Указана"}</span>
+                <span>{user.is_adult ? "Подтверждено: 18+" : "Подтверждено: 14+"}</span>
                 <Icon name="Lock" size={16} className="text-gray-400" />
               </div>
-              <p className="text-[11px] text-gray-400 mt-1">Дата нужна для возрастных ограничений, изменить её можно через поддержку</p>
+              <p className="text-[11px] text-gray-400 mt-1">Нужно для возрастных ограничений, изменить можно через поддержку</p>
             </>
           ) : (
-            <div className="mt-2">
-              <BirthDateInput
-                value={birth}
-                onChange={setBirth}
-                className="w-full px-3 py-3 bg-gray-50 text-black text-base rounded-md outline-none"
-              />
-              <p className="text-[11px] text-gray-400 mt-1">Введите цифрами: 25031998. После сохранения изменить её можно только через поддержку</p>
+            <div className="mt-2 flex gap-2">
+              {[{ l: "Мне есть 18 лет", v: true }, { l: "Мне 14–17 лет", v: false }].map((o) => (
+                <button
+                  key={o.l}
+                  type="button"
+                  onClick={async () => {
+                    const token = localStorage.getItem("auth_token") || "";
+                    const r = await fetch(AUTH_API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "set_age", token, age14: true, age18: o.v }) });
+                    const raw = await r.json();
+                    const d = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+                    if (d.error) setError(d.error);
+                    else updateUser({ birth_set: true, is_adult: !!d.is_adult, age_confirmed: o.v ? 18 : 14 });
+                  }}
+                  className="flex-1 py-3 bg-gray-100 text-black text-sm font-semibold rounded-md"
+                >
+                  {o.l}
+                </button>
+              ))}
             </div>
           )}
         </div>
