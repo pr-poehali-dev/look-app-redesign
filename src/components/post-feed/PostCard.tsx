@@ -178,10 +178,10 @@ const PostCard = ({ post }: { post: Post }) => {
             />
           </button>
           <button onClick={() => setShowComments(true)} className="flex items-center justify-center active:scale-90 transition-transform">
-            <Icon name="MessageDots" size={26} className="action-icon-glyph" />
+            <Icon name="MessageSquare" size={26} className="action-icon-glyph" />
           </button>
           <button onClick={() => { if (guest) return needAuth(); setShowShare(true); }} className="flex items-center justify-center active:scale-90 transition-transform">
-            <Icon name="ShareForward" size={26} className="action-icon-glyph" />
+            <Icon name="Forward" size={26} className="action-icon-glyph" />
           </button>
         </div>
         {(post.hasProducts || post.templateId) && (

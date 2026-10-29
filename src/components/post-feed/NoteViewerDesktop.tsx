@@ -286,11 +286,11 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
                     <span className="text-sm">{formatLikes(likes)}</span>
                   </button>
                   <button onClick={() => inputRef.current?.focus()} className="flex items-center gap-1.5 active:scale-90 transition-transform">
-                    <Icon name="MessageDots" size={26} className="nv-icon" />
+                    <Icon name="MessageSquare" size={26} className="nv-icon" />
                     <span className="text-sm">{commentCount}</span>
                   </button>
                   <button onClick={() => setShowShare(true)} className="active:scale-90 transition-transform">
-                    <Icon name="ShareForward" size={26} className="nv-icon" />
+                    <Icon name="Forward" size={26} className="nv-icon" />
                   </button>
                 </div>
               )}

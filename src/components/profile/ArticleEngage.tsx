@@ -147,11 +147,11 @@ const ArticleEngage = ({ articleId, title, cover, authorName, authorHandle }: Pr
             <Icon name="Bookmark" size={24} className={save.saved ? "text-[#fe2c55] fill-[#fe2c55]" : "text-black"} />
           </button>
           <button onClick={() => listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} className="flex items-center gap-1 active:scale-95 transition-transform">
-            <Icon name="MessageCircle" size={24} className="text-black" />
+            <Icon name="MessageSquare" size={24} className="text-black" />
             <span className="text-black text-xs font-semibold">{count}</span>
           </button>
           <button onClick={() => setShowShare(true)} className="active:scale-95 transition-transform">
-            <Icon name="ShareForward" size={24} className="text-black" />
+            <Icon name="Forward" size={24} className="text-black" />
           </button>
         </div>
       </div>

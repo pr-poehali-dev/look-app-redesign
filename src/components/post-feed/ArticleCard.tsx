@@ -33,12 +33,12 @@ const ArticleCard = ({ a, onOpen }: { a: Article; onOpen: () => void }) => {
           <span className="text-white text-xs font-semibold">{likes.count}</span>
         </button>
         <button onClick={onOpen} className="flex items-center gap-1.5 active:scale-90 transition-transform">
-          <Icon name="MessageCircle" size={22} className="text-white" />
+          <Icon name="MessageSquare" size={22} className="text-white" />
           <span className="text-white text-xs font-semibold">{commentCount}</span>
         </button>
         <div className="ml-auto flex items-center gap-5">
           <button onClick={() => setShowShare(true)} className="active:scale-90 transition-transform">
-            <Icon name="ShareForward" size={22} className="text-white" />
+            <Icon name="Forward" size={22} className="text-white" />
           </button>
           <button onClick={user ? save.toggle : needAuth} className="active:scale-90 transition-transform">
             <Icon name="Bookmark" size={22} className={save.saved ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"} />
