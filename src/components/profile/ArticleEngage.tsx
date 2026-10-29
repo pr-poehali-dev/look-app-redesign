@@ -151,7 +151,7 @@ const ArticleEngage = ({ articleId, title, cover, authorName, authorHandle }: Pr
             <span className="text-black text-xs font-semibold">{count}</span>
           </button>
           <button onClick={() => setShowShare(true)} className="active:scale-95 transition-transform">
-            <Icon name="Forward" size={24} className="text-black" />
+            <Icon name="ShareArrow" size={24} className="text-black" />
           </button>
         </div>
       </div>

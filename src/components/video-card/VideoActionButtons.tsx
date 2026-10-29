@@ -78,7 +78,7 @@ const VideoActionButtons = ({
           title="Поделиться"
         >
           <div className="action-icon-mobile-bg w-8 h-8 rounded-full flex items-center justify-center">
-            <Icon name="Forward" size={22} className="action-icon-glyph" />
+            <Icon name="ShareArrow" size={22} className="action-icon-glyph" />
           </div>
           <span className="action-count-text action-count-mobile-bg px-1 text-white text-[11px] font-semibold">{video.shares}</span>
         </button>
@@ -122,7 +122,7 @@ const VideoActionButtons = ({
         {/* Share */}
         <button onClick={() => { if (guest) return needAuth(); setShowShare(true); }} className="flex flex-col items-center gap-1">
           <div className="action-icon-circle w-12 h-12 rounded-full flex items-center justify-center transition-colors">
-            <Icon name="Forward" size={22} className="action-icon-glyph" />
+            <Icon name="ShareArrow" size={22} className="action-icon-glyph" />
           </div>
           <span className="action-count-text text-white text-xs font-semibold">{video.shares}</span>
         </button>

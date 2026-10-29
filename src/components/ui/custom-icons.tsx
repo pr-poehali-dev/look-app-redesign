@@ -52,8 +52,27 @@ export const CommentFilled: React.FC<LucideProps> = ({ size = 24, color = 'curre
   </svg>
 );
 
+export const ShareArrow: React.FC<LucideProps> = ({ size = 24, color = 'currentColor', className, ...rest }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={1.8}
+    strokeLinejoin="round"
+    strokeLinecap="round"
+    className={className}
+    {...rest}
+  >
+    <path d="M13 5.5 L21.5 12 L13 18.5 L13 15 C8.6 15 5.6 16.6 4 20.2 C3.7 20.8 3.3 20.7 3.2 20.1 C2.8 18.6 2.9 16 4.2 13.7 C5.9 10.7 8.8 9 13 8.8 Z" />
+  </svg>
+);
+
 export const CUSTOM_ICONS: Record<string, React.FC<LucideProps>> = {
   ShareForward,
   MessageDots,
   CommentFilled,
+  ShareArrow,
 };
