@@ -1008,7 +1008,7 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         removals = cur.fetchall()
         _q(cur, "SELECT COUNT(*) AS c FROM {S}.app_users WHERE consent_at IS NOT NULL")
         with_consent = cur.fetchone()['c']
-        _q(cur, "SELECT COUNT(*) AS c FROM {S}.app_users WHERE birth_date IS NULL")
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.app_users WHERE birth_date IS NULL AND age_confirmed IS NULL")
         no_birth = cur.fetchone()['c']
         return {'statusCode': 200, 'headers': _cors(),
                 'body': json.dumps({'ads': ads, 'ages': ages, 'removals': removals,
@@ -1018,11 +1018,11 @@ def _route(cur, conn, action: str, body: dict) -> dict:
     if action == 'users_no_birth':
         limit = _safe_int(body.get('limit'), 100, 300)
         offset = _safe_int(body.get('offset'), 0)
-        _q(cur, "SELECT COUNT(*) AS c FROM {S}.app_users WHERE birth_date IS NULL")
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.app_users WHERE birth_date IS NULL AND age_confirmed IS NULL")
         total = cur.fetchone()['c']
         _q(cur, """
             SELECT id, name, handle, email, avatar, created_at
-            FROM {S}.app_users WHERE birth_date IS NULL
+            FROM {S}.app_users WHERE birth_date IS NULL AND age_confirmed IS NULL
             ORDER BY created_at DESC NULLS LAST LIMIT %s OFFSET %s
         """, (limit, offset))
         return {'statusCode': 200, 'headers': _cors(),
