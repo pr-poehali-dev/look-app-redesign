@@ -83,22 +83,23 @@ def handler(event: dict, context) -> dict:
             phone = ''.join(ch for ch in phone_raw if ch.isdigit() or ch == '+')
             if phone and not phone.startswith('+'):
                 phone = '+' + phone.lstrip('+')
-            if not all([name, handle, email, password, phone]):
+            if not all([name, handle, email, password]):
                 return err('Заполни все поля')
             if not body.get('consent'):
                 return err('Нужно принять условия и дать согласие на обработку персональных данных')
-            birth = parse_birth(body.get('birth_date'))
-            if not birth:
-                return err('Укажи дату рождения')
-            if calc_age(birth) < 14:
-                return err('Регистрация доступна с 14 лет')
+            if not body.get('age14'):
+                return err('Подтверди, что тебе есть 14 лет')
+            age_confirmed = 18 if body.get('age18') else 14
             if len(password) < 6:
                 return err('Пароль минимум 6 символов')
             if not re.match(r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$', email):
                 return err('Введи корректный email')
-            digits_only = ''.join(ch for ch in phone if ch.isdigit())
-            if len(digits_only) < 10:
-                return err('Введи корректный номер телефона')
+            if phone:
+                digits_only = ''.join(ch for ch in phone if ch.isdigit())
+                if len(digits_only) < 10:
+                    return err('Введи корректный номер телефона')
+            else:
+                phone = None
             conn = get_conn(); cur = conn.cursor()
             try:
                 cur.execute("SELECT id FROM app_users WHERE email=%s", (email,))
@@ -107,13 +108,14 @@ def handler(event: dict, context) -> dict:
                 cur.execute("SELECT id FROM app_users WHERE lower(handle)=lower(%s) LIMIT 1", (handle,))
                 if cur.fetchone():
                     return err('Такой никнейм уже занят')
-                cur.execute("SELECT id FROM app_users WHERE phone=%s", (phone,))
-                if cur.fetchone():
-                    return err('Такой номер телефона уже занят')
+                if phone:
+                    cur.execute("SELECT id FROM app_users WHERE phone=%s", (phone,))
+                    if cur.fetchone():
+                        return err('Такой номер телефона уже занят')
                 uid = 'u_' + secrets.token_hex(8)
                 token = secrets.token_hex(32)
-                cur.execute("INSERT INTO app_users (id,name,handle,email,password_hash,token,phone,birth_date,consent_at,consent_version) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,NOW(),%s)",
-                    (uid, name, handle, email, hash_pw(password), token, phone, birth, CONSENT_VERSION))
+                cur.execute("INSERT INTO app_users (id,name,handle,email,password_hash,token,phone,age_confirmed,consent_at,consent_version) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,NOW(),%s)",
+                    (uid, name, handle, email, hash_pw(password), token, phone, age_confirmed, CONSENT_VERSION))
                 conn.commit()
             finally:
                 cur.close(); conn.close()
@@ -127,7 +129,7 @@ def handler(event: dict, context) -> dict:
                 urllib.request.urlopen(req, timeout=10)
             except Exception as e:
                 print(f'verify_send error: {e}')
-            return ok({'token': token, 'user': {'id': uid, 'name': name, 'handle': handle, 'email': email, 'avatar': None, 'phone': phone, 'is_adult': calc_age(birth) >= 18}, 'verify_sent': True})
+            return ok({'token': token, 'user': {'id': uid, 'name': name, 'handle': handle, 'email': email, 'avatar': None, 'phone': phone, 'is_adult': age_confirmed >= 18, 'birth_set': True}, 'verify_sent': True})
 
         if action == 'login':
             email = ''.join((body.get('email') or '').split()).lower()
@@ -136,12 +138,12 @@ def handler(event: dict, context) -> dict:
                 return err('Введи email и пароль')
             conn = get_conn(); cur = conn.cursor()
             try:
-                cur.execute("SELECT id,name,handle,email,avatar,token,password_hash,firebase_hash,firebase_salt,phone,COALESCE(banned,FALSE),birth_date FROM app_users WHERE email=%s",
+                cur.execute("SELECT id,name,handle,email,avatar,token,password_hash,firebase_hash,firebase_salt,phone,COALESCE(banned,FALSE),birth_date,age_confirmed FROM app_users WHERE email=%s",
                     (email,))
                 row = cur.fetchone()
                 if not row:
                     return err('Неверный email или пароль', 401)
-                uid, name, handle, em, avatar, token, pw_hash, fb_hash, fb_salt, phone, banned, birth_db = row
+                uid, name, handle, em, avatar, token, pw_hash, fb_hash, fb_salt, phone, banned, birth_db, age_conf_db = row
                 if pw_hash == hash_pw(password):
                     pass
                 elif fb_hash and fb_salt and verify_firebase_scrypt(password, fb_salt, fb_hash):
@@ -158,21 +160,21 @@ def handler(event: dict, context) -> dict:
                     conn.commit()
             finally:
                 cur.close(); conn.close()
-            return ok({'token': token, 'user': {'id': uid, 'name': name, 'handle': handle, 'email': em, 'avatar': avatar, 'phone': phone, 'is_adult': (calc_age(birth_db) >= 18) if birth_db else None}})
+            return ok({'token': token, 'user': {'id': uid, 'name': name, 'handle': handle, 'email': em, 'avatar': avatar, 'phone': phone, 'is_adult': ((calc_age(birth_db) >= 18) if birth_db else (age_conf_db >= 18 if age_conf_db else None)), 'birth_set': bool(birth_db or age_conf_db)}})
 
         if action == 'me':
             token = body.get('token') or ''
             if not token: return err('Нет токена', 401)
             conn = get_conn(); cur = conn.cursor()
             try:
-                cur.execute("SELECT id,name,handle,email,avatar,phone,gender,links,COALESCE(banned,FALSE),city,birth_date FROM app_users WHERE token=%s", (token,))
+                cur.execute("SELECT id,name,handle,email,avatar,phone,gender,links,COALESCE(banned,FALSE),city,birth_date,age_confirmed FROM app_users WHERE token=%s", (token,))
                 row = cur.fetchone()
             finally:
                 cur.close(); conn.close()
             if not row: return err('Токен недействителен', 401)
             if row[8]: return err('Аккаунт заблокирован. Обратитесь в поддержку: support@look.com.ru', 403)
             links_val = row[7] if row[7] is not None else []
-            return ok({'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'email': row[3], 'avatar': row[4], 'phone': row[5], 'gender': row[6], 'links': links_val, 'city': row[9], 'is_adult': (calc_age(row[10]) >= 18) if row[10] else None, 'birth_set': bool(row[10]), 'birth_date': row[10].isoformat() if row[10] else None}})
+            return ok({'user': {'id': row[0], 'name': row[1], 'handle': row[2], 'email': row[3], 'avatar': row[4], 'phone': row[5], 'gender': row[6], 'links': links_val, 'city': row[9], 'is_adult': ((calc_age(row[10]) >= 18) if row[10] else (row[11] >= 18 if row[11] else None)), 'birth_set': bool(row[10] or row[11]), 'birth_date': row[10].isoformat() if row[10] else None}})
 
         if action == 'qr_create':
             code = secrets.token_urlsafe(16)

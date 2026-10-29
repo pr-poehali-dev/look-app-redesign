@@ -45,12 +45,14 @@ def handler(event: dict, context) -> dict:
         schema = os.environ['MAIN_DB_SCHEMA']
         is_adult = False
         if user_id:
-            cur.execute(f"SELECT birth_date FROM {schema}.app_users WHERE id = %s", (user_id,))
+            cur.execute(f"SELECT birth_date, age_confirmed FROM {schema}.app_users WHERE id = %s", (user_id,))
             br = cur.fetchone()
             if br and br[0]:
                 import datetime as _dt
                 _t = _dt.date.today()
                 is_adult = (_t.year - br[0].year - ((_t.month, _t.day) < (br[0].month, br[0].day))) >= 18
+            elif br and br[1]:
+                is_adult = br[1] >= 18
         age_cond = "" if is_adult else "AND v.age_rating <> '18+' "
         base_select = (
             f"SELECT v.id, v.url, v.author, v.handle, v.description, v.hashtags, "

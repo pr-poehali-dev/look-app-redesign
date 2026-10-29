@@ -120,12 +120,14 @@ def handler(event: dict, context) -> dict:
     try:
         uid = (params.get('user_id') or '').strip()
         if uid:
-            cur.execute(f"SELECT birth_date FROM {schema}.app_users WHERE id = %s", (uid,))
+            cur.execute(f"SELECT birth_date, age_confirmed FROM {schema}.app_users WHERE id = %s", (uid,))
             br = cur.fetchone()
             if br and br[0]:
                 import datetime
                 t = datetime.date.today()
                 adult = (t.year - br[0].year - ((t.month, t.day) < (br[0].month, br[0].day))) >= 18
+            elif br and br[1]:
+                adult = br[1] >= 18
         if kind == 'log':
             qn = ' '.join(q.lower().split())[:60]
             if len(qn) >= 2 and not qn.startswith('-'):

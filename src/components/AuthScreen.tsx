@@ -1,4 +1,3 @@
-import BirthDateInput from "@/components/ui/birth-date-input";
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { LegalScreen } from "@/components/SettingsScreen";
@@ -19,7 +18,8 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [birthDate, setBirthDate] = useState("");
+  const [age14, setAge14] = useState(false);
+  const [age18, setAge18] = useState(false);
   const [consent, setConsent] = useState(false);
   const [legalDoc, setLegalDoc] = useState<"terms" | "privacy" | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -56,7 +56,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
     if (mode === "login") {
       err = await login(email.trim(), password);
     } else {
-      err = await register(name.trim(), handle.trim(), email.trim(), password, phone.trim(), birthDate, consent);
+      err = await register(name.trim(), handle.trim(), email.trim(), password, phone.trim(), age18, consent);
     }
     if (err) setError(err);
     setLoading(false);
@@ -77,21 +77,12 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
   };
 
   const phoneDigits = phone.replace(/\D/g, "");
-  const phoneValid = phoneDigits.length === 11;
+  const phoneValid = phoneDigits.length === 0 || phoneDigits.length === 11;
   const emailRe = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
   const emailValid = emailRe.test(email.trim());
-  const today = new Date().toISOString().slice(0, 10);
-  const ageYears = (() => {
-    if (!birthDate) return null;
-    const b = new Date(birthDate);
-    if (Number.isNaN(b.getTime()) || birthDate > today) return null;
-    const n = new Date();
-    return n.getFullYear() - b.getFullYear() - ((n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) ? 1 : 0);
-  })();
-  const birthOk = ageYears !== null && ageYears >= 14;
   const isValid = mode === "login"
     ? email.trim() && password
-    : name.trim() && handle.trim() && emailValid && password.length >= 6 && phoneValid && !!birthDate && birthOk && consent;
+    : name.trim() && handle.trim() && emailValid && password.length >= 6 && phoneValid && age14 && consent;
 
   if (showGuide) {
     return (
@@ -146,7 +137,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "login" ? "bg-white text-black shadow-sm" : "text-gray-400"}`}
           >Войти</button>
           <button
-            onClick={() => { setMode("register"); setError(""); setName(""); setHandle(""); setEmail(""); setPhone(""); setPassword(""); setBirthDate(""); setConsent(false); setShowPassword(false); }}
+            onClick={() => { setMode("register"); setError(""); setName(""); setHandle(""); setEmail(""); setPhone(""); setPassword(""); setAge14(false); setAge18(false); setConsent(false); setShowPassword(false); }}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "register" ? "bg-white text-black shadow-sm" : "text-gray-400"}`}
           >Регистрация</button>
         </div>
@@ -177,7 +168,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Номер телефона <span className="text-[#fe2c55]">*</span></label>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Номер телефона <span className="text-gray-400 normal-case font-normal">(необязательно)</span></label>
               <input
                 value={phone}
                 autoComplete="off"
@@ -193,18 +184,15 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
                 <p className="text-[11px] text-gray-400">По номеру тебя смогут найти друзья из контактов</p>
               )}
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Дата рождения <span className="text-[#fe2c55]">*</span></label>
-              <BirthDateInput
-                value={birthDate}
-                onChange={setBirthDate}
-                className="w-full px-4 py-3 rounded-xl bg-gray-100 text-black text-sm outline-none focus:ring-2 focus:ring-[#8b5cf6]/30"
-              />
-              {birthDate && !birthOk ? (
-                <p className="text-[11px] text-[#fe2c55]">Регистрация доступна с 14 лет</p>
-              ) : (
-                <p className="text-[11px] text-gray-400">Нужна для возрастных ограничений контента</p>
-              )}
+            <div className="flex flex-col gap-2">
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input type="checkbox" checked={age14} onChange={e => { setAge14(e.target.checked); if (!e.target.checked) setAge18(false); }} className="mt-0.5 w-4 h-4 accent-[#fe2c55] flex-shrink-0" />
+                <span className="text-xs text-gray-600 leading-snug">Мне есть 14 лет <span className="text-[#fe2c55]">*</span></span>
+              </label>
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input type="checkbox" checked={age18} disabled={!age14} onChange={e => setAge18(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#fe2c55] flex-shrink-0" />
+                <span className="text-xs text-gray-600 leading-snug">Мне есть 18 лет (откроет контент 18+)</span>
+              </label>
             </div>
           </>
         )}
