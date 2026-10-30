@@ -148,7 +148,7 @@ self.addEventListener("notificationclick", (e) => {
     }
     return;
   }
-  const accept = e.action === "accept";
+  const accept = e.action !== "decline";
   e.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
       if (list.length) {
