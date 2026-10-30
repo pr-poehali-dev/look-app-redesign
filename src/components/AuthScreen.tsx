@@ -13,7 +13,8 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
   const { login, register } = useAuth();
   const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [showGuide, setShowGuide] = useState(false);
-      const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(() => (initialMode === "login" ? localStorage.getItem("look_saved_email") || "" : ""));
+  const [rememberEmail, setRememberEmail] = useState(() => !!localStorage.getItem("look_saved_email"));
     const [password, setPassword] = useState("");
   const [age14, setAge14] = useState(false);
   const [age18, setAge18] = useState(false);
@@ -52,6 +53,10 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
     let err: string | null = null;
     if (mode === "login") {
       err = await login(email.trim(), password);
+      if (!err) {
+        if (rememberEmail) localStorage.setItem("look_saved_email", email.trim());
+        else localStorage.removeItem("look_saved_email");
+      }
     } else {
       err = await register("", "", email.trim(), password, "", age18, consent);
     }
@@ -114,7 +119,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
         {/* Tabs */}
         <div className="flex bg-gray-100 rounded-xl p-1 mb-1">
           <button
-            onClick={() => { setMode("login"); setError(""); setEmail(""); setPassword(""); setShowPassword(false); }}
+            onClick={() => { setMode("login"); setError(""); setEmail(localStorage.getItem("look_saved_email") || ""); setPassword(""); setShowPassword(false); }}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "login" ? "bg-white text-black shadow-sm" : "text-gray-400"}`}
           >Войти</button>
           <button
@@ -178,6 +183,18 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
             </button>
           )}
         </div>
+
+        {mode === "login" && (
+          <label className="flex items-center gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={rememberEmail}
+              onChange={e => setRememberEmail(e.target.checked)}
+              className="w-4 h-4 accent-[#8b5cf6]"
+            />
+            <span className="text-xs text-gray-500">Запомнить email на этом устройстве</span>
+          </label>
+        )}
 
         {mode === "register" && (
           <label className="flex items-start gap-2.5 cursor-pointer">
