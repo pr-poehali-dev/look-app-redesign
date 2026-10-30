@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, startTransition } from "react";
 import VideoCard, { VideoData } from "./VideoCard";
 import Icon from "@/components/ui/icon";
 import { useUserMedia } from "@/context/UserMediaContext";
@@ -358,7 +358,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
     const commit = () => {
       const h = container.clientHeight || 1;
       const index = Math.round(container.scrollTop / h);
-      setActiveIndex((prev) => (prev === index ? prev : index));
+      startTransition(() => setActiveIndex((prev) => (prev === index ? prev : index)));
     };
     const handleScroll = () => {
       if (raf) return;
@@ -372,7 +372,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
           return;
         }
         if (timer) clearTimeout(timer);
-        timer = setTimeout(() => { timer = null; commit(); }, 90);
+        timer = setTimeout(() => { timer = null; commit(); }, 50);
       });
     };
     container.addEventListener("scroll", handleScroll, { passive: true });
@@ -401,6 +401,8 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
           WebkitOverflowScrolling: "touch",
           touchAction: "pan-y",
           overflowAnchor: "none",
+          overscrollBehaviorY: "contain",
+          willChange: "scroll-position",
         }}
       >
         {!dbLoaded ? (
@@ -417,10 +419,10 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
               key={video.id}
               ref={(el) => { slideRefs.current[i] = el; }}
               className={`w-full snap-start snap-always flex md:items-center md:justify-center`}
-              style={{ height: "100%", background: "var(--look-bg)" }}
+              style={{ height: "100%", background: "var(--look-bg)", contain: "layout paint style" }}
             >
               <div className="w-full md:w-auto md:h-[calc(100vh-24px)] h-full" style={{ background: "var(--look-bg)" }}>
-                {distance <= 1 && (
+                {distance <= 2 && (
                   <VideoCard video={video} isActive={activeIndex === i} preloadLevel={preloadLevel} />
                 )}
               </div>
