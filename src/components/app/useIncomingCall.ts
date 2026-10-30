@@ -156,6 +156,12 @@ export const useIncomingCall = (user: AuthUser) => {
     }
     const onMsg = (ev: MessageEvent) => {
       const m = ev.data;
+      if (m && m.type === "call_cancel") {
+        stopRingtone();
+        if (autoTimeoutRef.current) { clearTimeout(autoTimeoutRef.current); autoTimeoutRef.current = null; }
+        setIncomingCall(null);
+        return;
+      }
       if (m && m.type === "accept_call" && m.call) {
         if (m.call.roomId) markHandled(m.call.roomId);
         stopRingtone();
@@ -207,7 +213,7 @@ export const useIncomingCall = (user: AuthUser) => {
           }
         }
       } catch (e) { void e; }
-    }, 5000);
+    }, 2000);
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
       if (autoTimeoutRef.current) clearTimeout(autoTimeoutRef.current);

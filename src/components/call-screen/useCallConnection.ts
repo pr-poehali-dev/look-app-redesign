@@ -326,6 +326,8 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
         // Свежий offer, который уже лежит в комнате к моменту принятия входящего,
         // НЕЛЬЗЯ выкидывать как stale — иначе callee не создаст answer и ICE не стартует.
         const freshOffers: { id: number; type: string; payload: unknown }[] = [];
+        let lastOfferId = 0;
+        let lastPeerEndId = 0;
         const freshIce: { id: number; type: string; payload: unknown }[] = [];
         for (let i = 0; i < 8; i++) {
           const r = await fetch(
@@ -337,7 +339,9 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
           const sigs = data.signals || [];
           if (sigs.length === 0) break;
           let maxId = lastSigIdRef.current;
-          for (const s of sigs as { id: number; type: string; payload: unknown }[]) {
+          for (const s of sigs as { id: number; type: string; payload: unknown; from_user?: string }[]) {
+            if (s.type === "offer" && s.id > lastOfferId) lastOfferId = s.id;
+            if ((s.type === "end" || s.type === "call_declined") && s.from_user && s.from_user !== myId && s.id > lastPeerEndId) lastPeerEndId = s.id;
             // offer оставляем на обработку — берём только самый свежий
             if (s.type === "offer" && !isCaller.current) {
               freshOffers.push(s);
@@ -353,6 +357,13 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
           if (sigs.length < 50) break;
         }
         console.log("[CallScreen] cleared", totalSkipped, "stale signals, kept", freshOffers.length, "offers, since_id =", lastSigIdRef.current);
+        if (!isCaller.current && lastOfferId > 0 && lastPeerEndId > lastOfferId) {
+          endedRef.current = true;
+          setEndReason("Собеседник завершил звонок");
+          setStatus("ended");
+          setTimeout(() => onEnd(), 1500);
+          return;
+        }
         pendingFreshOffersRef.current = freshOffers;
         pendingFreshIceRef.current = freshIce.slice(-200);
       } catch (e) { void e; }
@@ -897,7 +908,7 @@ export const useCallConnection = ({ name, mode, myId, peerId, onEnd, isCaller: i
           room_id: `incoming_${peerId}`,
           to_user: peerId,
           type: "call_cancel",
-          payload: {},
+          payload: { roomId },
         }),
       }).catch(() => {});
     }

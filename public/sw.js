@@ -97,6 +97,24 @@ self.addEventListener("push", (e) => {
     );
     return;
   }
+  if (d.type === "call_cancel") {
+    e.waitUntil(
+      self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+        list.forEach((c) => c.postMessage({ type: "call_cancel", roomId: d.roomId }));
+        return self.registration.showNotification(d.callerName || "Пропущенный звонок", {
+          body: "Пропущенный звонок",
+          icon: "/icon-192.png",
+          badge: "/icon-192.png",
+          tag: "incoming-call",
+          renotify: false,
+          requireInteraction: false,
+          silent: true,
+          data: { type: "notify", url: "/?tab=messages" },
+        });
+      })
+    );
+    return;
+  }
   if (d.type !== "call") return;
   const title = (d.callerName || "Входящий звонок");
   const body = d.mode === "video" ? "Видеозвонок" : "Аудиозвонок";

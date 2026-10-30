@@ -1863,6 +1863,19 @@ def handler(event: dict, context) -> dict:
                         "DELETE FROM sa_signaling WHERE created_at < NOW() - INTERVAL '5 minutes'"
                     )
                 conn.commit()
+                if sig_type == 'call_cancel':
+                    try:
+                        cancel_room = (payload.get('roomId') if isinstance(payload, dict) else '') or room_id
+                        cur.execute("SELECT name FROM app_users WHERE id = %s", (user_id,))
+                        nm = cur.fetchone()
+                        push_mod.send_call_push(cur, conn, to_user, {
+                            'type': 'call_cancel',
+                            'roomId': cancel_room,
+                            'callerName': (nm[0] if nm and nm[0] else '') or 'Пропущенный звонок',
+                        })
+                    except Exception as e:
+                        conn.rollback()
+                        print(f'call cancel push error: {e}')
                 if sig_type == 'call_invite' and isinstance(payload, dict):
                     call_data = {
                         'type': 'call',
