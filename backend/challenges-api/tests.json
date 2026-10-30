@@ -1,0 +1,9 @@
+{
+  "tests": [
+    {"name": "OPTIONS", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+    {"name": "GET current", "method": "GET", "path": "/?action=current", "expectedStatus": 200},
+    {"name": "GET my без пользователя", "method": "GET", "path": "/?action=my", "expectedStatus": 401},
+    {"name": "GET best без id", "method": "GET", "path": "/?action=best", "expectedStatus": 400},
+    {"name": "POST join без пользователя", "method": "POST", "path": "/?action=join", "body": {"challenge_id": 1}, "expectedStatus": 401}
+  ]
+}

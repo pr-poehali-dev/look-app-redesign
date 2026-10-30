@@ -15,6 +15,9 @@ import SearchOverlay from "./post-feed/SearchOverlay";
 import { Post, GET_PHOTOS_URL, formatTime, parseServerDate } from "./post-feed/PostFeedTypes";
 import { useBulkCounts } from "@/hooks/useBulkCounts";
 import { readFeedCache, writeFeedCache } from "@/lib/feedCache";
+import { mapPost } from "@/components/post-feed/mapPost";
+import TopicsScreen from "@/components/topics/TopicsScreen";
+import ChallengeBanner from "@/components/challenges/ChallengeBanner";
 import { isSlowNetwork } from "@/lib/network";
 import { useFollowingList } from "@/hooks/useFollowing";
 import { detectCity, normCity } from "@/lib/city";
@@ -33,59 +36,6 @@ const SCOPES: { id: FeedScope; label: string }[] = [
   { id: "nearby", label: "Рядом" },
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mapPost = (v: any, isVideo: boolean, user: ReturnType<typeof useAuth>["user"]): Post => {
-  const desc: string = v.description || "";
-  const hashtagsField: string = v.hashtags || "";
-  const tags = hashtagsField
-    ? (hashtagsField.match(/#\S+/g) || hashtagsField.split(/[\s,]+/).filter(Boolean).map((t: string) => t.replace(/^#/, ""))).map((t: string) => t.replace(/^#/, ""))
-    : (desc.match(/#\S+/g) || []).map((t: string) => t.slice(1));
-  const caption = desc || (v.type === "text" ? "Пост" : isVideo ? "Видео" : "Фото");
-  // Аватарка: берём из БД если есть. Подставляем свою — только если это пост текущего пользователя
-  const isMyPost = (v.handle && user?.handle && v.handle === user.handle)
-    || (v.author && user?.name && v.author === user.name)
-    || v.author === "Я";
-  const dbAvatar = v.avatar || v.user_avatar || null;
-  const createdAt = v.created_at ? parseServerDate(v.created_at).getTime() : undefined;
-  return {
-    id: v.id,
-    author: (v.author === "Я" || !v.author) ? (user?.name || "Пользователь") : v.author,
-    handle: (v.handle === "user" || !v.handle) ? (user?.handle || user?.name || "user") : v.handle,
-    avatar: dbAvatar || (isMyPost ? (user?.avatar || "") : ""),
-    image: v.url,
-    thumbnail: v.thumbnail || undefined,
-    caption,
-    hashtags: tags,
-    likes: parseInt(v.likes) || 0,
-    comments: parseInt(v.comments) || 0,
-    time: formatTime(v.created_at),
-    createdAt,
-    isVideo,
-    isText: v.type === "text",
-    category: v.category || null,
-    templateId: v.template_id || null,
-    hasProducts: !!v.has_products,
-    views: typeof v.views === "number" ? v.views : undefined,
-    city: v.city || null,
-    isVerified: !!v.is_verified,
-    isAd: !!v.is_ad,
-    adLabel: v.ad_label || null,
-    images: Array.isArray(v.images) ? v.images : [],
-    location: v.place || undefined,
-    address: v.address || null,
-    workHours: v.work_hours || null,
-    tips: v.tips || null,
-    seriesTitle: v.series_title || null,
-    brand: v.brand || null,
-    personalExperience: !!v.personal_experience,
-    ageRating: v.age_rating || null,
-    adErid: v.ad_erid || null,
-    adAdvertiser: v.ad_advertiser || null,
-    repostedBy: v.reposted_by || null,
-    repostedByAvatar: v.reposted_by_avatar || null,
-  };
-};
-
 const PostFeed = () => {
   const { user, token, updateUser } = useAuth();
   const [posts, setPosts] = useState<Post[]>(() => {
@@ -101,6 +51,18 @@ const PostFeed = () => {
   const myStoryInputRef = useRef<HTMLInputElement>(null);
   const followingHandles = useFollowingList();
   const [scope, setScope] = useState<FeedScope>("recommend");
+  const [ideasOnly, setIdeasOnly] = useState(false);
+  const [showTopics, setShowTopics] = useState(false);
+  useEffect(() => {
+    try { setIdeasOnly(localStorage.getItem("feed_ideas_only") === "1"); } catch { /* ignore */ }
+  }, []);
+  const toggleIdeas = () => {
+    setIdeasOnly((v) => {
+      const next = !v;
+      try { localStorage.setItem("feed_ideas_only", next ? "1" : "0"); } catch { /* ignore */ }
+      return next;
+    });
+  };
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window === "undefined") return "masonry";
     return (localStorage.getItem("feed_view_mode") as ViewMode) || "masonry";
@@ -295,10 +257,11 @@ const PostFeed = () => {
 
   const activeCategory = FEED_CATEGORIES.find(c => c.id === categoryId);
   const categoryPosts = useMemo(() => {
-    if (!activeCategory || activeCategory.id === "recommend") return scopedPosts;
-    if (activeCategory.id === "videos") return scopedPosts.filter(p => p.isVideo);
-    return scopedPosts.filter(p => activeCategory.match.includes((p.category || "").toLowerCase()));
-  }, [scopedPosts, activeCategory]);
+    const base = ideasOnly ? scopedPosts.filter(p => p.article || !p.isCommercial) : scopedPosts;
+    if (!activeCategory || activeCategory.id === "recommend") return base;
+    if (activeCategory.id === "videos") return base.filter(p => p.isVideo);
+    return base.filter(p => activeCategory.match.includes((p.category || "").toLowerCase()));
+  }, [scopedPosts, activeCategory, ideasOnly]);
   const headerH = scope === "articles" ? 156 : 200;
 
   const seenHandles = new Set<string>();
@@ -348,6 +311,12 @@ const PostFeed = () => {
         />
       )}
 
+      {showTopics && (
+        <div className="fixed inset-0 z-[10000] bg-black">
+          <TopicsScreen onBack={() => setShowTopics(false)} />
+        </div>
+      )}
+
       {showSearch && (
         <SearchOverlay
           initialQuery={searchSeed}
@@ -373,6 +342,24 @@ const PostFeed = () => {
             </button>
           ))}
         </div>
+        <button
+          onClick={toggleIdeas}
+          title="Только идеи и подборки"
+          aria-label="Только идеи и подборки"
+          aria-pressed={ideasOnly}
+          className={`h-8 px-2.5 rounded-full flex items-center gap-1 flex-shrink-0 text-[11px] font-semibold ${ideasOnly ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white/70"}`}
+        >
+          <Icon name="Lightbulb" size={14} />
+          Идеи
+        </button>
+        <button
+          onClick={() => setShowTopics(true)}
+          title="Темы"
+          aria-label="Темы"
+          className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+        >
+          <Icon name="Hash" size={18} className="text-white" />
+        </button>
         <button onClick={() => { setSearchSeed(""); setShowSearch(true); }} className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
           <Icon name="Search" size={18} className="text-white" />
         </button>
@@ -502,6 +489,7 @@ const PostFeed = () => {
           <div className="md:max-w-[620px] md:mx-auto">
             {/* Резерв под фиксированную панель сторис */}
             <div className="flex-shrink-0" style={{ height: headerH }} aria-hidden />
+            {!loading && <div className="px-3 pb-2"><ChallengeBanner /></div>}
             {loading ? (
               <div className="flex items-center justify-center py-20">
                 <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />

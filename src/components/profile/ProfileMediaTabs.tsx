@@ -4,10 +4,11 @@ import UserArticlesList from "./UserArticlesList";
 import { useUserMedia } from "@/context/UserMediaContext";
 import { useUserArticles } from "@/hooks/useArticles";
 import { categoryLabel } from "./videoCategories";
+import ProfileExtraTabs from "./ProfileExtraTabs";
 
 type UserMedia = ReturnType<typeof useUserMedia>;
 
-export type ProfileTab = "videos" | "posts" | "articles" | "reposts";
+export type ProfileTab = "videos" | "posts" | "articles" | "reposts" | "boards" | "circles" | "challenges";
 export type MediaViewerState = { tab: "video" | "image" | "text"; id: number; onlyReposts?: boolean } | null;
 
 interface ProfileMediaTabsProps {
@@ -19,9 +20,11 @@ interface ProfileMediaTabsProps {
   setShowArticles: Dispatch<SetStateAction<boolean>>;
   myArticles: ReturnType<typeof useUserArticles>["articles"];
   myArticlesLoading: boolean;
+  onOpenBoard: (id: number) => void;
+  onOpenBoards: () => void;
 }
 
-const ProfileMediaTabs = ({ tab, setTab, stories, setMediaViewer, setCategoryEditId, setShowArticles, myArticles, myArticlesLoading }: ProfileMediaTabsProps) => {
+const ProfileMediaTabs = ({ tab, setTab, stories, setMediaViewer, setCategoryEditId, setShowArticles, myArticles, myArticlesLoading, onOpenBoard, onOpenBoards }: ProfileMediaTabsProps) => {
   return (
     <>
       {/* Tabs */}
@@ -67,8 +70,21 @@ const ProfileMediaTabs = ({ tab, setTab, stories, setMediaViewer, setCategoryEdi
           </div>
         </button>
       </div>
+      <div className="flex gap-2 px-3 py-2 overflow-x-auto border-b border-gray-200" style={{ scrollbarWidth: "none" }}>
+        {([["boards", "Доски", "Layers"], ["circles", "Кружки", "Users"], ["challenges", "Челленджи", "Trophy"]] as const).map(([id, label, icon]) => (
+          <button
+            key={id}
+            onClick={() => setTab(id)}
+            className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold ${tab === id ? "bg-[#8b5cf6] text-white" : "bg-gray-100 text-gray-600"}`}
+          >
+            <Icon name={icon} size={13} />{label}
+          </button>
+        ))}
+      </div>
 
-      {tab === "videos" ? (
+      {tab === "boards" || tab === "circles" || tab === "challenges" ? (
+        <ProfileExtraTabs tab={tab} onOpenBoard={onOpenBoard} onOpenBoards={onOpenBoards} />
+      ) : tab === "videos" ? (
         (() => {
           const videos = stories.filter(s => s.type === "video" && !s.is_repost);
           return videos.length === 0 ? (

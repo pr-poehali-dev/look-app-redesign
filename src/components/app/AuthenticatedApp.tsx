@@ -14,13 +14,14 @@ import type { IncomingCall } from "./useIncomingCall";
 const Index = lazy(() => import("@/pages/Index"));
 const MediaDeepLink = lazy(() => import("@/components/MediaDeepLink"));
 const ArticleDeepLink = lazy(() => import("@/components/profile/ArticleDeepLink"));
+const BoardInviteLink = lazy(() => import("@/components/profile/BoardInviteLink"));
 const CallScreen = lazy(() => import("@/components/CallScreen"));
 const ThumbnailWorker = lazy(() => import("@/components/ThumbnailWorker"));
 
 const AuthenticatedRoutes = () => {
   const { pathname } = useLocation();
   if (pathname !== "/") return <NotFound />;
-  return <><Index /><ArticleDeepLink /><MediaDeepLink /></>;
+  return <><Index /><ArticleDeepLink /><MediaDeepLink /><BoardInviteLink /></>;
 };
 
 type AuthState = ReturnType<typeof useAuth>;

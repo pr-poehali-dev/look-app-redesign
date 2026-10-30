@@ -11,6 +11,17 @@ export interface Board {
   cover_image: string | null;
   is_public: boolean;
   created_at?: string;
+  topic?: string | null;
+  is_collab?: boolean;
+  items_count?: number;
+  my_role?: "owner" | "editor" | "member";
+}
+
+export interface BoardMember {
+  user_id: string;
+  role: "owner" | "editor" | "member";
+  handle: string | null;
+  name: string | null;
 }
 
 export interface BoardItem {
@@ -20,6 +31,8 @@ export interface BoardItem {
   image: string | null;
   title: string | null;
   added_at?: string;
+  added_by?: string | null;
+  added_by_handle?: string | null;
 }
 
 const parseBody = async (res: Response) => {
@@ -45,19 +58,19 @@ export const useMyBoards = () => {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  const create = useCallback(async (title: string, description = "", isPublic = true) => {
+  const create = useCallback(async (title: string, description = "", isPublic = true, extra: { topic?: string; isCollab?: boolean } = {}) => {
     if (!user?.id) return null;
     const res = await fetch(`${BOARDS_URL}?action=create`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-User-Id": user.id },
-      body: JSON.stringify({ title, description, is_public: isPublic }),
+      body: JSON.stringify({ title, description, is_public: isPublic, topic: extra.topic || null, is_collab: !!extra.isCollab }),
     });
     const data = await parseBody(res);
     refresh();
     return data.id as number | null;
   }, [user?.id, refresh]);
 
-  const update = useCallback(async (id: number, patch: Partial<Pick<Board, "title" | "description" | "is_public" | "cover_image">>) => {
+  const update = useCallback(async (id: number, patch: Partial<Pick<Board, "title" | "description" | "is_public" | "cover_image" | "topic">>) => {
     if (!user?.id) return;
     await fetch(`${BOARDS_URL}?action=update`, {
       method: "PUT",
@@ -104,6 +117,8 @@ export const useBoard = (boardId?: number | null) => {
   const { user } = useAuth();
   const [board, setBoard] = useState<Board | null>(null);
   const [items, setItems] = useState<BoardItem[]>([]);
+  const [myRole, setMyRole] = useState<"owner" | "editor" | "member" | null>(null);
+  const [members, setMembers] = useState<BoardMember[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -119,6 +134,8 @@ export const useBoard = (boardId?: number | null) => {
         if (!res.ok) { setError(data.error || "Ошибка"); return; }
         setBoard(data.board || null);
         setItems(data.items || []);
+        setMyRole(data.my_role || null);
+        setMembers(data.members || []);
       })
       .catch(() => setError("Ошибка загрузки"))
       .finally(() => setLoading(false));
@@ -135,7 +152,7 @@ export const useBoard = (boardId?: number | null) => {
     }).catch(() => {});
   }, [user?.id]);
 
-  return { board, items, loading, error, refresh, removeItem };
+  return { board, items, myRole, members, loading, error, refresh, removeItem };
 };
 
 export const addItemToBoard = async (
@@ -155,3 +172,36 @@ export const addItemToBoard = async (
     }),
   }).catch(() => {});
 };
+
+export const addItemToBoards = async (
+  boardIds: number[],
+  item: { itemType: "post" | "video"; itemId: string | number; image?: string; title?: string },
+  userId: string,
+) => {
+  const res = await fetch(`${BOARDS_URL}?action=add_item_multi`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-User-Id": userId },
+    body: JSON.stringify({
+      board_ids: boardIds.slice(0, 3),
+      item_type: item.itemType,
+      item_id: String(item.itemId),
+      image: item.image || "",
+      title: item.title || "",
+    }),
+  }).catch(() => null);
+  if (!res) return 0;
+  const data = await parseBody(res);
+  return (data.added as number) || 0;
+};
+
+export const boardsPost = async (action: string, userId: string, body: Record<string, unknown>) => {
+  const res = await fetch(`${BOARDS_URL}?action=${action}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-User-Id": userId },
+    body: JSON.stringify(body),
+  });
+  const data = await parseBody(res);
+  return { ok: res.ok, data };
+};
+
+export const BOARDS_API_URL = BOARDS_URL;

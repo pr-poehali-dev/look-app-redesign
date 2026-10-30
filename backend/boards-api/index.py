@@ -9,7 +9,7 @@ CORS = {
     'Access-Control-Max-Age': '86400',
 }
 
-BOARD_FIELDS = "id, owner_user_id, title, description, cover_image, is_public, created_at"
+BOARD_FIELDS = "id, owner_user_id, title, description, cover_image, is_public, created_at, topic, is_collab"
 
 
 def _resp(status, payload):
@@ -21,7 +21,36 @@ def _row_to_board(r):
         'id': r[0], 'owner_user_id': r[1], 'title': r[2], 'description': r[3] or '',
         'cover_image': r[4], 'is_public': bool(r[5]),
         'created_at': r[6].isoformat() if r[6] else None,
+        'topic': r[7], 'is_collab': bool(r[8]),
     }
+
+
+def _role(cur, schema, board_id, user_id, owner_id):
+    if not user_id:
+        return None
+    if owner_id == user_id:
+        return 'owner'
+    cur.execute(f"SELECT role FROM {schema}.board_members WHERE board_id = %s AND user_id = %s", (board_id, user_id))
+    r = cur.fetchone()
+    return r[0] if r else None
+
+
+def _with_counts(cur, schema, boards):
+    if not boards:
+        return boards
+    ids = [b['id'] for b in boards]
+    cur.execute(
+        f"SELECT board_id, COUNT(*) FROM {schema}.board_items WHERE board_id = ANY(%s) GROUP BY board_id", (ids,))
+    counts = {r[0]: r[1] for r in cur.fetchall()}
+    cur.execute(
+        f"SELECT DISTINCT ON (board_id) board_id, image FROM {schema}.board_items "
+        f"WHERE board_id = ANY(%s) AND image IS NOT NULL AND image <> '' ORDER BY board_id, added_at DESC", (ids,))
+    covers = {r[0]: r[1] for r in cur.fetchall()}
+    for b in boards:
+        b['items_count'] = counts.get(b['id'], 0)
+        if not b['cover_image']:
+            b['cover_image'] = covers.get(b['id'])
+    return boards
 
 
 def handler(event: dict, context) -> dict:
@@ -44,10 +73,16 @@ def handler(event: dict, context) -> dict:
             if not user_id:
                 return _resp(401, {'error': 'X-User-Id required'})
             cur.execute(
-                f"SELECT {BOARD_FIELDS} FROM {schema}.boards WHERE owner_user_id = %s ORDER BY id DESC",
-                (user_id,)
+                f"SELECT {BOARD_FIELDS} FROM {schema}.boards WHERE owner_user_id = %s "
+                f"OR id IN (SELECT board_id FROM {schema}.board_members WHERE user_id = %s) ORDER BY id DESC",
+                (user_id, user_id)
             )
             boards = [_row_to_board(r) for r in cur.fetchall()]
+            cur.execute(f"SELECT board_id, role FROM {schema}.board_members WHERE user_id = %s", (user_id,))
+            roles = {r[0]: r[1] for r in cur.fetchall()}
+            for b in boards:
+                b['my_role'] = 'owner' if b['owner_user_id'] == user_id else roles.get(b['id'], 'member')
+            _with_counts(cur, schema, boards)
             return _resp(200, {'boards': boards})
 
         # --- Публичные доски конкретного пользователя ---
@@ -60,6 +95,7 @@ def handler(event: dict, context) -> dict:
                 (owner_id,)
             )
             boards = [_row_to_board(r) for r in cur.fetchall()]
+            _with_counts(cur, schema, boards)
             return _resp(200, {'boards': boards})
 
         # --- Одна доска + её элементы (публично, если is_public или владелец) ---
@@ -72,18 +108,32 @@ def handler(event: dict, context) -> dict:
             if not row:
                 return _resp(404, {'error': 'not found'})
             board = _row_to_board(row)
-            if not board['is_public'] and board['owner_user_id'] != user_id:
+            my_role = _role(cur, schema, board['id'], user_id, board['owner_user_id'])
+            if not board['is_public'] and not my_role:
                 return _resp(403, {'error': 'private board'})
             cur.execute(
-                f"SELECT id, item_type, item_id, image, title, added_at FROM {schema}.board_items "
-                f"WHERE board_id = %s ORDER BY added_at DESC",
+                f"SELECT bi.id, bi.item_type, bi.item_id, bi.image, bi.title, bi.added_at, bi.added_by, au.handle "
+                f"FROM {schema}.board_items bi LEFT JOIN {schema}.app_users au ON au.id::text = bi.added_by "
+                f"WHERE bi.board_id = %s ORDER BY bi.added_at DESC",
                 (board_id,)
             )
             items = [{
                 'id': r[0], 'item_type': r[1], 'item_id': r[2], 'image': r[3], 'title': r[4],
-                'added_at': r[5].isoformat() if r[5] else None,
+                'added_at': r[5].isoformat() if r[5] else None, 'added_by': r[6], 'added_by_handle': r[7],
             } for r in cur.fetchall()]
-            return _resp(200, {'board': board, 'items': items})
+            members = []
+            if board['is_collab']:
+                cur.execute(
+                    f"SELECT m.user_id, m.role, au.handle, au.name FROM {schema}.board_members m "
+                    f"LEFT JOIN {schema}.app_users au ON au.id::text = m.user_id WHERE m.board_id = %s ORDER BY m.id",
+                    (board_id,)
+                )
+                members = [{'user_id': r[0], 'role': r[1], 'handle': r[2], 'name': r[3]} for r in cur.fetchall()]
+                cur.execute(f"SELECT handle, name FROM {schema}.app_users WHERE id::text = %s", (board['owner_user_id'],))
+                o = cur.fetchone()
+                members.insert(0, {'user_id': board['owner_user_id'], 'role': 'owner',
+                                   'handle': o[0] if o else None, 'name': o[1] if o else None})
+            return _resp(200, {'board': board, 'items': items, 'my_role': my_role, 'members': members})
 
         # --- Создать доску ---
         if method == 'POST' and action == 'create':
@@ -95,10 +145,12 @@ def handler(event: dict, context) -> dict:
                 return _resp(400, {'error': 'title required'})
             description = (body.get('description') or '').strip()[:2000]
             is_public = bool(body.get('is_public', True))
+            topic = (body.get('topic') or '').strip()[:40] or None
+            is_collab = bool(body.get('is_collab', False))
             cur.execute(
-                f"INSERT INTO {schema}.boards (owner_user_id, title, description, is_public) "
-                f"VALUES (%s, %s, %s, %s) RETURNING id",
-                (user_id, title, description, is_public)
+                f"INSERT INTO {schema}.boards (owner_user_id, title, description, is_public, topic, is_collab) "
+                f"VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+                (user_id, title, description, is_public, topic, is_collab)
             )
             new_id = cur.fetchone()[0]
             conn.commit()
@@ -123,6 +175,8 @@ def handler(event: dict, context) -> dict:
                 fields.append("description = %s"); values.append((body.get('description') or '').strip()[:2000])
             if 'is_public' in body:
                 fields.append("is_public = %s"); values.append(bool(body.get('is_public')))
+            if 'topic' in body:
+                fields.append("topic = %s"); values.append((body.get('topic') or '').strip()[:40] or None)
             if 'cover_image' in body:
                 fields.append("cover_image = %s"); values.append((body.get('cover_image') or '').strip())
             if not fields:
@@ -144,6 +198,8 @@ def handler(event: dict, context) -> dict:
             if not row or row[0] != user_id:
                 return _resp(403, {'error': 'not your board'})
             cur.execute(f"DELETE FROM {schema}.board_items WHERE board_id = %s", (board_id,))
+            cur.execute(f"DELETE FROM {schema}.board_members WHERE board_id = %s", (board_id,))
+            cur.execute(f"DELETE FROM {schema}.board_invites WHERE board_id = %s", (board_id,))
             cur.execute(f"DELETE FROM {schema}.boards WHERE id = %s", (board_id,))
             conn.commit()
             return _resp(200, {'ok': True})
@@ -162,15 +218,158 @@ def handler(event: dict, context) -> dict:
                 return _resp(400, {'error': 'board_id, item_type and item_id required'})
             cur.execute(f"SELECT owner_user_id FROM {schema}.boards WHERE id = %s", (board_id,))
             row = cur.fetchone()
-            if not row or row[0] != user_id:
-                return _resp(403, {'error': 'not your board'})
+            if not row:
+                return _resp(404, {'error': 'not found'})
+            if _role(cur, schema, int(board_id), user_id, row[0]) not in ('owner', 'editor'):
+                return _resp(403, {'error': 'no rights'})
             cur.execute(
-                f"INSERT INTO {schema}.board_items (board_id, item_type, item_id, image, title) "
-                f"VALUES (%s, %s, %s, %s, %s) ON CONFLICT (board_id, item_type, item_id) DO NOTHING",
-                (board_id, item_type, item_id, image, title)
+                f"INSERT INTO {schema}.board_items (board_id, item_type, item_id, image, title, added_by) "
+                f"VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT (board_id, item_type, item_id) DO NOTHING",
+                (board_id, item_type, item_id, image, title, user_id)
             )
             conn.commit()
             return _resp(200, {'ok': True})
+
+        # --- Добавить элемент сразу в несколько досок (до 3) ---
+        if method == 'POST' and action == 'add_item_multi':
+            if not user_id:
+                return _resp(401, {'error': 'X-User-Id required'})
+            body = json.loads(event.get('body') or '{}')
+            board_ids = [int(x) for x in (body.get('board_ids') or [])][:3]
+            item_type = (body.get('item_type') or '').strip()[:20]
+            item_id = str(body.get('item_id') or '').strip()[:100]
+            image = (body.get('image') or '').strip()
+            title = (body.get('title') or '').strip()[:200]
+            if not board_ids or not item_type or not item_id:
+                return _resp(400, {'error': 'board_ids, item_type and item_id required'})
+            added = 0
+            for bid in board_ids:
+                cur.execute(f"SELECT owner_user_id FROM {schema}.boards WHERE id = %s", (bid,))
+                row = cur.fetchone()
+                if not row or _role(cur, schema, bid, user_id, row[0]) not in ('owner', 'editor'):
+                    continue
+                cur.execute(
+                    f"INSERT INTO {schema}.board_items (board_id, item_type, item_id, image, title, added_by) "
+                    f"VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT (board_id, item_type, item_id) DO NOTHING",
+                    (bid, item_type, item_id, image, title, user_id)
+                )
+                added += 1
+            conn.commit()
+            return _resp(200, {'ok': True, 'added': added})
+
+        # --- Ссылка-приглашение в коллективную доску ---
+        if method == 'POST' and action == 'invite_link':
+            if not user_id:
+                return _resp(401, {'error': 'X-User-Id required'})
+            body = json.loads(event.get('body') or '{}')
+            board_id = body.get('board_id')
+            role = body.get('role') if body.get('role') in ('editor', 'member') else 'editor'
+            cur.execute(f"SELECT owner_user_id FROM {schema}.boards WHERE id = %s", (board_id,))
+            row = cur.fetchone()
+            if not row or row[0] != user_id:
+                return _resp(403, {'error': 'only owner'})
+            import secrets
+            token = secrets.token_urlsafe(16)
+            cur.execute(f"UPDATE {schema}.boards SET is_collab = TRUE WHERE id = %s", (board_id,))
+            cur.execute(
+                f"INSERT INTO {schema}.board_invites (board_id, token, role, created_by) VALUES (%s, %s, %s, %s)",
+                (board_id, token, role, user_id))
+            conn.commit()
+            return _resp(200, {'token': token})
+
+        # --- Принять приглашение по ссылке ---
+        if method == 'POST' and action == 'join':
+            if not user_id:
+                return _resp(401, {'error': 'X-User-Id required'})
+            body = json.loads(event.get('body') or '{}')
+            token = (body.get('token') or '').strip()[:60]
+            cur.execute(f"SELECT board_id, role FROM {schema}.board_invites WHERE token = %s", (token,))
+            inv = cur.fetchone()
+            if not inv:
+                return _resp(404, {'error': 'invite not found'})
+            cur.execute(f"SELECT owner_user_id FROM {schema}.boards WHERE id = %s", (inv[0],))
+            ow = cur.fetchone()
+            if ow and ow[0] != user_id:
+                cur.execute(
+                    f"INSERT INTO {schema}.board_members (board_id, user_id, role) VALUES (%s, %s, %s) "
+                    f"ON CONFLICT (board_id, user_id) DO NOTHING", (inv[0], user_id, inv[1]))
+            conn.commit()
+            return _resp(200, {'ok': True, 'board_id': inv[0]})
+
+        # --- Пригласить по нику ---
+        if method == 'POST' and action == 'invite_handle':
+            if not user_id:
+                return _resp(401, {'error': 'X-User-Id required'})
+            body = json.loads(event.get('body') or '{}')
+            board_id = body.get('board_id')
+            handle = (body.get('handle') or '').strip().lstrip('@')[:80]
+            role = body.get('role') if body.get('role') in ('editor', 'member') else 'editor'
+            cur.execute(f"SELECT owner_user_id FROM {schema}.boards WHERE id = %s", (board_id,))
+            row = cur.fetchone()
+            if not row or row[0] != user_id:
+                return _resp(403, {'error': 'only owner'})
+            cur.execute(f"SELECT id FROM {schema}.app_users WHERE LOWER(handle) = LOWER(%s)", (handle,))
+            u = cur.fetchone()
+            if not u:
+                return _resp(404, {'error': 'user not found'})
+            uid = str(u[0])
+            if uid == user_id:
+                return _resp(400, {'error': 'self'})
+            cur.execute(f"UPDATE {schema}.boards SET is_collab = TRUE WHERE id = %s", (board_id,))
+            cur.execute(
+                f"INSERT INTO {schema}.board_members (board_id, user_id, role) VALUES (%s, %s, %s) "
+                f"ON CONFLICT (board_id, user_id) DO UPDATE SET role = EXCLUDED.role", (board_id, uid, role))
+            conn.commit()
+            return _resp(200, {'ok': True})
+
+        # --- Сменить роль / убрать участника ---
+        if method == 'POST' and action == 'set_role':
+            if not user_id:
+                return _resp(401, {'error': 'X-User-Id required'})
+            body = json.loads(event.get('body') or '{}')
+            board_id = body.get('board_id')
+            target = str(body.get('user_id') or '')
+            role = body.get('role')
+            cur.execute(f"SELECT owner_user_id FROM {schema}.boards WHERE id = %s", (board_id,))
+            row = cur.fetchone()
+            if not row or row[0] != user_id:
+                return _resp(403, {'error': 'only owner'})
+            if role == 'remove':
+                cur.execute(f"DELETE FROM {schema}.board_members WHERE board_id = %s AND user_id = %s", (board_id, target))
+            elif role in ('editor', 'member'):
+                cur.execute(f"UPDATE {schema}.board_members SET role = %s WHERE board_id = %s AND user_id = %s", (role, board_id, target))
+            else:
+                return _resp(400, {'error': 'bad role'})
+            conn.commit()
+            return _resp(200, {'ok': True})
+
+        # --- Справочник тем ---
+        if method == 'GET' and action == 'topics':
+            cur.execute(f"SELECT slug, title, icon, color FROM {schema}.topics ORDER BY sort_order")
+            return _resp(200, {'topics': [{'slug': r[0], 'title': r[1], 'icon': r[2], 'color': r[3]} for r in cur.fetchall()]})
+
+        # --- Страница темы: топ недели, новые доски ---
+        if method == 'GET' and action == 'topic_page':
+            slug = (params.get('slug') or '').strip()[:40]
+            cur.execute(
+                f"SELECT v.id, v.url, v.thumbnail, v.type, v.card_title, v.description, v.handle, v.likes "
+                f"FROM {schema}.videos v WHERE v.topic = %s AND (v.hidden IS NULL OR v.hidden = FALSE) "
+                f"AND COALESCE(v.is_commercial, FALSE) = FALSE AND v.created_at > NOW() - INTERVAL '7 days' "
+                f"ORDER BY v.likes DESC, v.created_at DESC LIMIT 10", (slug,))
+            top = [{'id': r[0], 'url': r[1], 'thumbnail': r[2], 'type': r[3], 'title': r[4] or (r[5] or '')[:40],
+                    'handle': r[6], 'likes': r[7]} for r in cur.fetchall()]
+            if len(top) < 10:
+                cur.execute(
+                    f"SELECT v.id, v.url, v.thumbnail, v.type, v.card_title, v.description, v.handle, v.likes "
+                    f"FROM {schema}.videos v WHERE v.topic = %s AND (v.hidden IS NULL OR v.hidden = FALSE) "
+                    f"AND COALESCE(v.is_commercial, FALSE) = FALSE AND v.id <> ALL(%s) "
+                    f"ORDER BY v.created_at DESC LIMIT %s", (slug, [t['id'] for t in top] or [0], 10 - len(top)))
+                top += [{'id': r[0], 'url': r[1], 'thumbnail': r[2], 'type': r[3], 'title': r[4] or (r[5] or '')[:40],
+                         'handle': r[6], 'likes': r[7]} for r in cur.fetchall()]
+            cur.execute(
+                f"SELECT {BOARD_FIELDS} FROM {schema}.boards WHERE topic = %s AND is_public = TRUE ORDER BY id DESC LIMIT 12", (slug,))
+            boards = _with_counts(cur, schema, [_row_to_board(r) for r in cur.fetchall()])
+            return _resp(200, {'top': top, 'boards': boards})
 
         # --- Удалить элемент из доски ---
         if method == 'DELETE' and action == 'remove_item':
@@ -180,13 +379,16 @@ def handler(event: dict, context) -> dict:
             if not item_row_id:
                 return _resp(400, {'error': 'id required'})
             cur.execute(
-                f"SELECT b.owner_user_id FROM {schema}.board_items bi "
+                f"SELECT b.owner_user_id, bi.board_id, bi.added_by FROM {schema}.board_items bi "
                 f"JOIN {schema}.boards b ON b.id = bi.board_id WHERE bi.id = %s",
                 (item_row_id,)
             )
             row = cur.fetchone()
-            if not row or row[0] != user_id:
-                return _resp(403, {'error': 'not your board'})
+            if not row:
+                return _resp(404, {'error': 'not found'})
+            r_role = _role(cur, schema, row[1], user_id, row[0])
+            if not (r_role == 'owner' or (r_role == 'editor' and row[2] == user_id)):
+                return _resp(403, {'error': 'no rights'})
             cur.execute(f"DELETE FROM {schema}.board_items WHERE id = %s", (item_row_id,))
             conn.commit()
             return _resp(200, {'ok': True})

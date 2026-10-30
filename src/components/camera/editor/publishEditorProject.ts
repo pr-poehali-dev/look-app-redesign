@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import type { PublishCompliance } from "@/components/camera/ComplianceFields";
+import { complianceUploadMeta, attachToBoards, type PublishCompliance } from "@/components/camera/ComplianceFields";
 import { compressVideo, uploadFileDirect } from "@/lib/videoCompress";
 import { renderVideoWithOverlays, type RenderClip, type RenderSfxCue } from "@/lib/videoRender";
 import { EXPORT_FORMATS, EXPORT_QUALITIES, type Filter, type Layer, type Clip, type ExportFormat, type ExportQuality, type SubtitleCue, type WatermarkPosition, type SfxCue } from "./editorTypes";
@@ -162,10 +162,12 @@ export const publishEditorProject = async ({
         brand: compliance.brand,
         personalExperience: compliance.personalExperience,
         collabId: compliance.collabId,
+          ...complianceUploadMeta(compliance),
       },
       (p) => setPublishProgress({ stage: "upload", percent: p }),
     );
     if (!reg || !reg.url) throw new Error("Сервер не вернул ссылку на файл");
+    await attachToBoards(compliance, user?.id, reg, description);
 
     // Для видео — генерируем превью на сервере (OpenCV снимает кадр)
     if (isVideo && reg.id) {

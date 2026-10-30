@@ -168,6 +168,8 @@ const Index = () => {
       if (d?.series) setCollection({ series: d.series, owner: d.owner });
     };
     const onUseTemplate = () => setShowCamera(true);
+    const onOpenCamera = () => setShowCamera(true);
+    window.addEventListener("open-camera", onOpenCamera);
     window.addEventListener("open-user-profile", onOpen);
     window.addEventListener("open-direct-message", onMessage);
     window.addEventListener("use-template", onUseTemplate);
@@ -177,6 +179,7 @@ const Index = () => {
       window.removeEventListener("open-user-profile", onOpen);
       window.removeEventListener("open-direct-message", onMessage);
       window.removeEventListener("use-template", onUseTemplate);
+      window.removeEventListener("open-camera", onOpenCamera);
       window.removeEventListener("open-brand", onBrand);
       window.removeEventListener("open-series", onSeries);
     };

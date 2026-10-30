@@ -15,7 +15,8 @@ interface Props {
 
 const AddToBoardSheet = ({ itemType, itemId, image, title, onClose }: Props) => {
   const { user } = useAuth();
-  const { boards, loading, create } = useMyBoards();
+  const { boards: allBoards, loading, create } = useMyBoards();
+  const boards = allBoards.filter((b) => b.my_role !== "member");
   const [addedIds, setAddedIds] = useState<number[]>([]);
   const [creating, setCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");

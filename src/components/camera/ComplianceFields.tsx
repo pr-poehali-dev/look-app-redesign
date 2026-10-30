@@ -1,5 +1,9 @@
 import PostExtras from "@/components/camera/PostExtras";
 import PostStoryFields from "@/components/camera/PostStoryFields";
+import CardFields from "@/components/camera/CardFields";
+import { addItemToBoards } from "@/hooks/useBoards";
+import { submitPendingChallenge } from "@/hooks/useChallenge";
+import { toast } from "sonner";
 
 export type AgeRating = "0+" | "6+" | "12+" | "16+" | "18+";
 
@@ -16,11 +20,18 @@ export interface PublishCompliance {
   brand: string;
   personalExperience: boolean;
   collabId: number | null;
+  postMode: "photo" | "card";
+  cardTitle: string;
+  cardPoints: string[];
+  topic: string;
+  boardIds: number[];
+  isCommercial: boolean;
 }
 
 export const DEFAULT_COMPLIANCE: PublishCompliance = {
   ageRating: "12+", adErid: "", adAdvertiser: "", extraImages: [], place: "", address: "", workHours: "", tips: "",
   seriesTitle: "", brand: "", personalExperience: false, collabId: null,
+  postMode: "photo", cardTitle: "", cardPoints: ["", "", ""], topic: "", boardIds: [], isCommercial: false,
 };
 
 const AGES: AgeRating[] = ["0+", "6+", "12+", "16+", "18+"];
@@ -35,6 +46,7 @@ interface Props {
 
 const ComplianceFields = ({ value, onChange, isImage = true }: Props) => (
   <div className="flex flex-col gap-3">
+    <CardFields value={value} onChange={onChange} />
     <PostExtras
       value={{ extraImages: value.extraImages, place: value.place, address: value.address, workHours: value.workHours, tips: value.tips }}
       onChange={(e) => onChange({ ...value, extraImages: e.extraImages, place: e.place, address: e.address, workHours: e.workHours, tips: e.tips })}
@@ -65,3 +77,34 @@ const ComplianceFields = ({ value, onChange, isImage = true }: Props) => (
 );
 
 export default ComplianceFields;
+
+export const complianceUploadMeta = (c: PublishCompliance) => ({
+  cardTitle: c.postMode === "card" ? c.cardTitle.trim() : "",
+  cardPoints: c.postMode === "card" ? c.cardPoints.map((p) => p.trim()).filter(Boolean) : [],
+  topic: c.topic,
+  isCommercial: c.isCommercial,
+});
+
+export const attachToBoards = async (
+  c: PublishCompliance,
+  userId: string | undefined,
+  reg: { id?: number; url?: string; thumb?: string; type?: string } | null,
+  caption: string,
+) => {
+  if (userId && reg?.id) {
+    const badge = await submitPendingChallenge(userId, reg.id);
+    if (badge) toast.success(`Вы участник челленджа! Бейдж «${badge}» получен`);
+  }
+  if (!userId || !reg?.id || c.boardIds.length === 0) return;
+  const isVideo = reg.type === "video";
+  await addItemToBoards(
+    c.boardIds,
+    {
+      itemType: isVideo ? "video" : "post",
+      itemId: reg.id,
+      image: (isVideo ? reg.thumb : reg.url) || reg.url || "",
+      title: (c.postMode === "card" && c.cardTitle.trim()) || caption.slice(0, 120),
+    },
+    userId,
+  );
+};

@@ -34,6 +34,7 @@ const ProfilePage = () => {
   const [showShop, setShowShop] = useState(false);
   const [showCatalog, setShowCatalog] = useState(false);
   const [showBoards, setShowBoards] = useState(false);
+  const [openBoardId, setOpenBoardId] = useState<number | null>(null);
   const [showArticles, setShowArticles] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [showReferrals, setShowReferrals] = useState(false);
@@ -154,7 +155,7 @@ const ProfilePage = () => {
   if (showCatalog) return <CatalogScreen onBack={() => setShowCatalog(false)} />;
   if (showArticles) return <ArticlesScreen onBack={() => setShowArticles(false)} />;
   if (showGuide) return <GuideScreen onBack={() => setShowGuide(false)} />;
-  if (showBoards) return <BoardsScreen onBack={() => setShowBoards(false)} />;
+  if (showBoards) return <BoardsScreen initialBoardId={openBoardId} onBack={() => { setShowBoards(false); setOpenBoardId(null); }} />;
   if (showReferrals) return <ReferralsScreen onBack={() => setShowReferrals(false)} />;
   if (showCollabs) return <CollabsScreen onBack={() => setShowCollabs(false)} />;
 
@@ -333,6 +334,8 @@ const ProfilePage = () => {
         setShowArticles={setShowArticles}
         myArticles={myArticles}
         myArticlesLoading={myArticlesLoading}
+        onOpenBoard={(id) => { setOpenBoardId(id); setShowBoards(true); }}
+        onOpenBoards={() => { setOpenBoardId(null); setShowBoards(true); }}
       />
 
       <div className="pb-28" />

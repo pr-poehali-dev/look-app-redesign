@@ -1,5 +1,5 @@
 import TextPostComposer from "@/components/camera/TextPostComposer";
-import { PublishCompliance, DEFAULT_COMPLIANCE } from "@/components/camera/ComplianceFields";
+import { PublishCompliance, DEFAULT_COMPLIANCE, complianceUploadMeta, attachToBoards } from "@/components/camera/ComplianceFields";
 import { toast } from "sonner";
 import { useState, useRef, useEffect } from "react";
 import { useUserMedia } from "@/context/UserMediaContext";
@@ -140,11 +140,13 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
           brand: compliance.brand,
           personalExperience: compliance.personalExperience,
           collabId: compliance.collabId,
+          ...complianceUploadMeta(compliance),
         },
         (p) => setPublishProgress({ stage: "upload", percent: p }),
       );
 
       if (!reg || !reg.url) throw new Error("Сервер не вернул ссылку на файл");
+      await attachToBoards(compliance, user?.id, reg, description);
 
       setPublishProgress({ stage: "save", percent: 100 });
       setPublished(true);

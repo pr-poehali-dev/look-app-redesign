@@ -209,13 +209,18 @@ def handler(event: dict, context) -> dict:
                 brand = (meta.get('brand') or '').strip().lstrip('#@')[:80] or None
                 personal_experience = bool(meta.get('personal_experience'))
                 collab_id = meta.get('collab_id')
+                card_title = (meta.get('card_title') or '').strip()[:30] or None
+                raw_points = [str(x).strip()[:60] for x in (meta.get('card_points') or []) if str(x).strip()][:3]
+                card_points = json.dumps(raw_points, ensure_ascii=False) if card_title and raw_points else None
+                is_commercial = bool(meta.get('is_commercial')) or is_ad
+                topic = (meta.get('topic') or '').strip()[:40] or None
                 ad_label = (meta.get('ad_label') or '').strip()[:60] or ('Реклама' if is_ad else None)
                 cur.execute("SELECT word FROM moderation_words")
                 low = f"{meta.get('description', '')} {meta.get('hashtags', '')}".lower().replace('ё', 'е')
                 flagged = any(w[0].lower().replace('ё', 'е') in low for w in cur.fetchall())
                 cur.execute(
-                    "INSERT INTO videos (url, thumbnail, author, handle, description, hashtags, category, type, user_id, template_id, is_ad, ad_label, hidden, hidden_reason, age_rating, ad_erid, ad_advertiser, extra_images, place, series_title, brand, personal_experience, address, work_hours, tips) "
-                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+                    "INSERT INTO videos (url, thumbnail, author, handle, description, hashtags, category, type, user_id, template_id, is_ad, ad_label, hidden, hidden_reason, age_rating, ad_erid, ad_advertiser, extra_images, place, series_title, brand, personal_experience, address, work_hours, tips, card_title, card_points, is_commercial, topic) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
                     (cdn_url, thumb_url,
                      meta.get('author', 'Я'), meta.get('handle', 'user'),
                      meta.get('description', ''), meta.get('hashtags', ''),
@@ -224,7 +229,7 @@ def handler(event: dict, context) -> dict:
                      is_ad, ad_label, flagged, 'auto_words' if flagged else None,
                      age_rating, ad_erid if is_ad else None, ad_advertiser if is_ad else None,
                      extra_images, place, series_title, brand, personal_experience,
-                     address, work_hours, tips),
+                     address, work_hours, tips, card_title, card_points, is_commercial, topic),
                 )
                 video_id = cur.fetchone()[0]
                 if collab_id and str(meta.get('user_id', '')) != 'anonymous':

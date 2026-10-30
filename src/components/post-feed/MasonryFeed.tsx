@@ -4,6 +4,7 @@ import NoteCard from "./NoteCard";
 import NoteViewer from "./NoteViewer";
 import { Post } from "./PostFeedTypes";
 import { Reader } from "@/components/profile/ArticlesScreen";
+import ChallengeBanner from "@/components/challenges/ChallengeBanner";
 
 const MasonryFeed = ({ posts, loading, topPad = 0 }: { posts: Post[]; loading: boolean; topPad?: number }) => {
   const [openedPost, setOpenedPost] = useState<Post | null>(null);
@@ -21,6 +22,7 @@ const MasonryFeed = ({ posts, loading, topPad = 0 }: { posts: Post[]; loading: b
     <div className="h-full overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
       {topPad > 0 && <div style={{ height: topPad }} aria-hidden />}
       <div className="px-2 md:px-4 pt-2 pb-24">
+        {!loading && <div className="mb-2"><ChallengeBanner /></div>}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />

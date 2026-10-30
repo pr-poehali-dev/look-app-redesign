@@ -69,7 +69,7 @@ const NoteCard = ({ post, onOpen, priority = false }: { post: Post; onOpen: () =
           )}
         </div>
         <div className={post.isText ? "px-2.5 pb-2.5 pt-1" : "p-2.5"}>
-          {!post.isText && <p className="text-white text-[13px] leading-snug line-clamp-2 mb-2">{post.caption}</p>}
+          {!post.isText && <p className={`text-white leading-snug line-clamp-2 mb-2 ${post.cardTitle ? "text-[14px] font-bold" : "text-[13px]"}`}>{post.cardTitle || post.caption}</p>}
           <div className="flex items-center justify-between gap-1">
             <div className="flex items-center gap-1.5 min-w-0">
               <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0">

@@ -167,6 +167,22 @@ const PostCard = ({ post }: { post: Post }) => {
         )}
       </div>
 
+      {post.cardTitle && (
+        <div className="px-3 pt-2.5 flex-shrink-0">
+          <h3 className="text-white font-bold text-[17px] leading-tight">{post.cardTitle}</h3>
+          {post.cardPoints && post.cardPoints.length > 0 && (
+            <ol className="mt-1.5 flex flex-col gap-1">
+              {post.cardPoints.map((pt, i) => (
+                <li key={i} className="flex items-start gap-2 text-white/85 text-[13px] leading-snug">
+                  <span className="w-5 h-5 rounded-full bg-[#fe2c55] text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-px">{i + 1}</span>
+                  <span>{pt}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      )}
+
       {/* Action buttons */}
       <div className="flex items-center px-3 pt-2.5 pb-1 flex-shrink-0">
         <div className="flex items-center gap-4">
@@ -182,6 +198,9 @@ const PostCard = ({ post }: { post: Post }) => {
           </button>
           <button onClick={() => { if (guest) return needAuth(); setShowShare(true); }} className="flex items-center justify-center active:scale-90 transition-transform">
             <Icon name="ShareArrow" size={26} className="action-icon-glyph" />
+          </button>
+          <button onClick={() => { if (guest) return needAuth(); setShowAddToBoard(true); }} className="flex items-center justify-center active:scale-90 transition-transform" title="В доску" aria-label="В доску">
+            <Icon name="Layers" size={26} className="action-icon-glyph" />
           </button>
         </div>
         {(post.hasProducts || post.templateId) && (

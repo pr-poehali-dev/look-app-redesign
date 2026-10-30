@@ -3,6 +3,21 @@ import os
 import psycopg2
 
 
+def _card(r) -> dict:
+    pts = []
+    if len(r) > 36 and r[36]:
+        try:
+            pts = [str(x) for x in json.loads(r[36])][:3]
+        except Exception:
+            pts = []
+    return {
+        'card_title': r[35] if len(r) > 35 else None,
+        'card_points': pts,
+        'is_commercial': bool(r[37]) if len(r) > 37 else False,
+        'topic': r[38] if len(r) > 38 else None,
+    }
+
+
 def _row_to_item(r) -> dict:
     return {
         'id': r[0], 'url': r[1], 'author': r[2], 'handle': r[3], 'description': r[4],
@@ -15,7 +30,7 @@ def _row_to_item(r) -> dict:
         'age_rating': r[24], 'ad_erid': r[25], 'ad_advertiser': r[26],
         'images': json.loads(r[27]) if r[27] else [], 'place': r[28],
         'series_title': r[29], 'brand': r[30], 'personal_experience': bool(r[31]),
-        'address': r[32], 'work_hours': r[33], 'tips': r[34],
+        'address': r[32], 'work_hours': r[33], 'tips': r[34], **_card(r),
     }
 
 
@@ -62,7 +77,7 @@ def handler(event: dict, context) -> dict:
             f"COALESCE((SELECT COUNT(*) FROM {schema}.video_views vv WHERE vv.video_id = v.id), 0) AS views, "
             f"COALESCE(au.is_verified, FALSE) AS is_verified, "
             f"COALESCE(v.is_ad, FALSE) AS is_ad, v.ad_label, "
-            f"NULL::text AS reposted_by, NULL::text AS reposted_by_avatar, NULL::text AS reposted_by_id, v.age_rating, v.ad_erid, v.ad_advertiser, v.extra_images, v.place, v.series_title, v.brand, COALESCE(v.personal_experience, FALSE), v.address, v.work_hours, v.tips "
+            f"NULL::text AS reposted_by, NULL::text AS reposted_by_avatar, NULL::text AS reposted_by_id, v.age_rating, v.ad_erid, v.ad_advertiser, v.extra_images, v.place, v.series_title, v.brand, COALESCE(v.personal_experience, FALSE), v.address, v.work_hours, v.tips, v.card_title, v.card_points, COALESCE(v.is_commercial, FALSE), v.topic "
             f"FROM {schema}.videos v "
             f"LEFT JOIN {schema}.legacy_posts lp ON lp.migrated_to_video_id = v.id "
             f"LEFT JOIN {schema}.legacy_users lu ON lu.id = lp.user_id "
@@ -91,7 +106,7 @@ def handler(event: dict, context) -> dict:
                 'is_verified': bool(r[18]), 'is_ad': bool(r[19]), 'ad_label': r[20],
                 'age_rating': r[24], 'ad_erid': r[25], 'ad_advertiser': r[26],
                 'images': json.loads(r[27]) if r[27] else [], 'place': r[28], 'series_title': r[29], 'brand': r[30], 'personal_experience': bool(r[31]),
-                'address': r[32], 'work_hours': r[33], 'tips': r[34],
+                'address': r[32], 'work_hours': r[33], 'tips': r[34], **_card(r),
             }
             return {'statusCode': 200, 'headers': {'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'video': item})}
 
@@ -143,7 +158,7 @@ def handler(event: dict, context) -> dict:
             f"COALESCE((SELECT COUNT(*) FROM {schema}.video_views vv WHERE vv.video_id = v.id), 0) AS views, "
             f"COALESCE(au.is_verified, FALSE) AS is_verified, "
             f"COALESCE(v.is_ad, FALSE) AS is_ad, v.ad_label, "
-            f"ru.handle AS reposted_by, ru.avatar AS reposted_by_avatar, ru.id AS reposted_by_id, v.age_rating, v.ad_erid, v.ad_advertiser, v.extra_images, v.place, v.series_title, v.brand, COALESCE(v.personal_experience, FALSE), v.address, v.work_hours, v.tips "
+            f"ru.handle AS reposted_by, ru.avatar AS reposted_by_avatar, ru.id AS reposted_by_id, v.age_rating, v.ad_erid, v.ad_advertiser, v.extra_images, v.place, v.series_title, v.brand, COALESCE(v.personal_experience, FALSE), v.address, v.work_hours, v.tips, v.card_title, v.card_points, COALESCE(v.is_commercial, FALSE), v.topic "
             f"FROM {schema}.reposts r "
             f"JOIN {schema}.videos v ON v.id = r.original_video_id "
             f"LEFT JOIN {schema}.app_users ru ON ru.id = r.user_id "
@@ -326,6 +341,12 @@ def handler(event: dict, context) -> dict:
 
     now = datetime.datetime.utcnow()
 
+    if params.get('ideas') == '1':
+        rows = [r for r in rows if not (r[19] or r[16] or (len(r) > 37 and r[37]))]
+    topic_q = (params.get('topic') or '').strip()[:40]
+    if topic_q:
+        rows = [r for r in rows if len(r) > 38 and r[38] == topic_q]
+
     # Убираем скрытых авторов и видео с отметкой "не интересно"
     if hidden_handles or not_interested_ids:
         rows = [r for r in rows if (r[3] not in hidden_handles) and (r[0] not in not_interested_ids)]
@@ -439,6 +460,7 @@ def handler(event: dict, context) -> dict:
             'address': r[32],
             'work_hours': r[33],
             'tips': r[34],
+            **_card(r),
             'reposted_by': r[21],
             'reposted_by_avatar': r[22],
             'city': author_city.get(r[14]),

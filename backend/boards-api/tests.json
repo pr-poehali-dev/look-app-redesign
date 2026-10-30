@@ -28,7 +28,30 @@
       "name": "POST create без X-User-Id -> 401",
       "method": "POST",
       "path": "/?action=create",
-      "body": {"title": "Test board"},
+      "body": {
+        "title": "Test board"
+      },
+      "expectedStatus": 401
+    },
+    {
+      "name": "GET topics",
+      "method": "GET",
+      "path": "/?action=topics",
+      "expectedStatus": 200
+    },
+    {
+      "name": "GET topic_page",
+      "method": "GET",
+      "path": "/?action=topic_page&slug=diy",
+      "expectedStatus": 200
+    },
+    {
+      "name": "POST join без пользователя",
+      "method": "POST",
+      "path": "/?action=join",
+      "body": {
+        "token": "x"
+      },
       "expectedStatus": 401
     }
   ]
