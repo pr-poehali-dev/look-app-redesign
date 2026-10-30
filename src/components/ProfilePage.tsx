@@ -297,14 +297,6 @@ const ProfilePage = () => {
         handleChangeCategory={handleChangeCategory}
       />
 
-      <button
-        onClick={() => window.dispatchEvent(new CustomEvent("open-camera"))}
-        aria-label="Создать"
-        className="anim-fab fixed right-4 bottom-[76px] z-30 w-[52px] h-[52px] rounded-full bg-[#FF5A3C] text-white flex items-center justify-center shadow-lg md:hidden"
-      >
-        <Icon name="Plus" size={24} strokeWidth={2.5} />
-      </button>
-
       <ProfileMediaTabs
         tab={tab}
         setTab={setTab}
