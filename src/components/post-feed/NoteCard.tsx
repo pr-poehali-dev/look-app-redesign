@@ -8,6 +8,7 @@ import { useLikes } from "@/hooks/useLikes";
 import ProductDetailSheet from "@/components/products/ProductDetailSheet";
 import { useProductsByVideos, openProductLink, hasProductLink, Product } from "@/hooks/useProducts";
 import { useAuth } from "@/context/AuthContext";
+import { useFollowingList } from "@/hooks/useFollowing";
 
 const ASPECTS = [3 / 4, 1, 4 / 5, 5 / 6, 4 / 3, 2 / 3];
 
@@ -25,6 +26,8 @@ const NoteCard = ({ post, onOpen, priority = false }: { post: Post; onOpen: () =
   const aspect = ASPECTS[hashId(post.id) % ASPECTS.length];
   const { count: likeCount } = useLikes(post.article ? "article" : "post", post.article ? post.article.id : post.id, post.likes);
   const { user } = useAuth();
+  const following = useFollowingList();
+  const isFollowed = !!post.handle && following.some((h) => h.toLowerCase() === post.handle.toLowerCase());
   const [showProducts, setShowProducts] = useState(false);
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
 
@@ -76,6 +79,11 @@ const NoteCard = ({ post, onOpen, priority = false }: { post: Post; onOpen: () =
                 <UserAvatar src={post.avatar} name={post.author || post.handle} alt={post.author} />
               </div>
               <span className="text-white/60 text-[11px] truncate">{post.handle}</span>
+              {isFollowed && (
+                <span className="flex-shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[#FFE9E3] text-[#FF5A3C] text-[9px] font-semibold">
+                  <Icon name="Check" size={8} />Вы подписаны
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
               <Icon name="Heart" size={13} className="text-white/50" />
