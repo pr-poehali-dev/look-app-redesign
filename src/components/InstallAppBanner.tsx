@@ -1,10 +1,6 @@
 import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
-
-interface InstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
+import { clearInstallPrompt, getInstallPrompt, onInstallPromptChange } from "@/lib/installPrompt";
 
 const DISMISS_KEY = "look_install_banner_dismissed";
 
@@ -13,30 +9,18 @@ const isStandalone = () =>
   (navigator as unknown as { standalone?: boolean }).standalone === true;
 
 const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
-const isMobile = () => /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+const isMobile = () => /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
 
 const InstallAppBanner = () => {
-  const [promptEvent, setPromptEvent] = useState<InstallPromptEvent | null>(null);
+  const [canInstall, setCanInstall] = useState(!!getInstallPrompt());
   const [visible, setVisible] = useState(false);
-  const [showIosHint, setShowIosHint] = useState(false);
+  const [showHint, setShowHint] = useState(false);
 
   useEffect(() => {
     if (!isMobile() || isStandalone() || localStorage.getItem(DISMISS_KEY) === "1") return;
-    const onPrompt = (e: Event) => {
-      e.preventDefault();
-      setPromptEvent(e as InstallPromptEvent);
-      setVisible(true);
-    };
-    const onInstalled = () => setVisible(false);
-    window.addEventListener("beforeinstallprompt", onPrompt);
-    window.addEventListener("appinstalled", onInstalled);
-    let t: ReturnType<typeof setTimeout> | undefined;
-    if (isIos()) t = setTimeout(() => setVisible(true), 6000);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onPrompt);
-      window.removeEventListener("appinstalled", onInstalled);
-      if (t) clearTimeout(t);
-    };
+    const off = onInstallPromptChange(() => setCanInstall(!!getInstallPrompt()));
+    const t = setTimeout(() => setVisible(true), 3000);
+    return () => { off(); clearTimeout(t); };
   }, []);
 
   if (!visible) return null;
@@ -47,14 +31,15 @@ const InstallAppBanner = () => {
   };
 
   const install = async () => {
-    if (promptEvent) {
-      await promptEvent.prompt();
-      await promptEvent.userChoice.catch(() => null);
-      setPromptEvent(null);
+    const ev = getInstallPrompt();
+    if (ev) {
+      await ev.prompt();
+      await ev.userChoice.catch(() => null);
+      clearInstallPrompt();
       setVisible(false);
       return;
     }
-    setShowIosHint(true);
+    setShowHint(true);
   };
 
   return (
@@ -65,7 +50,7 @@ const InstallAppBanner = () => {
           <p className="text-sm font-semibold text-black">Установите Лоок</p>
           <p className="text-xs text-gray-500">Быстрый запуск и уведомления о звонках</p>
         </div>
-        {!showIosHint && (
+        {!showHint && (
           <button onClick={install} className="px-3 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-medium">
             Установить
           </button>
@@ -74,9 +59,13 @@ const InstallAppBanner = () => {
           <Icon name="X" size={18} className="text-gray-400" />
         </button>
       </div>
-      {showIosHint && (
-        <p className="mt-2 text-xs text-gray-600 flex items-center gap-1 flex-wrap">
-          Нажмите <Icon name="Share" size={14} className="text-gray-600" /> «Поделиться», затем «На экран Домой».
+      {showHint && (
+        <p className="mt-2 text-xs text-gray-600">
+          {isIos()
+            ? "Нажмите «Поделиться» в Safari, затем «На экран Домой»."
+            : canInstall
+              ? "Нажмите «Установить» ещё раз."
+              : "Откройте меню браузера ⋮ и выберите «Установить приложение» или «Добавить на главный экран»."}
         </p>
       )}
     </div>

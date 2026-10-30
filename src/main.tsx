@@ -6,8 +6,10 @@ import './index.css'
 import './i18n'
 import { installResilientFetch } from './lib/resilientFetch'
 import { installDomGuard } from './lib/domGuard'
+import { initInstallPrompt } from './lib/installPrompt'
 
 installDomGuard();
+initInstallPrompt();
 installResilientFetch();
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
