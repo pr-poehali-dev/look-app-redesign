@@ -1,16 +1,12 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { clearInstallPrompt, getInstallPrompt, onInstallPromptChange } from "@/lib/installPrompt";
-
-const isStandalone = () =>
-  window.matchMedia("(display-mode: standalone)").matches ||
-  (navigator as unknown as { standalone?: boolean }).standalone === true;
+import { clearInstallPrompt, getInstallPrompt, isAppInstalled, markInstalled, onInstallPromptChange } from "@/lib/installPrompt";
 
 const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
 
 const InstallAppRow = () => {
   const [, setTick] = useState(0);
-  const [installed, setInstalled] = useState(isStandalone());
+  const [installed, setInstalled] = useState(isAppInstalled());
 
   useEffect(() => onInstallPromptChange(() => setTick((n) => n + 1)), []);
 
@@ -22,7 +18,7 @@ const InstallAppRow = () => {
       await ev.prompt();
       const choice = await ev.userChoice.catch(() => null);
       clearInstallPrompt();
-      if (choice?.outcome === "accepted") setInstalled(true);
+      if (choice?.outcome === "accepted") { markInstalled(); setInstalled(true); }
       return;
     }
     toast.info(

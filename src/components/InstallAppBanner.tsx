@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
-import { clearInstallPrompt, getInstallPrompt, onInstallPromptChange } from "@/lib/installPrompt";
+import { clearInstallPrompt, getInstallPrompt, isAppInstalled, markInstalled, onInstallPromptChange } from "@/lib/installPrompt";
 
 const DISMISS_KEY = "look_install_banner_dismissed";
 
@@ -18,7 +18,7 @@ const InstallAppBanner = () => {
   const [showHint, setShowHint] = useState(false);
 
   useEffect(() => {
-    if (!isMobile() || isStandalone() || localStorage.getItem(DISMISS_KEY) === "1") return;
+    if (!isMobile() || isStandalone() || isAppInstalled() || localStorage.getItem(DISMISS_KEY) === "1") return;
     const off = onInstallPromptChange(() => setCanInstall(!!getInstallPrompt()));
     const t = setTimeout(() => setVisible(true), 3000);
     return () => { off(); clearTimeout(t); };
@@ -35,7 +35,8 @@ const InstallAppBanner = () => {
     const ev = getInstallPrompt();
     if (ev) {
       await ev.prompt();
-      await ev.userChoice.catch(() => null);
+      const choice = await ev.userChoice.catch(() => null);
+      if (choice?.outcome === "accepted") markInstalled();
       clearInstallPrompt();
       setVisible(false);
       return;
