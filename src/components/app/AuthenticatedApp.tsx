@@ -1,6 +1,7 @@
 import { lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import EnableCallPushBanner from "@/components/EnableCallPushBanner";
+import InstallAppBanner from "@/components/InstallAppBanner";
 import NotFound from "@/pages/NotFound";
 import { UserMediaProvider } from "@/context/UserMediaContext";
 import { UnreadProvider } from "@/context/UnreadContext";
@@ -55,6 +56,7 @@ const AuthenticatedApp = ({ user, token, activeCall, incomingCall, onEndCall, on
       </div>
     )}
 
+    <InstallAppBanner />
     {user && <EnableCallPushBanner userId={user.id} userName={user.name} />}
     {incomingCall && (
       <IncomingCallModal incomingCall={incomingCall} onDecline={onDecline} onAccept={onAccept} />
