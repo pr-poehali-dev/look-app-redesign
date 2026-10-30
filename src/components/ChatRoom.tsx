@@ -344,7 +344,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
     dark: "var(--look-bg)",
     blue: "#0b1a2e",
     purple: "#1a0d2e",
-    green: "#0d2e1a",
+    green: "#2E2E2B",
   };
 
   const deleteMessage = async (msgId: number) => {

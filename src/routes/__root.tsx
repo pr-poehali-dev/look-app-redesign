@@ -123,7 +123,7 @@ export const Route = createRootRoute({
                 name: "viewport",
                 content: "width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content",
             },
-            {name: "theme-color", content: "#232321"},
+            {name: "theme-color", content: "#2C2C29"},
             {httpEquiv: "X-Content-Type-Options", content: "nosniff"},
             {name: "referrer", content: "strict-origin-when-cross-origin"},
             {name: "google", content: "notranslate"},
@@ -158,7 +158,7 @@ export const Route = createRootRoute({
             {rel: "canonical", href: "https://look.com.ru/"},
             {rel: "manifest", href: "/manifest.webmanifest"},
         ],
-        styles: [{children: "html,body{background:#232321;margin:0;padding:0}"}],
+        styles: [{children: "html,body{background:#2C2C29;margin:0;padding:0}"}],
         // IMPORTANT: DO NOT REMOVE PLATFORM SCRIPTS AND THE DEV HMR CLIENT!
         scripts: [
             ...(import.meta.env.DEV ? [{children: HMR_CLIENT}] : []),

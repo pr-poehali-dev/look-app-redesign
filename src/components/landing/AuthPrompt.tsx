@@ -26,14 +26,14 @@ const AuthPrompt = ({ open, reason, onClose, onLogin, onRegister }: AuthPromptPr
         >
           <Icon name="X" size={18} />
         </button>
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#232321] text-white">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#2C2C29] text-white">
           <Icon name="User" size={28} />
         </div>
         <h3 className="text-xl font-bold">Войди в Лоок</h3>
         <p className="mt-2 text-sm text-black/60">{reason}</p>
         <button
           onClick={onRegister}
-          className="mt-5 w-full rounded-lg bg-[#232321] py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
+          className="mt-5 w-full rounded-lg bg-[#2C2C29] py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
         >
           Начать бесплатно
         </button>

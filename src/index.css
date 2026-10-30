@@ -140,11 +140,11 @@
 
 /* === UI Theme switch (Look home) === */
 :root {
-  --look-bg: #232321;
-  --look-sidebar-bg: #2E2E2B;
+  --look-bg: #2C2C29;
+  --look-sidebar-bg: #383835;
   --look-fg: #F2F1EE;
-  --look-muted: #A8A7A1;
-  --look-border: #3D3C38;
+  --look-muted: #B0AFA9;
+  --look-border: #4A4944;
   --look-accent: #FF6B4A;
   --look-accent-soft: #3A241E;
   --look-accent-fg: #ffffff;
@@ -1111,3 +1111,14 @@ html.theme-light .nv-tag {
 @keyframes fab-spring { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
 .anim-fab:active { animation: fab-spring 300ms cubic-bezier(0.2, 0, 0, 1); }
 @media (prefers-reduced-motion: reduce) { .anim-medal, .anim-tab-line, .anim-fab:active { animation: none; } }
+
+html.theme-dark .bg-gray-100,
+html.theme-dark .bg-gray-50 {
+  background-color: color-mix(in srgb, var(--look-bg) 88%, #fff 12%) !important;
+}
+html.theme-dark .bg-gray-200 {
+  background-color: color-mix(in srgb, var(--look-bg) 80%, #fff 20%) !important;
+}
+html.theme-dark .hover\:bg-gray-200:hover {
+  background-color: color-mix(in srgb, var(--look-bg) 78%, #fff 22%) !important;
+}
