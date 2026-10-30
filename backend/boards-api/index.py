@@ -9,7 +9,7 @@ CORS = {
     'Access-Control-Max-Age': '86400',
 }
 
-BOARD_FIELDS = "id, owner_user_id, title, description, cover_image, is_public, created_at, topic, is_collab"
+BOARD_FIELDS = "id, owner_user_id, title, description, cover_image, is_public, created_at, topic, is_collab, community_id"
 
 
 def _resp(status, payload):
@@ -21,7 +21,7 @@ def _row_to_board(r):
         'id': r[0], 'owner_user_id': r[1], 'title': r[2], 'description': r[3] or '',
         'cover_image': r[4], 'is_public': bool(r[5]),
         'created_at': r[6].isoformat() if r[6] else None,
-        'topic': r[7], 'is_collab': bool(r[8]),
+        'topic': r[7], 'is_collab': bool(r[8]), 'community_id': r[9],
     }
 
 
@@ -32,7 +32,12 @@ def _role(cur, schema, board_id, user_id, owner_id):
         return 'owner'
     cur.execute(f"SELECT role FROM {schema}.board_members WHERE board_id = %s AND user_id = %s", (board_id, user_id))
     r = cur.fetchone()
-    return r[0] if r else None
+    if r:
+        return r[0]
+    cur.execute(
+        f"SELECT 1 FROM {schema}.boards b JOIN {schema}.community_members cm ON cm.community_id = b.community_id "
+        f"WHERE b.id = %s AND cm.user_id = %s AND cm.role <> 'left'", (board_id, user_id))
+    return 'editor' if cur.fetchone() else None
 
 
 def _with_counts(cur, schema, boards):
@@ -43,13 +48,17 @@ def _with_counts(cur, schema, boards):
         f"SELECT board_id, COUNT(*) FROM {schema}.board_items WHERE board_id = ANY(%s) GROUP BY board_id", (ids,))
     counts = {r[0]: r[1] for r in cur.fetchall()}
     cur.execute(
-        f"SELECT DISTINCT ON (board_id) board_id, image FROM {schema}.board_items "
-        f"WHERE board_id = ANY(%s) AND image IS NOT NULL AND image <> '' ORDER BY board_id, added_at DESC", (ids,))
-    covers = {r[0]: r[1] for r in cur.fetchall()}
+        f"SELECT board_id, image FROM ("
+        f"SELECT board_id, image, ROW_NUMBER() OVER (PARTITION BY board_id ORDER BY added_at DESC) AS rn "
+        f"FROM {schema}.board_items WHERE board_id = ANY(%s) AND image IS NOT NULL AND image <> '') t WHERE rn <= 4", (ids,))
+    collages = {}
+    for r in cur.fetchall():
+        collages.setdefault(r[0], []).append(r[1])
     for b in boards:
         b['items_count'] = counts.get(b['id'], 0)
-        if not b['cover_image']:
-            b['cover_image'] = covers.get(b['id'])
+        b['collage'] = collages.get(b['id'], [])
+        if not b['cover_image'] and b['collage']:
+            b['cover_image'] = b['collage'][0]
     return boards
 
 
@@ -147,10 +156,19 @@ def handler(event: dict, context) -> dict:
             is_public = bool(body.get('is_public', True))
             topic = (body.get('topic') or '').strip()[:40] or None
             is_collab = bool(body.get('is_collab', False))
+            community_id = (body.get('community_id') or '').strip()[:100] or None
+            if community_id:
+                cur.execute(
+                    f"SELECT 1 FROM {schema}.community_members WHERE community_id = %s AND user_id = %s AND role <> 'left'",
+                    (community_id, user_id))
+                if not cur.fetchone():
+                    return _resp(403, {'error': 'join the circle first'})
+                is_collab = True
+                is_public = True
             cur.execute(
-                f"INSERT INTO {schema}.boards (owner_user_id, title, description, is_public, topic, is_collab) "
-                f"VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
-                (user_id, title, description, is_public, topic, is_collab)
+                f"INSERT INTO {schema}.boards (owner_user_id, title, description, is_public, topic, is_collab, community_id) "
+                f"VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id",
+                (user_id, title, description, is_public, topic, is_collab, community_id)
             )
             new_id = cur.fetchone()[0]
             conn.commit()
@@ -343,10 +361,51 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return _resp(200, {'ok': True})
 
-        # --- Справочник тем ---
+        # --- Доски кружка ---
+        if method == 'GET' and action == 'circle_boards':
+            cid = (params.get('community_id') or '').strip()[:100]
+            cur.execute(
+                f"SELECT {BOARD_FIELDS} FROM {schema}.boards WHERE community_id = %s ORDER BY id DESC", (cid,))
+            return _resp(200, {'boards': _with_counts(cur, schema, [_row_to_board(r) for r in cur.fetchall()])})
+
+        # --- Лента кружка: свежие посты участников ---
+        if method == 'GET' and action == 'circle_feed':
+            cid = (params.get('community_id') or '').strip()[:100]
+            cur.execute(
+                f"SELECT v.id, v.url, v.thumbnail, v.type, v.card_title, v.description, v.handle, v.likes "
+                f"FROM {schema}.videos v WHERE (v.hidden IS NULL OR v.hidden = FALSE) "
+                f"AND COALESCE(v.is_commercial, FALSE) = FALSE AND v.user_id IN "
+                f"(SELECT user_id FROM {schema}.community_members WHERE community_id = %s AND role <> 'left') "
+                f"ORDER BY v.created_at DESC LIMIT 30", (cid,))
+            items = [{'id': r[0], 'url': r[1], 'thumbnail': r[2], 'type': r[3], 'title': r[4] or (r[5] or '')[:40],
+                      'handle': r[6], 'likes': r[7]} for r in cur.fetchall()]
+            return _resp(200, {'items': items})
+
+        # --- Раздел «Вдохновение»: лучшие подборки недели ---
+        if method == 'GET' and action == 'inspiration':
+            cur.execute(
+                f"SELECT {BOARD_FIELDS} FROM {schema}.boards b WHERE b.is_public = TRUE "
+                f"AND EXISTS (SELECT 1 FROM {schema}.board_items bi WHERE bi.board_id = b.id) "
+                f"ORDER BY (SELECT COUNT(*) FROM {schema}.board_items bi WHERE bi.board_id = b.id "
+                f"AND bi.added_at > NOW() - INTERVAL '7 days') DESC, b.id DESC LIMIT 12")
+            return _resp(200, {'boards': _with_counts(cur, schema, [_row_to_board(r) for r in cur.fetchall()])})
+
+        # --- Темы со счётчиками постов ---
         if method == 'GET' and action == 'topics':
-            cur.execute(f"SELECT slug, title, icon, color FROM {schema}.topics ORDER BY sort_order")
-            return _resp(200, {'topics': [{'slug': r[0], 'title': r[1], 'icon': r[2], 'color': r[3]} for r in cur.fetchall()]})
+            cur.execute(
+                f"SELECT t.slug, t.title, t.icon, t.color, "
+                f"(SELECT COUNT(*) FROM {schema}.videos v WHERE v.topic = t.slug AND (v.hidden IS NULL OR v.hidden = FALSE)) "
+                f"FROM {schema}.topics t ORDER BY t.sort_order")
+            return _resp(200, {'topics': [{'slug': r[0], 'title': r[1], 'icon': r[2], 'color': r[3], 'posts': r[4]} for r in cur.fetchall()]})
+
+        # --- Событие использования функции (для метрик) ---
+        if method == 'POST' and action == 'track':
+            body = json.loads(event.get('body') or '{}')
+            ev = (body.get('event') or '').strip()[:40]
+            if ev in ('ideas_filter_on', 'ideas_filter_off', 'board_saved', 'card_created'):
+                cur.execute(f"INSERT INTO {schema}.feature_events (event, user_id) VALUES (%s, %s)", (ev, user_id or None))
+                conn.commit()
+            return _resp(200, {'ok': True})
 
         # --- Страница темы: топ недели, новые доски ---
         if method == 'GET' and action == 'topic_page':

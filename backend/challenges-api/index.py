@@ -43,7 +43,7 @@ def handler(event: dict, context) -> dict:
         if method == 'GET' and action == 'current':
             cur.execute(
                 f"SELECT {FIELDS} FROM {schema}.challenges WHERE is_active = TRUE AND ends_at > NOW() "
-                f"ORDER BY ends_at ASC LIMIT 1")
+                f"AND community_id IS NULL ORDER BY ends_at ASC LIMIT 1")
             row = cur.fetchone()
             if not row:
                 return _resp(200, {'challenge': None})
@@ -55,6 +55,45 @@ def handler(event: dict, context) -> dict:
                     f"SELECT 1 FROM {schema}.challenge_entries WHERE challenge_id = %s AND user_id = %s", (row[0], user_id))
                 joined = cur.fetchone() is not None
             return _resp(200, {'challenge': _challenge(row, joined, total)})
+
+        if method == 'GET' and action == 'circle':
+            cid = (params.get('community_id') or '').strip()[:100]
+            cur.execute(
+                f"SELECT {FIELDS} FROM {schema}.challenges WHERE is_active = TRUE AND ends_at > NOW() "
+                f"AND community_id = %s ORDER BY ends_at ASC LIMIT 1", (cid,))
+            row = cur.fetchone()
+            if not row:
+                return _resp(200, {'challenge': None})
+            cur.execute(f"SELECT COUNT(*) FROM {schema}.challenge_entries WHERE challenge_id = %s", (row[0],))
+            total = cur.fetchone()[0]
+            joined = False
+            if user_id:
+                cur.execute(
+                    f"SELECT 1 FROM {schema}.challenge_entries WHERE challenge_id = %s AND user_id = %s", (row[0], user_id))
+                joined = cur.fetchone() is not None
+            return _resp(200, {'challenge': _challenge(row, joined, total)})
+
+        if method == 'POST' and action == 'create_circle':
+            if not user_id:
+                return _resp(401, {'error': 'X-User-Id required'})
+            body = json.loads(event.get('body') or '{}')
+            cid = (body.get('community_id') or '').strip()[:100]
+            title = (body.get('title') or '').strip()[:120]
+            if not cid or not title:
+                return _resp(400, {'error': 'community_id and title required'})
+            cur.execute(
+                f"SELECT 1 FROM {schema}.community_members WHERE community_id = %s AND user_id = %s AND role IN ('owner','admin')",
+                (cid, user_id))
+            if not cur.fetchone():
+                return _resp(403, {'error': 'only circle admin'})
+            cur.execute(
+                f"INSERT INTO {schema}.challenges (title, description, criteria, badge_title, community_id) "
+                f"VALUES (%s, %s, %s, %s, %s) RETURNING id",
+                (title, (body.get('description') or '').strip()[:1000], (body.get('criteria') or '').strip()[:500],
+                 (body.get('badge_title') or 'Участник челленджа').strip()[:60], cid))
+            new_id = cur.fetchone()[0]
+            conn.commit()
+            return _resp(200, {'id': new_id})
 
         if method == 'GET' and action == 'best':
             cid = params.get('id')

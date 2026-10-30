@@ -53,6 +53,33 @@
         "token": "x"
       },
       "expectedStatus": 401
+    },
+    {
+      "name": "GET inspiration",
+      "method": "GET",
+      "path": "/?action=inspiration",
+      "expectedStatus": 200
+    },
+    {
+      "name": "GET circle_boards",
+      "method": "GET",
+      "path": "/?action=circle_boards&community_id=x",
+      "expectedStatus": 200
+    },
+    {
+      "name": "GET circle_feed",
+      "method": "GET",
+      "path": "/?action=circle_feed&community_id=x",
+      "expectedStatus": 200
+    },
+    {
+      "name": "POST track",
+      "method": "POST",
+      "path": "/?action=track",
+      "body": {
+        "event": "board_saved"
+      },
+      "expectedStatus": 200
     }
   ]
 }

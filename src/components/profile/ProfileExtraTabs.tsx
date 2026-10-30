@@ -4,6 +4,7 @@ import { useMyBoards } from "@/hooks/useBoards";
 import { useChallenge, useMyBadges, daysLeft, daysWord } from "@/hooks/useChallenge";
 import { topicTitle } from "@/lib/topics";
 import ChallengeScreen from "@/components/challenges/ChallengeScreen";
+import BoardCollage from "@/components/post-feed/BoardCollage";
 import CommunitiesScreen from "@/components/CommunitiesScreen";
 
 export type ExtraTab = "boards" | "circles" | "challenges";
@@ -28,14 +29,14 @@ const ProfileExtraTabs = ({ tab, onOpenBoard, onOpenBoards }: Props) => {
           <Icon name="Plus" size={15} />Создать или управлять досками
         </button>
         {loading ? (
-          <div className="flex justify-center py-10"><div className="w-6 h-6 border-2 border-[#8b5cf6] border-t-transparent rounded-full animate-spin" /></div>
+          <div className="grid grid-cols-2 gap-3">{[0, 1].map((i) => <div key={i} className="skeleton-box aspect-[4/5]" />)}</div>
         ) : boards.length === 0 ? (
           <p className="text-center text-sm text-gray-400 py-10">Пока нет досок</p>
         ) : (
           <div className="grid grid-cols-2 gap-3">
             {boards.map((b) => (
               <button key={b.id} onClick={() => onOpenBoard(b.id)} className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-gray-100">
-                {b.cover_image && <img src={b.cover_image} alt="" loading="lazy" className="w-full h-full object-cover" />}
+                <BoardCollage images={b.collage} cover={b.cover_image} />
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-3 pt-8 pb-2 text-left">
                   <p className="text-white text-sm font-bold truncate flex items-center gap-1">
                     {!b.is_public && <Icon name="Lock" size={10} />}{b.title}

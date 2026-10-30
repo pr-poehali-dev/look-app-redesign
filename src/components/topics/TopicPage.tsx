@@ -7,6 +7,7 @@ import { mapPost } from "@/components/post-feed/mapPost";
 import NoteViewer from "@/components/post-feed/NoteViewer";
 import type { Post } from "@/components/post-feed/PostFeedTypes";
 import { useAuth } from "@/context/AuthContext";
+import BoardCollage from "@/components/post-feed/BoardCollage";
 import BoardDetailScreen from "@/components/profile/BoardDetailScreen";
 
 interface TopItem {
@@ -75,7 +76,7 @@ const TopicPage = ({ slug, onBack }: { slug: string; onBack: () => void }) => {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" /></div>
+        <div className="grid grid-cols-3 gap-1 px-4">{Array.from({ length: 9 }).map((_, i) => <div key={i} className="skeleton-box aspect-square" />)}</div>
       ) : (
         <div className="pb-28">
           <h3 className="px-4 pb-2 text-white font-bold text-base">Топ недели</h3>
@@ -99,7 +100,7 @@ const TopicPage = ({ slug, onBack }: { slug: string; onBack: () => void }) => {
               <div className="flex gap-3 px-4 pb-5 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
                 {boards.map((b) => (
                   <button key={b.id} onClick={() => setBoardId(b.id)} className="relative w-36 aspect-[4/5] flex-shrink-0 rounded-2xl overflow-hidden bg-white/10">
-                    {b.cover_image && <img src={b.cover_image} alt="" loading="lazy" className="w-full h-full object-cover" />}
+                    <BoardCollage images={b.collage} cover={b.cover_image} />
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2.5 pt-8 pb-2 text-left">
                       <p className="text-white text-sm font-bold truncate">{b.title}</p>
                       <p className="text-white/70 text-[11px]">{b.items_count ?? 0} постов</p>

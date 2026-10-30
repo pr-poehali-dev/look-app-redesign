@@ -16,6 +16,7 @@ import { Post, GET_PHOTOS_URL, formatTime, parseServerDate } from "./post-feed/P
 import { useBulkCounts } from "@/hooks/useBulkCounts";
 import { readFeedCache, writeFeedCache } from "@/lib/feedCache";
 import { mapPost } from "@/components/post-feed/mapPost";
+import { trackEvent } from "@/lib/track";
 import TopicsScreen from "@/components/topics/TopicsScreen";
 import ChallengeBanner from "@/components/challenges/ChallengeBanner";
 import { isSlowNetwork } from "@/lib/network";
@@ -60,6 +61,7 @@ const PostFeed = () => {
     setIdeasOnly((v) => {
       const next = !v;
       try { localStorage.setItem("feed_ideas_only", next ? "1" : "0"); } catch { /* ignore */ }
+      trackEvent(next ? "ideas_filter_on" : "ideas_filter_off", user?.id);
       return next;
     });
   };

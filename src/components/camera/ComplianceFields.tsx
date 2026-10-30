@@ -4,6 +4,7 @@ import CardFields from "@/components/camera/CardFields";
 import { addItemToBoards } from "@/hooks/useBoards";
 import { submitPendingChallenge } from "@/hooks/useChallenge";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/track";
 
 export type AgeRating = "0+" | "6+" | "12+" | "16+" | "18+";
 
@@ -91,6 +92,7 @@ export const attachToBoards = async (
   reg: { id?: number; url?: string; thumb?: string; type?: string } | null,
   caption: string,
 ) => {
+  if (userId && reg?.id && c.postMode === "card") trackEvent("card_created", userId);
   if (userId && reg?.id) {
     const badge = await submitPendingChallenge(userId, reg.id);
     if (badge) toast.success(`Вы участник челленджа! Бейдж «${badge}» получен`);

@@ -6,6 +6,7 @@ import ChatRoom from "./ChatRoom";
 import GroupCallScreen from "./GroupCallScreen";
 import CommunitySettingsScreen from "./CommunitySettingsScreen";
 import { Chat } from "./MessagesScreen";
+import CircleHub from "./community/CircleHub";
 
 const API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 const TOPICS = ["Мода", "Красота", "Путешествия", "Еда", "Интерьер", "Спорт", "Хобби", "Фото", "Игры", "Музыка", "Другое"];
@@ -54,6 +55,7 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
   const [groupCall, setGroupCall] = useState<{ communityId: string; name: string; mode: "audio" | "video" } | null>(null);
   const [settingsCom, setSettingsCom] = useState<Community | null>(null);
   const [freshLoaded, setFreshLoaded] = useState(false);
+  const [hubCom, setHubCom] = useState<Community | null>(null);
 
   const loadCommunities = () => {
     if (!user) return;
@@ -209,6 +211,10 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
 
   if (openChat) return (
     <ChatRoom chat={openChat} onBack={() => { setOpenChat(null); }} />
+  );
+
+  if (hubCom) return (
+    <CircleHub communityId={hubCom.id} name={hubCom.name} isMember={hubCom.joined} isAdmin={!!hubCom.is_admin} onClose={() => setHubCom(null)} />
   );
 
   if (settingsCom) return (
@@ -371,6 +377,16 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
                     className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${com.joined ? "bg-white/10 text-white/60" : "bg-[#fe2c55] text-white"}`}
                   >
                     {com.joined ? "Выйти" : com.type === "closed" ? "Подать заявку" : "Вступить"}
+                  </button>
+                )}
+                {com.joined && (
+                  <button
+                    onClick={() => setHubCom(com)}
+                    className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center"
+                    title="Лента, доски и челленджи"
+                    aria-label="Лента, доски и челленджи"
+                  >
+                    <Icon name="LayoutGrid" size={16} className="text-white/60" />
                   </button>
                 )}
                 {com.joined && !com.is_admin && (

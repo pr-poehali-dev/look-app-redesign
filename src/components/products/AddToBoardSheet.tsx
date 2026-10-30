@@ -4,16 +4,18 @@ import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
 import { useMyBoards, addItemToBoard } from "@/hooks/useBoards";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/track";
 
 interface Props {
   itemType: "post" | "video";
   itemId: string | number;
   image: string;
   title?: string;
+  onSaved?: () => void;
   onClose: () => void;
 }
 
-const AddToBoardSheet = ({ itemType, itemId, image, title, onClose }: Props) => {
+const AddToBoardSheet = ({ itemType, itemId, image, title, onSaved, onClose }: Props) => {
   const { user } = useAuth();
   const { boards: allBoards, loading, create } = useMyBoards();
   const boards = allBoards.filter((b) => b.my_role !== "member");
@@ -26,6 +28,8 @@ const AddToBoardSheet = ({ itemType, itemId, image, title, onClose }: Props) => 
     setAddedIds((prev) => [...prev, boardId]);
     await addItemToBoard(boardId, { itemType, itemId, image, title }, user.id);
     toast.success("Добавлено на доску");
+    trackEvent("board_saved", user.id);
+    onSaved?.();
   };
 
   const handleCreateAndAdd = async () => {

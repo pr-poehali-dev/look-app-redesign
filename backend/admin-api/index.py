@@ -380,6 +380,84 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         result['videos_chart'] = [{'date': str(r['d']), 'count': r['c']} for r in cur.fetchall()]
         return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps(result, default=str)}
 
+    # ============ ИДЕИ: метрики, темы, челленджи ============
+    if action == 'ideas_metrics':
+        res = {}
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.boards")
+        res['boards_total'] = cur.fetchone()['c']
+        _q(cur, "SELECT COUNT(DISTINCT owner_user_id) AS c FROM {S}.boards")
+        res['board_owners'] = cur.fetchone()['c']
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.app_users")
+        users = max(1, cur.fetchone()['c'])
+        res['boards_per_user'] = round(res['boards_total'] / users, 2)
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.board_items")
+        res['board_items_total'] = cur.fetchone()['c']
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.board_items WHERE added_at > NOW() - INTERVAL '7 days'")
+        res['board_items_week'] = cur.fetchone()['c']
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.videos WHERE COALESCE(hidden, FALSE) = FALSE")
+        all_posts = max(1, cur.fetchone()['c'])
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.videos WHERE card_title IS NOT NULL AND COALESCE(hidden, FALSE) = FALSE")
+        res['cards_total'] = cur.fetchone()['c']
+        res['cards_share'] = round(res['cards_total'] * 100.0 / all_posts, 1)
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.challenge_entries")
+        res['challenge_entries'] = cur.fetchone()['c']
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.user_badges")
+        res['badges_total'] = cur.fetchone()['c']
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.feature_events WHERE event = 'ideas_filter_on'")
+        res['ideas_filter_on'] = cur.fetchone()['c']
+        _q(cur, "SELECT COUNT(DISTINCT user_id) AS c FROM {S}.feature_events WHERE event = 'ideas_filter_on' AND user_id IS NOT NULL")
+        res['ideas_filter_users'] = cur.fetchone()['c']
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps(res, default=str)}
+
+    if action == 'topics_admin_list':
+        _q(cur, "SELECT slug, title, icon, color, sort_order FROM {S}.topics ORDER BY sort_order")
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'topics': cur.fetchall()}, ensure_ascii=False)}
+
+    if action == 'topic_save':
+        import re as _re
+        slug = (body.get('slug') or '').strip().lower()[:40]
+        title = (body.get('title') or '').strip()[:60]
+        if not _re.fullmatch(r'[a-z0-9_-]{2,40}', slug) or not title:
+            return {'statusCode': 400, 'headers': _cors(), 'body': json.dumps({'error': 'slug (латиница) и название обязательны'})}
+        icon = (body.get('icon') or 'Sparkles').strip()[:40]
+        color = (body.get('color') or '#8b5cf6').strip()[:20]
+        order = _safe_int(body.get('sort_order'), 99, 1000)
+        _q(cur, "INSERT INTO {S}.topics (slug, title, icon, color, sort_order) VALUES (%s, %s, %s, %s, %s) "
+                "ON CONFLICT (slug) DO UPDATE SET title = EXCLUDED.title, icon = EXCLUDED.icon, color = EXCLUDED.color, sort_order = EXCLUDED.sort_order",
+           (slug, title, icon, color, order))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
+
+    if action == 'topic_delete':
+        _q(cur, "DELETE FROM {S}.topics WHERE slug = %s", ((body.get('slug') or '').strip(),))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
+
+    if action == 'challenges_admin_list':
+        _q(cur, """
+            SELECT c.id, c.title, c.description, c.criteria, c.topic, c.badge_title, c.starts_at, c.ends_at, c.is_active,
+                   (SELECT COUNT(*) FROM {S}.challenge_entries e WHERE e.challenge_id = c.id) AS entries
+            FROM {S}.challenges c WHERE c.community_id IS NULL ORDER BY c.id DESC LIMIT 50
+        """)
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'challenges': cur.fetchall()}, default=str, ensure_ascii=False)}
+
+    if action == 'challenge_save':
+        title = (body.get('title') or '').strip()[:120]
+        if not title:
+            return {'statusCode': 400, 'headers': _cors(), 'body': json.dumps({'error': 'название обязательно'})}
+        days = _safe_int(body.get('days'), 7, 60)
+        vals = (title, (body.get('description') or '').strip()[:1000], (body.get('criteria') or '').strip()[:500],
+                (body.get('topic') or '').strip()[:40] or None, (body.get('badge_title') or 'Участник челленджа').strip()[:60])
+        cid = body.get('id')
+        if cid:
+            _q(cur, "UPDATE {S}.challenges SET title=%s, description=%s, criteria=%s, topic=%s, badge_title=%s, is_active=%s WHERE id=%s",
+               vals + (bool(body.get('is_active', True)), int(cid)))
+        else:
+            _q(cur, "INSERT INTO {S}.challenges (title, description, criteria, topic, badge_title, ends_at) "
+                    "VALUES (%s, %s, %s, %s, %s, NOW() + (%s || ' days')::interval)", vals + (str(days),))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
+
     # ============ USERS ============
     if action == 'users_list':
         limit = _safe_int(body.get('limit'), 50, 200)

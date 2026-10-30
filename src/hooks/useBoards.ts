@@ -14,6 +14,8 @@ export interface Board {
   topic?: string | null;
   is_collab?: boolean;
   items_count?: number;
+  collage?: string[];
+  community_id?: string | null;
   my_role?: "owner" | "editor" | "member";
 }
 
@@ -58,12 +60,12 @@ export const useMyBoards = () => {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  const create = useCallback(async (title: string, description = "", isPublic = true, extra: { topic?: string; isCollab?: boolean } = {}) => {
+  const create = useCallback(async (title: string, description = "", isPublic = true, extra: { topic?: string; isCollab?: boolean; communityId?: string } = {}) => {
     if (!user?.id) return null;
     const res = await fetch(`${BOARDS_URL}?action=create`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-User-Id": user.id },
-      body: JSON.stringify({ title, description, is_public: isPublic, topic: extra.topic || null, is_collab: !!extra.isCollab }),
+      body: JSON.stringify({ title, description, is_public: isPublic, topic: extra.topic || null, is_collab: !!extra.isCollab, community_id: extra.communityId || null }),
     });
     const data = await parseBody(res);
     refresh();

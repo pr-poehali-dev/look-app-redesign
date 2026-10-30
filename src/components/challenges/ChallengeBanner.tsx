@@ -22,7 +22,10 @@ const ChallengeBanner = () => {
         <div className="flex-1 min-w-0">
           <p className="text-white/80 text-[11px] font-semibold uppercase tracking-wide">Челлендж недели</p>
           <p className="text-white font-bold text-sm truncate">{challenge.title}</p>
-          <p className="text-white/80 text-xs">{challenge.joined ? "Вы участвуете" : "Нажмите, чтобы участвовать"} · осталось {left} {daysWord(left)}</p>
+          <p className="text-white/80 text-xs">Осталось {left} {daysWord(left)} · участвуют {challenge.participants}</p>
+          <div className="mt-1.5 h-1 rounded-full bg-white/25 overflow-hidden">
+            <div className="h-full bg-white rounded-full" style={{ width: `${Math.min(100, Math.max(6, ((7 - Math.min(left, 7)) / 7) * 100))}%` }} />
+          </div>
         </div>
         <Icon name="ChevronRight" size={18} className="text-white/80 flex-shrink-0" />
       </button>

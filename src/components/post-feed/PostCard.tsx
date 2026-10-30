@@ -37,6 +37,7 @@ const PostCard = ({ post }: { post: Post }) => {
   const [showShare, setShowShare] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showAddToBoard, setShowAddToBoard] = useState(false);
+  const [boardSaved, setBoardSaved] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showProducts, setShowProducts] = useState(false);
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
@@ -190,7 +191,7 @@ const PostCard = ({ post }: { post: Post }) => {
             <Icon
               name="Heart"
               size={26}
-              className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph transition-all duration-150"}
+              className={liked ? "text-[#fe2c55] fill-[#fe2c55] anim-like" : "action-icon-glyph transition-all duration-150"}
             />
           </button>
           <button onClick={() => setShowComments(true)} className="flex items-center justify-center active:scale-90 transition-transform">
@@ -200,7 +201,7 @@ const PostCard = ({ post }: { post: Post }) => {
             <Icon name="ShareArrow" size={26} className="action-icon-glyph" />
           </button>
           <button onClick={() => { if (guest) return needAuth(); setShowAddToBoard(true); }} className="flex items-center justify-center active:scale-90 transition-transform" title="В доску" aria-label="В доску">
-            <Icon name="Layers" size={26} className="action-icon-glyph" />
+            <Icon name="Layers" size={26} className={`action-icon-glyph ${boardSaved ? "anim-pin" : ""}`} />
           </button>
         </div>
         {(post.hasProducts || post.templateId) && (
@@ -556,7 +557,8 @@ const PostCard = ({ post }: { post: Post }) => {
           itemType="post"
           itemId={post.id}
           image={post.image}
-          title={post.caption}
+          title={post.cardTitle || post.caption}
+          onSaved={() => { setBoardSaved(true); setTimeout(() => setBoardSaved(false), 700); }}
           onClose={() => setShowAddToBoard(false)}
         />
       )}

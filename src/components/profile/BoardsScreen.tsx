@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import { useMyBoards } from "@/hooks/useBoards";
 import { TOPICS, topicTitle } from "@/lib/topics";
 import BoardDetailScreen from "./BoardDetailScreen";
+import BoardCollage from "@/components/post-feed/BoardCollage";
 
 const BOARD_COVER_ICONS = ["LayoutGrid", "Heart", "Star", "Sparkles", "Palette", "Coffee", "Camera", "Plane"];
 
@@ -114,8 +115,8 @@ const BoardsScreen = ({ onBack, initialBoardId }: { onBack: () => void; initialB
       )}
 
       {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="w-6 h-6 border-2 border-[#8b5cf6] border-t-transparent rounded-full animate-spin" />
+        <div className="grid grid-cols-2 gap-3 p-4">
+          {[0, 1, 2, 3].map((i) => <div key={i} className="skeleton-box aspect-[4/5]" />)}
         </div>
       ) : shown.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3 px-8 text-center">
@@ -126,15 +127,9 @@ const BoardsScreen = ({ onBack, initialBoardId }: { onBack: () => void; initialB
       ) : (
         <div className="grid grid-cols-2 gap-3 p-4">
           {shown.map((b, i) => (
-            <div key={b.id} className="relative rounded-2xl overflow-hidden bg-gray-50 aspect-[4/5] shadow-sm">
+            <div key={b.id} className="relative rounded-[20px] overflow-hidden bg-gray-50 aspect-[4/5] border border-gray-200 anim-card-in">
               <button onClick={() => setOpenedId(b.id)} className="w-full h-full active:opacity-80">
-                {b.cover_image ? (
-                  <img loading="lazy" decoding="async" src={b.cover_image} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                    <Icon name={BOARD_COVER_ICONS[i % BOARD_COVER_ICONS.length]} size={36} className="text-gray-300" />
-                  </div>
-                )}
+                <BoardCollage images={b.collage} cover={b.cover_image} />
               </button>
               <div className="absolute top-2 left-2 flex items-center gap-1 pointer-events-none">
                 {b.is_collab && <span className="px-1.5 py-0.5 rounded-full bg-black/55 text-white text-[10px] font-semibold flex items-center gap-1"><Icon name="Users" size={10} />Общая</span>}

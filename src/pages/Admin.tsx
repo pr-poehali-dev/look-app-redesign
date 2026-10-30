@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Icon from "@/components/ui/icon";
+import IdeasAdmin from "@/components/admin/IdeasAdmin";
 
 const API = "https://functions.poehali.dev/c578b52c-b9b6-47b3-9bcf-b6ab8405c4d7";
 const TOKEN_KEY = "admin_token_v1";
 
-type Section = "dashboard" | "users" | "videos" | "photos" | "comments" | "chats" | "products" | "reports" | "search" | "compliance" | "streams" | "broadcast" | "email_stats" | "support" | "mobile_api" | "privacy" | "terms";
+type Section = "dashboard" | "users" | "videos" | "photos" | "comments" | "chats" | "products" | "reports" | "search" | "compliance" | "streams" | "broadcast" | "email_stats" | "support" | "mobile_api" | "privacy" | "terms" | "ideas";
 
 interface Stats {
   users_total: number; users_today: number; users_week: number;
@@ -38,6 +39,7 @@ const SECTIONS: { id: Section; label: string; icon: string }[] = [
   { id: "photos", label: "Фото", icon: "Image" },
   { id: "comments", label: "Комментарии", icon: "MessageSquare" },
   { id: "products", label: "Товары", icon: "ShoppingBag" },
+  { id: "ideas", label: "Идеи и подборки", icon: "Lightbulb" },
   { id: "streams", label: "Стримы", icon: "Radio" },
   { id: "reports", label: "Жалобы", icon: "Flag" },
   { id: "search", label: "Поиск", icon: "Search" },
@@ -112,6 +114,7 @@ export default function Admin() {
               {section === "photos" && <Videos token={token!} mediaType="image" />}
           {section === "comments" && <Comments token={token!} />}
           {section === "products" && <Products token={token!} />}
+          {section === "ideas" && <IdeasAdmin token={token!} />}
           {section === "chats" && <Chats token={token!} />}
           {section === "streams" && <Streams token={token!} />}
           {section === "reports" && <Reports token={token!} />}

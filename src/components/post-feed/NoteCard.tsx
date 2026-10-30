@@ -37,7 +37,7 @@ const NoteCard = ({ post, onOpen, priority = false }: { post: Post; onOpen: () =
   };
 
   return (
-    <div className="relative w-full mb-3 rounded-2xl overflow-hidden bg-white/5" style={{ breakInside: "avoid" }}>
+    <div className="relative w-full mb-3 rounded-2xl overflow-hidden bg-white/5 border border-white/10 anim-card-in" style={{ breakInside: "avoid" }}>
       <button
         onClick={onOpen}
         className="block w-full text-left active:opacity-90 transition-opacity"
