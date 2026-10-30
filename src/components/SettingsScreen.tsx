@@ -471,6 +471,8 @@ const EditProfileScreen = ({ onBack }: { onBack: () => void }) => {
   };
 
   const handleSave = async () => {
+    if (!handle.trim()) { setError("Укажите имя пользователя"); return; }
+    if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email.trim())) { setError("Укажите корректный email"); return; }
     setSaving(true);
     setError("");
     try {
@@ -556,7 +558,7 @@ const EditProfileScreen = ({ onBack }: { onBack: () => void }) => {
 
         {/* Имя пользователя */}
         <div className="px-4 pt-5">
-          <label className="text-black text-base">Имя пользователя</label>
+          <label className="text-black text-base">Имя пользователя <span className="text-[#fe2c55]">*</span></label>
           <input
             value={handle}
             onChange={e => setHandle(e.target.value.replace(/[^a-z0-9_.]/gi, ""))}
@@ -596,40 +598,6 @@ const EditProfileScreen = ({ onBack }: { onBack: () => void }) => {
           )}
         </div>
 
-        {/* Возраст */}
-        <div className="px-4 pt-5">
-          <label className="text-black text-base">Возраст</label>
-          {user?.birth_set ? (
-            <>
-              <div className="mt-2 px-3 py-3 bg-gray-50 text-black text-base rounded-md flex items-center justify-between">
-                <span>{user.is_adult ? "Подтверждено: 18+" : "Подтверждено: 12+"}</span>
-                <Icon name="Lock" size={16} className="text-gray-400" />
-              </div>
-              <p className="text-[11px] text-gray-400 mt-1">Нужно для возрастных ограничений, изменить можно через поддержку</p>
-            </>
-          ) : (
-            <div className="mt-2 flex gap-2">
-              {[{ l: "Мне есть 18 лет", v: true }, { l: "Мне 12–17 лет", v: false }].map((o) => (
-                <button
-                  key={o.l}
-                  type="button"
-                  onClick={async () => {
-                    const token = localStorage.getItem("auth_token") || "";
-                    const r = await fetch(AUTH_API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "set_age", token, age12: true, age18: o.v }) });
-                    const raw = await r.json();
-                    const d = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-                    if (d.error) setError(d.error);
-                    else updateUser({ birth_set: true, is_adult: !!d.is_adult, age_confirmed: o.v ? 18 : 12 });
-                  }}
-                  className="flex-1 py-3 bg-gray-100 text-black text-sm font-semibold rounded-md"
-                >
-                  {o.l}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Город */}
         <div className="px-4 pt-5">
           <label className="text-black text-base">Город</label>
@@ -662,7 +630,7 @@ const EditProfileScreen = ({ onBack }: { onBack: () => void }) => {
 
         {/* Email */}
         <div className="px-4 pt-5">
-          <label className="text-black text-base">Email</label>
+          <label className="text-black text-base">Email <span className="text-[#fe2c55]">*</span></label>
           <input
             value={email}
             onChange={e => setEmail(e.target.value)}
