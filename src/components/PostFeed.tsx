@@ -33,6 +33,7 @@ type ViewMode = "masonry" | "feed";
 const SCOPES: { id: FeedScope; label: string }[] = [
   { id: "following", label: "Подписки" },
   { id: "recommend", label: "Вдохновение" },
+  { id: "articles", label: "Статьи" },
   { id: "nearby", label: "Рядом" },
 ];
 

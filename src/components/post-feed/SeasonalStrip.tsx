@@ -17,7 +17,7 @@ interface Props {
 const SeasonalStrip = ({ posts, activeId, onChange }: Props) => {
   const [topics, setTopics] = useState<SeasonalTopic[]>([]);
   useEffect(() => { setTopics(getSeasonalTopics(new Date())); }, []);
-  const withCounts = topics.map((t) => ({ t, n: posts.filter((p) => matchesTopic(p, t)).length })).filter((x) => x.n > 0);
+  const withCounts = topics.map((t) => ({ t, n: posts.filter((p) => matchesTopic(p, t)).length }));
   if (withCounts.length === 0) return null;
   return (
     <div className="mb-3">
@@ -36,7 +36,7 @@ const SeasonalStrip = ({ posts, activeId, onChange }: Props) => {
           >
             <Icon name={t.icon} fallback="Sparkles" size={13} />
             {t.label}
-            <span className={activeId === t.id ? "text-white/80" : "text-white/40"}>{n}</span>
+            {n > 0 && <span className={activeId === t.id ? "text-white/80" : "text-white/40"}>{n}</span>}
           </button>
         ))}
       </div>
