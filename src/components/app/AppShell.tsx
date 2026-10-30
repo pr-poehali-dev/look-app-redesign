@@ -11,6 +11,7 @@ import VerifyEmailScreen from "@/components/app/VerifyEmailScreen";
 import AuthenticatedApp from "@/components/app/AuthenticatedApp";
 import InstallAppBanner from "@/components/InstallAppBanner";
 import { useIncomingCall } from "@/components/app/useIncomingCall";
+import { useNotifySound } from "@/components/app/useNotifySound";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import "@/i18n";
 
@@ -103,6 +104,7 @@ const AppContent = () => {
   }, [verifyToken]);
 
   const { incomingCall, activeCall, setActiveCall, acceptCall, declineCall } = useIncomingCall(user);
+  useNotifySound(!!user);
 
   if (loading) {
     return (

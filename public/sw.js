@@ -1,4 +1,4 @@
-const VERSION = "v5";
+const VERSION = "v6";
 const API = `api-${VERSION}`;
 const SHELL = `shell-${VERSION}`;
 const STATIC = `static-${VERSION}`;
@@ -85,11 +85,22 @@ self.addEventListener("push", (e) => {
   try { d = e.data ? e.data.json() : {}; } catch (_) { d = {}; }
   if (d.type === "notify") {
     e.waitUntil(
-      self.registration.showNotification(d.title || "Лоок", {
-        body: d.body || "",
-        icon: "/icon-192.png",
-        badge: "/icon-192.png",
-        data: { type: "notify", url: d.url || "/" },
+      self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+        const focused = list.find((c) => c.visibilityState === "visible" && c.focused);
+        if (focused) {
+          list.forEach((c) => c.postMessage({ type: "notify_sound", title: d.title || "", body: d.body || "" }));
+          return null;
+        }
+        return self.registration.showNotification(d.title || "Лоок", {
+          body: d.body || "",
+          icon: "/icon-192.png",
+          badge: "/icon-192.png",
+          vibrate: [200, 100, 200],
+          renotify: true,
+          silent: false,
+          tag: d.tag || "look-" + Date.now(),
+          data: { type: "notify", url: d.url || "/" },
+        });
       })
     );
     return;
@@ -123,7 +134,8 @@ self.addEventListener("push", (e) => {
       tag: "incoming-call",
       renotify: true,
       requireInteraction: true,
-      vibrate: [400, 200, 400, 200, 400],
+      silent: false,
+      vibrate: [600, 300, 600, 300, 600, 300, 600],
       data: d,
       actions: [
         { action: "accept", title: "Принять" },
