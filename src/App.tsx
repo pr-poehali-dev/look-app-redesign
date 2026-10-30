@@ -14,6 +14,7 @@ import OfflineBanner from "@/components/OfflineBanner";
 import PullToRefresh from "@/components/PullToRefresh";
 import VerifyEmailScreen from "./components/app/VerifyEmailScreen";
 import AuthenticatedApp from "./components/app/AuthenticatedApp";
+import InstallAppBanner from "@/components/InstallAppBanner";
 import { useIncomingCall } from "./components/app/useIncomingCall";
 
 const MediaDeepLink = lazy(() => import("./components/MediaDeepLink"));
@@ -191,6 +192,7 @@ const AppContent = () => {
             onRegister={() => setAuthMode("register")}
           />
           <ArticleDeepLink /><MediaDeepLink />
+          <InstallAppBanner />
         </>
       );
     }
