@@ -41,7 +41,6 @@ const SECTIONS: { id: Section; label: string; icon: string }[] = [
   { id: "streams", label: "Стримы", icon: "Radio" },
   { id: "reports", label: "Жалобы", icon: "Flag" },
   { id: "search", label: "Поиск", icon: "Search" },
-  { id: "compliance", label: "Закон и реклама", icon: "Scale" },
   { id: "broadcast", label: "Рассылки", icon: "Send" },
   { id: "email_stats", label: "Метрики писем", icon: "Mail" },
   { id: "support", label: "Поддержка", icon: "LifeBuoy" },
