@@ -75,28 +75,36 @@ const BOOT_GUARD = `(function () {
   });
 })();`;
 
-const METRIKA = `(function (m, e, t, r, i, k, a) {
-    m[i] = m[i] || function () {
+const METRIKA = `(function () {
+  function start() {
+    (function (m, e, t, r, i, k, a) {
+      m[i] = m[i] || function () {
         (m[i].a = m[i].a || []).push(arguments)
-    };
-    m[i].l = 1 * new Date();
-    for (var j = 0; j < document.scripts.length; j++) {
+      };
+      m[i].l = 1 * new Date();
+      for (var j = 0; j < document.scripts.length; j++) {
         if (document.scripts[j].src === r) {
-            return;
+          return;
         }
-    }
-    k = e.createElement(t), a = e.getElementsByTagName(t)[0], k.async = 1, k.src = r, a.parentNode.insertBefore(k, a)
-})
-(window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
-
-ym(101026698, "init", {
-    trustedDomains: ["poehali.dev"],
-    clickmap: true,
-    trackLinks: true,
-    accurateTrackBounce: true,
-    webvisor: true,
-    trackHash: true
-});`;
+      }
+      k = e.createElement(t), a = e.getElementsByTagName(t)[0], k.async = 1, k.src = r, a.parentNode.insertBefore(k, a)
+    })(window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+    ym(101026698, "init", {
+      trustedDomains: ["poehali.dev"],
+      clickmap: true,
+      trackLinks: true,
+      accurateTrackBounce: true,
+      webvisor: true,
+      trackHash: true
+    });
+  }
+  function later() {
+    if (window.requestIdleCallback) window.requestIdleCallback(start, { timeout: 5000 });
+    else setTimeout(start, 3000);
+  }
+  if (document.readyState === 'complete') later();
+  else window.addEventListener('load', later, { once: true });
+})();`;
 
 const JSON_LD = JSON.stringify({
     "@context": "https://schema.org",

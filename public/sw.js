@@ -52,7 +52,7 @@ self.addEventListener("fetch", (e) => {
           return res;
         });
         if (!cached) return network;
-        const timeout = new Promise((resolve) => setTimeout(() => resolve(cached), 4000));
+        const timeout = new Promise((resolve) => setTimeout(() => resolve(cached), 1200));
         return Promise.race([network.catch(() => cached), timeout]);
       })()
     );
