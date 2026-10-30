@@ -406,8 +406,8 @@ const Index = () => {
                   <div
                     className="pointer-events-auto absolute left-4 right-4 md:right-auto md:w-[420px] top-full mt-1 backdrop-blur rounded-2xl p-2 max-h-[60vh] overflow-y-auto z-40"
                     style={{
-                      background: theme === "dark" ? "rgba(10,46,26,0.95)" : "rgba(255,255,255,0.98)",
-                      border: theme === "dark" ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(13,42,24,0.15)",
+                      background: theme === "dark" ? "rgba(35, 35, 33,0.95)" : "rgba(255,255,255,0.98)",
+                      border: theme === "dark" ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(26, 26, 24,0.15)",
                     }}
                   >
                     <div className="flex flex-wrap gap-2">
@@ -419,7 +419,7 @@ const Index = () => {
                         }}
                         className="px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1"
                         style={{
-                          background: activeCategory === LIVE_CATEGORY.id ? "#FF5A3C" : theme === "dark" ? "rgba(255,255,255,0.12)" : "rgba(13,42,24,0.08)",
+                          background: activeCategory === LIVE_CATEGORY.id ? "#FF5A3C" : theme === "dark" ? "rgba(255,255,255,0.12)" : "rgba(26, 26, 24,0.08)",
                           color: activeCategory === LIVE_CATEGORY.id ? "#fff" : theme === "dark" ? "rgba(255,255,255,0.9)" : "#1A1A18",
                         }}
                       >
@@ -440,7 +440,7 @@ const Index = () => {
                             style={{
                               background: active
                                 ? theme === "dark" ? "#fff" : "#FF5A3C"
-                                : theme === "dark" ? "rgba(255,255,255,0.12)" : "rgba(13,42,24,0.08)",
+                                : theme === "dark" ? "rgba(255,255,255,0.12)" : "rgba(26, 26, 24,0.08)",
                               color: active
                                 ? theme === "dark" ? "var(--look-bg)" : "#fff"
                                 : theme === "dark" ? "rgba(255,255,255,0.9)" : "#1A1A18",

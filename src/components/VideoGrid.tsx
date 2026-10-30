@@ -141,7 +141,7 @@ const VideoGrid = ({ onOpenVideo, category = "all", onGuestAction }: Props) => {
                     className="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-[#0a2e1a] to-[#1a1a1a] flex items-center justify-center">
+                  <div className="w-full h-full bg-gradient-to-br from-[#2E2E2B] to-[#1a1a1a] flex items-center justify-center">
                     <Icon name="Play" size={36} className="text-white/60" />
                   </div>
                 )
