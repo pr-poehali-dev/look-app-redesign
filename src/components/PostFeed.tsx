@@ -152,29 +152,57 @@ const PostFeed = () => {
   useEffect(() => {
     const uidParam = user?.id ? `&user_id=${encodeURIComponent(String(user.id))}` : "";
     const postsCacheKey = `posts_${user?.id || "anon"}`;
-    Promise.all([
-      fetch(`${GET_PHOTOS_URL}?type=image${uidParam}`).then(r => r.json()),
-      fetch(`${GET_PHOTOS_URL}?type=video${uidParam}`).then(r => r.json()),
-    ])
-      .then(([rawImages, rawVideos]) => {
-        const imgData = typeof rawImages.body === 'string' ? JSON.parse(rawImages.body) : rawImages;
-        const vidData = typeof rawVideos.body === 'string' ? JSON.parse(rawVideos.body) : rawVideos;
-        writeFeedCache(postsCacheKey, { img: (imgData.videos || []).slice(0, 30), vid: (vidData.videos || []).slice(0, 30) });
-        const dbPosts: Post[] = (imgData.videos || []).map((v: unknown) => mapPost(v, false, user));
-        const dbVideoPosts: Post[] = (vidData.videos || []).map((v: unknown) => mapPost(v, true, user));
-        const seen = new Set<string>();
-        const deduped = [...dbPosts, ...dbVideoPosts].filter(p => {
-          if (!p.image) return true;
-          if (seen.has(p.image)) return false;
-          seen.add(p.image);
-          return true;
-        });
-        const sig = (list: Post[]) => list.map(p => `${p.id}:${p.likes}:${p.comments}:${p.image}`).join("|");
-        setPosts(prev => (sig(prev) === sig(deduped) ? prev : deduped));
+    let cancelled = false;
+    const load = (extra: string) => Promise.all([
+      fetch(`${GET_PHOTOS_URL}?type=image${uidParam}${extra}`).then(r => r.json()),
+      fetch(`${GET_PHOTOS_URL}?type=video${uidParam}${extra}`).then(r => r.json()),
+    ]).then(([rawImages, rawVideos]) => {
+      const imgData = typeof rawImages.body === 'string' ? JSON.parse(rawImages.body) : rawImages;
+      const vidData = typeof rawVideos.body === 'string' ? JSON.parse(rawVideos.body) : rawVideos;
+      return { imgData, vidData };
+    });
+    const apply = ({ imgData, vidData }: { imgData: { videos?: unknown[] }; vidData: { videos?: unknown[] } }) => {
+      const dbPosts: Post[] = (imgData.videos || []).map((v: unknown) => mapPost(v, false, user));
+      const dbVideoPosts: Post[] = (vidData.videos || []).map((v: unknown) => mapPost(v, true, user));
+      const seen = new Set<string>();
+      const deduped = [...dbPosts, ...dbVideoPosts].filter(p => {
+        if (!p.image) return true;
+        if (seen.has(p.image)) return false;
+        seen.add(p.image);
+        return true;
+      });
+      const sig = (list: Post[]) => list.map(p => `${p.id}:${p.likes}:${p.comments}:${p.image}`).join("|");
+      setPosts(prev => (sig(prev) === sig(deduped) ? prev : deduped));
+    };
+    const hasCache = !!readFeedCache(postsCacheKey);
+    let gotHead = false;
+    if (!hasCache && !isSlowNetwork()) {
+      load("&limit=6").then(d => {
+        if (cancelled || gotHead) return;
+        gotHead = true;
+        apply(d);
+        setLoading(false);
+      }).catch(() => {});
+    }
+    load("")
+      .then(d => {
+        if (cancelled) return;
+        writeFeedCache(postsCacheKey, { img: (d.imgData.videos || []).slice(0, 30), vid: (d.vidData.videos || []).slice(0, 30) });
+        apply(d);
       })
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [user, mediaVersion]);
+
+  const [shown, setShown] = useState(5);
+  useEffect(() => {
+    if (shown >= posts.length + 10) return;
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
+    const grow = () => setShown(n => n + 5);
+    if (w.requestIdleCallback) w.requestIdleCallback(grow, { timeout: 600 });
+    else setTimeout(grow, 300);
+  }, [shown, posts.length]);
 
   const warmedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
@@ -479,7 +507,7 @@ const PostFeed = () => {
                 <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
               </div>
             ) : (
-              categoryPosts.map((post) => (
+              categoryPosts.slice(0, shown).map((post) => (
                 <div
                   key={post.id}
                   className="snap-start snap-always flex flex-col "
