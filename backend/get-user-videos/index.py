@@ -91,9 +91,9 @@ def handler(event: dict, context) -> dict:
                 name = email.split('@')[0][:40] or handle
             if not body.get('consent'):
                 return err('Нужно принять условия и дать согласие на обработку персональных данных')
-            if not body.get('age12'):
-                return err('Подтверди, что тебе есть 12 лет')
-            age_confirmed = 18 if body.get('age18') else 12
+            if not body.get('age14'):
+                return err('Подтверди, что тебе есть 14 лет')
+            age_confirmed = 18 if body.get('age18') else 14
             if len(password) < 6:
                 return err('Пароль минимум 6 символов')
             if not re.match(r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$', email):
@@ -465,9 +465,9 @@ def handler(event: dict, context) -> dict:
             token = body.get('token') or ''
             if not token:
                 return err('Нет токена', 401)
-            if not body.get('age12'):
-                return err('Сервис доступен с 12 лет')
-            level = 18 if body.get('age18') else 12
+            if not body.get('age14'):
+                return err('Сервис доступен с 14 лет')
+            level = 18 if body.get('age18') else 14
             conn = get_conn(); cur = conn.cursor()
             try:
                 cur.execute("SELECT id, birth_date, age_confirmed FROM app_users WHERE token=%s", (token,))
@@ -490,8 +490,8 @@ def handler(event: dict, context) -> dict:
                 return err('Нет токена', 401)
             if not birth:
                 return err('Укажи корректную дату рождения')
-            if calc_age(birth) < 12:
-                return err('Сервис доступен с 12 лет')
+            if calc_age(birth) < 14:
+                return err('Сервис доступен с 14 лет')
             conn = get_conn(); cur = conn.cursor()
             try:
                 cur.execute("SELECT id, birth_date FROM app_users WHERE token=%s", (token,))

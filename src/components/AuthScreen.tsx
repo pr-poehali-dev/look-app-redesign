@@ -15,7 +15,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
   const [showGuide, setShowGuide] = useState(false);
       const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-  const [age12, setAge12] = useState(false);
+  const [age14, setAge14] = useState(false);
   const [age18, setAge18] = useState(false);
   const [consent, setConsent] = useState(false);
   const [legalDoc, setLegalDoc] = useState<"terms" | "privacy" | null>(null);
@@ -63,7 +63,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
   const emailValid = emailRe.test(email.trim());
   const isValid = mode === "login"
     ? email.trim() && password
-    : emailValid && password.length >= 6 && age12 && consent;
+    : emailValid && password.length >= 6 && age14 && consent;
 
   if (showGuide) {
     return (
@@ -118,7 +118,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "login" ? "bg-white text-black shadow-sm" : "text-gray-400"}`}
           >Войти</button>
           <button
-            onClick={() => { setMode("register"); setError(""); setEmail(""); setPassword(""); setAge12(false); setAge18(false); setConsent(false); setShowPassword(false); }}
+            onClick={() => { setMode("register"); setError(""); setEmail(""); setPassword(""); setAge14(false); setAge18(false); setConsent(false); setShowPassword(false); }}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "register" ? "bg-white text-black shadow-sm" : "text-gray-400"}`}
           >Регистрация</button>
         </div>
@@ -127,11 +127,11 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
           <>
             <div className="flex flex-col gap-2">
               <label className="flex items-start gap-2.5 cursor-pointer">
-                <input type="checkbox" checked={age12} onChange={e => { setAge12(e.target.checked); if (!e.target.checked) setAge18(false); }} className="mt-0.5 w-4 h-4 accent-[#fe2c55] flex-shrink-0" />
-                <span className="text-xs text-gray-600 leading-snug">Мне есть 12 лет <span className="text-[#fe2c55]">*</span></span>
+                <input type="checkbox" checked={age14} onChange={e => { setAge14(e.target.checked); if (!e.target.checked) setAge18(false); }} className="mt-0.5 w-4 h-4 accent-[#fe2c55] flex-shrink-0" />
+                <span className="text-xs text-gray-600 leading-snug">Мне есть 14 лет <span className="text-[#fe2c55]">*</span></span>
               </label>
               <label className="flex items-start gap-2.5 cursor-pointer">
-                <input type="checkbox" checked={age18} disabled={!age12} onChange={e => setAge18(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#fe2c55] flex-shrink-0" />
+                <input type="checkbox" checked={age18} disabled={!age14} onChange={e => setAge18(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#fe2c55] flex-shrink-0" />
                 <span className="text-xs text-gray-600 leading-snug">Мне есть 18 лет (откроет контент 18+)</span>
               </label>
             </div>
