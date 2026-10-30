@@ -1,1 +1,0 @@
-UPDATE t_p96441965_look_app_redesign.videos SET created_at = now() WHERE id = 436;

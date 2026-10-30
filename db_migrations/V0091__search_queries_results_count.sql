@@ -1,1 +1,0 @@
-ALTER TABLE t_p96441965_look_app_redesign.search_queries ADD COLUMN IF NOT EXISTS results_count INTEGER;

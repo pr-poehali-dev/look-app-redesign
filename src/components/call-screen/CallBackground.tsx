@@ -4,8 +4,8 @@ interface CallBackgroundProps {
   mode: "audio" | "video";
   avatar: string;
   cameraOff: boolean;
-  remoteVideoRef: RefObject<HTMLVideoElement>;
-  localVideoRef: RefObject<HTMLVideoElement>;
+  remoteVideoRef: RefObject<HTMLVideoElement | null>;
+  localVideoRef: RefObject<HTMLVideoElement | null>;
 }
 
 const CallBackground = ({ mode, avatar, cameraOff, remoteVideoRef, localVideoRef }: CallBackgroundProps) => {

@@ -1,13 +1,13 @@
 import type { RefObject } from "react";
 
 interface Props {
-  audioRef: RefObject<HTMLAudioElement>;
-  fileInputRef: RefObject<HTMLInputElement>;
-  galleryInputRef: RefObject<HTMLInputElement>;
-  cameraInputRef: RefObject<HTMLInputElement>;
-  musicInputRef: RefObject<HTMLInputElement>;
-  pipInputRef: RefObject<HTMLInputElement>;
-  watermarkInputRef: RefObject<HTMLInputElement>;
+  audioRef: RefObject<HTMLAudioElement | null>;
+  fileInputRef: RefObject<HTMLInputElement | null>;
+  galleryInputRef: RefObject<HTMLInputElement | null>;
+  cameraInputRef: RefObject<HTMLInputElement | null>;
+  musicInputRef: RefObject<HTMLInputElement | null>;
+  pipInputRef: RefObject<HTMLInputElement | null>;
+  watermarkInputRef: RefObject<HTMLInputElement | null>;
   addClips: (files: FileList | null) => void;
   handleMusicUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   addPip: (file: File) => void;

@@ -18,7 +18,7 @@ interface Props {
   setReplyingTo: (v: { id: number | string; name: string } | null) => void;
   commentText: string;
   setCommentText: (v: string) => void;
-  commentInputRef: RefObject<HTMLInputElement>;
+  commentInputRef: RefObject<HTMLInputElement | null>;
   handleSendComment: () => void;
 }
 

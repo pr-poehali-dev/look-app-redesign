@@ -1,2 +1,0 @@
-ALTER TABLE t_p96441965_look_app_redesign.sa_messages ADD COLUMN IF NOT EXISTS client_msg_id TEXT NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS sa_messages_client_msg_uidx ON t_p96441965_look_app_redesign.sa_messages (user_id, client_msg_id) WHERE client_msg_id IS NOT NULL;

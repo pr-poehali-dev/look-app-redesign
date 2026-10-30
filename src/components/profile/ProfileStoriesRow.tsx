@@ -9,7 +9,7 @@ interface ProfileStoriesRowProps {
   stories: UserMedia["userVideos"];
   addMedia: UserMedia["addMedia"];
   removeMedia: UserMedia["removeMedia"];
-  storyInputRef: RefObject<HTMLInputElement>;
+  storyInputRef: RefObject<HTMLInputElement | null>;
   longPressTimer: MutableRefObject<ReturnType<typeof setTimeout> | null>;
   setStoryOrigin: Dispatch<SetStateAction<DOMRect | null>>;
   setViewingStory: Dispatch<SetStateAction<number | null>>;

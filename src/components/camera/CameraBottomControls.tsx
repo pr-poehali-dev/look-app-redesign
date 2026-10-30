@@ -24,7 +24,7 @@ interface CameraBottomControlsProps {
   recording: boolean;
   flipping: boolean;
   uploadedMedia: { url: string; type: "image" | "video" } | null;
-  mediaInputRef: RefObject<HTMLInputElement>;
+  mediaInputRef: RefObject<HTMLInputElement | null>;
   mode?: string;
   onMediaFile?: (file: File) => void;
   onFilterChange: (id: string) => void;

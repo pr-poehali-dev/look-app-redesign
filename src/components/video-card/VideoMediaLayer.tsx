@@ -7,7 +7,7 @@ interface VideoMediaLayerProps {
   isVideo: boolean;
   isActive: boolean;
   preloadLevel: "full" | "meta" | "none";
-  videoRef: RefObject<HTMLVideoElement>;
+  videoRef: RefObject<HTMLVideoElement | null>;
   muted: boolean;
   setMuted: Dispatch<SetStateAction<boolean>>;
   volume: number;

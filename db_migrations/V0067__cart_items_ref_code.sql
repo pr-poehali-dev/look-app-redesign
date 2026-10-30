@@ -1,1 +1,0 @@
-ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS ref_code TEXT;

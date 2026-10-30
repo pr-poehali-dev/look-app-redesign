@@ -19,7 +19,7 @@ interface Props {
   layers: Layer[];
   activeLayerId: number | null;
   musicName: string;
-  canvasRef: RefObject<HTMLDivElement>;
+  canvasRef: RefObject<HTMLDivElement | null>;
   videoRefs: MutableRefObject<Map<number, HTMLVideoElement>>;
   capturedThumbRef: MutableRefObject<string | null>;
   onLayerPointerDown: (e: React.PointerEvent, layer: Layer) => void;

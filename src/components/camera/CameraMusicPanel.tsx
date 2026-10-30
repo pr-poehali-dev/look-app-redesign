@@ -17,7 +17,7 @@ interface CameraMusicPanelProps {
   selectedTrack: typeof TRACKS[0] | null;
   playingId: number | null;
   uploadedAudio: { name: string; url: string } | null;
-  fileInputRef: RefObject<HTMLInputElement>;
+  fileInputRef: RefObject<HTMLInputElement | null>;
   onClose: () => void;
   onSelectTrack: (track: typeof TRACKS[0] | null) => void;
   onSetPlayingId: (id: number | null) => void;

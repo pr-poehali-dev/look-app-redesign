@@ -1,2 +1,0 @@
-UPDATE t_p96441965_look_app_redesign.videos SET category = 'animals' WHERE category = 'feed' AND id IN (435, 405);
-UPDATE t_p96441965_look_app_redesign.videos SET category = 'nature' WHERE category = 'feed' AND id IN (394, 393, 153);

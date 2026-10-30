@@ -6,8 +6,8 @@ interface Props {
   onClose: () => void;
   showFileSheet: boolean;
   setShowFileSheet: (v: boolean) => void;
-  galleryInputRef: RefObject<HTMLInputElement>;
-  cameraInputRef: RefObject<HTMLInputElement>;
+  galleryInputRef: RefObject<HTMLInputElement | null>;
+  cameraInputRef: RefObject<HTMLInputElement | null>;
   onOpenSheet: () => void;
   onFilesAdd: (files: FileList | null) => void;
   onSelectTemplate: (templateId: string) => void;

@@ -7,8 +7,8 @@ interface ChatRoomInputBarProps {
   setShowAttach: (v: boolean | ((v: boolean) => boolean)) => void;
   isGroup: boolean;
   communityIsAdmin: boolean;
-  fileRef: RefObject<HTMLInputElement>;
-  docRef: RefObject<HTMLInputElement>;
+  fileRef: RefObject<HTMLInputElement | null>;
+  docRef: RefObject<HTMLInputElement | null>;
   sendLocation: () => void;
   openContactPicker: () => void;
   setShowPolls: (v: boolean) => void;

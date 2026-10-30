@@ -14,7 +14,7 @@ interface Props {
   category: string;
   setCategory: (c: string) => void;
   displayImg: string;
-  fileRef: RefObject<HTMLInputElement>;
+  fileRef: RefObject<HTMLInputElement | null>;
   onPickImage: () => void;
   onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   linkCopied: boolean;

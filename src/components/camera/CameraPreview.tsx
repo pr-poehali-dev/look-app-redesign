@@ -86,7 +86,7 @@ const VIDEO_CATEGORIES = [
 ];
 
 interface CameraPreviewProps {
-  videoRef: RefObject<HTMLVideoElement>;
+  videoRef: RefObject<HTMLVideoElement | null>;
   facing: "user" | "environment";
   flipping: boolean;
   filter: string;

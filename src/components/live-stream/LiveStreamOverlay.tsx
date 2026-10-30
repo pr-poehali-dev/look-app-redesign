@@ -8,7 +8,7 @@ const GIFTS = ["🌹", "🎁", "💎", "🚀", "⭐", "🏆", "💰", "🎉"];
 interface Props {
   likes: number;
   chat: ChatMsg[];
-  chatRef: RefObject<HTMLDivElement>;
+  chatRef: RefObject<HTMLDivElement | null>;
   showGifts: boolean;
   inputMsg: string;
   onInputChange: (v: string) => void;

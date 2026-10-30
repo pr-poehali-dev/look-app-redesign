@@ -1,1 +1,0 @@
-UPDATE t_p96441965_look_app_redesign.app_users SET city = NULL WHERE id = 'u_testuser01';

@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useLocation } from "@/lib/router-compat";
 import EnableCallPushBanner from "@/components/EnableCallPushBanner";
 import InstallAppBanner from "@/components/InstallAppBanner";
 import NotFound from "@/pages/NotFound";
@@ -16,6 +16,12 @@ const MediaDeepLink = lazy(() => import("@/components/MediaDeepLink"));
 const ArticleDeepLink = lazy(() => import("@/components/profile/ArticleDeepLink"));
 const CallScreen = lazy(() => import("@/components/CallScreen"));
 const ThumbnailWorker = lazy(() => import("@/components/ThumbnailWorker"));
+
+const AuthenticatedRoutes = () => {
+  const { pathname } = useLocation();
+  if (pathname !== "/") return <NotFound />;
+  return <><Index /><ArticleDeepLink /><MediaDeepLink /></>;
+};
 
 type AuthState = ReturnType<typeof useAuth>;
 
@@ -35,12 +41,7 @@ const AuthenticatedApp = ({ user, token, activeCall, incomingCall, onEndCall, on
     <ThumbnailWorker />
     <AgeGate />
     <ProfileSetupGate />
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<><Index /><ArticleDeepLink /><MediaDeepLink /></>} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthenticatedRoutes />
 
     {activeCall && (
       <div className="fixed inset-0 z-[10000]">

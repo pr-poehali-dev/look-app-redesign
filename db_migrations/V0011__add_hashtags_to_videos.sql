@@ -1,1 +1,0 @@
-ALTER TABLE t_p96441965_look_app_redesign.videos ADD COLUMN IF NOT EXISTS hashtags text NULL DEFAULT '';

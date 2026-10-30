@@ -1,1 +1,0 @@
-UPDATE videos SET hidden = TRUE WHERE id IN (419, 414);

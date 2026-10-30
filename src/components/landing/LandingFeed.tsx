@@ -195,13 +195,13 @@ const LandingFeed = ({ category, initialVideoId, onLocked, onLogin }: LandingFee
             <div
               key={v.id}
               data-idx={i}
-              ref={(el) => (slideRefs.current[i] = el)}
+              ref={(el) => { slideRefs.current[i] = el; }}
               className="flex h-full snap-start snap-always items-end justify-center gap-5 md:py-3"
             >
               <div className="relative h-full w-full overflow-hidden bg-black md:aspect-[9/16] md:w-auto md:rounded-2xl">
                 {Math.abs(i - active) <= 1 && (
                   <video
-                    ref={(el) => (videoRefs.current[i] = el)}
+                    ref={(el) => { videoRefs.current[i] = el; }}
                     src={v.url}
                     poster={v.thumbnail || undefined}
                     loop

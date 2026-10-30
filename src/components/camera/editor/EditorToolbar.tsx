@@ -29,9 +29,9 @@ interface Props {
   musicFile: File | null;
   showFileSheet: boolean;
   setShowFileSheet: (v: boolean) => void;
-  galleryInputRef: RefObject<HTMLInputElement>;
-  cameraInputRef: RefObject<HTMLInputElement>;
-  musicInputRef: RefObject<HTMLInputElement>;
+  galleryInputRef: RefObject<HTMLInputElement | null>;
+  cameraInputRef: RefObject<HTMLInputElement | null>;
+  musicInputRef: RefObject<HTMLInputElement | null>;
   addText: () => void;
   addSticker: (emoji: string) => void;
   updateLayer: (id: number, patch: Partial<Layer>) => void;
@@ -40,7 +40,7 @@ interface Props {
   applyTemplate: (id: string) => void;
   setMusicFile: (f: File | null) => void;
   setMusicName: (n: string) => void;
-  audioRef: RefObject<HTMLAudioElement>;
+  audioRef: RefObject<HTMLAudioElement | null>;
   updateClip: (id: number, patch: Partial<Clip>) => void;
   musicVolume: number;
   setMusicVolume: (v: number) => void;
@@ -52,8 +52,8 @@ interface Props {
   setExportFormat: (f: ExportFormat) => void;
   exportQuality: ExportQuality;
   setExportQuality: (q: ExportQuality) => void;
-  pipInputRef: RefObject<HTMLInputElement>;
-  watermarkInputRef: RefObject<HTMLInputElement>;
+  pipInputRef: RefObject<HTMLInputElement | null>;
+  watermarkInputRef: RefObject<HTMLInputElement | null>;
   watermarkUrl: string;
   watermarkPosition: WatermarkPosition;
   setWatermarkPosition: (p: WatermarkPosition) => void;

@@ -1,7 +1,6 @@
 import React from 'react';
 import * as LucideIcons from 'lucide-react';
 import { LucideProps } from 'lucide-react';
-import { CUSTOM_ICONS } from './custom-icons';
 
 interface IconProps extends LucideProps {
   name: string;
@@ -9,7 +8,7 @@ interface IconProps extends LucideProps {
 }
 
 const Icon: React.FC<IconProps> = ({ name, fallback = 'CircleAlert', ...props }) => {
-  const IconComponent = CUSTOM_ICONS[name] || (LucideIcons as unknown as Record<string, React.FC<LucideProps>>)[name];
+  const IconComponent = (LucideIcons as unknown as Record<string, React.FC<LucideProps>>)[name];
 
   if (!IconComponent) {
     // Если иконка не найдена, используем fallback иконку

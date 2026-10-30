@@ -1,2 +1,0 @@
-ALTER TABLE t_p96441965_look_app_redesign.videos ADD COLUMN IF NOT EXISTS hidden BOOLEAN DEFAULT FALSE;
-UPDATE t_p96441965_look_app_redesign.videos SET hidden = TRUE WHERE url LIKE 'https://short-video.ru%' OR url LIKE 'failed:%';
