@@ -38,7 +38,7 @@ const ArticleCard = ({ a, onOpen }: { a: Article; onOpen: () => void }) => {
         </button>
         <div className="ml-auto flex items-center gap-5">
           <button onClick={() => setShowShare(true)} className="active:scale-90 transition-transform">
-            <Icon name="Share2" size={22} className="text-white" />
+            <Icon name="ShareArrow" size={22} className="text-white" />
           </button>
           <button onClick={user ? save.toggle : needAuth} className="active:scale-90 transition-transform">
             <Icon name="Bookmark" size={22} className={save.saved ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"} />

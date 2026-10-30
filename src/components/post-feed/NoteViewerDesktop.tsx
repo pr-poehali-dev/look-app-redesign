@@ -290,7 +290,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
                     <span className="text-sm">{commentCount}</span>
                   </button>
                   <button onClick={() => setShowShare(true)} className="active:scale-90 transition-transform">
-                    <Icon name="Share2" size={26} className="nv-icon" />
+                    <Icon name="ShareArrow" size={26} className="nv-icon" />
                   </button>
                 </div>
               )}
