@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { clearInstallPrompt, getInstallPrompt, isAppInstalled, markInstalled, onInstallPromptChange } from "@/lib/installPrompt";
 
-const DISMISS_KEY = "look_install_banner_dismissed";
+const DISMISS_KEY = "look_install_banner_dismissed_at";
+const DISMISS_DAYS = 1;
+
+const isDismissed = () => {
+  const at = Number(localStorage.getItem(DISMISS_KEY) || 0);
+  return at > 0 && Date.now() - at < DISMISS_DAYS * 86400000;
+};
 
 const isStandalone = () =>
   window.matchMedia("(display-mode: standalone)").matches ||
@@ -18,7 +24,7 @@ const InstallAppBanner = () => {
   const [showHint, setShowHint] = useState(false);
 
   useEffect(() => {
-    if (!isMobile() || isStandalone() || isAppInstalled() || localStorage.getItem(DISMISS_KEY) === "1") return;
+    if (!isMobile() || isStandalone() || isAppInstalled() || isDismissed()) return;
     const off = onInstallPromptChange(() => setCanInstall(!!getInstallPrompt()));
     const t = setTimeout(() => setVisible(true), 3000);
     return () => { off(); clearTimeout(t); };
@@ -27,7 +33,7 @@ const InstallAppBanner = () => {
   if (!visible) return null;
 
   const dismiss = () => {
-    localStorage.setItem(DISMISS_KEY, "1");
+    localStorage.setItem(DISMISS_KEY, String(Date.now()));
     setVisible(false);
   };
 
