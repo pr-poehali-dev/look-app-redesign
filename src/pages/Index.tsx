@@ -442,7 +442,7 @@ const Index = () => {
                                 ? theme === "dark" ? "#fff" : "#1f6b3a"
                                 : theme === "dark" ? "rgba(255,255,255,0.12)" : "rgba(13,42,24,0.08)",
                               color: active
-                                ? theme === "dark" ? "#000" : "#fff"
+                                ? theme === "dark" ? "var(--look-bg)" : "#fff"
                                 : theme === "dark" ? "rgba(255,255,255,0.9)" : "#0d2a18",
                             }}
                           >
@@ -524,7 +524,7 @@ const Index = () => {
         </div>
 
         {/* Bottom Tab Bar (mobile only) */}
-        <div className="media-overlay-text absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black to-transparent md:hidden">
+        <div className="media-overlay-text absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-[var(--look-bg)] to-transparent md:hidden">
           <div className="flex items-center justify-around px-2 pb-3 pt-1">
             {TABS.map((tab) => (
               <button

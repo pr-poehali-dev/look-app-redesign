@@ -68,7 +68,7 @@ const VideoMediaLayer = ({
             x-webkit-airplay="allow"
             style={{
               touchAction: "manipulation",
-              backgroundColor: "#000",
+              backgroundColor: "var(--look-bg)",
               transform: "translateZ(0)",
               backfaceVisibility: "hidden",
               ...(video.thumbnail ? { backgroundImage: `url(${video.thumbnail})`, backgroundSize: "cover", backgroundPosition: "center" } : {}),
