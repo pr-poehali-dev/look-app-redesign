@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Post } from "./PostFeedTypes";
-import { SeasonalTopic, getSeasonalTopics } from "@/lib/seasonal";
+import type { SeasonalTopic } from "@/lib/seasonal";
 
 export const matchesTopic = (p: Post, t: SeasonalTopic) => {
   const hay = [p.caption, p.cardTitle, p.category, p.topic, ...(p.hashtags || [])].join(" ").toLowerCase();
@@ -10,14 +9,13 @@ export const matchesTopic = (p: Post, t: SeasonalTopic) => {
 
 interface Props {
   posts: Post[];
+  topics: SeasonalTopic[];
   activeId: string | null;
   onChange: (id: string | null) => void;
   empty?: boolean;
 }
 
-const SeasonalStrip = ({ posts, activeId, onChange, empty }: Props) => {
-  const [topics, setTopics] = useState<SeasonalTopic[]>([]);
-  useEffect(() => { setTopics(getSeasonalTopics(new Date())); }, []);
+const SeasonalStrip = ({ posts, topics, activeId, onChange, empty }: Props) => {
   const withCounts = topics.map((t) => ({ t, n: posts.filter((p) => matchesTopic(p, t)).length }));
   if (withCounts.length === 0) return null;
   return (
@@ -25,6 +23,7 @@ const SeasonalStrip = ({ posts, activeId, onChange, empty }: Props) => {
       <div className="flex items-center gap-1.5 px-1 mb-2">
         <Icon name="Flame" size={15} className="text-[#FF5A3C]" />
         <span className="text-white text-sm font-bold">Сейчас в теме</span>
+        <span className="text-white/40 text-[11px]">по сохранениям за неделю</span>
       </div>
       <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
         {withCounts.map(({ t, n }) => (

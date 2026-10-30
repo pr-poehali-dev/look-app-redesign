@@ -1,3 +1,5 @@
+import type { Post } from "@/components/post-feed/PostFeedTypes";
+
 export interface SeasonalTopic {
   id: string;
   label: string;
@@ -33,4 +35,23 @@ export const getSeasonalTopics = (date: Date): SeasonalTopic[] => {
   if (m <= 7) return SUMMER;
   if (m === 9 || m === 10) return AUTUMN;
   return AUTUMN;
+};
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+export const getLiveTopics = (posts: Post[], now: number, limit = 8): SeasonalTopic[] => {
+  const stats = new Map<string, { score: number; count: number }>();
+  posts.forEach((p) => {
+    if (!p.createdAt || now - p.createdAt > WEEK_MS) return;
+    const weight = (p.saves || 0) * 10 + p.comments * 3 + p.likes + 1;
+    const tags = new Set((p.hashtags || []).map((h) => h.toLowerCase().replace(/^#/, "").trim()).filter((h) => h.length > 2));
+    tags.forEach((tag) => {
+      const cur = stats.get(tag) || { score: 0, count: 0 };
+      stats.set(tag, { score: cur.score + weight, count: cur.count + 1 });
+    });
+  });
+  const all = [...stats.entries()].sort((a, b) => b[1].score - a[1].score);
+  const repeated = all.filter(([, v]) => v.count >= 2);
+  const picked = (repeated.length >= 3 ? repeated : all).slice(0, limit);
+  return picked.map(([tag]) => ({ id: `tag:${tag}`, label: `#${tag}`, icon: "TrendingUp", keywords: [tag] }));
 };
