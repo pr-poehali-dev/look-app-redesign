@@ -181,7 +181,7 @@ const PostCard = ({ post }: { post: Post }) => {
             <Icon name="MessageSquare" size={26} className="action-icon-glyph" />
           </button>
           <button onClick={() => { if (guest) return needAuth(); setShowShare(true); }} className="flex items-center justify-center active:scale-90 transition-transform">
-            <Icon name="ShareArrow" size={26} className="action-icon-glyph" />
+            <Icon name="Share2" size={26} className="action-icon-glyph" />
           </button>
         </div>
         {(post.hasProducts || post.templateId) && (
