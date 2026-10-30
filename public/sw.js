@@ -1,4 +1,4 @@
-const VERSION = "v4";
+const VERSION = "v5";
 const API = `api-${VERSION}`;
 const SHELL = `shell-${VERSION}`;
 const STATIC = `static-${VERSION}`;
@@ -28,16 +28,13 @@ self.addEventListener("fetch", (e) => {
 
   if (req.mode === "navigate") {
     e.respondWith(
-      caches.match("/").then((cachedShell) => {
-        const network = fetch(req).then((res) => {
+      fetch(req).then((res) => {
+        if (res.ok) {
           const copy = res.clone();
           caches.open(SHELL).then((c) => c.put("/", copy));
-          return res;
-        });
-        if (!cachedShell) return network.catch(() => Response.error());
-        const timeout = new Promise((resolve) => setTimeout(() => resolve(cachedShell), 2500));
-        return Promise.race([network.catch(() => cachedShell), timeout]);
-      })
+        }
+        return res;
+      }).catch(() => caches.match("/").then((c) => c || Response.error()))
     );
     return;
   }
