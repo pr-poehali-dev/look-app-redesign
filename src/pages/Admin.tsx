@@ -365,31 +365,6 @@ function Users({ token }: { token: string }) {
     }
   };
 
-  const [birthFor, setBirthFor] = useState<string | null>(null);
-  const [birthText, setBirthText] = useState("");
-  const [birthErr, setBirthErr] = useState("");
-
-  const fmtBirth = (iso?: string | null) => (iso ? iso.slice(0, 10).split("-").reverse().join(".") : "");
-
-  const openBirth = (u: UserRow) => {
-    setBirthFor(u.id);
-    setBirthText(fmtBirth(u.birth_date));
-    setBirthErr("");
-  };
-
-  const saveBirth = async (u: UserRow) => {
-    const d = birthText.replace(/\D/g, "");
-    if (d.length !== 8) { setBirthErr("Введите дату цифрами: ДД.ММ.ГГГГ"); return; }
-    const iso = `${d.slice(4)}-${d.slice(2, 4)}-${d.slice(0, 2)}`;
-    try {
-      await api("user_set_birth", { user_id: u.id, birth_date: iso }, token);
-      setUsers((list) => list.map((x) => x.id === u.id ? { ...x, birth_date: iso } : x));
-      setBirthFor(null);
-    } catch (e) {
-      setBirthErr(e instanceof Error ? e.message : "Не удалось сохранить");
-    }
-  };
-
   const toggleVerify = async (u: UserRow) => {
     const next = !u.is_verified;
     setUsers((list) => list.map((x) => x.id === u.id ? { ...x, is_verified: next } : x));
@@ -434,38 +409,7 @@ function Users({ token }: { token: string }) {
                   </span>
                   <span className="truncate">{u.email} · {u.id}</span>
                 </p>
-                <p className="text-white/40 text-xs mt-0.5">
-                  Дата рождения: {u.birth_date ? fmtBirth(u.birth_date) : "не указана"}
-                </p>
-                {birthFor === u.id && (
-                  <div className="mt-2">
-                    <div className="flex gap-2">
-                      <input
-                        value={birthText}
-                        inputMode="numeric"
-                        maxLength={10}
-                        autoFocus
-                        placeholder="ДД.ММ.ГГГГ"
-                        onChange={(e) => {
-                          const d = e.target.value.replace(/\D/g, "").slice(0, 8);
-                          setBirthText(d.length <= 2 ? d : d.length <= 4 ? `${d.slice(0, 2)}.${d.slice(2)}` : `${d.slice(0, 2)}.${d.slice(2, 4)}.${d.slice(4)}`);
-                        }}
-                        className="w-36 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm outline-none"
-                      />
-                      <button onClick={() => saveBirth(u)} className="px-3 py-1.5 rounded-lg bg-cyan-500 text-black text-xs font-bold">Сохранить</button>
-                      <button onClick={() => setBirthFor(null)} className="px-3 py-1.5 rounded-lg bg-white/10 text-xs">Отмена</button>
-                    </div>
-                    {birthErr && <p className="text-[#fe2c55] text-xs mt-1">{birthErr}</p>}
-                  </div>
-                )}
               </div>
-              <button
-                onClick={() => openBirth(u)}
-                title={u.birth_date ? "Дата рождения указана. Изменить" : "Дата рождения не указана. Указать"}
-                className={`p-2 rounded-lg flex-shrink-0 ${u.birth_date ? "text-blue-500 hover:bg-blue-500/10" : "text-white/20 hover:bg-white/5"}`}
-              >
-                <Icon name="CalendarClock" size={16} />
-              </button>
               <button
                 onClick={() => toggleVerify(u)}
                 title={u.is_verified ? "Убрать верификацию" : "Верифицировать профиль"}
