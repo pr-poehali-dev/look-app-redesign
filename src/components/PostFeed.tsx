@@ -247,13 +247,7 @@ const PostFeed = () => {
       };
       return [...visiblePosts].sort((a, b) => score(b) - score(a));
     }
-    const followed = new Set(followingHandles.map(h => h.toLowerCase()));
-    return [...visiblePosts]
-      .sort((a, b) => {
-        const fa = followed.has((a.handle || "").toLowerCase()) ? 1 : 0;
-        const fb = followed.has((b.handle || "").toLowerCase()) ? 1 : 0;
-        return fb - fa || byNew(a, b);
-      });
+    return [...visiblePosts].sort(byNew);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope, visiblePosts, followingHandles.join(","), myHandle, myCity]);
 
