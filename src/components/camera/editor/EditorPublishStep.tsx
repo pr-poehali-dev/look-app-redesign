@@ -1,3 +1,4 @@
+import { useWeeklyTags } from "@/hooks/useWeeklyTags";
 import ComplianceFields, { PublishCompliance } from "@/components/camera/ComplianceFields";
 import { useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
@@ -118,7 +119,7 @@ const EditorPublishStep = ({
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const { products: myProducts } = useMyProducts(userId);
-  const partnerProducts = usePartnerCatalog();
+  const weeklyTags = useWeeklyTags();
 
   const resetForm = () => {
     setNewTitle(""); setNewPrice(""); setNewOldPrice(""); setNewPromo(""); setNewUrl(""); setNewImage("");
@@ -237,6 +238,20 @@ const EditorPublishStep = ({
             placeholder="#вайб #москва"
             className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/30 outline-none"
           />
+          {weeklyTags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {weeklyTags.slice(0, 6).filter((t) => !hashtags.toLowerCase().includes("#" + t)).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setHashtags(`${hashtags.trim()} #${t}`.trim())}
+                  className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/50 text-xs"
+                >
+                  <span className="text-white/30">↑</span> #{t}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <ComplianceFields isAd={isAd} setIsAd={setIsAd} value={compliance} onChange={onComplianceChange} isImage={!!active && active.type === "image" && clipsCount <= 1} />

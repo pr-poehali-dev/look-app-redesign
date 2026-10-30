@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { FEED_CATEGORIES } from "@/lib/feedCategories";
 import CategoryBar from "./post-feed/CategoryBar";
 import SeasonalStrip, { matchesTopic } from "./post-feed/SeasonalStrip";
+import { WEEKLY_TAGS_KEY } from "@/hooks/useWeeklyTags";
 import { getSeasonalTopics, getLiveTopics, type SeasonalTopic } from "@/lib/seasonal";
 
 type FeedScope = "recommend" | "following" | "nearby" | "trending" | "articles";
@@ -247,6 +248,12 @@ const PostFeed = () => {
     return [...live, ...seasonal];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nowTs, posts, removedIds, tutorialPosts, imageCounts, videoCounts]);
+
+  useEffect(() => {
+    const tags = feedTopics.filter((t) => t.id.startsWith("tag:")).map((t) => t.keywords[0]);
+    if (tags.length === 0) return;
+    try { localStorage.setItem(WEEKLY_TAGS_KEY, JSON.stringify(tags)); } catch { /* ignore */ }
+  }, [feedTopics]);
 
   const activeCategory = FEED_CATEGORIES.find(c => c.id === categoryId);
   const categoryPosts = useMemo(() => {
