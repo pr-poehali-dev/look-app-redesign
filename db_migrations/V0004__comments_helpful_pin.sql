@@ -1,0 +1,1 @@
+ALTER TABLE t_p96441965_look_app_redesign.comments ADD COLUMN IF NOT EXISTS is_helpful BOOLEAN NOT NULL DEFAULT FALSE;

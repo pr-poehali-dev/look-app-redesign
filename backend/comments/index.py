@@ -196,6 +196,35 @@ def handler(event: dict, context) -> dict:
                 'views': {str(r[0]): r[1] for r in v_rows},
             })
 
+        if action == 'helpful' and method == 'POST':
+            body = json.loads(event.get('body') or '{}')
+            cid = body.get('comment_id')
+            if not user_id:
+                return _resp(401, {'error': 'X-User-Id required'})
+            if not cid or not str(cid).isdigit():
+                return _resp(400, {'error': 'comment_id required'})
+            cur.execute(f"SELECT target_type, target_id, is_helpful FROM {schema}.comments WHERE id = %s", (int(cid),))
+            row = cur.fetchone()
+            if not row:
+                return _resp(404, {'error': 'not found'})
+            t_type, t_id, was = row
+            owner = None
+            if t_type in ('video', 'post') and str(t_id).isdigit():
+                vid = int(t_id) - (10000 if t_type == 'video' else 0)
+                cur.execute(f"SELECT user_id FROM {schema}.videos WHERE id = %s", (vid,))
+                r = cur.fetchone()
+                owner = r[0] if r else None
+            elif t_type == 'article' and str(t_id).isdigit():
+                cur.execute(f"SELECT owner_user_id FROM {schema}.articles WHERE id = %s", (int(t_id),))
+                r = cur.fetchone()
+                owner = r[0] if r else None
+            if not owner or str(owner) != user_id:
+                return _resp(403, {'error': 'only author'})
+            new_val = not was
+            cur.execute(f"UPDATE {schema}.comments SET is_helpful = %s WHERE id = %s", (new_val, int(cid)))
+            conn.commit()
+            return _resp(200, {'helpful': new_val})
+
         if method == 'GET':
             target_type = _esc(params.get('target_type', ''))[:20]
             target_id = _esc(params.get('target_id', ''))[:100]
@@ -203,7 +232,7 @@ def handler(event: dict, context) -> dict:
                 return _resp(400, {'error': 'target_type and target_id required'})
 
             cur.execute(
-                f"SELECT id, author_name, author_handle, text, created_at, parent_id FROM {schema}.comments "
+                f"SELECT id, author_name, author_handle, text, created_at, parent_id, is_helpful FROM {schema}.comments "
                 f"WHERE target_type = '{target_type}' AND target_id = '{target_id}' ORDER BY created_at ASC LIMIT 500"
             )
             rows = cur.fetchall()
@@ -224,17 +253,18 @@ def handler(event: dict, context) -> dict:
                     'time': r[4].isoformat() if r[4] else None,
                     'parent_id': r[5],
                     'likes': like_counts.get(str(r[0]), 0),
+                    'helpful': bool(r[6]),
                 }
                 for r in rows
             ]
             top = [c for c in comments if not c['parent_id']]
-            top.sort(key=lambda c: c['id'], reverse=True)
+            top.sort(key=lambda c: (not c['helpful'], -c['id']))
             replies = [c for c in comments if c['parent_id']]
             ordered = []
             for t in top:
                 ordered.append(t)
                 ordered.extend([r for r in replies if r['parent_id'] == t['id']])
-            return _resp(200, {'comments': ordered, 'count': len(comments)})
+            return _resp(200, {'comments': ordered, 'count': len(comments), 'helpful_count': sum(1 for c in comments if c['helpful'])})
 
         if method == 'POST':
             body = json.loads(event.get('body') or '{}')

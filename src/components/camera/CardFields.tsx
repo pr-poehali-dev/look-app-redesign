@@ -115,19 +115,6 @@ const CardFields = ({ value, onChange }: Props) => {
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={() => onChange({ ...value, isCommercial: !value.isCommercial })}
-        className="w-full flex items-center justify-between bg-white/10 border border-white/15 rounded-xl px-3 py-3"
-      >
-        <div className="text-left">
-          <p className="text-white text-sm font-medium">Коммерческий пост</p>
-          <p className="text-white/40 text-xs">Есть продажа, реклама или ссылка на покупку</p>
-        </div>
-        <div className={`w-10 h-6 rounded-full p-0.5 transition-colors ${value.isCommercial ? "bg-[#FF5A3C]" : "bg-white/20"}`}>
-          <div className={`w-5 h-5 rounded-full bg-white transition-transform ${value.isCommercial ? "translate-x-4" : ""}`} />
-        </div>
-      </button>
     </div>
   );
 };

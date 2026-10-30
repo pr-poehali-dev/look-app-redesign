@@ -69,9 +69,9 @@ const ProfilePage = () => {
     };
   }, [bulkVideo, bulkPost]);
   const bulkLikes = bulkAll.likes;
-  const totalLikes = useMemo(
-    () => videoIds.reduce((sum, id) => sum + (bulkLikes[String(id)] || 0), 0),
-    [videoIds, bulkLikes]
+  const totalSaves = useMemo(
+    () => videoIds.reduce((sum, id) => sum + (bulkAll.saves[String(id)] || 0), 0),
+    [videoIds, bulkAll]
   );
   const followingUsers: UserItem[] = useMemo(
     () => followingHandles.map(h => {
@@ -228,9 +228,10 @@ const ProfilePage = () => {
       </div>
 
       {/* Счётчики */}
-      <div className="grid grid-cols-3 px-4 pb-3 md:px-3 border-b border-gray-200">
+      <div className="grid grid-cols-4 px-4 pb-3 md:px-3 border-b border-gray-200">
         {[
           { value: stories.filter((s) => !s.is_repost).length, label: "Посты", go: () => setTab("videos") },
+          { value: totalSaves, label: "Сохранения", go: () => setTab("boards") },
           { value: myBoards.length, label: "Доски", go: () => setTab("boards") },
           { value: circlesCount, label: "Кружки", go: () => setTab("circles") },
         ].map((c) => (

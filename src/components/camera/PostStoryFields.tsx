@@ -14,45 +14,6 @@ const PostStoryFields = ({ value, onChange }: Props) => {
 
   return (
     <div className="flex flex-col gap-3">
-      {accepted.length > 0 && (
-        <div>
-          <p className="text-white/60 text-xs font-semibold uppercase mb-2">Предложение от бренда</p>
-          <div className="flex flex-col gap-1.5">
-            {accepted.map((c) => {
-              const active = value.collabId === c.id;
-              return (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => onChange(active
-                    ? { ...value, collabId: null }
-                    : { ...value, collabId: c.id, brand: c.brand_name })}
-                  className={`flex items-center gap-2 text-left rounded-xl px-3 py-2 border transition-colors ${
-                    active ? "bg-[#FF5A3C]/20 border-[#FF5A3C]" : "bg-white/10 border-white/15"
-                  }`}
-                >
-                  <Icon name="Handshake" fallback="Gift" size={16} className="text-white/70 flex-shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-white text-sm font-medium truncate">{c.brand_name}: {c.product_title}</p>
-                    <p className="text-white/40 text-xs">{active ? "Пост будет привязан к этому предложению" : "Нажмите, чтобы привязать пост"}</p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      <div>
-        <p className="text-white/60 text-xs font-semibold uppercase mb-2">Бренд</p>
-        <input
-          value={value.brand}
-          onChange={(e) => onChange({ ...value, brand: e.target.value.replace(/^[#@]+/, "").slice(0, 80) })}
-          placeholder="Бренд, о котором пост (необязательно)"
-          className={inputCls}
-        />
-      </div>
-
       <div>
         <p className="text-white/60 text-xs font-semibold uppercase mb-2">Серия постов</p>
         <input

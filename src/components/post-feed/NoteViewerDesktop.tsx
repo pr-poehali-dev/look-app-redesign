@@ -1,5 +1,7 @@
 import PlaceDetails from "./PlaceDetails";
 import PhotoCarousel from "@/components/post-feed/PhotoCarousel";
+import HelpfulMark from "@/components/post-feed/HelpfulMark";
+import TranslateText from "@/components/post-feed/TranslateText";
 import { useEffect, useRef, useState } from "react";
 import { promptAuth } from "@/lib/promptAuth";
 import Icon from "@/components/ui/icon";
@@ -24,11 +26,15 @@ const CommentRow = ({
   isReply,
   onReply,
   onLike,
+  canMark,
+  onHelpful,
 }: {
   c: CommentItem;
   isReply?: boolean;
   onReply: (c: CommentItem) => void;
   onLike: (id: number | string) => void;
+  canMark?: boolean;
+  onHelpful?: (id: number | string) => void;
 }) => (
   <div className={`flex gap-2.5 ${isReply ? "ml-10 mt-3" : "mt-5"}`}>
     <div className={`${isReply ? "w-6 h-6" : "w-8 h-8"} rounded-full overflow-hidden flex-shrink-0`}>
@@ -36,7 +42,9 @@ const CommentRow = ({
     </div>
     <div className="min-w-0 flex-1">
       <p className="text-[13px] nv-muted truncate">{c.name}</p>
-      <p className="text-[14px] leading-snug break-words"><LinkifiedText text={c.text} /></p>
+      <TranslateText text={c.text} className="text-[12px] nv-muted font-semibold">
+        {(shown) => <p className="text-[14px] leading-snug break-words"><LinkifiedText text={shown} /></p>}
+      </TranslateText>
       <div className="flex items-center gap-4 mt-1 text-[12px] nv-muted">
         <span>{c.time}</span>
         <button onClick={() => onLike(c.id)} className="flex items-center gap-1">
@@ -44,6 +52,7 @@ const CommentRow = ({
           {c.likes > 0 && <span>{c.likes}</span>}
         </button>
         <button onClick={() => onReply(c)}>Ответить</button>
+        <HelpfulMark helpful={c.helpful} canMark={!!canMark} onToggle={() => onHelpful?.(c.id)} />
       </div>
     </div>
   </div>
@@ -51,6 +60,7 @@ const CommentRow = ({
 
 const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void }) => {
   const { user } = useAuth();
+  const isOwner = !!user?.handle && user.handle.toLowerCase() === (post.handle || "").toLowerCase();
   const { liked, count: likes, toggle: toggleLike } = useLikes("post", post.id, post.likes);
   const { saved, toggle: toggleSaved } = useSavedItem("post", post.id, {
     image: post.image,
@@ -58,7 +68,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
     handle: post.handle,
   });
   const { following, toggle: rawToggleFollow, isSelf } = useFollowing(post.handle);
-  const { comments, count: commentCount, send, toggleLike: toggleCommentLike } = useComments("post", post.id, true, post.comments || 0);
+  const { comments, count: commentCount, send, toggleLike: toggleCommentLike, toggleHelpful, helpfulCount } = useComments("post", post.id, true, post.comments || 0);
   const { muted, toggle: rawToggleMute } = useMutedAuthor(post.handle);
   const authUser = user;
   const needAuth = () => { promptAuth(); };
@@ -217,7 +227,26 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
 
           <div className="flex-1 overflow-y-auto px-5 py-4" style={{ scrollbarWidth: "thin" }}>
             <StoryTags handle={post.handle} seriesTitle={post.seriesTitle} brand={post.brand} personalExperience={post.personalExperience} tone="soft" />
-            {post.caption && <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words"><LinkifiedText text={post.caption} /></p>}
+            {post.cardTitle && (
+              <div className="mb-3">
+                <h3 className="text-[18px] font-bold leading-tight">{post.cardTitle}</h3>
+                {post.cardPoints && post.cardPoints.length > 0 && (
+                  <ol className="mt-2 flex flex-col gap-1.5">
+                    {post.cardPoints.map((pt, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[14px] leading-snug">
+                        <span className="w-5 h-5 rounded-full bg-[#FF5A3C] text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                        <span>{pt}</span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </div>
+            )}
+            {post.caption && (
+              <TranslateText text={post.caption} className="text-[12px] nv-muted font-semibold">
+                {(shown) => <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words"><LinkifiedText text={shown} /></p>}
+              </TranslateText>
+            )}
             {post.hashtags?.length > 0 && (
               <p className="mt-2 text-[14px] nv-tag break-words">
                 {post.hashtags.map((h) => `#${h}`).join(" ")}
@@ -228,7 +257,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
 
             <div className="mt-5 pt-4 border-t nv-border">
               <div className="flex items-center gap-3">
-                <p className="text-[13px] nv-muted">Комментарии: {commentCount}</p>
+                <p className="text-[13px] nv-muted">Комментарии: {commentCount}{helpfulCount > 0 ? ` · полезных: ${helpfulCount}` : ""}</p>
                 <button
                   onClick={() => {
                     onClose();
@@ -245,9 +274,9 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
               )}
               {topLevel.map((c) => (
                 <div key={c.id}>
-                  <CommentRow c={c} onReply={startReply} onLike={toggleCommentLike} />
+                  <CommentRow c={c} onReply={startReply} onLike={toggleCommentLike} canMark={isOwner} onHelpful={toggleHelpful} />
                   {repliesOf(c.id).map((r) => (
-                    <CommentRow key={r.id} c={r} isReply onReply={startReply} onLike={toggleCommentLike} />
+                    <CommentRow key={r.id} c={r} isReply onReply={startReply} onLike={toggleCommentLike} canMark={isOwner} onHelpful={toggleHelpful} />
                   ))}
                 </div>
               ))}

@@ -1,0 +1,20 @@
+{
+  "tests": [
+    {
+      "name": "Translate empty text",
+      "method": "POST",
+      "path": "/",
+      "body": {"text": ""},
+      "expectedStatus": 400
+    },
+    {
+      "name": "Same language no-op",
+      "method": "POST",
+      "path": "/",
+      "body": {"text": "Привет", "target": "ru"},
+      "expectedStatus": 200,
+      "expectedBody": {"text": "Привет"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

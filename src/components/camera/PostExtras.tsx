@@ -18,7 +18,7 @@ interface Props {
   allowImages: boolean;
 }
 
-const MAX_EXTRA = 9;
+const MAX_EXTRA = 5;
 
 const PostExtras = ({ value, onChange, allowImages }: Props) => {
   const inputRef = useRef<HTMLInputElement>(null);

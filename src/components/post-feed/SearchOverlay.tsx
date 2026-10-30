@@ -3,7 +3,6 @@ import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { Post } from "./PostFeedTypes";
-import { Product } from "@/hooks/useProducts";
 import { Reader } from "@/components/profile/ArticlesScreen";
 import { useAuth } from "@/context/AuthContext";
 import { toPost } from "@/components/MediaDeepLink";
@@ -15,8 +14,6 @@ const SEARCH_URL = "https://functions.poehali.dev/7f681f12-fcd3-45e4-aa45-38fccd
 interface VideoHit { id: number; url: string; thumbnail: string | null; author: string; handle: string; description: string; likes: string; place?: string | null; saves?: number }
 interface ArticleHit { id: number; title: string; cover: string | null; views: number; kind?: string }
 interface PersonHit { id: string; name: string; handle: string; avatar: string | null; is_verified: boolean }
-
-const PRODUCTS_URL = "https://functions.poehali.dev/c4d3aa37-b7c2-4047-880a-ab17127da315";
 
 const RECENT_KEY = "search_recent_v1";
 
@@ -44,7 +41,7 @@ interface Props {
 const SearchOverlay = ({ posts, onClose, onOpenPost, initialQuery = "" }: Props) => {
   const [query, setQuery] = useState(initialQuery);
   const [recent, setRecent] = useState<string[]>(readRecent);
-  const [resultTab, setResultTab] = useState<"posts" | "videos" | "people" | "articles" | "products">("posts");
+  const [resultTab, setResultTab] = useState<"all" | "posts" | "videos" | "people" | "articles">("all");
   const [videoHits, setVideoHits] = useState<VideoHit[]>([]);
   const [people, setPeople] = useState<PersonHit[]>([]);
   const [popularQueries, setPopularQueries] = useState<string[]>([]);
@@ -60,31 +57,11 @@ const SearchOverlay = ({ posts, onClose, onOpenPost, initialQuery = "" }: Props)
   const [extraLoading, setExtraLoading] = useState(false);
   const [openVideoId, setOpenVideoId] = useState<number | null>(null);
   const [openHandle, setOpenHandle] = useState<string | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [productsLoading, setProductsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
-
-  useEffect(() => {
-    const q = query.trim();
-    if (!q) { setProducts([]); return; }
-    let cancelled = false;
-    setProductsLoading(true);
-    const timeout = setTimeout(() => {
-      fetch(`${PRODUCTS_URL}?action=search&q=${encodeURIComponent(q)}`)
-        .then((r) => r.json())
-        .then((raw) => {
-          const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-          if (!cancelled) setProducts(data.products || []);
-        })
-        .catch(() => { if (!cancelled) setProducts([]); })
-        .finally(() => { if (!cancelled) setProductsLoading(false); });
-    }, 300);
-    return () => { cancelled = true; clearTimeout(timeout); };
-  }, [query]);
 
   useEffect(() => {
     const q = query.trim();
@@ -152,7 +129,7 @@ const SearchOverlay = ({ posts, onClose, onOpenPost, initialQuery = "" }: Props)
 
   const tutorialHits = articles.filter((a) => a.kind === "tutorial");
 
-  const totalHits = postHits.length + videoHits.length + people.length + articles.length + products.length;
+  const totalHits = postHits.length + videoHits.length + people.length + articles.length;
 
   const commitSearch = (q: string) => {
     const trimmed = q.trim();
@@ -207,7 +184,13 @@ const SearchOverlay = ({ posts, onClose, onOpenPost, initialQuery = "" }: Props)
               ))}
             </div>
             {fuzzy && <p className="text-white/40 text-xs mb-3">Показаны похожие результаты (с учётом опечаток)</p>}
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-4 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+              <button
+                onClick={() => setResultTab("all")}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold ${resultTab === "all" ? "bg-white text-black" : "bg-white/10 text-white/60"}`}
+              >
+                Подборки
+              </button>
               <button
                 onClick={() => setResultTab("posts")}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold ${resultTab === "posts" ? "bg-white text-black" : "bg-white/10 text-white/60"}`}
@@ -232,16 +215,94 @@ const SearchOverlay = ({ posts, onClose, onOpenPost, initialQuery = "" }: Props)
               >
                 Статьи {articles.length > 0 ? `(${articles.length})` : ""}
               </button>
-              <button
-                onClick={() => setResultTab("products")}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 ${resultTab === "products" ? "bg-white text-black" : "bg-white/10 text-white/60"}`}
-              >
-                <Icon name="ShoppingBag" size={12} />
-                Товары {products.length > 0 ? `(${products.length})` : ""}
-              </button>
             </div>
 
-            {resultTab === "videos" ? (
+            {resultTab === "all" ? (
+              extraLoading && totalHits === 0 ? (
+                <div className="flex justify-center py-16">
+                  <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                </div>
+              ) : totalHits === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-2">
+                  <Icon name="SearchX" size={32} className="text-white/20" />
+                  <p className="text-white/40 text-sm">Ничего не найдено</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-6">
+                  <p className="text-white/50 text-xs">По запросу «{query.trim()}» найдено: {postHits.length} постов, {tutorialHits.length} туториалов, {people.length} авторов</p>
+                  {postHits.length > 0 && (
+                    <section>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-white font-bold text-sm">Лучшие идеи</h3>
+                        <button onClick={() => setResultTab("posts")} className="text-[#FF5A3C] text-xs font-semibold">Все {postHits.length}</button>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {postHits.slice(0, 6).map((p) => (
+                          <button key={p.id} onClick={() => { commitSearch(query); onOpenPost(p); }} className="relative rounded-xl overflow-hidden bg-white/10" style={{ aspectRatio: "3 / 4" }}>
+                            <img loading="lazy" decoding="async" src={p.thumbnail || p.image} alt={p.caption} className="absolute inset-0 w-full h-full object-cover" />
+                            <div className="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/70 to-transparent">
+                              <p className="text-white text-[10px] font-semibold leading-tight line-clamp-2 text-left">{p.cardTitle || p.caption}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                  {tutorialHits.length > 0 && (
+                    <section>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-white font-bold text-sm">Пошаговые туториалы</h3>
+                        <button onClick={() => setResultTab("articles")} className="text-[#FF5A3C] text-xs font-semibold">Все {articles.length}</button>
+                      </div>
+                      <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+                        {tutorialHits.slice(0, 6).map((a) => (
+                          <button key={a.id} onClick={() => { commitSearch(query); setOpenArticleId(a.id); }} className="flex-shrink-0 w-32 text-left">
+                            <div className="w-32 rounded-xl overflow-hidden bg-white/10" style={{ aspectRatio: "3 / 4" }}>
+                              {a.cover && <img loading="lazy" decoding="async" src={a.cover} alt={a.title} className="w-full h-full object-cover" />}
+                            </div>
+                            <p className="text-white text-[11px] leading-snug line-clamp-2 mt-1">{a.title}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                  {people.length > 0 && (
+                    <section>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-white font-bold text-sm">Авторы по теме</h3>
+                        <button onClick={() => setResultTab("people")} className="text-[#FF5A3C] text-xs font-semibold">Все {people.length}</button>
+                      </div>
+                      <div className="flex gap-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+                        {people.slice(0, 10).map((u) => (
+                          <button key={u.id} onClick={() => { commitSearch(query); setOpenHandle(u.handle); }} className="flex-shrink-0 w-16 flex flex-col items-center gap-1">
+                            <div className="w-14 h-14 rounded-full overflow-hidden">
+                              <UserAvatar src={u.avatar || undefined} name={u.name || u.handle} alt={u.name} />
+                            </div>
+                            <span className="text-white/80 text-[10px] truncate w-full text-center">{u.handle}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                  {videoHits.length > 0 && (
+                    <section>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-white font-bold text-sm">Видео</h3>
+                        <button onClick={() => setResultTab("videos")} className="text-[#FF5A3C] text-xs font-semibold">Все {videoHits.length}</button>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {videoHits.slice(0, 3).map((v) => (
+                          <button key={v.id} onClick={() => { commitSearch(query); setOpenVideoId(v.id); }} className="relative rounded-xl overflow-hidden bg-white/10" style={{ aspectRatio: "3 / 4" }}>
+                            {v.thumbnail && <img loading="lazy" decoding="async" src={v.thumbnail} alt={v.description} className="absolute inset-0 w-full h-full object-cover" />}
+                            <div className="absolute top-1.5 right-1.5 bg-black/40 rounded-full p-1"><Icon name="Play" size={10} className="text-white" /></div>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                </div>
+              )
+            ) : resultTab === "videos" ? (
               extraLoading && videoHits.length === 0 ? (
                 <div className="flex justify-center py-16">
                   <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -379,34 +440,7 @@ const SearchOverlay = ({ posts, onClose, onOpenPost, initialQuery = "" }: Props)
                   <p className="text-white/40 text-sm">Ничего не найдено</p>
                 </div>
               )
-            ) : productsLoading && products.length === 0 ? (
-              <div className="flex justify-center py-16">
-                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              </div>
-            ) : products.length > 0 ? (
-              <div className="columns-2 gap-3">
-                {products.map((p) => (
-                  <a
-                    key={p.id}
-                    onClick={() => commitSearch(query)}
-                    className="mb-3 block break-inside-avoid rounded-2xl overflow-hidden bg-white/5"
-                  >
-                    <div className="bg-white/10">
-                      {p.image && <img src={p.image} alt={p.title} className="w-full h-auto object-cover block" loading="lazy" />}
-                    </div>
-                    <div className="p-2.5">
-                      <p className="text-white text-[12px] leading-snug line-clamp-2 mb-1">{p.title}</p>
-                      <span className="text-[#FF5A3C] text-sm font-bold">{p.price.toLocaleString("ru-RU")} ₽</span>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-16 gap-2">
-                <Icon name="ShoppingBag" size={32} className="text-white/20" />
-                <p className="text-white/40 text-sm">Товары не найдены</p>
-              </div>
-            )}
+            ) : null}
           </>
         ) : (
           <>

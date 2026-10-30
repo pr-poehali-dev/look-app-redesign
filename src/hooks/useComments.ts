@@ -16,6 +16,7 @@ export interface CommentItem {
   parentId?: number | null;
   likes: number;
   liked?: boolean;
+  helpful?: boolean;
 }
 
 export type TargetType = "video" | "post" | "article";
@@ -53,7 +54,7 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
     try {
       const res = await fetch(`${COMMENTS_URL}?target_type=${targetType}&target_id=${encodeURIComponent(String(targetId))}`);
       const data = await res.json();
-      const list: CommentItem[] = (data.comments || []).map((c: { id: number; name: string; handle?: string; text: string; time?: string; parent_id?: number | null; likes?: number }) => ({
+      const list: CommentItem[] = (data.comments || []).map((c: { id: number; name: string; handle?: string; text: string; time?: string; parent_id?: number | null; helpful?: boolean; likes?: number }) => ({
         id: c.id,
         name: c.name,
         handle: c.handle,
@@ -61,6 +62,7 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
         time: formatRelative(c.time),
         parentId: c.parent_id ?? null,
         likes: c.likes || 0,
+        helpful: !!c.helpful,
       }));
       setComments(list);
       setCount(prev => Math.max(prev, list.length));
@@ -141,6 +143,7 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
           time: formatRelative(data.comment.time),
           parentId: data.comment.parent_id ?? null,
           likes: data.comment.likes || 0,
+          helpful: false,
         } : c));
       }
     } catch {
@@ -164,5 +167,26 @@ export const useComments = (targetType: TargetType, targetId: string | number, e
     }
   }, [userId, user]);
 
-  return { comments, count, loading, send, reload: load, toggleLike };
+  const toggleHelpful = useCallback(async (commentId: number | string) => {
+    if (!user) { promptAuth(); return; }
+    try {
+      const res = await fetch(`${COMMENTS_URL}?action=helpful`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-User-Id": userId },
+        body: JSON.stringify({ comment_id: commentId }),
+      });
+      const data = await res.json();
+      if (typeof data.helpful === "boolean") {
+        setComments(prev => prev.map(c => c.id === commentId ? { ...c, helpful: data.helpful } : c));
+      } else if (data.error === "only author") {
+        toast.error("Отметить полезный ответ может только автор поста");
+      }
+    } catch {
+      toast.error("Не удалось отметить ответ");
+    }
+  }, [userId, user]);
+
+  const helpfulCount = comments.filter(c => c.helpful).length;
+
+  return { comments, count, loading, send, reload: load, toggleLike, toggleHelpful, helpfulCount };
 };

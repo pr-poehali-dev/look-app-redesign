@@ -31,6 +31,7 @@ export interface Post {
   templateId?: string | null;
   hasProducts?: boolean;
   views?: number;
+  saves?: number;
   isVerified?: boolean;
   isAd?: boolean;
   adLabel?: string | null;

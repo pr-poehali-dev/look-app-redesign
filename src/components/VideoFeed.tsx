@@ -95,7 +95,7 @@ return ({
           category: v.category || "all",
           avatar: v.avatar || "",
           templateId: v.template_id || null,
-          hasProducts: !!v.has_products,
+          hasProducts: false,
           views: typeof v.views === "number" ? v.views : undefined,
           isVerified: !!v.is_verified,
           isAd: !!v.is_ad,
@@ -114,7 +114,12 @@ return ({
         });
 };
 
-const mapDbVideos = (list: unknown[]) => (list || []).map(mapDbVideo);
+const isCommerceRaw = (v: unknown) => {
+  const r = v as { is_ad?: unknown; is_commercial?: unknown; has_products?: unknown };
+  return !!(r.is_ad || r.is_commercial || r.has_products);
+};
+
+const mapDbVideos = (list: unknown[]) => (list || []).filter((v) => !isCommerceRaw(v)).map(mapDbVideo);
 
 const MemoVideoCard = memo(VideoCard, (a, b) =>
   a.isActive === b.isActive &&

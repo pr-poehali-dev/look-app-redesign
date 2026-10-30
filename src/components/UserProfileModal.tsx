@@ -284,17 +284,6 @@ const UserProfileModal = ({ handle, initialTab = "media", onClose }: Props) => {
                 Статьи · {userArticles.length}
               </button>
             )}
-            {(shopProducts.length > 0 || initialTab === "shop") && (
-              <button
-                onClick={() => setTab("shop")}
-                className={`flex-1 py-3 text-sm font-medium border-b-2 transition-all flex items-center justify-center gap-1 ${
-                  tab === "shop" ? "border-[#2AABEE] text-[#2AABEE]" : "border-transparent text-gray-500"
-                }`}
-              >
-                <Icon name="Store" size={14} />
-                Магазин{shopProducts.length > 0 ? ` · ${shopProducts.length}` : ""}
-              </button>
-            )}
             {userBoards.length > 0 && (
               <button
                 onClick={() => setTab("boards")}

@@ -33,7 +33,7 @@ export const mapPost = (v: any, isVideo: boolean, user: ReturnType<typeof useAut
     isText: v.type === "text",
     category: v.category || null,
     templateId: v.template_id || null,
-    hasProducts: !!v.has_products,
+    hasProducts: false,
     views: typeof v.views === "number" ? v.views : undefined,
     city: v.city || null,
     isVerified: !!v.is_verified,

@@ -1,4 +1,6 @@
 import PhotoCarousel from "@/components/post-feed/PhotoCarousel";
+import HelpfulMark from "@/components/post-feed/HelpfulMark";
+import TranslateText from "@/components/post-feed/TranslateText";
 import StickyImage from "./StickyImage";
 import { useState, useRef } from "react";
 import { promptAuth } from "@/lib/promptAuth";
@@ -57,8 +59,9 @@ const PostCard = ({ post }: { post: Post }) => {
   const send: typeof rawSend = (...args) => { if (guest) { needAuth(); return Promise.resolve() as ReturnType<typeof rawSend>; } return rawSend(...args); };
   const toggleCommentLike: typeof rawToggleCommentLike = (...args) => { if (guest) { needAuth(); return Promise.resolve(); } return rawToggleCommentLike(...args); };
   // enabled=true — превью последних комментариев грузится сразу, чтобы показать 2 штуки под постом
-  const { comments: allComments, count: commentCount, send: rawSend, toggleLike: rawToggleCommentLike } = useComments("post", post.id, true, post.comments || 0);
-  const previewComments = allComments.filter(c => !c.parentId).slice(0, 2);
+  const { comments: allComments, count: commentCount, send: rawSend, toggleLike: rawToggleCommentLike, toggleHelpful, helpfulCount } = useComments("post", post.id, true, post.comments || 0);
+  const isPostOwner = !!user?.handle && user.handle.toLowerCase() === (post.handle || "").toLowerCase();
+  const previewComments = [...allComments.filter(c => !c.parentId)].sort((a, b) => Number(!!b.helpful) - Number(!!a.helpful)).slice(0, 2);
 
   // Товары грузим ТОЛЬКО если у поста реально есть привязанные товары (экономим трафик)
   const productVideoIds = post.hasProducts ? [post.id] : [];
@@ -258,6 +261,13 @@ const PostCard = ({ post }: { post: Post }) => {
           {!post.isText && post.caption.length > 90 && expanded && (
             <button onClick={() => setExpanded(false)} className="text-white/40 text-[13px] ml-1">свернуть</button>
           )}
+          {post.caption.trim().length > 1 && (
+            <div className="mt-1">
+              <TranslateText text={post.caption}>
+                {(shown) => shown !== post.caption ? <p className="text-white/80 text-[13px] leading-snug whitespace-pre-wrap break-words mb-1">{shown}</p> : null}
+              </TranslateText>
+            </div>
+          )}
           <PlaceDetails place={post.location} address={post.address} workHours={post.workHours} tips={post.tips} />
           {post.isAd && post.adErid && (
             <p className="text-white/40 text-[11px] mt-1 break-all">
@@ -287,6 +297,7 @@ const PostCard = ({ post }: { post: Post }) => {
           <div className="px-3 pb-1">
             {previewComments.map((c) => (
               <p key={c.id} className="text-[13px] leading-snug">
+                {c.helpful && <Icon name="Pin" size={11} className="inline text-[#FF5A3C] mr-1 -mt-0.5" />}
                 <span className="text-white font-semibold mr-1.5">{c.name}</span>
                 <span className="text-white/70"><LinkifiedText text={c.text} /></span>
               </p>
@@ -359,7 +370,9 @@ const PostCard = ({ post }: { post: Post }) => {
         <div className="fixed inset-0 z-[9999] flex flex-col justify-end md:flex-row md:justify-end md:bg-black/40" onPointerDown={() => setShowComments(false)}>
           <div className="sheet-theme rounded-t-3xl flex flex-col max-h-[70%] md:rounded-t-none md:rounded-l-3xl md:max-h-none md:h-full md:w-[400px] md:ml-auto md:shadow-2xl animate-in slide-in-from-bottom md:slide-in-from-right duration-300" onPointerDown={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/10">
-              <span className="text-white font-bold text-base">{commentCount} комментариев</span>
+              <span className="text-white font-bold text-base">
+                {commentCount} комментариев{helpfulCount > 0 ? ` · ${helpfulCount} полезных` : ""}
+              </span>
               <button onPointerDown={() => setShowComments(false)}>
                 <Icon name="X" size={20} className="text-white/60" />
               </button>
@@ -372,12 +385,15 @@ const PostCard = ({ post }: { post: Post }) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <span className="text-white font-semibold text-sm mr-2">{c.name}</span>
-                    <span className="text-white/80 text-sm break-words"><LinkifiedText text={c.text} /></span>
+                    <TranslateText text={c.text}>
+                      {(shown) => <span className="text-white/80 text-sm break-words"><LinkifiedText text={shown} /></span>}
+                    </TranslateText>
                     <div className="flex items-center gap-3 mt-1">
                       <span className="text-white/30 text-xs">{c.time}</span>
                       <button type="button" onClick={() => startReply(c.id, c.name)} className="text-white/40 text-xs font-semibold">
                         Ответить
                       </button>
+                      <HelpfulMark helpful={c.helpful} canMark={isPostOwner} onToggle={() => toggleHelpful(c.id)} />
                     </div>
                   </div>
                   <button

@@ -1,13 +1,9 @@
 import { useState } from "react";
 import StickyImage from "./StickyImage";
-import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import UserAvatar from "@/components/ui/user-avatar";
 import { Post, formatLikes } from "./PostFeedTypes";
 import { useLikes } from "@/hooks/useLikes";
-import ProductDetailSheet from "@/components/products/ProductDetailSheet";
-import { useProductsByVideos, openProductLink, hasProductLink, Product } from "@/hooks/useProducts";
-import { useAuth } from "@/context/AuthContext";
 import { useFollowingList } from "@/hooks/useFollowing";
 
 const ASPECTS = [3 / 4, 1, 4 / 5, 5 / 6, 4 / 3, 2 / 3];
@@ -25,19 +21,8 @@ function hashId(id: number | string): number {
 const NoteCard = ({ post, onOpen, priority = false }: { post: Post; onOpen: () => void; priority?: boolean }) => {
   const aspect = ASPECTS[hashId(post.id) % ASPECTS.length];
   const { count: likeCount } = useLikes(post.article ? "article" : "post", post.article ? post.article.id : post.id, post.likes);
-  const { user } = useAuth();
   const following = useFollowingList();
   const isFollowed = !!post.handle && following.some((h) => h.toLowerCase() === post.handle.toLowerCase());
-  const [showProducts, setShowProducts] = useState(false);
-  const [detailProduct, setDetailProduct] = useState<Product | null>(null);
-
-  const productVideoIds = post.hasProducts ? [post.id] : [];
-  const productsByVideo = useProductsByVideos(productVideoIds);
-  const products = productsByVideo[String(post.id)] || [];
-
-  const handleGoToProduct = (p: Product) => {
-    openProductLink(p, post.id, user?.id);
-  };
 
   return (
     <div className="relative w-full mb-3 rounded-2xl overflow-hidden bg-white/5 border border-white/10 anim-card-in" style={{ breakInside: "avoid" }}>
@@ -85,82 +70,20 @@ const NoteCard = ({ post, onOpen, priority = false }: { post: Post; onOpen: () =
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Icon name="Heart" size={13} className="text-white/50" />
-              <span className="text-[11px] text-white/50">{formatLikes(likeCount)}</span>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-1">
+                <Icon name="Bookmark" size={13} className="text-[#FF5A3C]" />
+                <span className="text-[11px] text-white/70 font-semibold">{formatLikes(post.saves || 0)}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Icon name="Heart" size={13} className="text-white/50" />
+                <span className="text-[11px] text-white/50">{formatLikes(likeCount)}</span>
+              </div>
             </div>
           </div>
         </div>
       </button>
 
-      {post.hasProducts && (
-        <button
-          onClick={(e) => { e.stopPropagation(); setShowProducts(true); }}
-          className="absolute top-2 left-2 flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full pl-1.5 pr-2 py-1 active:scale-95 transition-transform"
-        >
-          <Icon name="ShoppingBag" size={11} className="text-white" />
-          <span className="text-white text-[10px] font-semibold">Перейти</span>
-        </button>
-      )}
-
-      {showProducts && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] flex flex-col justify-end md:flex-row md:justify-end md:items-center md:bg-black/40"
-          onClick={() => setShowProducts(false)}
-        >
-          <div
-            className="sheet-theme rounded-t-3xl px-4 pt-5 pb-10 md:rounded-2xl md:pb-5 md:mr-6 md:w-[380px] md:shadow-2xl max-h-[70vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-white font-bold text-base flex items-center gap-2">
-                <Icon name="ShoppingBag" size={18} />
-                Товары из этого поста
-              </span>
-              <button onClick={() => setShowProducts(false)}>
-                <Icon name="X" size={20} className="text-white/60" />
-              </button>
-            </div>
-            {products.length === 0 ? (
-              <p className="text-white/40 text-sm py-6 text-center">Загружаем товары...</p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {products.map((p) => (
-                  <div key={p.id} className="flex items-center gap-3 bg-white/5 rounded-2xl p-3">
-                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 flex-shrink-0 cursor-pointer" onClick={() => setDetailProduct(p)}>
-                      {p.image && <img loading="lazy" decoding="async" src={p.image} alt={p.title} className="w-full h-full object-cover" />}
-                    </div>
-                    <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setDetailProduct(p)}>
-                      <p className="text-white text-sm font-semibold truncate">{p.title}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[#FF5A3C] font-bold text-sm">{p.price.toLocaleString("ru-RU")} ₽</span>
-                        {p.old_price && p.old_price > p.price && (
-                          <span className="text-white/40 text-xs line-through">{p.old_price.toLocaleString("ru-RU")} ₽</span>
-                        )}
-                      </div>
-                      {p.promo_code && (
-                        <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#FF5A3C]/20 text-[#FF5A3C] text-[10px] font-bold">
-                          Промокод: {p.promo_code}
-                        </span>
-                      )}
-                    </div>
-                    {hasProductLink(p) && (
-                      <button
-                        onClick={() => handleGoToProduct(p)}
-                        className="flex-shrink-0 px-3 py-1.5 rounded-full bg-[#FF5A3C] text-white text-xs font-bold active:scale-95 transition-transform whitespace-nowrap"
-                      >
-                        Перейти
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>,
-        document.body
-      )}
-      {detailProduct && <ProductDetailSheet product={detailProduct} videoId={post.id} onClose={() => setDetailProduct(null)} />}
     </div>
   );
 };

@@ -16,7 +16,6 @@ import { Post, GET_PHOTOS_URL, formatTime, parseServerDate } from "./post-feed/P
 import { useBulkCounts } from "@/hooks/useBulkCounts";
 import { readFeedCache, writeFeedCache } from "@/lib/feedCache";
 import { mapPost } from "@/components/post-feed/mapPost";
-import { trackEvent } from "@/lib/track";
 import TopicsScreen from "@/components/topics/TopicsScreen";
 import ChallengeBanner from "@/components/challenges/ChallengeBanner";
 import { isSlowNetwork } from "@/lib/network";
@@ -25,15 +24,15 @@ import { detectCity, normCity } from "@/lib/city";
 import { toast } from "sonner";
 import { FEED_CATEGORIES } from "@/lib/feedCategories";
 import CategoryBar from "./post-feed/CategoryBar";
+import SeasonalStrip, { matchesTopic } from "./post-feed/SeasonalStrip";
+import { getSeasonalTopics } from "@/lib/seasonal";
 
 type FeedScope = "recommend" | "following" | "nearby" | "trending" | "articles";
 type ViewMode = "masonry" | "feed";
 
 const SCOPES: { id: FeedScope; label: string }[] = [
   { id: "following", label: "Подписки" },
-  { id: "recommend", label: "Рекомендации" },
-  { id: "trending", label: "Тренды" },
-  { id: "articles", label: "Статьи" },
+  { id: "recommend", label: "Вдохновение" },
   { id: "nearby", label: "Рядом" },
 ];
 
@@ -52,19 +51,8 @@ const PostFeed = () => {
   const myStoryInputRef = useRef<HTMLInputElement>(null);
   const followingHandles = useFollowingList();
   const [scope, setScope] = useState<FeedScope>("recommend");
-  const [ideasOnly, setIdeasOnly] = useState(false);
   const [showTopics, setShowTopics] = useState(false);
-  useEffect(() => {
-    try { setIdeasOnly(localStorage.getItem("feed_ideas_only") === "1"); } catch { /* ignore */ }
-  }, []);
-  const toggleIdeas = () => {
-    setIdeasOnly((v) => {
-      const next = !v;
-      try { localStorage.setItem("feed_ideas_only", next ? "1" : "0"); } catch { /* ignore */ }
-      trackEvent(next ? "ideas_filter_on" : "ideas_filter_off", user?.id);
-      return next;
-    });
-  };
+  const [seasonId, setSeasonId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window === "undefined") return "masonry";
     return (localStorage.getItem("feed_view_mode") as ViewMode) || "masonry";
@@ -219,10 +207,11 @@ const PostFeed = () => {
       comments: c.comments[String(p.id)] ?? p.comments,
       likes: c.likes[String(p.id)] ?? p.likes,
       views: c.views[String(p.id)] ?? p.views,
+      saves: c.saves[String(p.id)] ?? p.saves ?? 0,
     };
   });
 
-  const visiblePosts = [...postsWithCounts.filter(p => !removedIds.has(p.id)), ...tutorialPosts].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+  const visiblePosts = [...postsWithCounts.filter(p => !removedIds.has(p.id) && !p.isCommercial), ...tutorialPosts].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
   const myHandle = (user?.handle || "").toLowerCase();
   const scopedPosts = useMemo(() => {
     const byNew = (a: Post, b: Post) => (b.createdAt ?? 0) - (a.createdAt ?? 0);
@@ -236,28 +225,25 @@ const PostFeed = () => {
         .filter(p => normCity(p.city) === myCity && (p.handle || "").toLowerCase() !== myHandle)
         .sort(byNew);
     }
-    if (scope === "trending") {
-      const weekMs = 7 * 24 * 60 * 60 * 1000;
-      const now = Date.now();
-      const score = (p: Post) => {
-        const base = p.likes * 3 + p.comments * 5 + (p.views || 0) / 10;
-        const age = p.createdAt ? now - p.createdAt : weekMs;
-        const freshBonus = age < weekMs ? (1 - age / weekMs) * base * 0.5 : 0;
-        return base + freshBonus;
-      };
-      return [...visiblePosts].sort((a, b) => score(b) - score(a));
-    }
-    return [...visiblePosts].sort(byNew);
+    const dayMs = 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    const score = (p: Post) => {
+      const base = (p.saves || 0) * 10 + p.comments * 3 + p.likes + (p.views || 0) / 50;
+      const ageDays = p.createdAt ? Math.max(0, (now - p.createdAt) / dayMs) : 30;
+      return (base + 2) / Math.pow(ageDays + 2, 1.2);
+    };
+    return [...visiblePosts].sort((a, b) => score(b) - score(a) || byNew(a, b));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope, visiblePosts, followingHandles.join(","), myHandle, myCity]);
 
   const activeCategory = FEED_CATEGORIES.find(c => c.id === categoryId);
   const categoryPosts = useMemo(() => {
-    const base = ideasOnly ? scopedPosts.filter(p => p.article || !p.isCommercial) : scopedPosts;
+    const season = scope === "recommend" && seasonId ? getSeasonalTopics(new Date()).find(t => t.id === seasonId) : null;
+    const base = season ? scopedPosts.filter(p => matchesTopic(p, season)) : scopedPosts;
     if (!activeCategory || activeCategory.id === "recommend") return base;
     if (activeCategory.id === "videos") return base.filter(p => p.isVideo);
     return base.filter(p => activeCategory.match.includes((p.category || "").toLowerCase()));
-  }, [scopedPosts, activeCategory, ideasOnly]);
+  }, [scopedPosts, activeCategory, scope, seasonId]);
   const headerH = scope === "articles" ? 156 : 200;
 
   const seenHandles = new Set<string>();
@@ -339,16 +325,6 @@ const PostFeed = () => {
           ))}
         </div>
         <button
-          onClick={toggleIdeas}
-          title="Только идеи и подборки"
-          aria-label="Только идеи и подборки"
-          aria-pressed={ideasOnly}
-          className={`h-8 px-2.5 rounded-full flex items-center gap-1 flex-shrink-0 text-[11px] font-semibold ${ideasOnly ? "bg-[#FF5A3C] text-white" : "bg-white/10 text-white/70"}`}
-        >
-          <Icon name="Lightbulb" size={14} />
-          Идеи
-        </button>
-        <button
           onClick={() => setShowTopics(true)}
           title="Темы"
           aria-label="Темы"
@@ -356,8 +332,9 @@ const PostFeed = () => {
         >
           <Icon name="Hash" size={18} className="text-white" />
         </button>
-        <button onClick={() => { setSearchSeed(""); setShowSearch(true); }} className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
-          <Icon name="Search" size={18} className="text-white" />
+        <button onClick={() => { setSearchSeed(""); setShowSearch(true); }} className="h-8 px-3 rounded-full bg-white/10 flex items-center gap-1.5 flex-shrink-0">
+          <Icon name="Search" size={15} className="text-white" />
+          <span className="text-white/70 text-[12px]">Поиск</span>
         </button>
         <button
           onClick={() => setViewMode((m) => (m === "masonry" ? "feed" : "masonry"))}
@@ -473,7 +450,7 @@ const PostFeed = () => {
         </div>
       ) : viewMode === "masonry" ? (
         <div className="absolute inset-0">
-          <MasonryFeed posts={categoryPosts} loading={loading} topPad={headerH} />
+          <MasonryFeed posts={categoryPosts} loading={loading} topPad={headerH} header={scope === "recommend" ? <SeasonalStrip posts={scopedPosts} activeId={seasonId} onChange={setSeasonId} /> : undefined} />
         </div>
       ) : (
         /* Posts — прокрутка с привязкой, под фиксированной панелью сторис */
