@@ -25,15 +25,17 @@ import { toast } from "sonner";
 import { FEED_CATEGORIES } from "@/lib/feedCategories";
 import CategoryBar from "./post-feed/CategoryBar";
 import SeasonalStrip, { matchesTopic } from "./post-feed/SeasonalStrip";
+import InterestsBar from "./post-feed/InterestsBar";
 import { WEEKLY_TAGS_KEY } from "@/hooks/useWeeklyTags";
 import { getSeasonalTopics, getLiveTopics, type SeasonalTopic } from "@/lib/seasonal";
 
-type FeedScope = "recommend" | "following" | "nearby" | "trending" | "articles";
+type FeedScope = "recommend" | "following" | "nearby" | "trending" | "articles" | "topics";
 type ViewMode = "masonry" | "feed";
 
 const SCOPES: { id: FeedScope; label: string }[] = [
   { id: "following", label: "Подписки" },
-  { id: "recommend", label: "Вдохновение" },
+  { id: "recommend", label: "Рекомендации" },
+  { id: "topics", label: "Мои темы" },
   { id: "articles", label: "Статьи" },
   { id: "nearby", label: "Рядом" },
 ];
@@ -55,6 +57,20 @@ const PostFeed = () => {
   const [scope, setScope] = useState<FeedScope>("recommend");
   const [showTopics, setShowTopics] = useState(false);
   const [seasonId, setSeasonId] = useState<string | null>(null);
+  const [interests, setInterests] = useState<string[]>([]);
+  const [interestsLoaded, setInterestsLoaded] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("feed_interests_v1");
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed)) setInterests(parsed.filter((x) => typeof x === "string"));
+    } catch { /* ignore */ }
+    setInterestsLoaded(true);
+  }, []);
+  useEffect(() => {
+    if (!interestsLoaded) return;
+    try { localStorage.setItem("feed_interests_v1", JSON.stringify(interests)); } catch { /* ignore */ }
+  }, [interests, interestsLoaded]);
   const [nowTs, setNowTs] = useState(0);
   useEffect(() => { setNowTs(Date.now()); }, []);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -229,6 +245,9 @@ const PostFeed = () => {
         .filter(p => normCity(p.city) === myCity && (p.handle || "").toLowerCase() !== myHandle)
         .sort(byNew);
     }
+    if (scope === "topics" && interests.length > 0) {
+      return visiblePosts.filter(p => !!p.topic && interests.includes(p.topic)).sort(byNew);
+    }
     const dayMs = 24 * 60 * 60 * 1000;
     const now = Date.now();
     const score = (p: Post) => {
@@ -238,7 +257,7 @@ const PostFeed = () => {
     };
     return [...visiblePosts].sort((a, b) => score(b) - score(a) || byNew(a, b));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scope, visiblePosts, followingHandles.join(","), myHandle, myCity]);
+  }, [scope, interests, visiblePosts, followingHandles.join(","), myHandle, myCity]);
 
   const feedTopics: SeasonalTopic[] = useMemo(() => {
     if (!nowTs) return [];
@@ -475,7 +494,7 @@ const PostFeed = () => {
         </div>
       ) : viewMode === "masonry" ? (
         <div className="absolute inset-0">
-          <MasonryFeed posts={categoryPosts} loading={loading} topPad={headerH} header={scope === "recommend" ? <SeasonalStrip posts={scopedPosts} topics={feedTopics} activeId={seasonId} onChange={setSeasonId} empty={seasonEmpty} /> : undefined} />
+          <MasonryFeed posts={categoryPosts} loading={loading} topPad={headerH} header={scope === "topics" ? <InterestsBar selected={interests} onChange={setInterests} empty={interests.length > 0 && scopedPosts.length === 0} /> : scope === "recommend" ? <SeasonalStrip posts={scopedPosts} topics={feedTopics} activeId={seasonId} onChange={setSeasonId} empty={seasonEmpty} /> : undefined} />
         </div>
       ) : (
         /* Posts — прокрутка с привязкой, под фиксированной панелью сторис */
