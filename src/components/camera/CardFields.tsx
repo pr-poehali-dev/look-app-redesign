@@ -1,5 +1,7 @@
 import Icon from "@/components/ui/icon";
 import { TOPICS } from "@/lib/topics";
+import { useEffect, useState } from "react";
+import { getSeasonalTopics, type SeasonalTopic } from "@/lib/seasonal";
 import { useMyBoards } from "@/hooks/useBoards";
 import type { PublishCompliance } from "./ComplianceFields";
 
@@ -14,6 +16,8 @@ const CardFields = ({ value, onChange }: Props) => {
   const { boards } = useMyBoards();
   const writable = boards.filter((b) => b.my_role !== "member");
   const isCard = value.postMode === "card";
+  const [season, setSeason] = useState<SeasonalTopic[]>([]);
+  useEffect(() => { setSeason(getSeasonalTopics(new Date())); }, []);
 
   const setPoint = (i: number, text: string) => {
     const next = [...value.cardPoints];
@@ -89,6 +93,26 @@ const CardFields = ({ value, onChange }: Props) => {
           ))}
         </div>
       </div>
+
+      {season.length > 0 && (
+        <div>
+          <p className="text-white/60 text-xs font-semibold uppercase mb-2">Сейчас в теме</p>
+          <div className="flex flex-wrap gap-1.5">
+            {season.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => onChange({ ...value, topic: value.topic === t.id ? "" : t.id })}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                  value.topic === t.id ? "bg-[#FF5A3C] border-[#FF5A3C] text-white" : "bg-white/10 border-white/15 text-white/70"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {writable.length > 0 && (
         <div>

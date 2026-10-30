@@ -5,7 +5,7 @@ import { SeasonalTopic, getSeasonalTopics } from "@/lib/seasonal";
 
 export const matchesTopic = (p: Post, t: SeasonalTopic) => {
   const hay = [p.caption, p.cardTitle, p.category, p.topic, ...(p.hashtags || [])].join(" ").toLowerCase();
-  return t.keywords.some((k) => hay.includes(k));
+  return p.topic === t.id || t.keywords.some((k) => hay.includes(k));
 };
 
 interface Props {
