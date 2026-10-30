@@ -24,7 +24,27 @@ export const useIncomingCall = (user: AuthUser) => {
   const ringtoneRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const allCtxRef = useRef<AudioContext[]>([]);
-  const handledRoomsRef = useRef<Set<string>>(new Set());
+  const handledRoomsRef = useRef<Map<string, number>>(new Map());
+
+  const HANDLED_KEY = "look_handled_call";
+  const HANDLED_TTL_MS = 60000;
+
+  const markHandled = (roomId: string) => {
+    const now = Date.now();
+    handledRoomsRef.current.set(roomId, now);
+    try { sessionStorage.setItem(HANDLED_KEY, JSON.stringify({ roomId, at: now })); } catch (e) { void e; }
+  };
+
+  const isRecentlyHandled = (roomId: string) => {
+    let at = handledRoomsRef.current.get(roomId) || 0;
+    if (!at) {
+      try {
+        const saved = JSON.parse(sessionStorage.getItem(HANDLED_KEY) || "null");
+        if (saved && saved.roomId === roomId) at = saved.at || 0;
+      } catch (e) { void e; }
+    }
+    return at > 0 && Date.now() - at < HANDLED_TTL_MS;
+  };
 
   const playRingtone = () => {
     // Гарантированно глушим всё, что играло до этого
@@ -122,7 +142,7 @@ export const useIncomingCall = (user: AuthUser) => {
     const params = new URLSearchParams(window.location.search);
     const room = params.get("accept_call");
     if (room) {
-      handledRoomsRef.current.add(room);
+      markHandled(room);
       stopRingtone();
       setIncomingCall(null);
       setActiveCall({
@@ -137,7 +157,7 @@ export const useIncomingCall = (user: AuthUser) => {
     const onMsg = (ev: MessageEvent) => {
       const m = ev.data;
       if (m && m.type === "accept_call" && m.call) {
-        if (m.call.roomId) handledRoomsRef.current.add(m.call.roomId);
+        if (m.call.roomId) markHandled(m.call.roomId);
         stopRingtone();
         setIncomingCall(null);
         setActiveCall({
@@ -167,7 +187,7 @@ export const useIncomingCall = (user: AuthUser) => {
         for (const sig of data.signals || []) {
           lastSigRef.current = sig.id;
           if (sig.type === "call_invite" && sig.payload) {
-            if (handledRoomsRef.current.has(sig.payload.roomId)) continue;
+            if (isRecentlyHandled(sig.payload.roomId)) continue;
             playRingtone();
             vibrate();
             const call: IncomingCall = {
@@ -199,7 +219,7 @@ export const useIncomingCall = (user: AuthUser) => {
     if (!incomingCall) return;
     if (autoTimeoutRef.current) { clearTimeout(autoTimeoutRef.current); autoTimeoutRef.current = null; }
     stopRingtone();
-    handledRoomsRef.current.add(incomingCall.roomId);
+    markHandled(incomingCall.roomId);
     setActiveCall(incomingCall);
     setIncomingCall(null);
   };
@@ -208,7 +228,7 @@ export const useIncomingCall = (user: AuthUser) => {
     if (!incomingCall || !user) return;
     if (autoTimeoutRef.current) { clearTimeout(autoTimeoutRef.current); autoTimeoutRef.current = null; }
     stopRingtone();
-    handledRoomsRef.current.add(incomingCall.roomId);
+    markHandled(incomingCall.roomId);
     // Шлём в комнату самого звонка, чтобы CallScreen звонящего получил сигнал и закрылся
     await fetch(`${CHAT_API}?module=signal`, {
       method: "POST",
