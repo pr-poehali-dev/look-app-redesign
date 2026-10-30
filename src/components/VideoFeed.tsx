@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, startTransition } from "react";
+import { useRef, useState, useEffect, memo } from "react";
 import VideoCard, { VideoData } from "./VideoCard";
 import Icon from "@/components/ui/icon";
 import { useUserMedia } from "@/context/UserMediaContext";
@@ -115,6 +115,18 @@ return ({
 };
 
 const mapDbVideos = (list: unknown[]) => (list || []).map(mapDbVideo);
+
+const MemoVideoCard = memo(VideoCard, (a, b) =>
+  a.isActive === b.isActive &&
+  a.preloadLevel === b.preloadLevel &&
+  a.video.id === b.video.id &&
+  a.video.image === b.video.image &&
+  a.video.likes === b.video.likes &&
+  a.video.comments === b.video.comments &&
+  a.video.shares === b.video.shares &&
+  a.video.description === b.video.description &&
+  a.video.thumbnail === b.video.thumbnail
+);
 
 const videoSig = (l: (VideoData & { category: string })[]) => l.map(v => `${v.id}:${v.likes}:${v.comments}:${v.image}`).join("|");
 
@@ -358,7 +370,7 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
     const commit = () => {
       const h = container.clientHeight || 1;
       const index = Math.round(container.scrollTop / h);
-      startTransition(() => setActiveIndex((prev) => (prev === index ? prev : index)));
+      setActiveIndex((prev) => (prev === index ? prev : index));
     };
     const handleScroll = () => {
       if (raf) return;
@@ -419,11 +431,11 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
               key={video.id}
               ref={(el) => { slideRefs.current[i] = el; }}
               className={`w-full snap-start snap-always flex md:items-center md:justify-center`}
-              style={{ height: "100%", background: "var(--look-bg)", contain: "layout paint style" }}
+              style={{ height: "100%", background: "var(--look-bg)", contain: "layout style" }}
             >
               <div className="w-full md:w-auto md:h-[calc(100vh-24px)] h-full" style={{ background: "var(--look-bg)" }}>
-                {distance <= 2 && (
-                  <VideoCard video={video} isActive={activeIndex === i} preloadLevel={preloadLevel} />
+                {distance <= 1 && (
+                  <MemoVideoCard video={video} isActive={activeIndex === i} preloadLevel={preloadLevel} />
                 )}
               </div>
             </div>
