@@ -1,3 +1,4 @@
+import HoverPreviewThumb from "./HoverPreviewThumb";
 import type { Dispatch, SetStateAction } from "react";
 import Icon from "@/components/ui/icon";
 import UserArticlesList from "./UserArticlesList";
@@ -97,7 +98,7 @@ const ProfileMediaTabs = ({ tab, setTab, stories, setMediaViewer, setCategoryEdi
               {videos.map((item, idx) => (
                 <div key={item.id} className="relative aspect-square overflow-hidden cursor-pointer" style={{ background: "linear-gradient(135deg, #2E2E2B 0%, #1a1a1a 100%)" }} onClick={() => setMediaViewer({ tab: "video", id: item.id })}>
                   {(item.thumb || item.thumbnail) ? (
-                    <img loading={idx < 12 ? "eager" : "lazy"} decoding="async" src={item.thumb || item.thumbnail} alt="" className="w-full h-full object-cover rounded-md" />
+                    <HoverPreviewThumb src={(item.thumb || item.thumbnail) as string} videoUrl={item.url} eager={idx < 12} />
                   ) : (item.url ? (
                     <video
                       src={`${item.url}#t=0.1`}

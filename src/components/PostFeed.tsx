@@ -27,6 +27,7 @@ import CategoryBar from "./post-feed/CategoryBar";
 import SeasonalStrip, { matchesTopic } from "./post-feed/SeasonalStrip";
 import InterestsBar from "./post-feed/InterestsBar";
 import ContinueWatching from "./post-feed/ContinueWatching";
+import BestOfWeek from "./post-feed/BestOfWeek";
 import { WEEKLY_TAGS_KEY } from "@/hooks/useWeeklyTags";
 import { getSeasonalTopics, getLiveTopics, type SeasonalTopic } from "@/lib/seasonal";
 
@@ -495,7 +496,7 @@ const PostFeed = () => {
         </div>
       ) : viewMode === "masonry" ? (
         <div className="absolute inset-0">
-          <MasonryFeed posts={categoryPosts} loading={loading} topPad={headerH} header={scope === "topics" ? <InterestsBar selected={interests} onChange={setInterests} empty={interests.length > 0 && scopedPosts.length === 0} /> : scope === "recommend" ? <><ContinueWatching /><SeasonalStrip posts={scopedPosts} topics={feedTopics} activeId={seasonId} onChange={setSeasonId} empty={seasonEmpty} /></> : undefined} />
+          <MasonryFeed posts={categoryPosts} loading={loading} topPad={headerH} header={scope === "topics" ? <InterestsBar selected={interests} onChange={setInterests} empty={interests.length > 0 && scopedPosts.length === 0} /> : scope === "recommend" ? <><ContinueWatching /><BestOfWeek posts={visiblePosts} /><SeasonalStrip posts={scopedPosts} topics={feedTopics} activeId={seasonId} onChange={setSeasonId} empty={seasonEmpty} /></> : undefined} />
         </div>
       ) : (
         /* Posts — прокрутка с привязкой, под фиксированной панелью сторис */
