@@ -9,6 +9,7 @@ const isStandalone = () =>
   (navigator as unknown as { standalone?: boolean }).standalone === true;
 
 const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isYandex = () => /YaBrowser|YaApp/i.test(navigator.userAgent);
 const isMobile = () => /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
 
 const InstallAppBanner = () => {
@@ -63,7 +64,9 @@ const InstallAppBanner = () => {
         <p className="mt-2 text-xs text-gray-600">
           {isIos()
             ? "Нажмите «Поделиться» в Safari, затем «На экран Домой»."
-            : canInstall
+            : isYandex() && !canInstall
+              ? "Откройте меню браузера (три полоски) и выберите «Добавить ярлык на рабочий стол» или «Добавить на гл. экран»."
+              : canInstall
               ? "Нажмите «Установить» ещё раз."
               : "Откройте меню браузера ⋮ и выберите «Установить приложение» или «Добавить на главный экран»."}
         </p>
