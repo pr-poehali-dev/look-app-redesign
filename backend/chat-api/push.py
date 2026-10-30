@@ -1,7 +1,7 @@
 import json
 import base64
 from pywebpush import webpush, WebPushException
-from py_vapid import Vapid01
+from py_vapid import Vapid01, Vapid02
 from cryptography.hazmat.primitives import serialization
 
 
@@ -29,19 +29,22 @@ def get_vapid(cur, conn):
 
 def send_call_push(cur, conn, to_user, data):
     priv, _ = get_vapid(cur, conn)
+    vv = Vapid02.from_pem(priv.encode())
     cur.execute("SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = %s", (to_user,))
     subs = cur.fetchall()
+    sent = 0
     for endpoint, p256dh, auth in subs:
         try:
             webpush(
                 subscription_info={"endpoint": endpoint, "keys": {"p256dh": p256dh, "auth": auth}},
                 data=json.dumps(data),
-                vapid_private_key=priv,
+                vapid_private_key=vv,
                 vapid_claims={"sub": "mailto:support@look.com.ru"},
                 ttl=30,
                 headers={"Urgency": "high"},
                 timeout=3,
             )
+            sent += 1
         except WebPushException as e:
             status = getattr(e.response, 'status_code', None)
             if status in (404, 410):
@@ -49,3 +52,4 @@ def send_call_push(cur, conn, to_user, data):
                 conn.commit()
         except Exception:
             pass
+    return sent

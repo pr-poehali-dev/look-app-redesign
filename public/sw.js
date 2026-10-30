@@ -86,6 +86,17 @@ self.addEventListener("fetch", (e) => {
 self.addEventListener("push", (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (_) { d = {}; }
+  if (d.type === "notify") {
+    e.waitUntil(
+      self.registration.showNotification(d.title || "Лоок", {
+        body: d.body || "",
+        icon: "/icon-192.png",
+        badge: "/icon-192.png",
+        data: { type: "notify", url: d.url || "/" },
+      })
+    );
+    return;
+  }
   if (d.type !== "call") return;
   const title = (d.callerName || "Входящий звонок");
   const body = d.mode === "video" ? "Видеозвонок" : "Аудиозвонок";
@@ -112,6 +123,19 @@ const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
   const d = e.notification.data || {};
+  if (d.type === "notify") {
+    const target = d.url || "/";
+    e.waitUntil(
+      self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+        if (list.length) {
+          const c = list[0];
+          return c.focus().then(() => (c.navigate ? c.navigate(target) : null)).catch(() => self.clients.openWindow(target));
+        }
+        return self.clients.openWindow(target);
+      })
+    );
+    return;
+  }
   if (e.action === "decline") {
     if (d.toUser && d.callerId && d.roomId) {
       e.waitUntil(

@@ -1,59 +1,46 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
-interface OneSignalApi {
-  Notifications: { permission: boolean; requestPermission: () => Promise<void> };
-  User: { PushSubscription: { optedIn?: boolean; optIn: () => Promise<void>; optOut: () => Promise<void> } };
-}
-
-const run = (fn: (os: OneSignalApi) => Promise<void>) => {
-  const w = window as unknown as { OneSignalDeferred?: Array<(os: OneSignalApi) => Promise<void>> };
-  w.OneSignalDeferred = w.OneSignalDeferred || [];
-  w.OneSignalDeferred.push(fn);
-};
+import { useAuth } from "@/context/AuthContext";
+import { hasPushSubscription, isPushSupported, subscribeToCallPush, unsubscribeFromPush } from "@/lib/pushSubscribe";
 
 const PushToggle = () => {
-  const supported = typeof Notification !== "undefined";
+  const { user } = useAuth();
+  const supported = isPushSupported();
   const [on, setOn] = useState(false);
   const [denied, setDenied] = useState(supported && Notification.permission === "denied");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!supported) return;
-    run(async (os) => {
-      setOn(!!os.Notifications.permission && !!os.User.PushSubscription.optedIn);
-    });
+    hasPushSubscription().then(setOn).catch(() => {});
   }, [supported]);
 
-  if (!supported) return null;
+  if (!supported || !user) return null;
 
-  const toggle = () => {
+  const toggle = async () => {
     if (busy) return;
     if (denied) {
       toast.error("Уведомления заблокированы в настройках браузера. Разрешите их для этого сайта");
       return;
     }
     setBusy(true);
-    run(async (os) => {
-      try {
-        if (on) {
-          await os.User.PushSubscription.optOut();
-          setOn(false);
+    try {
+      if (on) {
+        await unsubscribeFromPush(String(user.id));
+        setOn(false);
+      } else {
+        await subscribeToCallPush(String(user.id), user.name);
+        if (Notification.permission === "denied") {
+          setDenied(true);
+          toast.error("Уведомления заблокированы в настройках браузера");
         } else {
-          if (!os.Notifications.permission) await os.Notifications.requestPermission();
-          if (Notification.permission === "denied") {
-            setDenied(true);
-            toast.error("Уведомления заблокированы в настройках браузера");
-          } else if (os.Notifications.permission) {
-            await os.User.PushSubscription.optIn();
-            setOn(true);
-          }
+          setOn(await hasPushSubscription());
         }
-      } catch {
-        toast.error("Не удалось изменить настройку уведомлений");
       }
-      setBusy(false);
-    });
+    } catch {
+      toast.error("Не удалось изменить настройку уведомлений");
+    }
+    setBusy(false);
   };
 
   return (

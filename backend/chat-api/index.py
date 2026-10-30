@@ -9,7 +9,7 @@ import psycopg2
 import boto3
 import requests
 import push as push_mod
-from onesignal_push import send_push
+from own_push import send_push
 
 _MSK_TZ = datetime.timezone(datetime.timedelta(hours=3))
 
@@ -1872,32 +1872,10 @@ def handler(event: dict, context) -> dict:
                         'mode': payload.get('mode', 'audio'),
                         'roomId': payload.get('roomId', ''),
                     }
-                    delivered = 0
                     try:
-                        is_video = call_data['mode'] == 'video'
-                        delivered = send_push(
-                            [to_user],
-                            call_data['callerName'] or 'Входящий звонок',
-                            'Видеозвонок' if is_video else 'Аудиозвонок',
-                            '/?incoming_call=' + str(call_data['roomId']),
-                            extra={
-                                'priority': 10,
-                                'ttl': 40,
-                                'data': call_data,
-                                'android_visibility': 1,
-                                'ios_interruption_level': 'time_sensitive',
-                                'ios_badgeType': 'None',
-                                'web_push_topic': 'incoming-call',
-                                'collapse_id': 'incoming-call',
-                            },
-                        )
+                        push_mod.send_call_push(cur, conn, to_user, call_data)
                     except Exception as e:
-                        print(f'call onesignal error: {e}')
-                    if not delivered:
-                        try:
-                            push_mod.send_call_push(cur, conn, to_user, call_data)
-                        except Exception:
-                            pass
+                        print(f'call push error: {e}')
                 return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True})}
 
             elif method == 'GET':
@@ -1940,6 +1918,10 @@ def handler(event: dict, context) -> dict:
                 return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'publicKey': pub})}
             elif method == 'POST':
                 body = json.loads(event.get('body') or '{}')
+                if body.get('unsubscribe') and body.get('endpoint') and user_id != 'anon':
+                    cur.execute("DELETE FROM push_subscriptions WHERE endpoint = %s AND user_id = %s", (body['endpoint'], user_id))
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'ok': True})}
                 sub = body.get('subscription') or {}
                 keys = sub.get('keys') or {}
                 if not (sub.get('endpoint') and keys.get('p256dh') and keys.get('auth')) or user_id == 'anon':

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { unsubscribeFromPush } from "@/lib/pushSubscribe";
 
 export type ProfileLink = string | { url: string; label?: string };
 
@@ -45,27 +46,6 @@ const readCachedUser = (): AppUser | null => {
     const raw = localStorage.getItem("auth_user");
     return raw ? (JSON.parse(raw) as AppUser) : null;
   } catch { return null; }
-};
-
-type OneSignalApi = {
-  login: (id: string) => Promise<void>;
-  logout: () => Promise<void>;
-  Notifications?: { permission: boolean; requestPermission: () => Promise<void> };
-};
-const withOneSignal = (fn: (os: OneSignalApi) => Promise<void>) => {
-  const w = window as unknown as { OneSignalDeferred?: Array<(os: OneSignalApi) => Promise<void>> };
-  w.OneSignalDeferred = w.OneSignalDeferred || [];
-  w.OneSignalDeferred.push(async (os) => {
-    try { await fn(os); } catch (e) { console.warn("[OneSignal]", e); }
-  });
-};
-
-const bindOneSignal = (id: string) => {
-  setTimeout(() => {
-    withOneSignal(async (os) => {
-      await Promise.race([os.login(id), new Promise<void>((r) => setTimeout(r, 8000))]);
-    });
-  }, 4000);
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -115,7 +95,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("auth_user", JSON.stringify(data.user));
     localStorage.setItem("user_id", data.user.id);
     if (data.user.handle) localStorage.setItem("user_handle", data.user.handle);
-    bindOneSignal(String(data.user.id));
     return null;
   };
 
@@ -134,7 +113,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("auth_user", JSON.stringify(data.user));
     localStorage.setItem("user_id", data.user.id);
     if (data.user.handle) localStorage.setItem("user_handle", data.user.handle);
-    bindOneSignal(String(data.user.id));
     return null;
   };
 
@@ -144,18 +122,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("auth_token", newToken);
     localStorage.setItem("auth_user", JSON.stringify(newUser));
     localStorage.setItem("user_id", newUser.id);
-    bindOneSignal(String(newUser.id));
     if (newUser.handle) localStorage.setItem("user_handle", newUser.handle);
   };
 
   const logout = () => {
+    if (user?.id) unsubscribeFromPush(String(user.id)).catch(() => {});
     setUser(null);
     setToken(null);
     localStorage.removeItem("auth_token");
     localStorage.removeItem("auth_user");
     localStorage.removeItem("user_id");
     localStorage.removeItem("user_handle");
-    withOneSignal((os) => os.logout());
   };
 
   const updateUser = (u: Partial<AppUser>) => {

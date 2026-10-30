@@ -1,7 +1,7 @@
 import json
 import os
 import psycopg2
-from onesignal_push import send_push
+from own_push import send_push
 from datetime import datetime, timezone
 from urllib.parse import unquote
 
