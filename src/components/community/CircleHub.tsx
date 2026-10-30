@@ -17,14 +17,29 @@ const parse = async (res: Response) => {
 interface Props {
   communityId: string;
   name: string;
+  description?: string;
+  img?: string;
+  members?: number;
+  creatorId?: string;
   isMember: boolean;
   isAdmin: boolean;
+  onChat?: () => void;
+  onCall?: (mode: "audio" | "video") => void;
+  onSettings?: () => void;
   onClose: () => void;
 }
 
-const CircleHub = ({ communityId, name, isMember, isAdmin, onClose }: Props) => {
+interface Person { id: string; name: string; role: string; online?: boolean }
+
+const CHAT_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
+const TABS = [["feed", "Лента"], ["boards", "Доска кружка"], ["challenge", "Челленджи"], ["people", "Участники"]] as const;
+type HubTab = (typeof TABS)[number][0];
+
+const CircleHub = ({ communityId, name, description, img, members, isMember, isAdmin, onChat, onCall, onSettings, onClose }: Props) => {
   const { user } = useAuth();
-  const [tab, setTab] = useState<"feed" | "boards" | "challenge">("feed");
+  const [tab, setTab] = useState<HubTab>("feed");
+  const [people, setPeople] = useState<Person[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [boards, setBoards] = useState<Board[]>([]);
   const [challenge, setChallenge] = useState<Challenge | null>(null);
@@ -40,10 +55,27 @@ const CircleHub = ({ communityId, name, isMember, isAdmin, onClose }: Props) => 
       .then(parse).then((d) => setChallenge(d.challenge || null)).catch(() => {});
 
   useEffect(() => {
-    fetch(`${BOARDS_API_URL}?action=circle_feed&community_id=${encodeURIComponent(communityId)}`).then(parse).then((d) => setFeed(d.items || [])).catch(() => {});
-    loadBoards();
-    loadChallenge();
+    Promise.all([
+      fetch(`${BOARDS_API_URL}?action=circle_feed&community_id=${encodeURIComponent(communityId)}`).then(parse).then((d) => setFeed(d.items || [])).catch(() => {}),
+      loadBoards(),
+      loadChallenge(),
+    ]).finally(() => setLoaded(true));
+    if (user) {
+      fetch(`${CHAT_API}?module=community&action=members&community_id=${encodeURIComponent(communityId)}`, {
+        headers: { "X-User-Id": user.id, "X-User-Name": encodeURIComponent(user.name) },
+      }).then(parse).then((d) => setPeople(d.members || [])).catch(() => {});
+    }
   }, [communityId, user?.id]);
+
+  const share = async () => {
+    const url = `${window.location.origin}/?community=${communityId}`;
+    try {
+      if (navigator.share) { await navigator.share({ title: name, url }); return; }
+      await navigator.clipboard.writeText(url);
+      toast.success("Ссылка на кружок скопирована");
+    } catch { /* ignore */ }
+  };
+  const tabIndex = TABS.findIndex(([id]) => id === tab);
 
   const createBoard = async () => {
     if (!user || !newBoard.trim()) return;
@@ -81,18 +113,55 @@ const CircleHub = ({ communityId, name, isMember, isAdmin, onClose }: Props) => 
 
   return (
     <div className="fixed inset-0 z-[10000] bg-black overflow-y-auto">
-      <div className="flex items-center gap-3 px-4 pt-14 pb-3">
+      <div className="flex items-center gap-2 px-4 pt-14 pb-3">
         <button onClick={onClose} className="p-1" aria-label="Назад"><Icon name="ArrowLeft" size={22} className="text-white" /></button>
-        <h2 className="flex-1 text-white font-bold text-xl truncate">{name}</h2>
+        <span className="flex-1" />
+        <button onClick={share} className="h-8 px-3 rounded-full bg-[#FFE9E3] text-[#FF5A3C] text-xs font-semibold flex items-center gap-1.5">
+          <Icon name="Share2" size={13} />Поделиться
+        </button>
+        {isMember && onChat && <button onClick={onChat} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center" aria-label="Чат"><Icon name="MessageCircle" size={15} className="text-white/80" /></button>}
+        {isMember && onCall && <button onClick={() => onCall("audio")} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center" aria-label="Звонок"><Icon name="Phone" size={15} className="text-white/80" /></button>}
+        {isAdmin && onSettings && <button onClick={onSettings} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center" aria-label="Настройки"><Icon name="Settings" size={15} className="text-white/80" /></button>}
       </div>
-      <div className="flex gap-2 px-4 pb-3">
-        {([["feed", "Лента"], ["boards", "Доски"], ["challenge", "Челлендж"]] as const).map(([id, label]) => (
-          <button key={id} onClick={() => setTab(id)} className={`px-4 py-1.5 rounded-full text-sm font-semibold ${tab === id ? "bg-white text-black" : "bg-white/10 text-white/70"}`}>{label}</button>
+
+      <div className="flex items-center gap-4 px-4 pb-4">
+        <span className="w-[72px] h-[72px] rounded-full overflow-hidden bg-[#FFE9E3] text-[#FF5A3C] font-bold text-3xl flex items-center justify-center flex-shrink-0">
+          {img ? <img src={img} alt="" className="w-full h-full object-cover" /> : (name[0] || "?").toUpperCase()}
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-white font-semibold text-[17px] leading-snug truncate">{name}</h2>
+          {description && <p className="text-white/60 text-[13px] leading-snug line-clamp-2">{description}</p>}
+          <p className="text-white/40 text-[11px] mt-0.5">{members ?? people.length} участников</p>
+        </div>
+      </div>
+
+      <div className="relative flex border-b border-white/10 mx-4 mb-4">
+        {TABS.map(([id, label]) => (
+          <button key={id} onClick={() => setTab(id)} className={`flex-1 py-2.5 text-[12px] font-semibold transition-colors duration-200 ${tab === id ? "text-white" : "text-white/45"}`}>{label}</button>
         ))}
+        <span
+          className="absolute bottom-0 h-[3px] w-9 rounded-full bg-[#FF5A3C] transition-transform duration-200"
+          style={{ left: `calc(${tabIndex} * 25% + 12.5% - 18px)`, transitionTimingFunction: "cubic-bezier(0.2,0,0,1)" }}
+        />
       </div>
 
       <div className="px-4 pb-28">
-        {tab === "feed" && (feed.length === 0 ? (
+        {!loaded && (
+          <div className="grid grid-cols-2 gap-3">{[0, 1, 2, 3].map((i) => <div key={i} className="skeleton-box aspect-[4/5]" />)}</div>
+        )}
+        {loaded && tab === "people" && (
+          <div className="flex flex-col gap-3">
+            {people.length === 0 && <p className="text-white/40 text-sm text-center py-10">Список участников пока пуст</p>}
+            {people.map((m) => (
+              <div key={m.id} className="flex items-center gap-3">
+                <span className="w-10 h-10 rounded-full bg-[#FFE9E3] text-[#FF5A3C] font-bold flex items-center justify-center">{(m.name[0] || "?").toUpperCase()}</span>
+                <span className="flex-1 text-white text-[13px] font-semibold truncate">{m.name}</span>
+                <span className="text-white/40 text-[11px]">{m.role === "owner" ? "Создатель" : m.role === "admin" ? "Админ" : "Участник"}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {loaded && tab === "feed" && (feed.length === 0 ? (
           <p className="text-white/40 text-sm py-10 text-center">Здесь появятся публикации участников кружка</p>
         ) : (
           <div className="grid grid-cols-3 gap-1">
@@ -105,7 +174,7 @@ const CircleHub = ({ communityId, name, isMember, isAdmin, onClose }: Props) => 
           </div>
         ))}
 
-        {tab === "boards" && (
+        {loaded && tab === "boards" && (
           <div className="flex flex-col gap-3">
             {isMember && (
               <div className="flex gap-2">
@@ -131,10 +200,10 @@ const CircleHub = ({ communityId, name, isMember, isAdmin, onClose }: Props) => 
           </div>
         )}
 
-        {tab === "challenge" && (
+        {loaded && tab === "challenge" && (
           <div className="flex flex-col gap-3">
             {challenge ? (
-              <div className="rounded-3xl p-5 bg-gradient-to-br from-[#FF5A3C] to-[#8b5cf6]">
+              <div className="rounded-[20px] p-5 bg-gradient-to-br from-[#FF5A3C] to-[#8b5cf6]">
                 <p className="text-white/80 text-xs font-semibold uppercase mb-1">Осталось {left} {daysWord(left)} · участвуют {challenge.participants}</p>
                 <h3 className="text-white font-bold text-xl mb-1">{challenge.title}</h3>
                 <p className="text-white/90 text-sm mb-3">{challenge.description}</p>

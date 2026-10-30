@@ -524,13 +524,13 @@ const Index = () => {
         </div>
 
         {/* Bottom Tab Bar (mobile only) */}
-        <div className="media-overlay-text absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-[var(--look-bg)] to-transparent md:hidden">
-          <div className="flex items-center justify-around px-2 pb-3 pt-1">
+        <div className="media-overlay-text absolute bottom-0 left-0 right-0 z-30 md:hidden border-t border-white/10" style={{ background: "color-mix(in srgb, var(--look-bg) 72%, transparent)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}>
+          <div className="flex items-center justify-around px-2 h-14">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => tab.id === "add" ? setShowCamera(true) : setActiveTab(tab.id)}
-                className="flex flex-col items-center gap-0.5 min-w-[48px]"
+                className="relative flex flex-col items-center justify-center gap-0.5 min-w-[48px] min-h-[44px]"
               >
                 {tab.id === "add" ? (
                   <div className="relative flex items-center h-6">
@@ -557,10 +557,11 @@ const Index = () => {
                       )}
                     </div>
                     {tab.label && (
-                      <span className={`text-[10px] font-medium transition-opacity ${activeTab === tab.id ? "text-white opacity-100" : "text-white/50 opacity-50"}`}>
+                      <span className={`text-[10px] transition-opacity ${activeTab === tab.id ? "text-white opacity-100 font-bold" : "text-white/50 opacity-50 font-medium"}`}>
                         {t(`tabs.${tab.key}`)}
                       </span>
                     )}
+                    {activeTab === tab.id && <span className="absolute -top-0.5 w-1 h-1 rounded-full bg-[#FF5A3C]" />}
                   </>
                 )}
               </button>

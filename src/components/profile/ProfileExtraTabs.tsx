@@ -24,25 +24,25 @@ const ProfileExtraTabs = ({ tab, onOpenBoard, onOpenBoards }: Props) => {
 
   if (tab === "boards") {
     return (
-      <div className="p-3">
-        <button onClick={onOpenBoards} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold mb-3">
-          <Icon name="Plus" size={15} />Создать или управлять досками
-        </button>
+      <div className="px-4 pt-4 pb-28">
         {loading ? (
-          <div className="grid grid-cols-2 gap-3">{[0, 1].map((i) => <div key={i} className="skeleton-box aspect-[4/5]" />)}</div>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-[26px]">{[0, 1, 2, 3].map((i) => <div key={i} className="skeleton-box aspect-square !rounded-xl" />)}</div>
         ) : boards.length === 0 ? (
-          <p className="text-center text-sm text-gray-400 py-10">Пока нет досок</p>
+          <div className="flex flex-col items-center gap-4 py-10 text-center">
+            <img src="https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/1cdfbbd2-beb1-4504-88fc-3d2299fe1ead.jpg" alt="" className="w-40 h-40 rounded-3xl object-cover" loading="lazy" />
+            <p className="text-gray-500 text-sm max-w-[240px]">Создай первую доску — сохрани то, что вдохновило</p>
+            <button onClick={onOpenBoards} className="h-11 px-8 rounded-full bg-[#FF5A3C] text-white text-[15px] font-semibold">Создать доску</button>
+          </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-[26px]">
             {boards.map((b) => (
-              <button key={b.id} onClick={() => onOpenBoard(b.id)} className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-gray-100">
-                <BoardCollage images={b.collage} cover={b.cover_image} />
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-3 pt-8 pb-2 text-left">
-                  <p className="text-white text-sm font-bold truncate flex items-center gap-1">
-                    {!b.is_public && <Icon name="Lock" size={10} />}{b.title}
-                  </p>
-                  <p className="text-white/70 text-[11px]">{b.items_count ?? 0} постов{b.topic ? ` · ${topicTitle(b.topic)}` : ""}</p>
+              <button key={b.id} onClick={() => onOpenBoard(b.id)} className="text-left anim-card-in">
+                <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-100">
+                  <BoardCollage images={b.collage} cover={b.cover_image} />
+                  {!b.is_public && <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/45 flex items-center justify-center"><Icon name="Lock" size={11} className="text-white" /></span>}
                 </div>
+                <p className="text-black text-[13px] font-semibold mt-2 truncate">{b.title}</p>
+                <p className="text-gray-500 text-[11px]">{b.items_count ?? 0} постов{b.topic ? ` · ${topicTitle(b.topic)}` : ""}</p>
               </button>
             ))}
           </div>

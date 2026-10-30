@@ -14,6 +14,9 @@ export interface Challenge {
   ends_at: string | null;
   joined: boolean;
   participants: number;
+  my_posts?: number;
+  works?: number;
+  finished?: boolean;
 }
 
 export interface Badge {

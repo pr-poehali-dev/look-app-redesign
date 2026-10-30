@@ -34,8 +34,9 @@ const BoardDetailScreen = ({ boardId, onBack }: { boardId: number; onBack: () =>
 
   if (loading && !board) {
     return (
-      <div className="h-full bg-white flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+      <div className="h-full bg-white px-4 pt-14">
+        <div className="skeleton-box h-6 w-40 mx-auto mb-6" />
+        <div className="grid grid-cols-2 gap-3">{[0, 1, 2, 3].map((i) => <div key={i} className="skeleton-box aspect-[4/5]" />)}</div>
       </div>
     );
   }
@@ -55,53 +56,63 @@ const BoardDetailScreen = ({ boardId, onBack }: { boardId: number; onBack: () =>
     );
   }
 
+  const subtitle = `${items.length} ${items.length === 1 ? "пост" : items.length >= 2 && items.length <= 4 ? "поста" : "постов"}${board.is_collab ? " · коллективная" : ""}${board.topic ? ` · ${topicTitle(board.topic)}` : ""}${!board.is_public ? " · приватная" : ""}`;
+  const shown = members.slice(0, 4);
+
   return (
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
-      <div className="flex items-center gap-3 px-4 pt-14 pb-4 bg-white border-b border-gray-100">
-        <button onClick={onBack} className="p-1"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
-        <span className="flex-1 text-center text-black font-bold text-lg pr-7 truncate">{board.title}</span>
+      <div className="flex items-center gap-2 px-4 pt-14 pb-3 border-b border-gray-100">
+        <button onClick={onBack} className="p-1 w-8" aria-label="Назад"><Icon name="ArrowLeft" size={22} className="text-black" /></button>
+        <div className="flex-1 min-w-0 text-center">
+          <p className="text-black font-semibold text-[15px] leading-tight truncate">{board.title}</p>
+          <p className="text-gray-500 text-xs mt-0.5">{subtitle}</p>
+        </div>
+        <div className="w-8 flex justify-end">
+          {isOwner && (
+            <button onClick={() => setShowMembers(true)} className="p-1" aria-label="Настройки доски"><Icon name="Settings" size={20} className="text-black" /></button>
+          )}
+        </div>
       </div>
 
-      <div className="px-4 py-3">
-        {board.description && <p className="text-gray-500 text-sm mb-1">{board.description}</p>}
-        <div className="flex items-center gap-2">
-          <span className="text-gray-400 text-xs">{items.length} {items.length === 1 ? "пост" : "постов"}</span>
-          {board.topic && <span className="text-gray-400 text-xs">· {topicTitle(board.topic)}</span>}
-          {board.is_collab && (
-            <span className="flex items-center gap-1 text-gray-400 text-xs"><Icon name="Users" size={11} />Общая</span>
-          )}
-          {!board.is_public && (
-            <span className="flex items-center gap-1 text-gray-400 text-xs">
-              <Icon name="Lock" size={11} />
-              Приватная
-            </span>
-          )}
-        </div>
-        <div className="flex gap-2 mt-3">
-          {canAdd && (
-            <button onClick={() => setShowPicker(true)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold">
-              <Icon name="Plus" size={15} />Добавить пост
-            </button>
-          )}
-          {(isOwner || board.is_collab) && (
-            <button onClick={() => setShowMembers(true)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gray-100 text-black text-sm font-semibold">
-              <Icon name="Users" size={15} />{isOwner ? "Пригласить" : "Участники"}
+      {board.description && <p className="px-4 pt-3 text-gray-500 text-sm">{board.description}</p>}
+
+      {(isOwner || board.is_collab) && (
+        <div className="flex items-center justify-between px-4 py-3">
+          <button onClick={() => setShowMembers(true)} className="flex items-center" aria-label="Участники">
+            {shown.map((m, i) => (
+              <span
+                key={m.user_id}
+                className="w-6 h-6 rounded-full border-2 border-white bg-[#FFE9E3] text-[#FF5A3C] text-[10px] font-bold flex items-center justify-center"
+                style={{ marginLeft: i === 0 ? 0 : -8 }}
+              >
+                {((m.name || m.handle || "?")[0] || "?").toUpperCase()}
+              </span>
+            ))}
+            {members.length > shown.length && <span className="ml-2 text-gray-500 text-xs">+{members.length - shown.length}</span>}
+          </button>
+          {isOwner && (
+            <button onClick={() => setShowMembers(true)} className="h-8 px-4 rounded-full bg-[#FFE9E3] text-[#FF5A3C] text-[13px] font-semibold flex items-center gap-1.5">
+              <Icon name="UserPlus" size={14} />Пригласить
             </button>
           )}
         </div>
-      </div>
+      )}
 
       {items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 px-8 text-center">
-          <Icon name="LayoutGrid" size={48} className="text-gray-300" />
-          <p className="text-gray-400 text-sm">В этой доске пока пусто</p>
+        <div className="flex flex-col items-center justify-center py-16 gap-4 px-8 text-center">
+          <div className="w-20 h-20 rounded-full bg-[#FFE9E3] flex items-center justify-center"><Icon name="LayoutGrid" size={36} className="text-[#FF5A3C]" /></div>
+          <p className="text-gray-500 text-sm">Здесь пока пусто. Добавь первый пост{isOwner || board.is_collab ? " — или позови друзей" : ""}</p>
+          {isOwner && (
+            <button onClick={() => setShowMembers(true)} className="h-10 px-6 rounded-full bg-[#FFE9E3] text-[#FF5A3C] text-sm font-semibold">Пригласить</button>
+          )}
         </div>
       ) : (
-        <div className="columns-2 gap-3 px-4 pb-8">
+        <div className="columns-2 gap-3 px-4 pb-28">
           {items.map((item) => {
             const isVideo = item.item_type === "video" || /\.(mp4|mov|webm)(\?|$)/i.test(item.image || "");
+            const who = item.added_by_handle || "";
             return (
-              <div key={item.id} className="mb-3 break-inside-avoid rounded-2xl overflow-hidden bg-gray-50 relative group">
+              <div key={item.id} className="mb-3 break-inside-avoid rounded-2xl overflow-hidden bg-gray-50 relative group anim-card-in">
                 <button onClick={() => item.image && setOpened({ image: item.image, isVideo })} className="w-full block">
                   {isVideo ? (
                     <video src={item.image || undefined} className="w-full h-auto object-cover block" muted playsInline preload="metadata" />
@@ -109,11 +120,15 @@ const BoardDetailScreen = ({ boardId, onBack }: { boardId: number; onBack: () =>
                     item.image && <img src={item.image} alt={item.title || ""} className="w-full h-auto object-cover block" loading="lazy" />
                   )}
                 </button>
-                {item.title && (
-                  <p className="text-black text-xs leading-snug line-clamp-2 px-2 pt-1.5">{item.title}</p>
+                {who && (
+                  <span className="absolute top-2 left-2 w-4 h-4 rounded-full bg-[#FFE9E3] text-[#FF5A3C] text-[8px] font-bold flex items-center justify-center border border-white" title={`@${who}`}>
+                    {who[0].toUpperCase()}
+                  </span>
                 )}
-                {board.is_collab && item.added_by_handle && (
-                  <p className="text-gray-400 text-[10px] px-2 pb-1.5 pt-0.5">добавил @{item.added_by_handle}</p>
+                {item.title && (
+                  <div className="absolute inset-x-0 bottom-0 bg-black/55 backdrop-blur-sm px-2.5 py-1.5 pointer-events-none">
+                    <p className="text-white text-[12px] font-semibold leading-snug line-clamp-2">{item.title}</p>
+                  </div>
                 )}
                 {(isOwner || (myRole === "editor" && item.added_by === user?.id)) && (
                   <button
@@ -126,6 +141,14 @@ const BoardDetailScreen = ({ boardId, onBack }: { boardId: number; onBack: () =>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {canAdd && (
+        <div className="sticky bottom-20 px-4 pb-2 pointer-events-none flex justify-center">
+          <button onClick={() => setShowPicker(true)} className="pointer-events-auto h-11 px-8 rounded-full bg-[#FF5A3C] text-white text-[15px] font-semibold flex items-center gap-2 shadow-lg active:scale-95 transition-transform">
+            <Icon name="Plus" size={16} />Добавить пост
+          </button>
         </div>
       )}
 

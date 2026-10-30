@@ -28,66 +28,57 @@ interface ProfileMediaTabsProps {
 const ProfileMediaTabs = ({ tab, setTab, stories, setMediaViewer, setCategoryEditId, setShowArticles, myArticles, myArticlesLoading, onOpenBoard, onOpenBoards, onOpenGuide }: ProfileMediaTabsProps) => {
   return (
     <>
-      {/* Tabs */}
-      <div className="flex border-b border-gray-200">
-        <button
-          onClick={() => setTab("videos")}
-          className={`flex-1 flex items-center justify-center py-3 md:py-2 border-b-2 transition-all ${
-            tab === "videos" ? "border-[#8b5cf6]" : "border-transparent"
-          }`}
-        >
-          <div className={`w-8 h-8 md:w-7 md:h-7 rounded-lg flex items-center justify-center ${tab === "videos" ? "bg-[#8b5cf6]" : "bg-gray-200"}`}>
-            <Icon name="Play" size={16} className={tab === "videos" ? "text-white" : "text-gray-400"} />
-          </div>
-        </button>
-        <button
-          onClick={() => setTab("posts")}
-          className={`flex-1 flex items-center justify-center py-3 md:py-2 border-b-2 transition-all ${
-            tab === "posts" ? "border-[#8b5cf6]" : "border-transparent"
-          }`}
-        >
-          <div className={`w-8 h-8 md:w-7 md:h-7 rounded-lg flex items-center justify-center ${tab === "posts" ? "bg-[#8b5cf6]" : "bg-gray-200"}`}>
-            <Icon name="LayoutGrid" size={16} className={tab === "posts" ? "text-white" : "text-gray-400"} />
-          </div>
-        </button>
-        <button
-          onClick={() => setTab("articles")}
-          className={`flex-1 flex items-center justify-center py-3 md:py-2 border-b-2 transition-all ${
-            tab === "articles" ? "border-[#8b5cf6]" : "border-transparent"
-          }`}
-        >
-          <div className={`w-8 h-8 md:w-7 md:h-7 rounded-lg flex items-center justify-center ${tab === "articles" ? "bg-[#8b5cf6]" : "bg-gray-200"}`}>
-            <Icon name="FileText" size={16} className={tab === "articles" ? "text-white" : "text-gray-400"} />
-          </div>
-        </button>
-        <button
-          onClick={() => setTab("reposts")}
-          className={`flex-1 flex items-center justify-center py-3 md:py-2 border-b-2 transition-all ${
-            tab === "reposts" ? "border-[#8b5cf6]" : "border-transparent"
-          }`}
-        >
-          <div className={`w-8 h-8 md:w-7 md:h-7 rounded-lg flex items-center justify-center ${tab === "reposts" ? "bg-[#8b5cf6]" : "bg-gray-200"}`}>
-            <Icon name="Repeat2" size={16} className={tab === "reposts" ? "text-white" : "text-gray-400"} />
-          </div>
-        </button>
-      </div>
-      <div className="flex gap-2 px-3 py-2 overflow-x-auto border-b border-gray-200" style={{ scrollbarWidth: "none" }}>
+      <div className="relative flex border-b border-gray-200">
         {([
-          { id: "boards", label: "Доски", icon: "Layers", action: () => setTab("boards") },
-          { id: "circles", label: "Кружки", icon: "Users", action: () => setTab("circles") },
-          { id: "challenges", label: "Челленджи", icon: "Trophy", action: () => setTab("challenges") },
-          { id: "articles-open", label: "Статьи", icon: "FileText", action: () => setShowArticles(true) },
-          { id: "guide", label: "Инструкция", icon: "BookOpen", action: onOpenGuide },
-        ] as const).map(({ id, label, icon, action }) => (
-          <button
-            key={id}
-            onClick={action}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold ${tab === id ? "bg-[#8b5cf6] text-white" : "bg-gray-100 text-gray-600"}`}
-          >
-            <Icon name={icon} size={13} />{label}
-          </button>
-        ))}
+          { id: "videos", label: "Лента" },
+          { id: "boards", label: "Доски" },
+          { id: "circles", label: "Кружки" },
+          { id: "challenges", label: "Челленджи" },
+        ] as const).map(({ id, label }) => {
+          const active = id === "videos" ? (tab === "videos" || tab === "posts" || tab === "articles" || tab === "reposts") : tab === id;
+          return (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={`flex-1 py-3 text-[13px] font-semibold transition-colors duration-200 ${active ? "text-black" : "text-gray-400"}`}
+            >
+              {label}
+            </button>
+          );
+        })}
+        <span
+          className="absolute bottom-0 h-[3px] w-9 rounded-full bg-[#FF5A3C] transition-all duration-200"
+          style={{
+            left: `calc(${["videos", "posts", "articles", "reposts"].includes(tab) ? 0 : tab === "boards" ? 1 : tab === "circles" ? 2 : 3} * 25% + 12.5% - 18px)`,
+            transitionTimingFunction: "cubic-bezier(0.2,0,0,1)",
+          }}
+        />
       </div>
+
+      {(["videos", "posts", "articles", "reposts"] as const).includes(tab as "videos") && (
+        <div className="flex gap-2 px-3 py-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+          {([
+            { id: "videos", icon: "Play", label: "Видео" },
+            { id: "posts", icon: "LayoutGrid", label: "Фото" },
+            { id: "articles", icon: "FileText", label: "Статьи" },
+            { id: "reposts", icon: "Repeat2", label: "Репосты" },
+          ] as const).map(({ id, icon, label }) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold ${tab === id ? "bg-[#FFE9E3] text-[#FF5A3C]" : "bg-gray-100 text-gray-600"}`}
+            >
+              <Icon name={icon} size={13} />{label}
+            </button>
+          ))}
+          <button onClick={() => setShowArticles(true)} className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+            <Icon name="PenLine" size={13} />Написать
+          </button>
+          <button onClick={onOpenGuide} className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+            <Icon name="BookOpen" size={13} />Инструкция
+          </button>
+        </div>
+      )}
 
       {tab === "boards" || tab === "circles" || tab === "challenges" ? (
         <ProfileExtraTabs tab={tab} onOpenBoard={onOpenBoard} onOpenBoards={onOpenBoards} />

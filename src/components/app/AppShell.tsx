@@ -12,6 +12,7 @@ import AuthenticatedApp from "@/components/app/AuthenticatedApp";
 import InstallAppBanner from "@/components/InstallAppBanner";
 import { useIncomingCall } from "@/components/app/useIncomingCall";
 import { useNotifySound } from "@/components/app/useNotifySound";
+import MedalToast from "@/components/challenges/MedalToast";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import "@/i18n";
 
@@ -105,6 +106,12 @@ const AppContent = () => {
 
   const { incomingCall, activeCall, setActiveCall, acceptCall, declineCall } = useIncomingCall(user);
   useNotifySound(!!user);
+  const [medal, setMedal] = useState<string | null>(null);
+  useEffect(() => {
+    const on = (e: Event) => setMedal((e as CustomEvent).detail?.title || "Участник");
+    window.addEventListener("badge-earned", on);
+    return () => window.removeEventListener("badge-earned", on);
+  }, []);
 
   if (loading) {
     return (
@@ -178,15 +185,18 @@ const AppContent = () => {
   }
 
   return (
-    <AuthenticatedApp
-      user={user}
-      token={token}
-      activeCall={activeCall}
-      incomingCall={incomingCall}
-      onEndCall={() => setActiveCall(null)}
-      onAccept={acceptCall}
-      onDecline={declineCall}
-    />
+    <>
+      <AuthenticatedApp
+        user={user}
+        token={token}
+        activeCall={activeCall}
+        incomingCall={incomingCall}
+        onEndCall={() => setActiveCall(null)}
+        onAccept={acceptCall}
+        onDecline={declineCall}
+      />
+      {medal && <MedalToast title={medal} onClose={() => setMedal(null)} />}
+    </>
   );
 };
 

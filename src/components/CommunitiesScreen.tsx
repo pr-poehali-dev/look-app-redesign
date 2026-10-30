@@ -56,6 +56,8 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
   const [settingsCom, setSettingsCom] = useState<Community | null>(null);
   const [freshLoaded, setFreshLoaded] = useState(false);
   const [hubCom, setHubCom] = useState<Community | null>(null);
+  const [query, setQuery] = useState("");
+  const [justJoined, setJustJoined] = useState<Set<string>>(new Set());
 
   const loadCommunities = () => {
     if (!user) return;
@@ -214,7 +216,20 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
   );
 
   if (hubCom) return (
-    <CircleHub communityId={hubCom.id} name={hubCom.name} isMember={hubCom.joined} isAdmin={!!hubCom.is_admin} onClose={() => setHubCom(null)} />
+    <CircleHub
+      communityId={hubCom.id}
+      name={hubCom.name}
+      description={hubCom.description}
+      img={hubCom.img}
+      members={hubCom.members}
+      creatorId={hubCom.creator_id || ""}
+      isMember={hubCom.joined}
+      isAdmin={!!hubCom.is_admin}
+      onChat={() => { const c = hubCom; setHubCom(null); openCommunityChat(c); }}
+      onCall={(mode) => { const c = hubCom; setHubCom(null); setGroupCall({ communityId: c.id, name: c.name, mode }); }}
+      onSettings={() => { const c = hubCom; setHubCom(null); setSettingsCom(c); }}
+      onClose={() => setHubCom(null)}
+    />
   );
 
   if (settingsCom) return (
@@ -232,7 +247,13 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
     />
   );
 
-  const filtered = communities.filter(c => category === "Все" || c.category === category);
+  const q = query.trim().toLowerCase();
+  const filtered = communities.filter(c =>
+    (category === "Все" || c.category === category) &&
+    (!q || c.name.toLowerCase().includes(q) || (c.description || "").toLowerCase().includes(q))
+  );
+  const mine = filtered.filter(c => c.joined);
+  const recommended = filtered.filter(c => !c.joined || justJoined.has(c.id));
 
   return (
     <div className="h-full bg-black flex flex-col overflow-hidden">
@@ -318,114 +339,73 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
         </div>
       )}
 
-      <div className="flex-1 overflow-y-scroll px-4 flex flex-col gap-3 pb-28" style={{ scrollbarWidth: "none" }}>
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="w-8 h-8 border-2 border-[#FF5A3C] border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : filtered.map(com => (
-          <div key={com.id} className="bg-[#111] rounded-2xl overflow-hidden border border-white/8">
-            <div
-              className="relative h-24 cursor-pointer"
-              onClick={() => setSettingsCom(com)}
-            >
-              {com.img ? (
-                <img loading="lazy" decoding="async" src={com.img} className="w-full h-full object-cover opacity-70" alt={com.name} />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-[#FF5A3C]/30 to-[#8b5cf6]/30" />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-              <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full">
-                <Icon name={com.type === "open" ? "Globe" : "Lock"} size={10} className="text-white/70" />
-                <span className="text-white/70 text-[10px]">{com.type === "open" ? "Открытое" : "Закрытое"}</span>
-              </div>
-              {com.is_admin ? (
-                <div className="absolute top-2 left-2 bg-amber-500 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <Icon name="Crown" size={10} className="text-white" />
-                  <span className="text-white text-[10px] font-bold">Админ</span>
-                </div>
-              ) : com.joined ? (
-                <div className="absolute top-2 left-2 bg-[#FF5A3C] px-2 py-0.5 rounded-full">
-                  <span className="text-white text-[10px] font-bold">Участник</span>
-                </div>
-              ) : null}
-              <div className="absolute bottom-2 left-3">
-                <span className="text-white/50 text-[10px] bg-black/40 px-2 py-0.5 rounded-full">{com.category}</span>
-              </div>
-            </div>
-            <div className="p-3">
-              <div className="flex items-start justify-between gap-2 mb-1">
-                <h3 className="text-white font-bold text-sm">{com.name}</h3>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <Icon name="Users" size={11} className="text-white/30" />
-                  <span className="text-white/40 text-xs">{com.members >= 1000 ? (com.members / 1000).toFixed(1) + "K" : com.members}</span>
-                </div>
-              </div>
-              <p className="text-white/50 text-xs mb-3 leading-snug break-words"><LinkifiedText text={com.description} /></p>
+      <div className="flex-1 overflow-y-scroll px-4 flex flex-col gap-5 pb-28" style={{ scrollbarWidth: "none" }}>
+        <div className="relative">
+          <Icon name="Search" size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Поиск кружков…"
+            className="w-full h-11 rounded-[18px] border border-white/15 bg-transparent pl-10 pr-4 text-sm text-white outline-none placeholder-white/40 focus:border-[#FF5A3C]"
+          />
+        </div>
 
-              <div className="flex gap-2">
-                {com.is_admin ? (
-                  <button
-                    onClick={() => openCommunityChat(com)}
-                    className="flex-1 py-2 rounded-xl text-sm font-bold bg-[#FF5A3C] text-white"
-                  >
-                    Открыть чат
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleJoin(com)}
-                    className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${com.joined ? "bg-white/10 text-white/60" : "bg-[#FF5A3C] text-white"}`}
-                  >
-                    {com.joined ? "Выйти" : com.type === "closed" ? "Подать заявку" : "Вступить"}
-                  </button>
-                )}
-                {com.joined && (
-                  <button
-                    onClick={() => setHubCom(com)}
-                    className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center"
-                    title="Лента, доски и челленджи"
-                    aria-label="Лента, доски и челленджи"
-                  >
-                    <Icon name="LayoutGrid" size={16} className="text-white/60" />
-                  </button>
-                )}
-                {com.joined && !com.is_admin && (
-                  <button
-                    onClick={() => openCommunityChat(com)}
-                    className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center"
-                  >
-                    <Icon name="MessageCircle" size={16} className="text-white/60" />
-                  </button>
-                )}
-                {com.joined && (
-                  <>
-                    <button
-                      onClick={() => setGroupCall({ communityId: com.id, name: com.name, mode: "audio" })}
-                      className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center"
-                    >
-                      <Icon name="Phone" size={16} className="text-green-400" />
-                    </button>
-                    <button
-                      onClick={() => setGroupCall({ communityId: com.id, name: com.name, mode: "video" })}
-                      className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center"
-                    >
-                      <Icon name="Video" size={16} className="text-[#00a2ff]" />
-                    </button>
-                  </>
-                )}
-                {(com.is_admin || (user && com.creator_id === user.id)) && (
-                  <button
-                    onClick={() => setSettingsCom(com)}
-                    className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors"
-                    title="Настройки сообщества"
-                  >
-                    <Icon name="Settings" size={16} className="text-white/70" />
-                  </button>
-                )}
-              </div>
-            </div>
+        {loading ? (
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-4">{[0, 1, 2, 3].map((i) => <div key={i} className="skeleton-box w-11 h-11 !rounded-full flex-shrink-0" />)}</div>
+            {[0, 1, 2].map((i) => <div key={i} className="skeleton-box h-14" />)}
           </div>
-        ))}
+        ) : (
+          <>
+            {mine.length > 0 && (
+              <section>
+                <h3 className="text-white font-semibold text-[15px] mb-3">Мои кружки</h3>
+                <div className="flex gap-4 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+                  {mine.map((com) => (
+                    <button key={com.id} onClick={() => setHubCom(com)} className="flex flex-col items-center gap-1.5 w-16 flex-shrink-0">
+                      <span className={`w-11 h-11 rounded-full overflow-hidden flex items-center justify-center bg-[#FFE9E3] text-[#FF5A3C] font-bold text-lg ${com.is_admin ? "ring-2 ring-[#FF5A3C] ring-offset-2 ring-offset-black" : ""}`}>
+                        {com.img ? <img src={com.img} alt="" className="w-full h-full object-cover" loading="lazy" /> : (com.name[0] || "?").toUpperCase()}
+                      </span>
+                      <span className="text-white/60 text-[11px] leading-tight w-full truncate text-center">{com.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <section>
+              <h3 className="text-white font-semibold text-[15px] mb-3">Рекомендуем</h3>
+              {recommended.length === 0 ? (
+                <p className="text-white/40 text-sm text-center py-8">{query ? "Ничего не нашли" : "Пока нет кружков. Создайте первый."}</p>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {recommended.map((com) => (
+                    <div key={com.id} className="flex items-center gap-3">
+                      <button onClick={() => (com.joined ? setHubCom(com) : setSettingsCom(com))} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+                        <span className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-[#FFE9E3] text-[#FF5A3C] font-bold flex-shrink-0">
+                          {com.img ? <img src={com.img} alt="" className="w-full h-full object-cover" loading="lazy" /> : (com.name[0] || "?").toUpperCase()}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block text-white font-semibold text-[13px] truncate">{com.name}</span>
+                          <span className="block text-white/50 text-[11px]">{com.members >= 1000 ? (com.members / 1000).toFixed(1) + "K" : com.members} участников · {com.category}</span>
+                        </span>
+                      </button>
+                      {com.joined ? (
+                        <button onClick={() => setHubCom(com)} className="h-6 w-[88px] flex-shrink-0 rounded-full border border-[#2E9E6B] text-[#2E9E6B] text-[11px] font-semibold flex items-center justify-center gap-1">
+                          <Icon name="Check" size={11} />Вы в кружке
+                        </button>
+                      ) : (
+                        <button onClick={() => { setJustJoined((p) => new Set(p).add(com.id)); handleJoin(com); }} className="h-6 w-[74px] flex-shrink-0 rounded-full bg-[#FF5A3C] text-white text-[11px] font-semibold">
+                          {com.type === "closed" ? "Заявка" : "Войти"}
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        )}
       </div>
     </div>
   );

@@ -9,6 +9,8 @@ import BoardsScreen from "./profile/BoardsScreen";
 import ArticlesScreen from "./profile/ArticlesScreen";
 import GuideScreen from "./profile/GuideScreen";
 import { useUserArticles } from "@/hooks/useArticles";
+import { useMyBoards } from "@/hooks/useBoards";
+import { useMyCirclesCount } from "@/hooks/useMyCirclesCount";
 import ReferralsScreen from "./profile/ReferralsScreen";
 import CollabsScreen from "./profile/CollabsScreen";
 import StoryViewerModal, { StoryViewerItem } from "./shared/StoryViewerModal";
@@ -34,6 +36,8 @@ const ProfilePage = () => {
   const [showShop, setShowShop] = useState(false);
   const [showCatalog, setShowCatalog] = useState(false);
   const [showBoards, setShowBoards] = useState(false);
+  const { boards: myBoards } = useMyBoards();
+  const circlesCount = useMyCirclesCount();
   const [openBoardId, setOpenBoardId] = useState<number | null>(null);
   const [showArticles, setShowArticles] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
@@ -191,16 +195,16 @@ const ProfilePage = () => {
       })()}
 
       <div className="md:max-w-2xl md:mx-auto">
-      {/* Avatar + stats */}
-      <div className="flex items-center gap-4 px-4 pt-14 pb-4 md:px-3 md:pt-10 md:pb-3">
+      {/* Хедер: аватар + имя */}
+      <div className="flex items-center gap-4 px-4 pt-14 pb-3 md:px-3 md:pt-10">
         <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
         <button
           onClick={() => avatarInputRef.current?.click()}
-          className="relative w-20 h-20 md:w-16 md:h-16 rounded-full flex-shrink-0 bg-gradient-to-br from-[#c084fc] to-[#8b5cf6] flex items-center justify-center overflow-hidden"
+          className="relative w-[72px] h-[72px] rounded-full flex-shrink-0 bg-[#FFE9E3] flex items-center justify-center overflow-hidden"
         >
           {user?.avatar
             ? <img loading="lazy" decoding="async" src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
-            : <span className="text-white font-black text-3xl md:text-2xl">{user?.name?.[0]?.toUpperCase() ?? "?"}</span>
+            : <span className="text-[#FF5A3C] font-bold text-3xl">{user?.name?.[0]?.toUpperCase() ?? "?"}</span>
           }
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
             {avatarLoading
@@ -209,38 +213,32 @@ const ProfilePage = () => {
             }
           </div>
         </button>
-
-        <div className="flex flex-1 justify-around">
-          {[
-            { value: String(totalLikes), label: t("pr.likes"), action: null },
-            { value: String(followersCount), label: t("pr.followers"), action: "followers" },
-            { value: String(followingHandles.length), label: t("pr.following"), action: "following" },
-          ].map((s, i) => (
-            <div key={s.label} className="flex items-center">
-              {i > 0 && <div className="w-px h-8 md:h-6 bg-gray-200 mr-4 md:mr-3" />}
-              <button
-                onClick={() => {
-                  if (!s.action) return;
-                  if (s.action === "followers") loadFollowers();
-                  setShowScreen(s.action as "followers" | "following");
-                }}
-                className="flex flex-col items-center"
-              >
-                <span className="text-black font-bold text-xl md:text-base leading-tight">{s.value}</span>
-                <span className="text-gray-500 text-xs md:text-[11px] mt-0.5">{s.label}</span>
-              </button>
-            </div>
-          ))}
+        <div className="min-w-0 flex-1">
+          <p className="text-black font-semibold text-[17px] leading-tight flex items-center gap-1 truncate">
+            {user?.name ?? ""}
+            {user?.is_verified && <Icon name="BadgeCheck" size={16} className="text-[#2AABEE]" />}
+          </p>
+          <p className="text-gray-500 text-[13px] mt-0.5 truncate">@{user?.handle ?? ""}</p>
+          <p className="text-gray-500 text-xs mt-1 truncate">
+            <button onClick={() => { loadFollowers(); setShowScreen("followers"); }} className="font-semibold text-black">{followersCount}</button> {t("pr.followers").toLowerCase()}
+            <span className="mx-1.5">·</span>
+            <button onClick={() => setShowScreen("following")} className="font-semibold text-black">{followingHandles.length}</button> {t("pr.following").toLowerCase()}
+          </p>
         </div>
       </div>
 
-      {/* Name & bio */}
-      <div className="px-4 pb-4 md:px-3 md:pb-3">
-        <p className="text-black font-bold text-lg md:text-base leading-tight flex items-center gap-1">
-          {user?.name ?? ""}
-          {user?.is_verified && <Icon name="BadgeCheck" size={16} className="text-[#2AABEE]" />}
-        </p>
-        <p className="text-gray-500 text-sm md:text-xs mt-0.5">@{user?.handle ?? ""}</p>
+      {/* Счётчики */}
+      <div className="grid grid-cols-3 px-4 pb-3 md:px-3 border-b border-gray-200">
+        {[
+          { value: stories.filter((s) => !s.is_repost).length, label: "Посты", go: () => setTab("videos") },
+          { value: myBoards.length, label: "Доски", go: () => setTab("boards") },
+          { value: circlesCount, label: "Кружки", go: () => setTab("circles") },
+        ].map((c) => (
+          <button key={c.label} onClick={c.go} className="flex flex-col items-center py-1">
+            <span className="text-black font-semibold text-[15px] leading-tight">{c.value}</span>
+            <span className="text-gray-500 text-xs mt-0.5">{c.label}</span>
+          </button>
+        ))}
       </div>
 
       {/* Action buttons */}
@@ -298,6 +296,14 @@ const ProfilePage = () => {
         savingCategory={savingCategory}
         handleChangeCategory={handleChangeCategory}
       />
+
+      <button
+        onClick={() => window.dispatchEvent(new CustomEvent("open-camera"))}
+        aria-label="Создать"
+        className="anim-fab fixed right-4 bottom-[76px] z-30 w-[52px] h-[52px] rounded-full bg-[#FF5A3C] text-white flex items-center justify-center shadow-lg md:hidden"
+      >
+        <Icon name="Plus" size={24} strokeWidth={2.5} />
+      </button>
 
       <ProfileMediaTabs
         tab={tab}

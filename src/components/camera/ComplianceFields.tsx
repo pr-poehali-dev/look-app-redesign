@@ -95,7 +95,7 @@ export const attachToBoards = async (
   if (userId && reg?.id && c.postMode === "card") trackEvent("card_created", userId);
   if (userId && reg?.id) {
     const badge = await submitPendingChallenge(userId, reg.id);
-    if (badge) toast.success(`Вы участник челленджа! Бейдж «${badge}» получен`);
+    if (badge) window.dispatchEvent(new CustomEvent("badge-earned", { detail: { title: badge } }));
   }
   if (!userId || !reg?.id || c.boardIds.length === 0) return;
   const isVideo = reg.type === "video";

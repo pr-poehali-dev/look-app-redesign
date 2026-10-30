@@ -14,12 +14,26 @@ def _resp(status, payload):
     return {'statusCode': status, 'headers': {**CORS, 'Content-Type': 'application/json'}, 'body': json.dumps(payload, default=str)}
 
 
-def _challenge(r, joined=False, participants=0):
+def _challenge(r, joined=False, participants=0, my_posts=0, works=0, finished=False):
     return {
+        'my_posts': my_posts, 'works': works, 'finished': finished,
         'id': r[0], 'title': r[1], 'description': r[2], 'criteria': r[3], 'topic': r[4],
         'badge_title': r[5], 'starts_at': r[6].isoformat() if r[6] else None,
         'ends_at': r[7].isoformat() if r[7] else None, 'joined': joined, 'participants': participants,
     }
+
+
+def _stats(cur, schema, cid, user_id):
+    cur.execute(f"SELECT COUNT(*) FROM {schema}.challenge_entries WHERE challenge_id = %s", (cid,))
+    total = cur.fetchone()[0]
+    cur.execute(f"SELECT COUNT(*) FROM {schema}.challenge_entries WHERE challenge_id = %s AND video_id IS NOT NULL", (cid,))
+    works = cur.fetchone()[0]
+    joined, mine = False, 0
+    if user_id:
+        cur.execute(f"SELECT COUNT(*), COUNT(video_id) FROM {schema}.challenge_entries WHERE challenge_id = %s AND user_id = %s", (cid, user_id))
+        c = cur.fetchone()
+        joined, mine = c[0] > 0, c[1]
+    return total, works, joined, mine
 
 
 FIELDS = "id, title, description, criteria, topic, badge_title, starts_at, ends_at"
@@ -45,16 +59,17 @@ def handler(event: dict, context) -> dict:
                 f"SELECT {FIELDS} FROM {schema}.challenges WHERE is_active = TRUE AND ends_at > NOW() "
                 f"AND community_id IS NULL ORDER BY ends_at ASC LIMIT 1")
             row = cur.fetchone()
+            finished = False
+            if not row:
+                cur.execute(
+                    f"SELECT {FIELDS} FROM {schema}.challenges WHERE is_active = TRUE AND ends_at <= NOW() "
+                    f"AND ends_at > NOW() - INTERVAL '14 days' AND community_id IS NULL ORDER BY ends_at DESC LIMIT 1")
+                row = cur.fetchone()
+                finished = True
             if not row:
                 return _resp(200, {'challenge': None})
-            cur.execute(f"SELECT COUNT(*) FROM {schema}.challenge_entries WHERE challenge_id = %s", (row[0],))
-            total = cur.fetchone()[0]
-            joined = False
-            if user_id:
-                cur.execute(
-                    f"SELECT 1 FROM {schema}.challenge_entries WHERE challenge_id = %s AND user_id = %s", (row[0], user_id))
-                joined = cur.fetchone() is not None
-            return _resp(200, {'challenge': _challenge(row, joined, total)})
+            total, works, joined, mine = _stats(cur, schema, row[0], user_id)
+            return _resp(200, {'challenge': _challenge(row, joined, total, mine, works, finished)})
 
         if method == 'GET' and action == 'circle':
             cid = (params.get('community_id') or '').strip()[:100]
@@ -64,14 +79,8 @@ def handler(event: dict, context) -> dict:
             row = cur.fetchone()
             if not row:
                 return _resp(200, {'challenge': None})
-            cur.execute(f"SELECT COUNT(*) FROM {schema}.challenge_entries WHERE challenge_id = %s", (row[0],))
-            total = cur.fetchone()[0]
-            joined = False
-            if user_id:
-                cur.execute(
-                    f"SELECT 1 FROM {schema}.challenge_entries WHERE challenge_id = %s AND user_id = %s", (row[0], user_id))
-                joined = cur.fetchone() is not None
-            return _resp(200, {'challenge': _challenge(row, joined, total)})
+            total, works, joined, mine = _stats(cur, schema, row[0], user_id)
+            return _resp(200, {'challenge': _challenge(row, joined, total, mine, works)})
 
         if method == 'POST' and action == 'create_circle':
             if not user_id:
@@ -100,13 +109,25 @@ def handler(event: dict, context) -> dict:
             if not cid:
                 return _resp(400, {'error': 'id required'})
             cur.execute(
-                f"SELECT v.id, v.url, v.thumbnail, v.type, v.card_title, v.description, v.handle, v.likes "
+                f"SELECT v.id, v.url, v.thumbnail, v.type, v.card_title, v.description, v.handle, v.likes, v.user_id "
                 f"FROM {schema}.challenge_entries e JOIN {schema}.videos v ON v.id = e.video_id "
                 f"WHERE e.challenge_id = %s AND (v.hidden IS NULL OR v.hidden = FALSE) "
                 f"ORDER BY v.likes DESC, e.created_at DESC LIMIT 10", (cid,))
             items = [{'id': r[0], 'url': r[1], 'thumbnail': r[2], 'type': r[3],
-                      'title': r[4] or (r[5] or '')[:40], 'handle': r[6], 'likes': r[7]} for r in cur.fetchall()]
-            return _resp(200, {'items': items})
+                      'title': r[4] or (r[5] or '')[:40], 'handle': r[6], 'likes': r[7],
+                      'mine': bool(user_id) and str(r[8]) == user_id} for r in cur.fetchall()]
+            if user_id:
+                have = {i['id'] for i in items}
+                cur.execute(
+                    f"SELECT v.id, v.url, v.thumbnail, v.type, v.card_title, v.description, v.handle, v.likes "
+                    f"FROM {schema}.challenge_entries e JOIN {schema}.videos v ON v.id = e.video_id "
+                    f"WHERE e.challenge_id = %s AND e.user_id = %s AND (v.hidden IS NULL OR v.hidden = FALSE) "
+                    f"ORDER BY e.created_at DESC LIMIT 5", (cid, user_id))
+                mine_items = [{'id': r[0], 'url': r[1], 'thumbnail': r[2], 'type': r[3],
+                               'title': r[4] or (r[5] or '')[:40], 'handle': r[6], 'likes': r[7], 'mine': True}
+                              for r in cur.fetchall() if r[0] not in have]
+                return _resp(200, {'items': items, 'mine': mine_items})
+            return _resp(200, {'items': items, 'mine': []})
 
         if method == 'GET' and action == 'my':
             if not user_id:
