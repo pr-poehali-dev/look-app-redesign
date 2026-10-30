@@ -25,7 +25,6 @@ import { toast } from "sonner";
 import { FEED_CATEGORIES } from "@/lib/feedCategories";
 import CategoryBar from "./post-feed/CategoryBar";
 import SeasonalStrip, { matchesTopic } from "./post-feed/SeasonalStrip";
-import InterestsBar from "./post-feed/InterestsBar";
 import { getSeasonalTopics } from "@/lib/seasonal";
 
 type FeedScope = "recommend" | "following" | "nearby" | "trending" | "articles";
@@ -55,20 +54,6 @@ const PostFeed = () => {
   const [scope, setScope] = useState<FeedScope>("recommend");
   const [showTopics, setShowTopics] = useState(false);
   const [seasonId, setSeasonId] = useState<string | null>(null);
-  const [interests, setInterests] = useState<string[]>([]);
-  const [interestsLoaded, setInterestsLoaded] = useState(false);
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("feed_interests_v1");
-      const parsed = raw ? JSON.parse(raw) : [];
-      if (Array.isArray(parsed)) setInterests(parsed.filter((x) => typeof x === "string"));
-    } catch { /* ignore */ }
-    setInterestsLoaded(true);
-  }, []);
-  useEffect(() => {
-    if (!interestsLoaded) return;
-    try { localStorage.setItem("feed_interests_v1", JSON.stringify(interests)); } catch { /* ignore */ }
-  }, [interests, interestsLoaded]);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window === "undefined") return "masonry";
     return (localStorage.getItem("feed_view_mode") as ViewMode) || "masonry";
@@ -257,13 +242,11 @@ const PostFeed = () => {
     const season = scope === "recommend" && seasonId ? getSeasonalTopics(new Date()).find(t => t.id === seasonId) : null;
     const matched = season ? scopedPosts.filter(p => matchesTopic(p, season)) : scopedPosts;
     const bySeason = season && matched.length === 0 ? scopedPosts : matched;
-    const mine = scope === "recommend" && interests.length > 0 ? bySeason.filter(p => !!p.topic && interests.includes(p.topic)) : bySeason;
-    const base = scope === "recommend" && interests.length > 0 && mine.length === 0 ? bySeason : mine;
+    const base = bySeason;
     if (!activeCategory || activeCategory.id === "recommend") return base;
     if (activeCategory.id === "videos") return base.filter(p => p.isVideo);
     return base.filter(p => activeCategory.match.includes((p.category || "").toLowerCase()));
-  }, [scopedPosts, activeCategory, scope, seasonId, interests]);
-  const interestsEmpty = scope === "recommend" && interests.length > 0 && !scopedPosts.some(p => !!p.topic && interests.includes(p.topic));
+  }, [scopedPosts, activeCategory, scope, seasonId]);
   const seasonEmpty = scope === "recommend" && !!seasonId && (() => {
     const t = getSeasonalTopics(new Date()).find(x => x.id === seasonId);
     return !!t && scopedPosts.every(p => !matchesTopic(p, t));
@@ -474,7 +457,7 @@ const PostFeed = () => {
         </div>
       ) : viewMode === "masonry" ? (
         <div className="absolute inset-0">
-          <MasonryFeed posts={categoryPosts} loading={loading} topPad={headerH} header={scope === "recommend" ? <><SeasonalStrip posts={scopedPosts} activeId={seasonId} onChange={setSeasonId} empty={seasonEmpty} /><InterestsBar selected={interests} onChange={setInterests} empty={interestsEmpty} /></> : undefined} />
+          <MasonryFeed posts={categoryPosts} loading={loading} topPad={headerH} header={scope === "recommend" ? <SeasonalStrip posts={scopedPosts} activeId={seasonId} onChange={setSeasonId} empty={seasonEmpty} /> : undefined} />
         </div>
       ) : (
         /* Posts — прокрутка с привязкой, под фиксированной панелью сторис */
