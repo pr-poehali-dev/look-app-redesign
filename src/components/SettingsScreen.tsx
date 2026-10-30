@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import PushToggle from "@/components/profile/PushToggle";
+import InstallAppRow from "@/components/profile/InstallAppRow";
 import { QRCodeCanvas } from "qrcode.react";
 import Icon from "@/components/ui/icon";
 import { detectCity } from "@/lib/city";
@@ -340,6 +341,7 @@ const NotificationsScreen = ({ onBack }: { onBack: () => void }) => {
       </div>
       <div className="mt-2">
         <PushToggle />
+        <InstallAppRow />
         {settings.map((n) => (
           <div key={n.label} className="flex items-center gap-4 px-4 py-4 md:py-3 bg-white border-b border-gray-100">
             <span className="flex-1 text-black text-base md:text-sm">{n.label}</span>
