@@ -33,7 +33,7 @@ const CatalogScreen = ({ onBack }: { onBack: () => void }) => {
             key={c.id}
             onClick={() => setCategory(c.id)}
             className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${
-              category === c.id ? "bg-black text-white" : "bg-gray-100 text-gray-600"
+              category === c.id ? "bg-[#FF5A3C] text-white" : "bg-gray-100 text-gray-600"
             }`}
           >
             {c.label}

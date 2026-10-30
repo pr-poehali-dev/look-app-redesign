@@ -71,7 +71,7 @@ const UserArticlesList = ({ articles, loading, emptyText = "Пока нет ст
               onClick={() => setFilter(c.id)}
               disabled={c.count === 0 && c.id !== "all"}
               className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold disabled:opacity-40 ${
-                filter === c.id ? "bg-black text-white" : "bg-gray-100 text-gray-600"
+                filter === c.id ? "bg-[#FF5A3C] text-white" : "bg-gray-100 text-gray-600"
               }`}
             >
               {c.label} · {c.count}

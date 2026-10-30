@@ -482,8 +482,8 @@ html.theme-light .media-overlay-text .add-tab-plus-icon,
 html.theme-light .media-overlay-text .add-tab-plus-icon *,
 html.theme-dark .media-overlay-text .add-tab-plus-icon,
 html.theme-dark .media-overlay-text .add-tab-plus-icon * {
-  color: #1f6b3a !important;
-  stroke: #1f6b3a !important;
+  color: #FF5A3C !important;
+  stroke: #FF5A3C !important;
 }
 
 /* === Иконки на тёмных подложках всегда остаются белыми ===
@@ -629,6 +629,12 @@ html.theme-light .action-count-text {
 }
 
 /* Иконки на красных/розовых/зелёных акцентных кнопках */
+html.theme-light .bg-\[\#FF5A3C\],
+html.theme-light .bg-\[\#FF5A3C\] *,
+html.theme-light .bg-gradient-to-r.from-\[\#FF5A3C\],
+html.theme-light .bg-gradient-to-r.from-\[\#FF5A3C\] *,
+html.theme-light .bg-gradient-to-br.from-\[\#FF5A3C\],
+html.theme-light .bg-gradient-to-br.from-\[\#FF5A3C\] *,
 html.theme-light .bg-\[\#FF5A3C\] svg,
 html.theme-light .bg-\[\#FF5A3C\] .text-white,
 html.theme-light .bg-red-500 svg,

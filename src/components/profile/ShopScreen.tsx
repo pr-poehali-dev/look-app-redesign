@@ -172,7 +172,7 @@ const ShopScreen = ({ onBack }: { onBack: () => void }) => {
               <button
                 key={c.id}
                 onClick={() => setEditing({ ...editing, category: c.id })}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold ${editing.category === c.id ? "bg-black text-white" : "bg-gray-100 text-gray-600"}`}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold ${editing.category === c.id ? "bg-[#FF5A3C] text-white" : "bg-gray-100 text-gray-600"}`}
               >{c.label}</button>
             ))}
           </div>

@@ -91,7 +91,7 @@ const Landing = ({ onLogin, onRegister }: LandingProps) => {
                     setMenuOpen(false);
                     setPrompt("Войди, чтобы смотреть трансляции.");
                   }}
-                  className="flex items-center gap-1 rounded-full bg-black/10 px-3 py-1 text-sm font-medium text-[#0d2a18]"
+                  className="flex items-center gap-1 rounded-full bg-black/10 px-3 py-1 text-sm font-medium text-[#1A1A18]"
                 >
                   <Icon name="Radio" size={13} />
                   Трансляции
@@ -111,7 +111,7 @@ const Landing = ({ onLogin, onRegister }: LandingProps) => {
                         setCategory(c.id);
                       }}
                       className={`rounded-full px-3 py-1 text-sm font-medium ${
-                        on ? "bg-[#1f6b3a] text-white" : "bg-black/10 text-[#0d2a18]"
+                        on ? "bg-[#FF5A3C] text-white" : "bg-black/10 text-[#1A1A18]"
                       }`}
                     >
                       {c.label}

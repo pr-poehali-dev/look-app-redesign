@@ -207,11 +207,11 @@ function RootDocument({children}: { children: ReactNode }) {
         </head>
         <body>
         <noscript>
-            <div style={{position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 24, background: "#0d2a18", color: "#fff", fontFamily: "system-ui,sans-serif"}}>
+            <div style={{position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 24, background: "#1A1A18", color: "#fff", fontFamily: "system-ui,sans-serif"}}>
                 Для работы Лоок включите JavaScript в браузере.
             </div>
         </noscript>
-        <div id="fallback-msg" style={{display: "none", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, alignItems: "center", justifyContent: "center", textAlign: "center", padding: 24, background: "#0d2a18", color: "#fff", fontFamily: "system-ui,sans-serif"}}>
+        <div id="fallback-msg" style={{display: "none", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, alignItems: "center", justifyContent: "center", textAlign: "center", padding: 24, background: "#1A1A18", color: "#fff", fontFamily: "system-ui,sans-serif"}}>
             <div style={{maxWidth: 480}}>
                 <div style={{fontSize: 24, fontWeight: 700, marginBottom: 12}}>Лоок</div>
                 <div style={{fontSize: 16, lineHeight: 1.5, opacity: 0.9}}>Похоже, ваш браузер устарел и не поддерживается. Откройте сайт на телефоне или компьютере в современном браузере (Chrome, Safari, Firefox).</div>

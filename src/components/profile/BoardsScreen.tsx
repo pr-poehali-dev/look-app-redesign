@@ -77,7 +77,7 @@ const BoardsScreen = ({ onBack, initialBoardId }: { onBack: () => void; initialB
                 key={t.slug}
                 type="button"
                 onClick={() => setNewTopic(newTopic === t.slug ? "" : t.slug)}
-                className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${newTopic === t.slug ? "bg-black text-white border-black" : "bg-white text-gray-600 border-gray-200"}`}
+                className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${newTopic === t.slug ? "bg-[#FF5A3C] text-white border-black" : "bg-white text-gray-600 border-gray-200"}`}
               >
                 {t.title}
               </button>
@@ -106,7 +106,7 @@ const BoardsScreen = ({ onBack, initialBoardId }: { onBack: () => void; initialB
             <button
               key={t || "all"}
               onClick={() => setFilterTopic(t)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold ${filterTopic === t ? "bg-black text-white" : "bg-gray-100 text-gray-600"}`}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold ${filterTopic === t ? "bg-[#FF5A3C] text-white" : "bg-gray-100 text-gray-600"}`}
             >
               {t ? topicTitle(t) : "Все"}
             </button>

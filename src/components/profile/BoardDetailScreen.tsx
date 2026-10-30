@@ -79,7 +79,7 @@ const BoardDetailScreen = ({ boardId, onBack }: { boardId: number; onBack: () =>
         </div>
         <div className="flex gap-2 mt-3">
           {canAdd && (
-            <button onClick={() => setShowPicker(true)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-black text-white text-sm font-semibold">
+            <button onClick={() => setShowPicker(true)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold">
               <Icon name="Plus" size={15} />Добавить пост
             </button>
           )}

@@ -15,7 +15,7 @@ export const TOPICS: Topic[] = [
   { slug: "style", title: "Стиль", icon: "Shirt", color: "#ec4899" },
   { slug: "beauty", title: "Красота", icon: "Flower2", color: "#f472b6" },
   { slug: "travel", title: "Путешествия", icon: "Plane", color: "#06b6d4" },
-  { slug: "nature", title: "Природа", icon: "Leaf", color: "#22c55e" },
+  { slug: "nature", title: "Природа", icon: "Leaf", color: "#2E9E6B" },
   { slug: "hobby", title: "Хобби", icon: "Palette", color: "#a855f7" },
   { slug: "sport", title: "Спорт", icon: "Dumbbell", color: "#f97316" },
   { slug: "kids", title: "Дети и семья", icon: "Baby", color: "#eab308" },

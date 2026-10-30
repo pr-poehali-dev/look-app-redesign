@@ -105,7 +105,7 @@ const ReviewsSheet = ({ productId, title, onClose }: Props) => {
                 : image ? <img loading="lazy" decoding="async" src={image} alt="" className="w-full h-full object-cover" />
                 : <Icon name="Camera" size={18} className="text-gray-500" />}
             </button>
-            <button onClick={submit} disabled={sending} className="flex-1 h-11 rounded-xl bg-black text-white text-sm font-bold disabled:opacity-60">
+            <button onClick={submit} disabled={sending} className="flex-1 h-11 rounded-xl bg-[#FF5A3C] text-white text-sm font-bold disabled:opacity-60">
               {sending ? "Сохраняю..." : "Оставить отзыв"}
             </button>
           </div>

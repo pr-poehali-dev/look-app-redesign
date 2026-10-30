@@ -276,7 +276,7 @@ const Index = () => {
                     <div className="w-6 h-5 rounded-md absolute left-0" style={{ background: "var(--look-accent)", opacity: 0.6 }} />
                     <div className="w-6 h-5 rounded-md absolute right-0" style={{ background: "var(--look-accent)" }} />
                     <div className="w-6 h-5 rounded-md flex items-center justify-center relative z-10 mx-auto" style={{ background: "#ffffff", border: "1.5px solid rgba(0,0,0,0.15)" }}>
-                      <Icon name="Plus" size={14} strokeWidth={3} style={{ color: "#1f6b3a" }} />
+                      <Icon name="Plus" size={14} strokeWidth={3} style={{ color: "#FF5A3C" }} />
                     </div>
                   </div>
                 ) : (
@@ -420,7 +420,7 @@ const Index = () => {
                         className="px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1"
                         style={{
                           background: activeCategory === LIVE_CATEGORY.id ? "#FF5A3C" : theme === "dark" ? "rgba(255,255,255,0.12)" : "rgba(13,42,24,0.08)",
-                          color: activeCategory === LIVE_CATEGORY.id ? "#fff" : theme === "dark" ? "rgba(255,255,255,0.9)" : "#0d2a18",
+                          color: activeCategory === LIVE_CATEGORY.id ? "#fff" : theme === "dark" ? "rgba(255,255,255,0.9)" : "#1A1A18",
                         }}
                       >
                         <Icon name="Radio" size={13} />
@@ -439,11 +439,11 @@ const Index = () => {
                             className="px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap transition-all"
                             style={{
                               background: active
-                                ? theme === "dark" ? "#fff" : "#1f6b3a"
+                                ? theme === "dark" ? "#fff" : "#FF5A3C"
                                 : theme === "dark" ? "rgba(255,255,255,0.12)" : "rgba(13,42,24,0.08)",
                               color: active
                                 ? theme === "dark" ? "var(--look-bg)" : "#fff"
-                                : theme === "dark" ? "rgba(255,255,255,0.9)" : "#0d2a18",
+                                : theme === "dark" ? "rgba(255,255,255,0.9)" : "#1A1A18",
                             }}
                           >
                             {t(`cat.${cat.id}`, { defaultValue: cat.label })}
@@ -537,7 +537,7 @@ const Index = () => {
                     <div className="w-9 h-6 rounded-lg absolute left-0" style={{ background: "var(--look-accent)", opacity: 0.6 }} />
                     <div className="w-9 h-6 rounded-lg absolute right-0" style={{ background: "var(--look-accent)" }} />
                     <div className="w-9 h-6 rounded-lg flex items-center justify-center relative z-10 mx-auto" style={{ background: "#ffffff", border: "1.5px solid rgba(0,0,0,0.15)" }}>
-                      <Icon name="Plus" size={16} strokeWidth={3} className="add-tab-plus-icon" style={{ color: "#1f6b3a" }} />
+                      <Icon name="Plus" size={16} strokeWidth={3} className="add-tab-plus-icon" style={{ color: "#FF5A3C" }} />
                     </div>
                   </div>
                 ) : (

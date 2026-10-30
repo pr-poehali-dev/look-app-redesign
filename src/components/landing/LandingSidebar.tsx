@@ -46,7 +46,7 @@ const LandingSidebar = ({ onLocked, onLogin, onOpenDoc, onHome }: LandingSidebar
               className="w-6 h-5 rounded-md flex items-center justify-center relative z-10 mx-auto"
               style={{ background: "#ffffff", border: "1.5px solid rgba(0,0,0,0.15)" }}
             >
-              <Icon name="Plus" size={14} strokeWidth={3} style={{ color: "#1f6b3a" }} />
+              <Icon name="Plus" size={14} strokeWidth={3} style={{ color: "#FF5A3C" }} />
             </div>
           </div>
           <span className="text-sm opacity-90">Создать</span>

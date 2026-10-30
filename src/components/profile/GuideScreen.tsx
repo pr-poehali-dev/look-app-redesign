@@ -33,7 +33,7 @@ const GuideScreen = ({ onBack }: { onBack: () => void }) => {
                 <ol className="flex flex-col gap-2">
                   {s.points.map((p, k) => (
                     <li key={k} className="flex gap-2.5 text-sm text-gray-700">
-                      <span className="w-5 h-5 rounded-full bg-black text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{k + 1}</span>
+                      <span className="w-5 h-5 rounded-full bg-[#FF5A3C] text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{k + 1}</span>
                       <span>{p}</span>
                     </li>
                   ))}

@@ -136,7 +136,7 @@ const ProfileMediaTabs = ({ tab, setTab, stories, setMediaViewer, setCategoryEdi
         <div className="relative">
           <button
             onClick={() => setShowArticles(true)}
-            className="m-3 mb-0 px-4 py-2 rounded-xl bg-black text-white text-sm font-semibold flex items-center gap-1.5"
+            className="m-3 mb-0 px-4 py-2 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold flex items-center gap-1.5"
           >
             <Icon name="Plus" size={14} /> Написать статью или туториал
           </button>

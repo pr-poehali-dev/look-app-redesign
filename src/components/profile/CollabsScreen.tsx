@@ -48,7 +48,7 @@ const IncomingCard = ({ c, onRespond }: { c: BrandCollab; onRespond: (id: number
     {c.status === "pending" && (
       <div className="flex gap-2 pt-1">
         <button onClick={() => onRespond(c.id, "decline")} className="flex-1 py-2 rounded-xl bg-gray-100 text-black text-sm font-semibold">Отклонить</button>
-        <button onClick={() => onRespond(c.id, "accept")} className="flex-1 py-2 rounded-xl bg-black text-white text-sm font-semibold">Принять</button>
+        <button onClick={() => onRespond(c.id, "accept")} className="flex-1 py-2 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold">Принять</button>
       </div>
     )}
     {c.status === "accepted" && (
@@ -105,7 +105,7 @@ const SendForm = ({ onSent }: { onSent: () => void }) => {
       <button
         onClick={submit}
         disabled={busy || !authorHandle.trim() || !brandName.trim() || !title.trim()}
-        className="py-2.5 rounded-xl bg-black text-white text-sm font-semibold disabled:opacity-40"
+        className="py-2.5 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold disabled:opacity-40"
       >
         {busy ? "Отправляю..." : "Отправить предложение"}
       </button>
@@ -139,7 +139,7 @@ const CollabsScreen = ({ onBack }: { onBack: () => void }) => {
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold ${tab === id ? "bg-black text-white" : "bg-gray-100 text-gray-600"}`}
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold ${tab === id ? "bg-[#FF5A3C] text-white" : "bg-gray-100 text-gray-600"}`}
           >
             {label}
           </button>

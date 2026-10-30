@@ -112,7 +112,7 @@ export const Reader = ({ id, onBack, onEdit }: { id: number; onBack: () => void;
                       type="button"
                       onClick={() => toggleStep(i)}
                       aria-label={done.includes(i) ? "Снять отметку" : "Отметить выполненным"}
-                      className={`w-8 h-8 rounded-full text-sm font-bold flex items-center justify-center flex-shrink-0 ${done.includes(i) ? "bg-green-600 text-white" : "bg-black text-white"}`}
+                      className={`w-8 h-8 rounded-full text-sm font-bold flex items-center justify-center flex-shrink-0 ${done.includes(i) ? "bg-green-600 text-white" : "bg-[#FF5A3C] text-white"}`}
                     >
                       {done.includes(i) ? <Icon name="Check" size={16} /> : i + 1}
                     </button>
@@ -208,7 +208,7 @@ const Editor = ({ article, onBack, onSaved }: { article?: Article; onBack: () =>
                 key={k}
                 type="button"
                 onClick={() => setKind(k)}
-                className={`flex-1 py-2 rounded-xl text-sm font-semibold ${kind === k ? "bg-black text-white" : "bg-gray-100 text-gray-600"}`}
+                className={`flex-1 py-2 rounded-xl text-sm font-semibold ${kind === k ? "bg-[#FF5A3C] text-white" : "bg-gray-100 text-gray-600"}`}
               >
                 {label}
               </button>
@@ -221,7 +221,7 @@ const Editor = ({ article, onBack, onSaved }: { article?: Article; onBack: () =>
             <div className="flex gap-2">
               <input value={importUrl} onChange={(e) => setImportUrl(e.target.value)} placeholder="https://..."
                 className="flex-1 min-w-0 px-3 py-2 rounded-xl bg-white border border-gray-200 text-black text-sm outline-none" />
-              <button onClick={doImport} disabled={importing || !importUrl.trim()} className="px-3 rounded-xl bg-black text-white text-sm font-semibold disabled:opacity-50">
+              <button onClick={doImport} disabled={importing || !importUrl.trim()} className="px-3 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold disabled:opacity-50">
                 {importing ? "..." : "Загрузить"}
               </button>
             </div>
@@ -244,7 +244,7 @@ const Editor = ({ article, onBack, onSaved }: { article?: Article; onBack: () =>
           <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={14} placeholder="Напиши свою статью..."
             className="w-full px-1 py-2 text-black text-[15px] leading-relaxed outline-none resize-none" />
         )}
-        <button onClick={save} disabled={saving} className="w-full py-3 rounded-xl bg-black text-white font-bold text-sm disabled:opacity-60">
+        <button onClick={save} disabled={saving} className="w-full py-3 rounded-xl bg-[#FF5A3C] text-white font-bold text-sm disabled:opacity-60">
           {saving ? "Публикую..." : "Опубликовать"}
         </button>
       </div>
@@ -266,7 +266,7 @@ const ArticlesScreen = ({ onBack }: { onBack: () => void }) => {
       <Header title="Статьи" onBack={onBack} right={<button onClick={() => setView({ type: "edit" })}><Icon name="Plus" size={22} className="text-black" /></button>} />
       <div className="flex gap-2 px-4 py-3">
         {([["feed", "Лента"], ["mine", "Мои"]] as const).map(([id, label]) => (
-          <button key={id} onClick={() => setMode(id)} className={`px-4 py-1.5 rounded-full text-sm font-semibold ${mode === id ? "bg-black text-white" : "bg-gray-100 text-black"}`}>{label}</button>
+          <button key={id} onClick={() => setMode(id)} className={`px-4 py-1.5 rounded-full text-sm font-semibold ${mode === id ? "bg-[#FF5A3C] text-white" : "bg-gray-100 text-black"}`}>{label}</button>
         ))}
       </div>
       {loading ? (
@@ -275,7 +275,7 @@ const ArticlesScreen = ({ onBack }: { onBack: () => void }) => {
         <div className="flex flex-col items-center py-16 gap-3 px-8 text-center">
           <Icon name="FileText" size={48} className="text-gray-300" />
           <p className="text-gray-400 text-sm">{mode === "mine" ? "У тебя пока нет статей" : "Пока никто не опубликовал статьи"}</p>
-          <button onClick={() => setView({ type: "edit" })} className="px-5 py-2 rounded-xl bg-black text-white text-sm font-semibold">Написать статью</button>
+          <button onClick={() => setView({ type: "edit" })} className="px-5 py-2 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold">Написать статью</button>
         </div>
       ) : (
         <div className="px-4 pb-16 flex flex-col gap-3">

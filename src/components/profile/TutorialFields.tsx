@@ -80,7 +80,7 @@ const TutorialFields = ({ userId, value, onChange }: Props) => {
               key={d}
               type="button"
               onClick={() => onChange({ ...value, difficulty: value.difficulty === d ? "" : d })}
-              className={`flex-1 py-1.5 rounded-xl text-xs font-semibold border ${value.difficulty === d ? "bg-black text-white border-black" : "bg-white text-gray-600 border-gray-200"}`}
+              className={`flex-1 py-1.5 rounded-xl text-xs font-semibold border ${value.difficulty === d ? "bg-[#FF5A3C] text-white border-black" : "bg-white text-gray-600 border-gray-200"}`}
             >
               {DIFFICULTY_LABEL[d]}
             </button>
@@ -100,7 +100,7 @@ const TutorialFields = ({ userId, value, onChange }: Props) => {
       {value.steps.map((st, i) => (
         <div key={i} className="rounded-2xl border border-gray-200 p-3 flex flex-col gap-2">
           <div className="flex items-center gap-2">
-            <span className="w-7 h-7 rounded-full bg-black text-white text-sm font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
+            <span className="w-7 h-7 rounded-full bg-[#FF5A3C] text-white text-sm font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
             <input
               value={st.title}
               onChange={(e) => setStep(i, { title: e.target.value.slice(0, 120) })}

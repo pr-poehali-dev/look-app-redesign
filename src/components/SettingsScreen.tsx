@@ -67,7 +67,7 @@ const SavedScreen = ({ onBack }: { onBack: () => void }) => {
               />
               <button
                 onClick={() => { if (newFolderName.trim()) { createFolder(newFolderName); setNewFolderName(""); } setCreating(false); }}
-                className="px-3 py-2 rounded-xl bg-black text-white text-sm font-semibold"
+                className="px-3 py-2 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold"
               >
                 Готово
               </button>

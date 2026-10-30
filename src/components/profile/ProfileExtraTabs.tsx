@@ -25,7 +25,7 @@ const ProfileExtraTabs = ({ tab, onOpenBoard, onOpenBoards }: Props) => {
   if (tab === "boards") {
     return (
       <div className="p-3">
-        <button onClick={onOpenBoards} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-black text-white text-sm font-semibold mb-3">
+        <button onClick={onOpenBoards} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold mb-3">
           <Icon name="Plus" size={15} />Создать или управлять досками
         </button>
         {loading ? (
@@ -56,7 +56,7 @@ const ProfileExtraTabs = ({ tab, onOpenBoard, onOpenBoards }: Props) => {
       <div className="flex flex-col items-center gap-3 py-12 px-8 text-center">
         <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center"><Icon name="Users" size={28} className="text-gray-400" /></div>
         <p className="text-sm text-gray-500">Кружки — сообщества по интересам со своей лентой, досками и челленджами</p>
-        <button onClick={() => setShowCircles(true)} className="px-5 py-2.5 rounded-xl bg-black text-white text-sm font-semibold">Открыть кружки</button>
+        <button onClick={() => setShowCircles(true)} className="px-5 py-2.5 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold">Открыть кружки</button>
         {showCircles && (
           <div className="fixed inset-0 z-[10000] bg-black">
             <CommunitiesScreen onBack={() => setShowCircles(false)} />
