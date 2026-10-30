@@ -201,16 +201,41 @@ const VideoFeed = ({ activeTab, activeCategory = "all", initialVideoId }: VideoF
       applyVideos(cached, firstLoad || categoryChanged);
       setDbLoaded(true);
     }
+    const parse = (raw: { body?: unknown; videos?: unknown[] }) => {
+      const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
+      return ((data as { videos?: unknown[] }).videos || []) as { id: number }[];
+    };
+    let cancelled = false;
+    let head: { id: number }[] = [];
+    const quick = !hadCache && !slowNetwork;
+    if (quick) {
+      fetch(`${url}&limit=6`)
+        .then(r => r.json())
+        .then(raw => {
+          if (cancelled) return;
+          head = parse(raw);
+          if (head.length) {
+            applyVideos(head, firstLoad || categoryChanged);
+            setDbLoaded(true);
+          }
+        })
+        .catch(() => {});
+    }
     fetch(url)
       .then(r => r.json())
       .then(raw => {
-        const data = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
-        const list = data.videos || [];
+        if (cancelled) return;
+        let list = parse(raw);
+        if (head.length) {
+          const headIds = new Set(head.map(v => v.id));
+          list = [...head, ...list.filter(v => !headIds.has(v.id))];
+        }
         writeFeedCache(cacheKey, list.slice(0, 40));
-        applyVideos(list, !hadCache && (firstLoad || categoryChanged));
+        applyVideos(list, !hadCache && !head.length && (firstLoad || categoryChanged));
       })
       .catch(e => console.error('VideoFeed fetch error:', e))
-      .finally(() => setDbLoaded(true));
+      .finally(() => { if (!cancelled) setDbLoaded(true); });
+    return () => { cancelled = true; };
   }, [activeCategory, mediaVersion, user?.id]);
 
   useEffect(() => {

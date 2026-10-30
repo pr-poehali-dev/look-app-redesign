@@ -386,6 +386,13 @@ def handler(event: dict, context) -> dict:
         if not full_list:
             rows = rows[:60]
 
+    try:
+        first_n = int(params.get('limit') or 0)
+    except ValueError:
+        first_n = 0
+    if 0 < first_n < len(rows):
+        rows = rows[:first_n]
+
     videos = []
     ad_video_ids = []
     for r in rows:

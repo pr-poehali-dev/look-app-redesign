@@ -35,6 +35,12 @@
       "method": "GET",
       "path": "/?series=test&series_owner=u1",
       "expectedStatus": 200
+    },
+    {
+      "name": "GET first videos with limit",
+      "method": "GET",
+      "path": "/?type=video&limit=10",
+      "expectedStatus": 200
     }
   ]
 }
