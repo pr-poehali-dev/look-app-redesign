@@ -12,6 +12,8 @@ import { Post, formatLikes } from "./PostFeedTypes";
 import { useComments } from "@/hooks/useComments";
 import { useLikes } from "@/hooks/useLikes";
 import { useSavedItem } from "@/hooks/useSaved";
+import { recordWatch } from "@/hooks/useWatchHistory";
+import SaveToCollectionSheet from "./SaveToCollectionSheet";
 import PlaceDetails from "./PlaceDetails";
 import { useFollowing } from "@/hooks/useFollowing";
 import { useMutedAuthor } from "@/hooks/useMutedAuthors";
@@ -27,7 +29,7 @@ import ProductDetailSheet from "@/components/products/ProductDetailSheet";
 
 const PostCard = ({ post }: { post: Post }) => {
   const { user } = useAuth();
-  const { saved, toggle: rawToggleSaved } = useSavedItem("post", post.id, {
+  const { saved, toggle: rawToggleSaved, saveTo } = useSavedItem("post", post.id, {
     image: post.image,
     title: post.caption,
     handle: post.handle,
@@ -39,6 +41,10 @@ const PostCard = ({ post }: { post: Post }) => {
   const [showShare, setShowShare] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showAddToBoard, setShowAddToBoard] = useState(false);
+  const [showCollections, setShowCollections] = useState(false);
+  const [saveToast, setSaveToast] = useState("");
+  const swipeStart = useRef<{ x: number; y: number; ok: boolean } | null>(null);
+  const lastWatchTs = useRef(0);
   const [boardSaved, setBoardSaved] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showProducts, setShowProducts] = useState(false);
@@ -54,6 +60,29 @@ const PostCard = ({ post }: { post: Post }) => {
   const needAuth = () => { promptAuth(); };
   const handleLike = () => { if (guest) return needAuth(); rawHandleLike(); };
   const toggleSaved = () => { if (guest) return needAuth(); rawToggleSaved(); };
+  const pickCollection = (folder: string) => {
+    saveTo(folder);
+    setShowCollections(false);
+    setSaveToast(`Сохранено в «${folder}»`);
+    setTimeout(() => setSaveToast(""), 1800);
+  };
+  const onMediaTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    const t = e.touches[0];
+    const rect = e.currentTarget.getBoundingClientRect();
+    const inControls = post.isVideo && t.clientY > rect.bottom - 64;
+    swipeStart.current = { x: t.clientX, y: t.clientY, ok: !inControls && !(post.images && post.images.length > 0) };
+  };
+  const onMediaTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    const s = swipeStart.current;
+    swipeStart.current = null;
+    if (!s || !s.ok) return;
+    const t = e.changedTouches[0];
+    if (t.clientX - s.x < -90 && Math.abs(t.clientY - s.y) < 40) {
+      if (guest) return needAuth();
+      if (saved) { setSaveToast("Уже в сохранённом"); setTimeout(() => setSaveToast(""), 1500); return; }
+      pickCollection("Общее");
+    }
+  };
   const toggleFollow = () => { if (guest) return needAuth(); rawToggleFollow(); };
   const toggleMute = () => { if (guest) { needAuth(); return muted; } return rawToggleMute(); };
   const send: typeof rawSend = (...args) => { if (guest) { needAuth(); return Promise.resolve() as ReturnType<typeof rawSend>; } return rawSend(...args); };
@@ -161,9 +190,18 @@ const PostCard = ({ post }: { post: Post }) => {
       </div>
 
       {/* Photo / Video */}
-      <div className={`w-full min-h-0 overflow-hidden flex items-center justify-center ${post.isText ? "flex-shrink-0" : "flex-1 bg-black"}`}>
+      <div onTouchStart={onMediaTouchStart} onTouchEnd={onMediaTouchEnd} className={`relative w-full min-h-0 overflow-hidden flex items-center justify-center ${post.isText ? "flex-shrink-0" : "flex-1 bg-black"}`}>
+        {saveToast && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 px-3 py-1.5 rounded-full bg-black/75 text-white text-xs font-semibold pointer-events-none">{saveToast}</div>
+        )}
         {post.isText ? null : post.isVideo ? (
-          <video src={post.image.includes("#") ? post.image : `${post.image}#t=0.001`} poster={post.thumbnail || undefined} preload="metadata" className="max-w-full max-h-full w-auto h-auto object-contain" controls playsInline loop />
+          <video src={post.image.includes("#") ? post.image : `${post.image}#t=0.001`} poster={post.thumbnail || undefined} preload="metadata" className="max-w-full max-h-full w-auto h-auto object-contain" controls playsInline loop onTimeUpdate={(e) => {
+            const v = e.currentTarget;
+            const now = Date.now();
+            if (!v.duration || now - lastWatchTs.current < 3000) return;
+            lastWatchTs.current = now;
+            recordWatch({ id: post.id, image: post.image, thumbnail: post.thumbnail || undefined, title: post.caption, handle: post.handle, progress: v.currentTime / v.duration });
+          }} onEnded={() => recordWatch({ id: post.id, image: post.image, thumbnail: post.thumbnail || undefined, title: post.caption, handle: post.handle, progress: 1 })} />
         ) : post.images && post.images.length > 0 ? (
           <PhotoCarousel images={[post.image, ...post.images]} alt={post.caption} />
         ) : (
@@ -202,6 +240,9 @@ const PostCard = ({ post }: { post: Post }) => {
           </button>
           <button onClick={() => { if (guest) return needAuth(); setShowShare(true); }} className="flex items-center justify-center active:scale-90 transition-transform">
             <Icon name="ShareArrow" size={26} className="action-icon-glyph" />
+          </button>
+          <button onClick={() => { if (guest) return needAuth(); setShowCollections(true); }} className="flex items-center justify-center active:scale-90 transition-transform" title="В коллекцию" aria-label="В коллекцию">
+            <Icon name="Bookmark" size={26} className={saved ? "text-[#FF5A3C] fill-[#FF5A3C]" : "action-icon-glyph"} />
           </button>
           <button onClick={() => { if (guest) return needAuth(); setShowAddToBoard(true); }} className="flex items-center justify-center active:scale-90 transition-transform" title="В доску" aria-label="В доску">
             <Icon name="Layers" size={26} className={`action-icon-glyph ${boardSaved ? "anim-pin" : ""}`} />
@@ -567,6 +608,10 @@ const PostCard = ({ post }: { post: Post }) => {
       )}
 
       {detailProduct && <ProductDetailSheet product={detailProduct} videoId={post.id} onClose={() => setDetailProduct(null)} />}
+
+      {showCollections && (
+        <SaveToCollectionSheet saved={saved} onPick={pickCollection} onRemove={() => { rawToggleSaved(); setShowCollections(false); }} onClose={() => setShowCollections(false)} />
+      )}
 
       {showAddToBoard && (
         <AddToBoardSheet

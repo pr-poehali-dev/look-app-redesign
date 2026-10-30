@@ -105,7 +105,20 @@ export const useSavedItem = (type: SavedItemType, id: number | string, payload: 
     }
   }, [type, id, payload, user]);
 
-  return { saved, toggle };
+  const saveTo = useCallback((folder: string) => {
+    if (!user) { promptAuth(); return; }
+    const all = readAll();
+    const k = keyOf(type, id);
+    const userId = user?.id || getGuestId();
+    if (all.some(it => keyOf(it.type, it.id) === k)) {
+      writeAll(all.map(it => keyOf(it.type, it.id) === k ? { ...it, folder } : it));
+    } else {
+      writeAll([{ type, id, savedAt: Date.now(), ...payload, folder }, ...all]);
+      syncSaveToServer(type, id, userId, true);
+    }
+  }, [type, id, payload, user]);
+
+  return { saved, toggle, saveTo };
 };
 
 export const useSavedList = (): SavedItem[] => {
