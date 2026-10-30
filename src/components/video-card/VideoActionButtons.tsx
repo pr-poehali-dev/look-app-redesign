@@ -36,7 +36,7 @@ const VideoActionButtons = ({
   return (
     <>
       {/* Right side actions — мобайл (внутри видео) */}
-      <div className={`absolute right-2 ${guest ? "bottom-16" : "bottom-24"} flex flex-col items-center gap-3 z-30 md:hidden`}>
+      <div className={`absolute right-2 ${guest ? "bottom-[58px]" : "bottom-24"} flex flex-col items-center gap-3 z-30 md:hidden`}>
         {/* Like */}
         <button
           onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); toggleLike(); }}
