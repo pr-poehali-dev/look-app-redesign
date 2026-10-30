@@ -114,7 +114,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
         {/* Tabs */}
         <div className="flex bg-gray-100 rounded-xl p-1 mb-1">
           <button
-            onClick={() => { setMode("login"); setError(""); setPassword(""); setShowPassword(false); }}
+            onClick={() => { setMode("login"); setError(""); setEmail(""); setPassword(""); setShowPassword(false); }}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "login" ? "bg-white text-black shadow-sm" : "text-gray-400"}`}
           >Войти</button>
           <button
@@ -142,7 +142,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
           <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email <span className="text-[#fe2c55]">*</span></label>
           <input
             value={email}
-            autoComplete={mode === "register" ? "off" : "username"}
+            autoComplete="off"
             onChange={e => setEmail(e.target.value.replace(/\s/g, ""))}
             type="email"
             placeholder="example@mail.com"
@@ -158,7 +158,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
           <div className="flex items-center bg-gray-100 rounded-xl px-4">
             <input
               value={password}
-              autoComplete={mode === "register" ? "new-password" : "current-password"}
+              autoComplete="new-password"
               onChange={e => setPassword(e.target.value)}
               type={showPassword ? "text" : "password"}
               placeholder={mode === "register" ? "Минимум 6 символов" : "Пароль"}

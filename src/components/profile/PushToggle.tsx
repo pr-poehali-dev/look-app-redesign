@@ -20,7 +20,7 @@ const PushToggle = () => {
   const toggle = async () => {
     if (busy) return;
     if (denied) {
-      toast.error("Уведомления заблокированы в настройках браузера. Разрешите их для этого сайта");
+      toast.error("Уведомления выключены в телефоне. Откройте Настройки телефона → Приложения → этот сайт или браузер → Уведомления и включите их", { duration: 9000 });
       return;
     }
     setBusy(true);
@@ -47,7 +47,7 @@ const PushToggle = () => {
     <div className="flex items-center gap-4 px-4 py-4 md:py-3 bg-white border-b border-gray-100">
       <div className="flex-1">
         <p className="text-black text-base md:text-sm">Push-уведомления</p>
-        <p className="text-gray-400 text-xs">{denied ? "Заблокированы в браузере" : "Сообщения и новости даже при закрытом сайте"}</p>
+        <p className="text-gray-400 text-xs">{denied ? "Выключены в настройках телефона. Нажмите, чтобы узнать, как включить" : "Сообщения и новости даже при закрытом сайте"}</p>
       </div>
       <button
         onClick={toggle}
