@@ -1,21 +1,7 @@
 const ICE_API = "https://functions.poehali.dev/53c7b2af-c5ea-4c37-bc28-154737d35d87";
 
 const FALLBACK_STUN: RTCIceServer[] = [
-  { urls: "stun:stun.l.google.com:19302" },
-  { urls: "stun:stun1.l.google.com:19302" },
-  { urls: "stun:stun2.l.google.com:19302" },
-  { urls: "stun:stun3.l.google.com:19302" },
-  { urls: "stun:stun4.l.google.com:19302" },
-  { urls: "stun:stun.cloudflare.com:3478" },
-  {
-    urls: [
-      "turn:openrelay.metered.ca:80",
-      "turn:openrelay.metered.ca:443",
-      "turn:openrelay.metered.ca:443?transport=tcp",
-    ],
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
+  { urls: "stun:turn.look.com.ru:3478" },
 ];
 
 let cachedServers: RTCIceServer[] | null = null;

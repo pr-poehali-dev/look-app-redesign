@@ -18,20 +18,7 @@ def handler(event: dict, context) -> dict:
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': headers, 'body': ''}
 
-    ice_servers = [
-        {'urls': 'stun:stun.l.google.com:19302'},
-        {'urls': 'stun:stun1.l.google.com:19302'},
-        {'urls': 'stun:stun.cloudflare.com:3478'},
-        {
-            'urls': [
-                'turn:openrelay.metered.ca:80',
-                'turn:openrelay.metered.ca:443',
-                'turn:openrelay.metered.ca:443?transport=tcp',
-            ],
-            'username': 'openrelayproject',
-            'credential': 'openrelayproject',
-        },
-    ]
+    ice_servers = []
 
     turn_url = os.environ.get('TURN_URL', '').strip()
     turn_secret = os.environ.get('TURN_SECRET', '').strip()
