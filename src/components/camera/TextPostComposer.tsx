@@ -72,7 +72,7 @@ const TextPostComposer = ({ onClose }: Props) => {
         <button
           onClick={publish}
           disabled={text.trim().length < 3 || saving}
-          className="px-4 py-1.5 rounded-full bg-[#fe2c55] text-white text-sm font-bold disabled:opacity-40"
+          className="px-4 py-1.5 rounded-full bg-[#FF5A3C] text-white text-sm font-bold disabled:opacity-40"
         >
           {saving ? "..." : "Опубликовать"}
         </button>
@@ -99,7 +99,7 @@ const TextPostComposer = ({ onClose }: Props) => {
                 key={r.id}
                 type="button"
                 onClick={() => setCategory(r.id)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${category === r.id ? "bg-[#fe2c55] border-[#fe2c55] text-white" : "bg-white/10 border-white/15 text-white/70"}`}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${category === r.id ? "bg-[#FF5A3C] border-[#FF5A3C] text-white" : "bg-white/10 border-white/15 text-white/70"}`}
               >
                 {r.label}
               </button>
@@ -155,7 +155,7 @@ const TextPostComposer = ({ onClose }: Props) => {
                 key={a}
                 type="button"
                 onClick={() => setAge(a)}
-                className={`flex-1 py-2 rounded-lg text-sm font-semibold border ${age === a ? "bg-[#fe2c55] border-[#fe2c55] text-white" : "bg-white/10 border-white/15 text-white/70"}`}
+                className={`flex-1 py-2 rounded-lg text-sm font-semibold border ${age === a ? "bg-[#FF5A3C] border-[#FF5A3C] text-white" : "bg-white/10 border-white/15 text-white/70"}`}
               >
                 {a}
               </button>

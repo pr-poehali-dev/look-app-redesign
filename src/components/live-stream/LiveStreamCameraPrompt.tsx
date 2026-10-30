@@ -21,7 +21,7 @@ const LiveStreamCameraPrompt = ({ camState, camErrorMsg, onClose, onStart }: Pro
         </p>
         <button
           onClick={onStart}
-          className="w-full py-4 rounded-2xl bg-[#fe2c55] hover:bg-[#e0264c] text-white font-bold text-lg active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-3"
+          className="w-full py-4 rounded-2xl bg-[#FF5A3C] hover:bg-[#e0264c] text-white font-bold text-lg active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-3"
         >
           <Icon name="Camera" size={22} />
           Включить камеру
@@ -61,7 +61,7 @@ const LiveStreamCameraPrompt = ({ camState, camErrorMsg, onClose, onStart }: Pro
       <div className="w-full h-px bg-white/10 mb-4" />
       <button
         onClick={onStart}
-        className="w-full py-4 rounded-2xl bg-[#fe2c55] hover:bg-[#e0264c] text-white font-bold text-base active:scale-95 transition-all cursor-pointer mb-3"
+        className="w-full py-4 rounded-2xl bg-[#FF5A3C] hover:bg-[#e0264c] text-white font-bold text-base active:scale-95 transition-all cursor-pointer mb-3"
       >
         Попробовать снова
       </button>

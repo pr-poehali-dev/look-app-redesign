@@ -2,7 +2,7 @@ import { RefObject } from "react";
 import Icon from "@/components/ui/icon";
 
 const TRACKS = [
-  { id: 1, title: "Roses Remix", artist: "Imanbek", duration: "2:34", color: "#fe2c55" },
+  { id: 1, title: "Roses Remix", artist: "Imanbek", duration: "2:34", color: "#FF5A3C" },
   { id: 2, title: "Bangarang", artist: "Skrillex", duration: "3:12", color: "#8b5cf6" },
   { id: 3, title: "Blinding Lights", artist: "The Weeknd", duration: "3:20", color: "#f59e0b" },
   { id: 4, title: "Mood", artist: "24kGoldn", duration: "2:20", color: "#34d399" },
@@ -42,7 +42,7 @@ const CameraMusicPanel = ({
         <div className="relative z-20 mx-4 mb-3 flex items-center gap-2 bg-black/50 backdrop-blur-sm border border-white/15 rounded-full px-4 py-2">
           <div
             className="w-6 h-6 rounded-full flex items-center justify-center animate-spin flex-shrink-0"
-            style={{ background: selectedTrack ? selectedTrack.color : "#fe2c55", animationDuration: "3s" }}
+            style={{ background: selectedTrack ? selectedTrack.color : "#FF5A3C", animationDuration: "3s" }}
           >
             <Icon name="Music" size={11} className="text-white" />
           </div>
@@ -70,8 +70,8 @@ const CameraMusicPanel = ({
             onClick={() => fileInputRef.current?.click()}
             className="mx-3 mb-2 w-[calc(100%-24px)] flex items-center gap-3 bg-white/8 border border-dashed border-white/20 rounded-2xl px-4 py-3 hover:bg-white/12 active:scale-[0.98] transition-all"
           >
-            <div className="w-9 h-9 rounded-xl bg-[#fe2c55]/20 border border-[#fe2c55]/40 flex items-center justify-center flex-shrink-0">
-              <Icon name="Upload" size={17} className="text-[#fe2c55]" />
+            <div className="w-9 h-9 rounded-xl bg-[#FF5A3C]/20 border border-[#FF5A3C]/40 flex items-center justify-center flex-shrink-0">
+              <Icon name="Upload" size={17} className="text-[#FF5A3C]" />
             </div>
             <div className="text-left">
               <p className="text-white text-sm font-semibold">Загрузить с устройства</p>
@@ -105,7 +105,7 @@ const CameraMusicPanel = ({
                   </div>
                   <span className="text-white/30 text-xs flex-shrink-0">{track.duration}</span>
                   {isSelected && (
-                    <div className="w-5 h-5 rounded-full bg-[#fe2c55] flex items-center justify-center flex-shrink-0">
+                    <div className="w-5 h-5 rounded-full bg-[#FF5A3C] flex items-center justify-center flex-shrink-0">
                       <Icon name="Check" size={11} className="text-white" />
                     </div>
                   )}

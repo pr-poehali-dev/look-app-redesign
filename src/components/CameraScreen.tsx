@@ -14,7 +14,7 @@ import PhotoEditor from "@/components/camera/editor/PhotoEditor";
 import { compressVideo, uploadFileDirect } from "@/lib/videoCompress";
 
 const TRACKS = [
-  { id: 1, title: "Roses Remix", artist: "Imanbek", duration: "2:34", color: "#fe2c55" },
+  { id: 1, title: "Roses Remix", artist: "Imanbek", duration: "2:34", color: "#FF5A3C" },
   { id: 2, title: "Bangarang", artist: "Skrillex", duration: "3:12", color: "#8b5cf6" },
   { id: 3, title: "Blinding Lights", artist: "The Weeknd", duration: "3:20", color: "#f59e0b" },
   { id: 4, title: "Mood", artist: "24kGoldn", duration: "2:20", color: "#34d399" },
@@ -440,7 +440,7 @@ const CameraScreen = ({ onClose }: CameraScreenProps) => {
           <p className="text-white/50 text-sm text-center">Зрители увидят твой экран в реальном времени</p>
           <button
             onClick={handleGoLive}
-            className="w-full py-4 rounded-2xl bg-[#fe2c55] text-white font-bold text-lg flex items-center justify-center gap-3 active:scale-95 transition-transform"
+            className="w-full py-4 rounded-2xl bg-[#FF5A3C] text-white font-bold text-lg flex items-center justify-center gap-3 active:scale-95 transition-transform"
           >
             <div className="w-3 h-3 rounded-full bg-white animate-pulse" />
             Начать трансляцию

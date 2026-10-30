@@ -193,7 +193,7 @@ const EditorPublishStep = ({
               <button
                 key={d.id}
                 onClick={() => setDestination(d.id)}
-                className={`py-3 rounded-xl flex flex-col items-center gap-1 cursor-pointer transition-all ${destination === d.id ? "bg-[#fe2c55] text-white" : "bg-white/5 text-white/70 hover:bg-white/10"}`}
+                className={`py-3 rounded-xl flex flex-col items-center gap-1 cursor-pointer transition-all ${destination === d.id ? "bg-[#FF5A3C] text-white" : "bg-white/5 text-white/70 hover:bg-white/10"}`}
               >
                 <Icon name={d.icon} size={18} />
                 <span className="text-xs font-semibold">{d.label}</span>
@@ -248,7 +248,7 @@ const EditorPublishStep = ({
               <Icon name="ShoppingBag" size={13} /> Товары в кадре
             </p>
             {!showAddProduct && (
-              <button onClick={() => setShowAddProduct(true)} className="text-[#fe2c55] text-xs font-semibold flex items-center gap-1">
+              <button onClick={() => setShowAddProduct(true)} className="text-[#FF5A3C] text-xs font-semibold flex items-center gap-1">
                 <Icon name="Plus" size={13} /> Добавить
               </button>
             )}
@@ -314,7 +314,7 @@ const EditorPublishStep = ({
                           <p className="text-white text-sm truncate">{p.title}</p>
                           <p className="text-white/50 text-xs">{p.price.toLocaleString("ru-RU")} ₽</p>
                         </div>
-                        <Icon name="Plus" size={16} className="text-[#fe2c55] flex-shrink-0" />
+                        <Icon name="Plus" size={16} className="text-[#FF5A3C] flex-shrink-0" />
                       </button>
                     ))}
                   </div>
@@ -344,7 +344,7 @@ const EditorPublishStep = ({
                           </div>
                           <p className="text-white/50 text-xs">{p.price.toLocaleString("ru-RU")} ₽</p>
                         </div>
-                        <Icon name="Plus" size={16} className="text-[#fe2c55] flex-shrink-0" />
+                        <Icon name="Plus" size={16} className="text-[#FF5A3C] flex-shrink-0" />
                       </button>
                     ))}
                   </div>
@@ -409,7 +409,7 @@ const EditorPublishStep = ({
                   />
                   <div className="flex gap-2 pt-1">
                     <button onClick={resetForm} className="flex-1 py-2 rounded-lg bg-white/10 text-white/70 text-sm font-semibold">Отмена</button>
-                    <button onClick={addProduct} disabled={!newTitle.trim() || !newPrice} className="flex-1 py-2 rounded-lg bg-[#fe2c55] text-white text-sm font-semibold disabled:opacity-40">Добавить</button>
+                    <button onClick={addProduct} disabled={!newTitle.trim() || !newPrice} className="flex-1 py-2 rounded-lg bg-[#FF5A3C] text-white text-sm font-semibold disabled:opacity-40">Добавить</button>
                   </div>
                 </>
               )}
@@ -424,7 +424,7 @@ const EditorPublishStep = ({
         </div>
 
         {publishing && publishProgress ? (
-          <div className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6]">
+          <div className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6]">
             <div className="flex items-center gap-2 text-white mb-2">
               <Icon name="Loader" size={18} className="animate-spin" />
               <span className="font-semibold text-sm">
@@ -442,7 +442,7 @@ const EditorPublishStep = ({
           <button
             onClick={onPublish}
             disabled={publishing}
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer text-white font-bold disabled:opacity-50"
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer text-white font-bold disabled:opacity-50"
           >
             {publishing ? "Публикуем..." : "Опубликовать"}
           </button>

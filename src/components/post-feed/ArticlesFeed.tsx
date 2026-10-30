@@ -13,7 +13,7 @@ const ArticlesFeed = ({ topPad }: { topPad: number }) => {
       <div className="md:max-w-[620px] md:mx-auto px-3 pb-24" style={{ paddingTop: topPad + 8 }}>
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-[#FF5A3C] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : articles.length === 0 ? (
           <div className="flex flex-col items-center py-20 gap-3 text-center">

@@ -56,7 +56,7 @@ const ProductMasonryCard = ({ p, hideOwner, rating }: Props) => {
         <p onClick={() => setShowDetail(true)} className="text-black text-[13px] leading-snug font-medium line-clamp-2 cursor-pointer">{p.title}</p>
 
         <div className="flex items-baseline gap-1.5">
-          <span className="text-[#fe2c55] text-base font-bold">{p.price > 0 ? `${p.price.toLocaleString("ru-RU")} ₽` : "Бесплатно"}</span>
+          <span className="text-[#FF5A3C] text-base font-bold">{p.price > 0 ? `${p.price.toLocaleString("ru-RU")} ₽` : "Бесплатно"}</span>
           {p.old_price && p.old_price > p.price && (
             <span className="text-gray-400 text-[11px] line-through">{p.old_price.toLocaleString("ru-RU")} ₽</span>
           )}

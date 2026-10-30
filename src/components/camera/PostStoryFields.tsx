@@ -28,7 +28,7 @@ const PostStoryFields = ({ value, onChange }: Props) => {
                     ? { ...value, collabId: null }
                     : { ...value, collabId: c.id, brand: c.brand_name })}
                   className={`flex items-center gap-2 text-left rounded-xl px-3 py-2 border transition-colors ${
-                    active ? "bg-[#fe2c55]/20 border-[#fe2c55]" : "bg-white/10 border-white/15"
+                    active ? "bg-[#FF5A3C]/20 border-[#FF5A3C]" : "bg-white/10 border-white/15"
                   }`}
                 >
                   <Icon name="Handshake" fallback="Gift" size={16} className="text-white/70 flex-shrink-0" />
@@ -76,7 +76,7 @@ const PostStoryFields = ({ value, onChange }: Props) => {
             <p className="text-white/40 text-xs">Я сам пользуюсь этим товаром или был в этом месте</p>
           </div>
         </div>
-        <div className={`w-10 h-6 rounded-full flex items-center px-0.5 transition-colors flex-shrink-0 ${value.personalExperience ? "bg-[#fe2c55]" : "bg-white/15"}`}>
+        <div className={`w-10 h-6 rounded-full flex items-center px-0.5 transition-colors flex-shrink-0 ${value.personalExperience ? "bg-[#FF5A3C]" : "bg-white/15"}`}>
           <div className={`w-5 h-5 rounded-full bg-white transition-transform ${value.personalExperience ? "translate-x-4" : "translate-x-0"}`} />
         </div>
       </button>

@@ -24,15 +24,15 @@ const LiveStreamStartForm = ({
   if (!showStartForm) {
     return (
       <div className="relative z-20 flex-1 flex flex-col items-center justify-center gap-6 px-8">
-        <div className="w-24 h-24 rounded-full bg-[#fe2c55]/20 border-2 border-[#fe2c55] flex items-center justify-center animate-pulse">
-          <Icon name="Radio" size={40} className="text-[#fe2c55]" />
+        <div className="w-24 h-24 rounded-full bg-[#FF5A3C]/20 border-2 border-[#FF5A3C] flex items-center justify-center animate-pulse">
+          <Icon name="Radio" size={40} className="text-[#FF5A3C]" />
         </div>
         <div className="text-center">
           <h2 className="text-white font-bold text-2xl mb-2">Прямая трансляция</h2>
           <p className="text-white/50 text-sm">Начни трансляцию — зрители уже ждут</p>
         </div>
         <button onClick={onOpenForm}
-          className="w-full py-4 rounded-2xl bg-[#fe2c55] text-white font-bold text-lg active:scale-95 transition-all flex items-center justify-center gap-3">
+          className="w-full py-4 rounded-2xl bg-[#FF5A3C] text-white font-bold text-lg active:scale-95 transition-all flex items-center justify-center gap-3">
           <Icon name="Radio" size={22} />
           Начать трансляцию
         </button>
@@ -67,7 +67,7 @@ const LiveStreamStartForm = ({
           <option value="Образование">Образование</option>
         </select>
         <button onClick={onStartLive}
-          className="w-full py-3.5 rounded-xl bg-[#fe2c55] text-white font-bold text-base active:scale-95 transition-all flex items-center justify-center gap-2">
+          className="w-full py-3.5 rounded-xl bg-[#FF5A3C] text-white font-bold text-base active:scale-95 transition-all flex items-center justify-center gap-2">
           <Icon name="Radio" size={18} />
           Начать
         </button>

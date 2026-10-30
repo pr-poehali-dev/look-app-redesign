@@ -21,7 +21,7 @@ const EditorHeader = ({ undo, redo, canUndo, canRedo, onNext, onClose }: Props) 
     </div>
     <button
       onClick={onNext}
-      className="px-4 py-1.5 rounded-full bg-[#fe2c55] hover:bg-[#e0264c] active:scale-95 transition-all cursor-pointer text-white text-sm font-bold flex-shrink-0"
+      className="px-4 py-1.5 rounded-full bg-[#FF5A3C] hover:bg-[#e0264c] active:scale-95 transition-all cursor-pointer text-white text-sm font-bold flex-shrink-0"
     >Далее</button>
     <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer" title="Закрыть"><Icon name="X" size={22} className="text-white" /></button>
   </div>

@@ -102,7 +102,7 @@ const CallControls = ({
       <div className="flex justify-center">
         <button
           onClick={hangup}
-          className="w-16 h-16 rounded-full bg-[#fe2c55] flex items-center justify-center shadow-[0_0_30px_rgba(254,44,85,0.5)] hover:scale-110 active:scale-95 transition-all"
+          className="w-16 h-16 rounded-full bg-[#FF5A3C] flex items-center justify-center shadow-[0_0_30px_rgba(254,44,85,0.5)] hover:scale-110 active:scale-95 transition-all"
         >
           <Icon name="PhoneOff" size={26} className="text-white" />
         </button>

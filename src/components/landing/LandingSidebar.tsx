@@ -67,8 +67,8 @@ const LandingSidebar = ({ onLocked, onLogin, onOpenDoc, onHome }: LandingSidebar
           <span className="text-sm opacity-90">Политика конфиденциальности</span>
         </button>
         <button onClick={onLogin} className={ITEM}>
-          <Icon name="LogIn" size={22} className="text-[#fe2c55]" />
-          <span className="text-sm text-[#fe2c55]">Войти</span>
+          <Icon name="LogIn" size={22} className="text-[#FF5A3C]" />
+          <span className="text-sm text-[#FF5A3C]">Войти</span>
         </button>
         <button onClick={toggle} className={ITEM} title="Переключить тему">
           <Icon name={theme === "dark" ? "Sun" : "Moon"} size={22} className="opacity-80" />

@@ -59,7 +59,7 @@ const QrApproveScreen = ({ code, onDone }: Props) => {
   if (!token) {
     return (
       <div className="fixed inset-0 bg-black flex flex-col items-center justify-center px-6 text-center">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center mb-4">
+        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#FF5A3C] to-[#8b5cf6] flex items-center justify-center mb-4">
           <Icon name="QrCode" size={36} className="text-white" />
         </div>
         <p className="text-white font-bold text-xl mb-2">Войди в аккаунт</p>
@@ -105,7 +105,7 @@ const QrApproveScreen = ({ code, onDone }: Props) => {
             </>
           ) : (
             <>
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#FF5A3C] to-[#8b5cf6] flex items-center justify-center">
                 <Icon name="Monitor" size={36} className="text-white" />
               </div>
               <p className="text-black font-bold text-lg text-center">Подтвердить вход на ПК?</p>
@@ -116,7 +116,7 @@ const QrApproveScreen = ({ code, onDone }: Props) => {
                 <button
                   onClick={approve}
                   disabled={state === "approving"}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold disabled:opacity-50"
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white font-bold disabled:opacity-50"
                 >{state === "approving" ? "Подтверждаем..." : "Подтвердить вход"}</button>
                 <button
                   onClick={reject}

@@ -63,7 +63,7 @@ const ComplianceFields = ({ value, onChange, isImage = true }: Props) => (
             type="button"
             onClick={() => onChange({ ...value, ageRating: a })}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors ${
-              value.ageRating === a ? "bg-[#fe2c55] border-[#fe2c55] text-white" : "bg-white/10 border-white/15 text-white/70"
+              value.ageRating === a ? "bg-[#FF5A3C] border-[#FF5A3C] text-white" : "bg-white/10 border-white/15 text-white/70"
             }`}
           >
             {a}

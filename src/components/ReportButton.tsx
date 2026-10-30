@@ -85,7 +85,7 @@ export default function ReportButton({ targetType, targetId, className, variant 
           onClick={(e) => { e.stopPropagation(); setOpen(true); }}
           className={className || "w-full px-3 py-2 text-left text-sm text-white/80 hover:bg-white/5 flex items-center gap-2"}
         >
-          <Icon name="Flag" size={16} className="text-[#fe2c55]" />
+          <Icon name="Flag" size={16} className="text-[#FF5A3C]" />
           {label || "Пожаловаться"}
         </button>
       )}
@@ -123,11 +123,11 @@ export default function ReportButton({ targetType, targetId, className, variant 
                       key={r.id}
                       onClick={() => setReason(r.id)}
                       className={`w-full px-3 py-2.5 rounded-xl text-left text-sm flex items-center justify-between ${
-                        reason === r.id ? "bg-[#fe2c55]/20 text-white border border-[#fe2c55]/40" : "bg-white/5 text-white/80 hover:bg-white/10 border border-transparent"
+                        reason === r.id ? "bg-[#FF5A3C]/20 text-white border border-[#FF5A3C]/40" : "bg-white/5 text-white/80 hover:bg-white/10 border border-transparent"
                       }`}
                     >
                       {r.label}
-                      {reason === r.id && <Icon name="Check" size={16} className="text-[#fe2c55]" />}
+                      {reason === r.id && <Icon name="Check" size={16} className="text-[#FF5A3C]" />}
                     </button>
                   ))}
                 </div>
@@ -137,12 +137,12 @@ export default function ReportButton({ targetType, targetId, className, variant 
                   rows={2}
                   maxLength={500}
                   placeholder="Добавь детали (необязательно)"
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white placeholder:text-white/30 text-sm resize-none focus:outline-none focus:border-[#fe2c55]"
+                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white placeholder:text-white/30 text-sm resize-none focus:outline-none focus:border-[#FF5A3C]"
                 />
                 <button
                   onClick={send}
                   disabled={!reason || sending}
-                  className="w-full py-3 rounded-xl bg-[#fe2c55] text-white font-semibold disabled:opacity-50"
+                  className="w-full py-3 rounded-xl bg-[#FF5A3C] text-white font-semibold disabled:opacity-50"
                 >
                   {sending ? "Отправляем..." : "Отправить жалобу"}
                 </button>

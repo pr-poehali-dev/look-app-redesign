@@ -34,7 +34,7 @@ const LiveStreamOverlay = ({
     <>
       <div className="absolute right-4 top-1/3 z-20 flex flex-col items-center gap-1">
         <div className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center">
-          <Icon name="Heart" size={20} className="text-[#fe2c55] fill-[#fe2c55]" />
+          <Icon name="Heart" size={20} className="text-[#FF5A3C] fill-[#FF5A3C]" />
         </div>
         <span className="text-white text-xs font-bold">{likes.toLocaleString()}</span>
       </div>
@@ -78,7 +78,7 @@ const LiveStreamOverlay = ({
             <span className="text-lg">🎁</span>
           </button>
           <button onClick={onStopLive}
-            className="px-4 h-10 rounded-full bg-[#fe2c55]/90 flex items-center justify-center">
+            className="px-4 h-10 rounded-full bg-[#FF5A3C]/90 flex items-center justify-center">
             <span className="text-white text-xs font-bold">Стоп</span>
           </button>
         </div>

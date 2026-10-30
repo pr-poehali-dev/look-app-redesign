@@ -70,7 +70,7 @@ const ProfileExtraTabs = ({ tab, onOpenBoard, onOpenBoards }: Props) => {
   return (
     <div className="p-3 flex flex-col gap-3">
       {challenge ? (
-        <button onClick={() => setShowChallenge(true)} className="rounded-2xl p-4 text-left bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6]">
+        <button onClick={() => setShowChallenge(true)} className="rounded-2xl p-4 text-left bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6]">
           <p className="text-white/80 text-[11px] font-semibold uppercase">Челлендж недели · осталось {left} {daysWord(left)}</p>
           <p className="text-white font-bold text-base">{challenge.title}</p>
           <p className="text-white/80 text-xs mt-0.5">{challenge.joined ? "Вы участвуете" : "Нажмите, чтобы участвовать"}</p>

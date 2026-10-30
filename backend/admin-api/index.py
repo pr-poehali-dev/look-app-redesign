@@ -441,6 +441,14 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         """)
         return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'challenges': cur.fetchall()}, default=str, ensure_ascii=False)}
 
+    if action == 'challenge_delete':
+        cid = _safe_int(body.get('id'))
+        _q(cur, "DELETE FROM {S}.challenge_entries WHERE challenge_id = %s", (cid,))
+        _q(cur, "DELETE FROM {S}.user_badges WHERE challenge_id = %s", (cid,))
+        _q(cur, "DELETE FROM {S}.challenges WHERE id = %s", (cid,))
+        conn.commit()
+        return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps({'ok': True})}
+
     if action == 'challenge_save':
         title = (body.get('title') or '').strip()[:120]
         if not title:

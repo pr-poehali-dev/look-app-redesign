@@ -29,7 +29,7 @@ const RequestsModal = ({ requests, requestsLoading, onClose, onDecide }: Props) 
         <div className="flex-1 overflow-y-auto px-2 pb-4" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.3) transparent" }}>
           {requestsLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-[#FF5A3C] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : requests.length === 0 ? (
             <div className="text-center py-12 text-white/40 text-sm">Пока нет заявок</div>
@@ -39,14 +39,14 @@ const RequestsModal = ({ requests, requestsLoading, onClose, onDecide }: Props) 
                 {r.avatar ? (
                   <img loading="lazy" decoding="async" src={r.avatar} className="w-10 h-10 rounded-full object-cover" alt={r.user_name} />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center text-white text-sm font-bold">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF5A3C] to-[#8b5cf6] flex items-center justify-center text-white text-sm font-bold">
                     {r.user_name.slice(0, 1).toUpperCase()}
                   </div>
                 )}
                 <span className="flex-1 text-white text-sm truncate">{r.user_name}</span>
                 <button
                   onClick={() => onDecide(r.user_id, true)}
-                  className="px-3 py-1.5 rounded-lg bg-[#fe2c55] text-white text-xs font-semibold"
+                  className="px-3 py-1.5 rounded-lg bg-[#FF5A3C] text-white text-xs font-semibold"
                 >
                   Принять
                 </button>

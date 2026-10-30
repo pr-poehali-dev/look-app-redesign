@@ -36,11 +36,11 @@ const AgeGate = () => {
         <p className="text-gray-500 text-sm">
           По закону часть контента доступна только совершеннолетним. Мы не храним дату рождения, только отметку о возрасте. Сервис доступен с 14 лет.
         </p>
-        {error && <p className="text-[#fe2c55] text-sm">{error}</p>}
+        {error && <p className="text-[#FF5A3C] text-sm">{error}</p>}
         <button
           onClick={() => submit(true)}
           disabled={loading}
-          className="w-full py-3.5 rounded-xl bg-[#fe2c55] text-white font-bold text-base disabled:opacity-40"
+          className="w-full py-3.5 rounded-xl bg-[#FF5A3C] text-white font-bold text-base disabled:opacity-40"
         >
           Мне есть 18 лет
         </button>

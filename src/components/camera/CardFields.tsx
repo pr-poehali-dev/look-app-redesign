@@ -38,7 +38,7 @@ const CardFields = ({ value, onChange }: Props) => {
               type="button"
               onClick={() => onChange({ ...value, postMode: mode })}
               className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors ${
-                value.postMode === mode ? "bg-[#fe2c55] border-[#fe2c55] text-white" : "bg-white/10 border-white/15 text-white/70"
+                value.postMode === mode ? "bg-[#FF5A3C] border-[#FF5A3C] text-white" : "bg-white/10 border-white/15 text-white/70"
               }`}
             >
               {label}
@@ -81,7 +81,7 @@ const CardFields = ({ value, onChange }: Props) => {
               type="button"
               onClick={() => onChange({ ...value, topic: value.topic === t.slug ? "" : t.slug })}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
-                value.topic === t.slug ? "bg-[#fe2c55] border-[#fe2c55] text-white" : "bg-white/10 border-white/15 text-white/70"
+                value.topic === t.slug ? "bg-[#FF5A3C] border-[#FF5A3C] text-white" : "bg-white/10 border-white/15 text-white/70"
               }`}
             >
               {t.title}
@@ -102,12 +102,12 @@ const CardFields = ({ value, onChange }: Props) => {
                   type="button"
                   onClick={() => toggleBoard(b.id)}
                   className={`flex items-center gap-2 rounded-xl px-3 py-2 border text-left transition-colors ${
-                    active ? "bg-[#fe2c55]/20 border-[#fe2c55]" : "bg-white/10 border-white/15"
+                    active ? "bg-[#FF5A3C]/20 border-[#FF5A3C]" : "bg-white/10 border-white/15"
                   }`}
                 >
                   <Icon name={b.is_collab ? "Users" : "Layers"} size={15} className="text-white/70 flex-shrink-0" />
                   <span className="flex-1 text-white text-sm truncate">{b.title}</span>
-                  {active && <Icon name="Check" size={16} className="text-[#fe2c55]" />}
+                  {active && <Icon name="Check" size={16} className="text-[#FF5A3C]" />}
                 </button>
               );
             })}
@@ -124,7 +124,7 @@ const CardFields = ({ value, onChange }: Props) => {
           <p className="text-white text-sm font-medium">Коммерческий пост</p>
           <p className="text-white/40 text-xs">Есть продажа, реклама или ссылка на покупку</p>
         </div>
-        <div className={`w-10 h-6 rounded-full p-0.5 transition-colors ${value.isCommercial ? "bg-[#fe2c55]" : "bg-white/20"}`}>
+        <div className={`w-10 h-6 rounded-full p-0.5 transition-colors ${value.isCommercial ? "bg-[#FF5A3C]" : "bg-white/20"}`}>
           <div className={`w-5 h-5 rounded-full bg-white transition-transform ${value.isCommercial ? "translate-x-4" : ""}`} />
         </div>
       </button>

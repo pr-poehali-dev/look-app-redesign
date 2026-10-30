@@ -49,7 +49,7 @@ const VideoActionButtons = ({
             <Icon
               name="Heart"
               size={22}
-              className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"}
+              className={liked ? "text-[#FF5A3C] fill-[#FF5A3C]" : "action-icon-glyph"}
             />
           </div>
           <span className="action-count-text action-count-mobile-bg px-1 text-white text-[11px] font-semibold">{formatCount(likeCount)}</span>
@@ -105,7 +105,7 @@ const VideoActionButtons = ({
             <Icon
               name="Heart"
               size={24}
-              className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"}
+              className={liked ? "text-[#FF5A3C] fill-[#FF5A3C]" : "action-icon-glyph"}
             />
           </div>
           <span className="action-count-text text-white text-xs font-semibold">{formatCount(likeCount)}</span>
@@ -133,7 +133,7 @@ const VideoActionButtons = ({
             <Icon
               name="Bookmark"
               size={22}
-              className={saved ? "text-[#fe2c55] fill-[#fe2c55]" : "action-icon-glyph"}
+              className={saved ? "text-[#FF5A3C] fill-[#FF5A3C]" : "action-icon-glyph"}
             />
           </div>
           {!!video.saves && (

@@ -119,7 +119,7 @@ const PostExtras = ({ value, onChange, allowImages }: Props) => {
             )}
           </div>
           <input ref={inputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
-          {error && <p className="text-[#fe2c55] text-xs mt-1.5">{error}</p>}
+          {error && <p className="text-[#FF5A3C] text-xs mt-1.5">{error}</p>}
         </div>
       )}
     </div>

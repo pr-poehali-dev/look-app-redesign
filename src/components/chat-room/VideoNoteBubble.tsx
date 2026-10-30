@@ -77,7 +77,7 @@ const VideoNoteBubble = ({ isMe, mediaUrl, duration, time, transcript, transcrib
       )}
 
       {transcript && (
-        <div className={`mt-1 flex items-start gap-1.5 px-3 py-2 rounded-xl max-w-full ${isMe ? "bg-[#fe2c55]/15" : "bg-white/5"}`}>
+        <div className={`mt-1 flex items-start gap-1.5 px-3 py-2 rounded-xl max-w-full ${isMe ? "bg-[#FF5A3C]/15" : "bg-white/5"}`}>
           <p className="text-white/70 text-xs leading-snug italic flex-1">{transcript}</p>
           {onCloseTranscript && (
             <button onClick={onCloseTranscript} className="flex-shrink-0 text-white/40 hover:text-white/70">

@@ -157,12 +157,12 @@ const CameraBottomControls = ({
         <button onClick={onShutter} className="relative flex items-center justify-center">
           <div
             className={`w-20 h-20 rounded-full border-4 flex items-center justify-center transition-all duration-200 ${
-              recording ? "border-[#fe2c55]" : "border-white"
+              recording ? "border-[#FF5A3C]" : "border-white"
             }`}
           >
             <div
               className={`transition-all duration-200 bg-white ${
-                recording ? "w-8 h-8 rounded-lg bg-[#fe2c55]" : "w-16 h-16 rounded-full"
+                recording ? "w-8 h-8 rounded-lg bg-[#FF5A3C]" : "w-16 h-16 rounded-full"
               }`}
             />
           </div>

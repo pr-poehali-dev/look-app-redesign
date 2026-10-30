@@ -37,7 +37,7 @@ const NotificationRow = ({ n, onRead }: { n: AppNotification; onRead: (id: numbe
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <p className="text-black text-sm font-semibold">{n.title}</p>
-          {!n.is_read && <span className="w-2 h-2 rounded-full bg-[#fe2c55] flex-shrink-0" />}
+          {!n.is_read && <span className="w-2 h-2 rounded-full bg-[#FF5A3C] flex-shrink-0" />}
         </div>
         <p className="text-gray-500 text-xs mt-0.5 leading-relaxed">{n.message}</p>
         <p className="text-gray-300 text-[11px] mt-1">{timeAgo(n.created_at)}</p>

@@ -54,11 +54,11 @@ const ProfileSetupGate = () => {
           placeholder="Имя (необязательно)"
           className="w-full px-4 py-3 rounded-xl bg-gray-100 text-black text-sm outline-none"
         />
-        {error && <p className="text-[#fe2c55] text-sm">{error}</p>}
+        {error && <p className="text-[#FF5A3C] text-sm">{error}</p>}
         <button
           onClick={submit}
           disabled={handle.trim().length < 3 || loading}
-          className="w-full py-3.5 rounded-xl bg-[#fe2c55] text-white font-bold text-base disabled:opacity-40"
+          className="w-full py-3.5 rounded-xl bg-[#FF5A3C] text-white font-bold text-base disabled:opacity-40"
         >
           {loading ? "Сохраняем..." : "Продолжить"}
         </button>

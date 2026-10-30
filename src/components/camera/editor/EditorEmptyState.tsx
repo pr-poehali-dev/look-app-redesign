@@ -31,7 +31,7 @@ const EditorEmptyState = ({
         <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer" title="Закрыть"><Icon name="X" size={22} className="text-white" /></button>
       </div>
       <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center">
+        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#FF5A3C] to-[#8b5cf6] flex items-center justify-center">
           <Icon name="Sparkles" size={36} className="text-white" />
         </div>
         <div className="text-center">
@@ -56,7 +56,7 @@ const EditorEmptyState = ({
         />
         <button
           onClick={onOpenSheet}
-          className="px-6 py-3 rounded-2xl bg-[#fe2c55] hover:bg-[#e0264c] active:scale-95 transition-all cursor-pointer text-white font-bold flex items-center gap-2"
+          className="px-6 py-3 rounded-2xl bg-[#FF5A3C] hover:bg-[#e0264c] active:scale-95 transition-all cursor-pointer text-white font-bold flex items-center gap-2"
         >
           <Icon name="Upload" size={18} /> Выбрать файлы
         </button>
@@ -67,7 +67,7 @@ const EditorEmptyState = ({
               <button
                 key={t.id}
                 onClick={() => onSelectTemplate(t.id)}
-                className="aspect-[9/16] rounded-xl flex flex-col items-center justify-center gap-2 text-white text-sm font-semibold bg-gradient-to-br from-[#fe2c55]/30 to-[#8b5cf6]/30 border border-white/15 active:scale-95 transition-transform"
+                className="aspect-[9/16] rounded-xl flex flex-col items-center justify-center gap-2 text-white text-sm font-semibold bg-gradient-to-br from-[#FF5A3C]/30 to-[#8b5cf6]/30 border border-white/15 active:scale-95 transition-transform"
               >
                 <Icon name="Sparkles" size={18} className="text-white/80" />
                 {t.name}

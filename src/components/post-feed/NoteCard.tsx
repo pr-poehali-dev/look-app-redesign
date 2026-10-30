@@ -125,13 +125,13 @@ const NoteCard = ({ post, onOpen, priority = false }: { post: Post; onOpen: () =
                     <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setDetailProduct(p)}>
                       <p className="text-white text-sm font-semibold truncate">{p.title}</p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[#fe2c55] font-bold text-sm">{p.price.toLocaleString("ru-RU")} ₽</span>
+                        <span className="text-[#FF5A3C] font-bold text-sm">{p.price.toLocaleString("ru-RU")} ₽</span>
                         {p.old_price && p.old_price > p.price && (
                           <span className="text-white/40 text-xs line-through">{p.old_price.toLocaleString("ru-RU")} ₽</span>
                         )}
                       </div>
                       {p.promo_code && (
-                        <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#fe2c55]/20 text-[#fe2c55] text-[10px] font-bold">
+                        <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#FF5A3C]/20 text-[#FF5A3C] text-[10px] font-bold">
                           Промокод: {p.promo_code}
                         </span>
                       )}
@@ -139,7 +139,7 @@ const NoteCard = ({ post, onOpen, priority = false }: { post: Post; onOpen: () =
                     {hasProductLink(p) && (
                       <button
                         onClick={() => handleGoToProduct(p)}
-                        className="flex-shrink-0 px-3 py-1.5 rounded-full bg-[#fe2c55] text-white text-xs font-bold active:scale-95 transition-transform whitespace-nowrap"
+                        className="flex-shrink-0 px-3 py-1.5 rounded-full bg-[#FF5A3C] text-white text-xs font-bold active:scale-95 transition-transform whitespace-nowrap"
                       >
                         Перейти
                       </button>

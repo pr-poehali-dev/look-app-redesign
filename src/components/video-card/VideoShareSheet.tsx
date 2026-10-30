@@ -65,12 +65,12 @@ const VideoShareSheet = ({ video, shareUrl, setShowShare, handleRepost, repostin
           disabled={reposting}
           className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3 mb-3 disabled:opacity-60"
         >
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${alreadyReposted && !repostResult ? "bg-white/10" : "bg-[#fe2c55]/20"}`}>
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${alreadyReposted && !repostResult ? "bg-white/10" : "bg-[#FF5A3C]/20"}`}>
             <Icon
               name={repostResult ? "Check" : "Repeat2"}
               fallback="Repeat"
               size={20}
-              className={repostResult === "added" ? "text-green-400" : repostResult === "removed" ? "text-white/60" : alreadyReposted ? "text-white/60" : "text-[#fe2c55]"}
+              className={repostResult === "added" ? "text-green-400" : repostResult === "removed" ? "text-white/60" : alreadyReposted ? "text-white/60" : "text-[#FF5A3C]"}
             />
           </div>
           <div className="text-left">

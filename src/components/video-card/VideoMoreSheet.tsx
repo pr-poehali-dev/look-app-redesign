@@ -45,7 +45,7 @@ const VideoMoreSheet = ({ video, user, saved, isSelf, toggleSaved, setShowMore, 
             <Icon
               name="Bookmark"
               size={20}
-              className={saved ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"}
+              className={saved ? "text-[#FF5A3C] fill-[#FF5A3C]" : "text-white"}
             />
           </div>
           <span className="text-white text-sm font-medium">
@@ -135,7 +135,7 @@ const VideoMoreSheet = ({ video, user, saved, isSelf, toggleSaved, setShowMore, 
           className="w-full flex items-center gap-3 bg-white/8 rounded-2xl px-4 py-3"
         >
           <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-            <Icon name="Flag" size={20} className="text-[#fe2c55]" />
+            <Icon name="Flag" size={20} className="text-[#FF5A3C]" />
           </div>
           <span className="text-white text-sm font-medium">Пожаловаться</span>
         </button>

@@ -48,7 +48,7 @@ const FILTERS: { id: string; label: string; css: (a: Adjustments) => string }[] 
 
 const STICKERS = ["😭", "💀", "🥹", "🥲", "😮‍💨", "🫶", "🤌", "🫠", "😩", "🤍", "🔥", "✨", "💅", "👀", "🙏", "💯", "😎", "🥳", "🤩", "😏", "🫡", "🤝", "💋", "🩷", "🌟", "⚡", "🎯", "🚀", "🌈", "🍀", "🦋", "🌸"];
 const FONTS = ["'Golos Text', sans-serif", "'Oswald', sans-serif", "Georgia, serif", "'Courier New', monospace", "system-ui, sans-serif"];
-const TEXT_COLORS = ["#ffffff", "#000000", "#fe2c55", "#8b5cf6", "#34d399", "#f59e0b", "#0095f6", "#ec4899"];
+const TEXT_COLORS = ["#ffffff", "#000000", "#FF5A3C", "#8b5cf6", "#34d399", "#f59e0b", "#0095f6", "#ec4899"];
 const ASPECTS: { id: string; label: string; ratio: number | null }[] = [
   { id: "free", label: "Свободно", ratio: null },
   { id: "1:1", label: "1:1", ratio: 1 },
@@ -88,7 +88,7 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
   const [overlays, setOverlays] = useState<Overlay[]>([]);
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [activeOverlay, setActiveOverlay] = useState<number | null>(null);
-  const [brushColor, setBrushColor] = useState("#fe2c55");
+  const [brushColor, setBrushColor] = useState("#FF5A3C");
   const [brushSize, setBrushSize] = useState(8);
   const [textColor, setTextColor] = useState("#ffffff");
   const [textFont, setTextFont] = useState(FONTS[0]);
@@ -493,7 +493,7 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
       <div className="flex items-center justify-between px-4 py-3 flex-shrink-0">
         <button onClick={onCancel} className="text-white/80 text-sm font-medium px-3 py-1.5">Отмена</button>
         <span className="text-white font-semibold text-sm">Редактор фото</span>
-        <button onClick={handleApply} disabled={processing} className="text-white font-bold text-sm px-4 py-1.5 rounded-full bg-[#fe2c55] disabled:opacity-60">
+        <button onClick={handleApply} disabled={processing} className="text-white font-bold text-sm px-4 py-1.5 rounded-full bg-[#FF5A3C] disabled:opacity-60">
           {processing ? "..." : "Готово"}
         </button>
       </div>
@@ -538,7 +538,7 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
               key={o.id}
               onPointerDown={(e) => onOverlayPointerDown(e, o)}
               onDoubleClick={() => o.kind === "text" && setEditingText({ id: o.id, value: o.value })}
-              className={`absolute select-none cursor-move ${activeOverlay === o.id ? "ring-2 ring-[#fe2c55] ring-offset-1 ring-offset-transparent" : ""}`}
+              className={`absolute select-none cursor-move ${activeOverlay === o.id ? "ring-2 ring-[#FF5A3C] ring-offset-1 ring-offset-transparent" : ""}`}
               style={{
                 left: `${o.x}%`, top: `${o.y}%`,
                 transform: `translate(-50%,-50%) rotate(${o.rotation}deg) scale(${o.scale})`,
@@ -564,7 +564,7 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
           {activeObj.kind === "text" && (
             <button onClick={() => setEditingText({ id: activeObj.id, value: activeObj.value })} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center"><Icon name="Pencil" size={16} className="text-white" /></button>
           )}
-          <button onClick={removeActive} className="w-9 h-9 rounded-full bg-[#fe2c55]/80 flex items-center justify-center"><Icon name="Trash2" size={16} className="text-white" /></button>
+          <button onClick={removeActive} className="w-9 h-9 rounded-full bg-[#FF5A3C]/80 flex items-center justify-center"><Icon name="Trash2" size={16} className="text-white" /></button>
         </div>
       )}
 
@@ -584,7 +584,7 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
               ] as [keyof Adjustments, string, number, number][]).map(([key, label, min, max]) => (
                 <div key={key} className="flex items-center gap-3">
                   <span className="text-white/60 text-xs w-24 flex-shrink-0">{label}</span>
-                  <input type="range" min={min} max={max} value={adj[key]} onChange={(e) => setAdj(a => ({ ...a, [key]: Number(e.target.value) }))} className="flex-1 accent-[#fe2c55]" />
+                  <input type="range" min={min} max={max} value={adj[key]} onChange={(e) => setAdj(a => ({ ...a, [key]: Number(e.target.value) }))} className="flex-1 accent-[#FF5A3C]" />
                   <span className="text-white/40 text-[10px] w-8 text-right">{adj[key]}</span>
                 </div>
               ))}
@@ -595,7 +595,7 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
             <div className="flex gap-2 overflow-x-auto pb-1">
               {FILTERS.map(f => (
                 <button key={f.id} onClick={() => setFilter(f.id)} className={`flex-shrink-0 flex flex-col items-center gap-1 ${filter === f.id ? "opacity-100" : "opacity-70"}`}>
-                  <div className={`w-14 h-14 rounded-lg overflow-hidden border-2 ${filter === f.id ? "border-[#fe2c55]" : "border-transparent"}`}>
+                  <div className={`w-14 h-14 rounded-lg overflow-hidden border-2 ${filter === f.id ? "border-[#FF5A3C]" : "border-transparent"}`}>
                     {imgLoaded && <img loading="lazy" decoding="async" src={src} alt="" className="w-full h-full object-cover" style={{ filter: f.css(DEFAULT_ADJ) }} />}
                   </div>
                   <span className="text-white/70 text-[10px]">{f.label}</span>
@@ -608,14 +608,14 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
             <div className="space-y-3">
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {ASPECTS.map(a => (
-                  <button key={a.id} onClick={() => setAspect(a.id)} className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-medium ${aspect === a.id ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white/70"}`}>{a.label}</button>
+                  <button key={a.id} onClick={() => setAspect(a.id)} className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-medium ${aspect === a.id ? "bg-[#FF5A3C] text-white" : "bg-white/10 text-white/70"}`}>{a.label}</button>
                 ))}
               </div>
               <div className="flex gap-2">
                 <button onClick={() => setRotation(r => r - 90)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-white/10 text-white text-xs"><Icon name="RotateCcw" size={15} />Влево</button>
                 <button onClick={() => setRotation(r => r + 90)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-white/10 text-white text-xs"><Icon name="RotateCw" size={15} />Вправо</button>
-                <button onClick={() => setFlipH(v => !v)} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs ${flipH ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white"}`}><Icon name="FlipHorizontal" size={15} />Гориз.</button>
-                <button onClick={() => setFlipV(v => !v)} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs ${flipV ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white"}`}><Icon name="FlipVertical" size={15} />Верт.</button>
+                <button onClick={() => setFlipH(v => !v)} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs ${flipH ? "bg-[#FF5A3C] text-white" : "bg-white/10 text-white"}`}><Icon name="FlipHorizontal" size={15} />Гориз.</button>
+                <button onClick={() => setFlipV(v => !v)} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs ${flipV ? "bg-[#FF5A3C] text-white" : "bg-white/10 text-white"}`}><Icon name="FlipVertical" size={15} />Верт.</button>
               </div>
             </div>
           )}
@@ -623,12 +623,12 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
           {tab === "text" && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
-                <button onClick={addText} className="px-3 py-2 rounded-lg bg-[#fe2c55] text-white text-xs font-semibold flex items-center gap-1"><Icon name="Plus" size={14} />Добавить текст</button>
+                <button onClick={addText} className="px-3 py-2 rounded-lg bg-[#FF5A3C] text-white text-xs font-semibold flex items-center gap-1"><Icon name="Plus" size={14} />Добавить текст</button>
                 <button onClick={() => setTextBg(v => !v)} className={`px-3 py-2 rounded-lg text-xs ${textBg ? "bg-white/25 text-white" : "bg-white/10 text-white/70"}`}>Фон</button>
               </div>
               <div className="flex gap-1.5 overflow-x-auto">
                 {TEXT_COLORS.map(c => (
-                  <button key={c} onClick={() => { setTextColor(c); updateActive({ color: c }); }} className={`w-7 h-7 rounded-full flex-shrink-0 border-2 ${textColor === c ? "border-[#fe2c55]" : "border-white/20"}`} style={{ background: c }} />
+                  <button key={c} onClick={() => { setTextColor(c); updateActive({ color: c }); }} className={`w-7 h-7 rounded-full flex-shrink-0 border-2 ${textColor === c ? "border-[#FF5A3C]" : "border-white/20"}`} style={{ background: c }} />
                 ))}
               </div>
               <div className="flex gap-1.5 overflow-x-auto">
@@ -643,7 +643,7 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
                     key={opt.l}
                     onClick={() => updateActive({ scale: opt.s })}
                     disabled={!activeObj || activeObj.kind !== "text"}
-                    className={`px-3 py-1.5 rounded-lg flex-shrink-0 disabled:opacity-30 ${activeObj && activeObj.kind === "text" && Math.abs(activeObj.scale - opt.s) < 0.01 ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white/70"}`}
+                    className={`px-3 py-1.5 rounded-lg flex-shrink-0 disabled:opacity-30 ${activeObj && activeObj.kind === "text" && Math.abs(activeObj.scale - opt.s) < 0.01 ? "bg-[#FF5A3C] text-white" : "bg-white/10 text-white/70"}`}
                     style={{ fontWeight: 700, fontSize: 10 + opt.s * 4 }}
                   >
                     {opt.l}
@@ -665,14 +665,14 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
             <div className="space-y-2">
               <div className="flex gap-1.5 overflow-x-auto items-center">
                 {TEXT_COLORS.map(c => (
-                  <button key={c} onClick={() => setBrushColor(c)} className={`w-8 h-8 rounded-full flex-shrink-0 border-2 ${brushColor === c ? "border-[#fe2c55]" : "border-white/20"}`} style={{ background: c }} />
+                  <button key={c} onClick={() => setBrushColor(c)} className={`w-8 h-8 rounded-full flex-shrink-0 border-2 ${brushColor === c ? "border-[#FF5A3C]" : "border-white/20"}`} style={{ background: c }} />
                 ))}
                 <button onClick={() => setStrokes(s => s.slice(0, -1))} className="ml-auto px-3 py-2 rounded-lg bg-white/10 text-white text-xs flex items-center gap-1 flex-shrink-0"><Icon name="Undo2" size={14} />Отмена</button>
                 <button onClick={() => setStrokes([])} className="px-3 py-2 rounded-lg bg-white/10 text-white text-xs flex-shrink-0">Очистить</button>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-white/60 text-xs">Кисть</span>
-                <input type="range" min={2} max={40} value={brushSize} onChange={(e) => setBrushSize(Number(e.target.value))} className="flex-1 accent-[#fe2c55]" />
+                <input type="range" min={2} max={40} value={brushSize} onChange={(e) => setBrushSize(Number(e.target.value))} className="flex-1 accent-[#FF5A3C]" />
               </div>
             </div>
           )}
@@ -685,7 +685,7 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
             <span className="text-[9px]">Сброс</span>
           </button>
           {TABS.map(t => (
-            <button key={t.id} onClick={() => { setTab(t.id); setActiveOverlay(null); }} className={`flex flex-col items-center gap-0.5 px-2 py-1 ${tab === t.id ? "text-[#fe2c55]" : "text-white/70"}`}>
+            <button key={t.id} onClick={() => { setTab(t.id); setActiveOverlay(null); }} className={`flex flex-col items-center gap-0.5 px-2 py-1 ${tab === t.id ? "text-[#FF5A3C]" : "text-white/70"}`}>
               <Icon name={t.icon} size={18} />
               <span className="text-[9px]">{t.label}</span>
             </button>
@@ -702,10 +702,10 @@ const PhotoEditor = ({ src, onCancel, onApply }: PhotoEditorProps) => {
               value={editingText.value}
               onChange={(e) => setEditingText({ ...editingText, value: e.target.value })}
               onKeyDown={(e) => { if (e.key === "Enter") { updateActive({ value: editingText.value || "Текст" }); setEditingText(null); } }}
-              className="w-full bg-transparent text-center text-white text-3xl font-bold outline-none border-b-2 border-[#fe2c55] pb-2"
+              className="w-full bg-transparent text-center text-white text-3xl font-bold outline-none border-b-2 border-[#FF5A3C] pb-2"
               placeholder="Введите текст"
             />
-            <button onClick={() => { updateActive({ value: editingText.value || "Текст" }); setEditingText(null); }} className="mt-6 w-full py-3 rounded-xl bg-[#fe2c55] text-white font-bold">Готово</button>
+            <button onClick={() => { updateActive({ value: editingText.value || "Текст" }); setEditingText(null); }} className="mt-6 w-full py-3 rounded-xl bg-[#FF5A3C] text-white font-bold">Готово</button>
           </div>
         </div>
       )}

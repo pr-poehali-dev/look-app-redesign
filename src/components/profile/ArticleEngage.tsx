@@ -65,7 +65,7 @@ const ArticleEngage = ({ articleId, title, cover, authorName, authorHandle }: Pr
       <div className="flex-1 min-w-0">
         <p className="text-xs text-gray-500 flex items-center gap-1.5">
           <span className="font-semibold text-black">{c.name}</span>
-          {isAuthor(c) && <span className="px-1.5 py-px rounded bg-[#fe2c55]/10 text-[#fe2c55] text-[10px] font-bold">Автор</span>}
+          {isAuthor(c) && <span className="px-1.5 py-px rounded bg-[#FF5A3C]/10 text-[#FF5A3C] text-[10px] font-bold">Автор</span>}
         </p>
         <p className="text-black text-sm whitespace-pre-wrap break-words">{c.text}</p>
         <p className="text-gray-400 text-xs mt-0.5 flex gap-3">
@@ -74,7 +74,7 @@ const ArticleEngage = ({ articleId, title, cover, authorName, authorHandle }: Pr
         </p>
       </div>
       <button onClick={() => (guest ? needAuth() : toggleLike(c.id))} className="flex flex-col items-center gap-0.5 self-start pt-1">
-        <Icon name="Heart" size={16} className={c.liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-gray-400"} />
+        <Icon name="Heart" size={16} className={c.liked ? "text-[#FF5A3C] fill-[#FF5A3C]" : "text-gray-400"} />
         <span className="text-gray-400 text-[10px]">{c.likes}</span>
       </button>
     </div>
@@ -134,17 +134,17 @@ const ArticleEngage = ({ articleId, title, cover, authorName, authorHandle }: Pr
               className="flex-1 min-w-0 bg-transparent py-2.5 text-black text-sm outline-none"
             />
             {text.trim() ? (
-              <button onClick={submit} className="px-3 py-1 rounded-full bg-[#fe2c55] text-white text-xs font-semibold">Отправить</button>
+              <button onClick={submit} className="px-3 py-1 rounded-full bg-[#FF5A3C] text-white text-xs font-semibold">Отправить</button>
             ) : (
               <button onClick={() => (guest ? needAuth() : setShowEmoji((v) => !v))} className="p-1.5"><Icon name="Smile" size={20} className="text-gray-500" /></button>
             )}
           </div>
           <button onClick={guest ? needAuth : likes.toggle} className="flex items-center gap-1 active:scale-95 transition-transform">
-            <Icon name="Heart" size={24} className={likes.liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-black"} />
+            <Icon name="Heart" size={24} className={likes.liked ? "text-[#FF5A3C] fill-[#FF5A3C]" : "text-black"} />
             <span className="text-black text-xs font-semibold">{likes.count}</span>
           </button>
           <button onClick={guest ? needAuth : save.toggle} className="active:scale-95 transition-transform">
-            <Icon name="Bookmark" size={24} className={save.saved ? "text-[#fe2c55] fill-[#fe2c55]" : "text-black"} />
+            <Icon name="Bookmark" size={24} className={save.saved ? "text-[#FF5A3C] fill-[#FF5A3C]" : "text-black"} />
           </button>
           <button onClick={() => listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} className="flex items-center gap-1 active:scale-95 transition-transform">
             <Icon name="MessageSquare" size={24} className="text-black" />

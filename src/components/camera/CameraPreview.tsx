@@ -208,7 +208,7 @@ const CameraPreview = ({
             {uploadedMedia.type === "image" && onEditPhoto && (
               <button
                 onClick={onEditPhoto}
-                className="absolute top-4 right-4 md:top-5 md:right-5 flex items-center gap-1.5 pl-3 pr-3.5 py-2 rounded-full bg-[#fe2c55] backdrop-blur-sm active:scale-95 transition-transform"
+                className="absolute top-4 right-4 md:top-5 md:right-5 flex items-center gap-1.5 pl-3 pr-3.5 py-2 rounded-full bg-[#FF5A3C] backdrop-blur-sm active:scale-95 transition-transform"
               >
                 <Icon name="Wand2" size={16} className="text-white" />
                 <span className="text-white text-sm font-semibold">Редактировать</span>
@@ -222,7 +222,7 @@ const CameraPreview = ({
             <div className="hidden md:block bg-zinc-900/60 border border-white/10 rounded-2xl p-3 mb-1">
               <p className="text-white/40 text-[10px] mb-2 font-semibold uppercase tracking-wider">Так увидят твой пост</p>
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#8b5cf6] to-[#fe2c55]" />
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#8b5cf6] to-[#FF5A3C]" />
                 <span className="text-white text-xs font-semibold">ты</span>
               </div>
               <div className="rounded-xl overflow-hidden bg-black aspect-square mb-2">
@@ -261,10 +261,10 @@ const CameraPreview = ({
               <div className="flex gap-2">
                 <button
                   onClick={() => onDestinationChange("home")}
-                  className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl border transition-all ${destination === "home" ? "bg-[#fe2c55]/20 border-[#fe2c55]" : "bg-white/5 border-white/10"}`}
+                  className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl border transition-all ${destination === "home" ? "bg-[#FF5A3C]/20 border-[#FF5A3C]" : "bg-white/5 border-white/10"}`}
                 >
-                  <Icon name="Play" size={20} className={destination === "home" ? "text-[#fe2c55]" : "text-white/50"} />
-                  <span className={`text-xs font-semibold ${destination === "home" ? "text-[#fe2c55]" : "text-white/50"}`}>Главная</span>
+                  <Icon name="Play" size={20} className={destination === "home" ? "text-[#FF5A3C]" : "text-white/50"} />
+                  <span className={`text-xs font-semibold ${destination === "home" ? "text-[#FF5A3C]" : "text-white/50"}`}>Главная</span>
                   <span className="text-white/30 text-[10px]">Видеолента</span>
                 </button>
                 <button
@@ -420,7 +420,7 @@ const CameraPreview = ({
       )}
 
       {recording && (
-        <div className="absolute inset-0 border-[3px] border-[#fe2c55] pointer-events-none z-10" />
+        <div className="absolute inset-0 border-[3px] border-[#FF5A3C] pointer-events-none z-10" />
       )}
     </div>
   );

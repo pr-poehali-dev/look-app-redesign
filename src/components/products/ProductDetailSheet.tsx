@@ -67,7 +67,7 @@ const ProductDetailSheet = ({ product: p, videoId, onClose }: Props) => {
             <Icon name="X" size={18} className="text-white" />
           </button>
           {discount > 0 && (
-            <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-[#fe2c55] text-white text-xs font-bold">
+            <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-[#FF5A3C] text-white text-xs font-bold">
               -{discount}%
             </span>
           )}
@@ -75,7 +75,7 @@ const ProductDetailSheet = ({ product: p, videoId, onClose }: Props) => {
 
         <div className="px-4 pt-4 pb-6 flex flex-col gap-3">
           <div className="flex items-baseline gap-2">
-            <span className="text-[#fe2c55] text-2xl font-extrabold">{p.price > 0 ? `${p.price.toLocaleString("ru-RU")} ₽` : "Бесплатно"}</span>
+            <span className="text-[#FF5A3C] text-2xl font-extrabold">{p.price > 0 ? `${p.price.toLocaleString("ru-RU")} ₽` : "Бесплатно"}</span>
             {discount > 0 && p.old_price && (
               <span className="text-white/40 text-sm line-through">{p.old_price.toLocaleString("ru-RU")} ₽</span>
             )}
@@ -84,7 +84,7 @@ const ProductDetailSheet = ({ product: p, videoId, onClose }: Props) => {
           <h3 className="text-white text-base font-semibold leading-snug">{p.title}</h3>
 
           {p.promo_code && (
-            <span className="inline-block w-fit px-2.5 py-1 rounded-full bg-[#fe2c55]/20 text-[#fe2c55] text-xs font-bold">
+            <span className="inline-block w-fit px-2.5 py-1 rounded-full bg-[#FF5A3C]/20 text-[#FF5A3C] text-xs font-bold">
               Промокод: {p.promo_code}
             </span>
           )}
@@ -131,7 +131,7 @@ const ProductDetailSheet = ({ product: p, videoId, onClose }: Props) => {
               <button
                 onClick={goExternal}
                 disabled={p.in_stock === false}
-                className="flex-1 h-12 rounded-full bg-[#fe2c55] text-white text-sm font-bold active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 h-12 rounded-full bg-[#FF5A3C] text-white text-sm font-bold active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 <Icon name="ExternalLink" size={17} />
                 Перейти на сайт продавца

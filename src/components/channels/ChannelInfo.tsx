@@ -118,7 +118,7 @@ const ChannelInfo = ({ channel, onClose, onChanged }: Props) => {
         <button onClick={onClose}><Icon name="ChevronLeft" size={24} className="text-white" /></button>
         <p className="text-white font-bold text-base flex-1">О канале</p>
         {isAdmin && (
-          <button onClick={save} disabled={saving || !name.trim()} className="px-4 py-1.5 rounded-full bg-[#fe2c55] text-white text-xs font-bold disabled:opacity-50">
+          <button onClick={save} disabled={saving || !name.trim()} className="px-4 py-1.5 rounded-full bg-[#FF5A3C] text-white text-xs font-bold disabled:opacity-50">
             {saving ? "Сохраняю…" : "Сохранить"}
           </button>
         )}
@@ -129,7 +129,7 @@ const ChannelInfo = ({ channel, onClose, onChanged }: Props) => {
           <button
             disabled={!isAdmin}
             onClick={() => fileRef.current?.click()}
-            className="relative w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center"
+            className="relative w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-[#FF5A3C] to-[#8b5cf6] flex items-center justify-center"
           >
             {img ? <img loading="lazy" decoding="async" src={img} className="w-full h-full object-cover" alt="" /> : <Icon name="Megaphone" size={36} className="text-white" />}
             {isAdmin && (
@@ -169,7 +169,7 @@ const ChannelInfo = ({ channel, onClose, onChanged }: Props) => {
         <p className="px-4 pb-2 text-white/40 text-xs uppercase tracking-wide">Подписчики: {members.length}</p>
         {loading ? (
           <div className="flex justify-center py-8">
-            <div className="w-7 h-7 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
+            <div className="w-7 h-7 border-2 border-[#FF5A3C] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <div className="flex flex-col">
@@ -187,7 +187,7 @@ const ChannelInfo = ({ channel, onClose, onChanged }: Props) => {
                   <p className="text-white/40 text-xs">{m.online ? "в сети" : "не в сети"}</p>
                 </div>
                 {ROLE_LABELS[m.role] && (
-                  <span className="text-[#fe2c55] text-xs font-semibold">{ROLE_LABELS[m.role]}</span>
+                  <span className="text-[#FF5A3C] text-xs font-semibold">{ROLE_LABELS[m.role]}</span>
                 )}
                 {isAdmin && m.role !== "owner" && m.id !== user?.id && (
                   <Icon name="MoreVertical" size={16} className="text-white/30" />
@@ -225,12 +225,12 @@ const ChannelInfo = ({ channel, onClose, onChanged }: Props) => {
               </button>
             )}
             {(target.role !== "admin" || isOwner) && (
-              <button disabled={busy} onClick={() => runAction("kick")} className="w-full text-left px-5 py-4 text-[#fe2c55] text-sm flex items-center gap-3 disabled:opacity-50">
+              <button disabled={busy} onClick={() => runAction("kick")} className="w-full text-left px-5 py-4 text-[#FF5A3C] text-sm flex items-center gap-3 disabled:opacity-50">
                 <Icon name="UserMinus" size={18} /> Удалить из канала
               </button>
             )}
             {(target.role !== "admin" || isOwner) && (
-              <button disabled={busy} onClick={() => runAction("ban")} className="w-full text-left px-5 py-4 text-[#fe2c55] text-sm flex items-center gap-3 disabled:opacity-50">
+              <button disabled={busy} onClick={() => runAction("ban")} className="w-full text-left px-5 py-4 text-[#FF5A3C] text-sm flex items-center gap-3 disabled:opacity-50">
                 <Icon name="Ban" size={18} /> Заблокировать
               </button>
             )}

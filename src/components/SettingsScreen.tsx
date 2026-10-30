@@ -560,7 +560,7 @@ const EditProfileScreen = ({ onBack }: { onBack: () => void }) => {
 
         {/* Имя пользователя */}
         <div className="px-4 pt-5">
-          <label className="text-black text-base">Имя пользователя <span className="text-[#fe2c55]">*</span></label>
+          <label className="text-black text-base">Имя пользователя <span className="text-[#FF5A3C]">*</span></label>
           <input
             value={handle}
             onChange={e => setHandle(e.target.value.replace(/[^a-z0-9_.]/gi, ""))}
@@ -632,7 +632,7 @@ const EditProfileScreen = ({ onBack }: { onBack: () => void }) => {
 
         {/* Email */}
         <div className="px-4 pt-5">
-          <label className="text-black text-base">Email <span className="text-[#fe2c55]">*</span></label>
+          <label className="text-black text-base">Email <span className="text-[#FF5A3C]">*</span></label>
           <input
             value={email}
             onChange={e => setEmail(e.target.value)}
@@ -1098,14 +1098,14 @@ const DeleteAccountScreen = ({ onBack }: { onBack: () => void }) => {
           />
         </div>
         <label className="flex items-start gap-2.5 cursor-pointer">
-          <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#fe2c55]" />
+          <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#FF5A3C]" />
           <span className="text-xs text-gray-600 leading-snug">Я понимаю, что аккаунт и все данные будут удалены без возможности восстановления</span>
         </label>
-        {error && <p className="text-[#fe2c55] text-sm">{error}</p>}
+        {error && <p className="text-[#FF5A3C] text-sm">{error}</p>}
         <button
           onClick={submit}
           disabled={!password || !confirmed || loading}
-          className="w-full py-3.5 rounded-xl bg-[#fe2c55] text-white font-bold text-base disabled:opacity-40"
+          className="w-full py-3.5 rounded-xl bg-[#FF5A3C] text-white font-bold text-base disabled:opacity-40"
         >
           {loading ? "Удаляем..." : "Удалить аккаунт навсегда"}
         </button>
@@ -1235,8 +1235,8 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
 
       {user?.email && emailVerified === false && (
         <div className="mx-4 mt-3 rounded-2xl bg-white p-4 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-full bg-[#fe2c55]/10 flex items-center justify-center flex-shrink-0">
-            <Icon name="MailCheck" size={18} className="text-[#fe2c55]" />
+          <div className="w-9 h-9 rounded-full bg-[#FF5A3C]/10 flex items-center justify-center flex-shrink-0">
+            <Icon name="MailCheck" size={18} className="text-[#FF5A3C]" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-black font-semibold text-sm">Подтверждение email</p>
@@ -1247,7 +1247,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
             <button
               onClick={sendVerifyEmail}
               disabled={verifyStatus === "loading" || verifyStatus === "sent" || verifyStatus === "already"}
-              className="mt-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white text-xs font-semibold disabled:opacity-50"
+              className="mt-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white text-xs font-semibold disabled:opacity-50"
             >
               {verifyStatus === "loading" ? "Отправляем..." : verifyStatus === "sent" ? "Отправлено" : verifyStatus === "already" ? "Подтверждено" : "Отправить письмо"}
             </button>
@@ -1319,8 +1319,8 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
             }}
             className="w-full flex items-center gap-4 px-4 py-4 bg-white border-b border-gray-100 active:bg-gray-50"
           >
-            <Icon name="LogOut" size={22} className="text-[#fe2c55] flex-shrink-0" />
-            <span className="flex-1 text-[#fe2c55] font-semibold text-base text-left">{t("set.logout")}</span>
+            <Icon name="LogOut" size={22} className="text-[#FF5A3C] flex-shrink-0" />
+            <span className="flex-1 text-[#FF5A3C] font-semibold text-base text-left">{t("set.logout")}</span>
           </button>
         </div>
       </div>

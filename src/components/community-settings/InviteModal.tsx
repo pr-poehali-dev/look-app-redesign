@@ -60,7 +60,7 @@ const InviteModal = ({
         <div className="flex-1 overflow-y-auto px-2 pb-2" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.3) transparent" }}>
           {contactsLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-[#FF5A3C] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : filteredContacts.length === 0 ? (
             <div className="text-center py-12 text-white/40 text-sm">
@@ -74,14 +74,14 @@ const InviteModal = ({
                   key={c.id}
                   onClick={() => toggleSelect(c.id)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
-                    checked ? "bg-[#fe2c55]/15" : "hover:bg-white/5"
+                    checked ? "bg-[#FF5A3C]/15" : "hover:bg-white/5"
                   }`}
                 >
                   <div className="relative">
                     {c.avatar ? (
                       <img loading="lazy" decoding="async" src={c.avatar} className="w-10 h-10 rounded-full object-cover" alt={c.name} />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center text-white text-sm font-bold">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF5A3C] to-[#8b5cf6] flex items-center justify-center text-white text-sm font-bold">
                         {c.name.slice(0, 1).toUpperCase()}
                       </div>
                     )}
@@ -92,7 +92,7 @@ const InviteModal = ({
                   <span className="flex-1 text-left text-white text-sm">{c.name}</span>
                   <div
                     className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      checked ? "bg-[#fe2c55] border-[#fe2c55]" : "border-white/30"
+                      checked ? "bg-[#FF5A3C] border-[#FF5A3C]" : "border-white/30"
                     }`}
                   >
                     {checked && <Icon name="Check" size={12} className="text-white" />}
@@ -107,7 +107,7 @@ const InviteModal = ({
           <button
             onClick={onInvite}
             disabled={selectedIds.length === 0 || inviting}
-            className="w-full py-3 rounded-xl bg-[#fe2c55] text-white font-bold text-sm disabled:opacity-40"
+            className="w-full py-3 rounded-xl bg-[#FF5A3C] text-white font-bold text-sm disabled:opacity-40"
           >
             {inviting ? "Приглашаем..." : selectedIds.length > 0 ? `Пригласить (${selectedIds.length})` : "Выбери друзей"}
           </button>

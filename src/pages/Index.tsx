@@ -287,7 +287,7 @@ const Index = () => {
                       className={active ? "text-white" : "text-white/80"}
                     />
                     {tab.id === "messages" && totalUnread > 0 && (
-                      <div className="absolute -top-1 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#fe2c55] flex items-center justify-center">
+                      <div className="absolute -top-1 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FF5A3C] flex items-center justify-center">
                         <span className="text-white text-[10px] font-bold leading-none">
                           {totalUnread > 99 ? "99+" : totalUnread}
                         </span>
@@ -332,8 +332,8 @@ const Index = () => {
             onClick={handleLogout}
             className="flex items-center gap-4 px-4 py-2 rounded-xl hover:bg-white/5 transition-colors text-left"
           >
-            <Icon name="LogOut" size={22} className="text-[#fe2c55]" />
-            <span className="text-sm text-[#fe2c55]">Выйти</span>
+            <Icon name="LogOut" size={22} className="text-[#FF5A3C]" />
+            <span className="text-sm text-[#FF5A3C]">Выйти</span>
           </button>
           <button
             onClick={toggleTheme}
@@ -398,7 +398,7 @@ const Index = () => {
                   }}
                   className="cat-toggle-text cat-toggle-mobile-bg pointer-events-auto px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap text-white md:bg-white md:text-black flex items-center gap-1"
                 >
-                  {activeCategory === LIVE_CATEGORY.id && <Icon name="Radio" size={13} className="text-[#fe2c55]" />}
+                  {activeCategory === LIVE_CATEGORY.id && <Icon name="Radio" size={13} className="text-[#FF5A3C]" />}
                   {activeCategory === LIVE_CATEGORY.id ? t("tabs.live") : t(`cat.${activeCategory}`, { defaultValue: CATEGORIES.find((c) => c.id === activeCategory)?.label || t("cat.all") })}
                   <Icon name={(activeCategory === "all" && gridOpenVideoId !== null) ? "ArrowLeft" : (mobileCatOpen ? "ChevronUp" : "ChevronDown")} size={14} className="cat-toggle-icon md:text-black text-white" />
                 </button>
@@ -419,7 +419,7 @@ const Index = () => {
                         }}
                         className="px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1"
                         style={{
-                          background: activeCategory === LIVE_CATEGORY.id ? "#fe2c55" : theme === "dark" ? "rgba(255,255,255,0.12)" : "rgba(13,42,24,0.08)",
+                          background: activeCategory === LIVE_CATEGORY.id ? "#FF5A3C" : theme === "dark" ? "rgba(255,255,255,0.12)" : "rgba(13,42,24,0.08)",
                           color: activeCategory === LIVE_CATEGORY.id ? "#fff" : theme === "dark" ? "rgba(255,255,255,0.9)" : "#0d2a18",
                         }}
                       >
@@ -549,7 +549,7 @@ const Index = () => {
                         className={activeTab === tab.id ? "text-white" : "text-white/50 opacity-50"}
                       />
                       {tab.id === "messages" && totalUnread > 0 && (
-                        <div className="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-[#fe2c55] flex items-center justify-center">
+                        <div className="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-[#FF5A3C] flex items-center justify-center">
                           <span className="text-white text-[9px] font-bold leading-none">
                             {totalUnread > 99 ? "99+" : totalUnread}
                           </span>

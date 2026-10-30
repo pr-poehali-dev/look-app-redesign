@@ -1056,7 +1056,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
         return <PollMessage pollId={pollData.poll_id} communityId={communityId} isMe={isMe} time={msg.time} />;
       }
       return (
-        <div className={`px-4 py-2.5 rounded-2xl max-w-[78%] ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
+        <div className={`px-4 py-2.5 rounded-2xl max-w-[78%] ${isMe ? "bg-[#FF5A3C] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
           <p className="text-white text-sm">📊 {t("cr.poll")}</p>
           <div className="flex items-center justify-end gap-1 mt-1">
             <DisappearBadge msg={msg} />
@@ -1118,7 +1118,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
         );
       }
       return (
-        <div className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl max-w-[78%] ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
+        <div className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl max-w-[78%] ${isMe ? "bg-[#FF5A3C] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
           <a
             href={info.data || "#"}
             download={info.name || "file"}
@@ -1145,9 +1145,9 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       try { loc = JSON.parse(msg.content); } catch { void 0; }
       const url = loc.lat && loc.lng ? `https://www.openstreetmap.org/?mlat=${loc.lat}&mlon=${loc.lng}#map=16/${loc.lat}/${loc.lng}` : "#";
       return (
-        <a href={url} target="_blank" rel="noopener noreferrer" className={`block max-w-[70%] rounded-2xl overflow-hidden ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
+        <a href={url} target="_blank" rel="noopener noreferrer" className={`block max-w-[70%] rounded-2xl overflow-hidden ${isMe ? "bg-[#FF5A3C] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
           <div className="h-28 bg-[#2a2a2a] flex items-center justify-center relative">
-            <Icon name="MapPin" size={32} className="text-[#fe2c55]" />
+            <Icon name="MapPin" size={32} className="text-[#FF5A3C]" />
           </div>
           <div className="px-3 py-2">
             <p className="text-white text-sm font-medium">{t("cr.location")}</p>
@@ -1165,7 +1165,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       let info: { id?: string; name?: string; avatar?: string } = {};
       try { info = JSON.parse(msg.content); } catch { void 0; }
       return (
-        <div className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl max-w-[78%] ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
+        <div className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl max-w-[78%] ${isMe ? "bg-[#FF5A3C] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
           <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
             <UserAvatar src={info.avatar} name={info.name || "?"} alt={info.name || ""} />
           </div>
@@ -1208,7 +1208,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
       return <VoiceMessageBubble {...commonProps} />;
     }
     return (
-      <div className={`px-4 py-2.5 rounded-2xl max-w-[78%] ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
+      <div className={`px-4 py-2.5 rounded-2xl max-w-[78%] ${isMe ? "bg-[#FF5A3C] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
         <p className="text-white text-sm leading-snug break-words"><LinkifiedText text={msg.content} className={isMe ? "text-white font-semibold underline underline-offset-2 break-all" : undefined} /></p>
         <div className={`flex items-center gap-1.5 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
           <DisappearBadge msg={msg} />
@@ -1530,7 +1530,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                       <button onClick={() => { setMenuOpen(false); setShowDisappear(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{t("cr.disappearing")}</button>
                       <button onClick={() => { setMenuOpen(false); setShowTheme(true); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{t("cr.chatTheme")}</button>
                       {isGroup && (
-                        <button onClick={() => { setMenuOpen(false); leaveGroup(); }} className="w-full text-left px-4 py-3 text-[#fe2c55] text-sm hover:bg-white/5 flex items-center gap-2">
+                        <button onClick={() => { setMenuOpen(false); leaveGroup(); }} className="w-full text-left px-4 py-3 text-[#FF5A3C] text-sm hover:bg-white/5 flex items-center gap-2">
                           <Icon name="LogOut" size={15} />
                           <span>{t("cr.leaveGroup")}</span>
                         </button>
@@ -1552,7 +1552,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                       <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); exportChat(); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{t("cr.exportChat")}</button>
                       <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); addToHomescreen(); }} className="w-full text-left px-4 py-3 text-white text-sm hover:bg-white/5">{t("cr.addIcon")}</button>
                       <div className="my-1 h-px bg-white/8" />
-                      <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); setConfirmDeleteChat(true); }} className="w-full text-left px-4 py-3 text-[#fe2c55] text-sm hover:bg-white/5 flex items-center gap-2">
+                      <button onClick={() => { setMenuOpen(false); setSubmenuOpen(false); setConfirmDeleteChat(true); }} className="w-full text-left px-4 py-3 text-[#FF5A3C] text-sm hover:bg-white/5 flex items-center gap-2">
                         <Icon name="Trash2" size={15} />
                         <span>{t("cr.deleteChat")}</span>
                       </button>
@@ -1660,7 +1660,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
             >
               <Icon name="ChevronDown" size={22} className="text-white" />
               {newBelow > 0 && (
-                <span className="absolute -top-2 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[#fe2c55] text-white text-[11px] font-bold flex items-center justify-center">
+                <span className="absolute -top-2 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[#FF5A3C] text-white text-[11px] font-bold flex items-center justify-center">
                   {newBelow > 99 ? "99+" : newBelow}
                 </span>
               )}
@@ -1683,7 +1683,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
               <button
                 key={t.id}
                 onClick={() => setEmojiTab(t.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${emojiTab === t.id ? "bg-[#fe2c55] text-white" : "bg-white/8 text-white/60 hover:bg-white/15"}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${emojiTab === t.id ? "bg-[#FF5A3C] text-white" : "bg-white/8 text-white/60 hover:bg-white/15"}`}
               >
                 <Icon name={t.icon} size={15} />
                 {t.label}
@@ -1698,7 +1698,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                   <button
                     key={c.id}
                     onClick={() => setEmojiCat(c.id)}
-                    className={`w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg transition-colors ${emojiCat === c.id ? "bg-white/15 text-[#fe2c55]" : "text-white/50 hover:bg-white/10"}`}
+                    className={`w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg transition-colors ${emojiCat === c.id ? "bg-white/15 text-[#FF5A3C]" : "text-white/50 hover:bg-white/10"}`}
                   >
                     <Icon name={c.icon} size={18} />
                   </button>
@@ -1757,7 +1757,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                     <button
                       key={s}
                       onClick={() => setGifQuery(q)}
-                      className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${active ? "bg-[#fe2c55] text-white" : "bg-white/8 text-white/70 hover:bg-white/15"}`}
+                      className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${active ? "bg-[#FF5A3C] text-white" : "bg-white/8 text-white/70 hover:bg-white/15"}`}
                     >
                       {s}
                     </button>
@@ -1839,11 +1839,11 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
 
         {recording ? (
           <div className="flex-1 flex items-center gap-3 bg-[#1a1a1a] rounded-3xl px-4 py-3">
-            <div className="w-2 h-2 rounded-full bg-[#fe2c55] animate-pulse" />
+            <div className="w-2 h-2 rounded-full bg-[#FF5A3C] animate-pulse" />
             <span className="text-white/60 text-sm flex-1">
               {String(Math.floor(recSecs / 60)).padStart(2, "0")}:{String(recSecs % 60).padStart(2, "0")} / {String(Math.floor(MAX_VOICE_SEC / 60)).padStart(2, "0")}:{String(MAX_VOICE_SEC % 60).padStart(2, "0")}
             </span>
-            <button onPointerUp={stopVoice} className="text-[#fe2c55]">
+            <button onPointerUp={stopVoice} className="text-[#FF5A3C]">
               <Icon name="Send" size={20} />
             </button>
           </div>
@@ -1858,7 +1858,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
               className="flex-1 bg-transparent text-white text-base outline-none resize-none placeholder-white/30 max-h-32 leading-snug"
               style={{ scrollbarWidth: "none" }}
             />
-            <button onClick={() => setShowEmoji((v) => !v)} className={`flex-shrink-0 mb-0.5 transition-colors ${showEmoji ? "text-[#fe2c55]" : "text-white/40"}`}>
+            <button onClick={() => setShowEmoji((v) => !v)} className={`flex-shrink-0 mb-0.5 transition-colors ${showEmoji ? "text-[#FF5A3C]" : "text-white/40"}`}>
               <Icon name="Smile" size={20} />
             </button>
           </div>
@@ -1868,7 +1868,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
           <button
             onClick={handleSend}
             disabled={sending}
-            className="w-10 h-10 rounded-full bg-[#fe2c55] flex items-center justify-center flex-shrink-0 shadow-[0_0_16px_rgba(254,44,85,0.4)] disabled:opacity-50"
+            className="w-10 h-10 rounded-full bg-[#FF5A3C] flex items-center justify-center flex-shrink-0 shadow-[0_0_16px_rgba(254,44,85,0.4)] disabled:opacity-50"
           >
             <Icon name="Send" size={17} className="text-white" />
           </button>
@@ -1927,7 +1927,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
             )}
             <button
               onClick={() => deleteMessage(confirmDelete!)}
-              className="w-full flex items-center gap-3 px-4 py-3 text-[#fe2c55] text-sm hover:bg-white/5 rounded-lg"
+              className="w-full flex items-center gap-3 px-4 py-3 text-[#FF5A3C] text-sm hover:bg-white/5 rounded-lg"
             >
               <Icon name="Trash2" size={18} />
               <span>{t("cr.delMsg")}</span>
@@ -2003,7 +2003,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
             <p className="text-white/50 text-sm mb-5">{blocked ? t("cr.unblockText", { name: displayName }) : t("cr.blockText", { name: displayName })}</p>
             <div className="flex gap-2">
               <button onClick={() => setShowBlock(false)} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm">{t("cr.cancel")}</button>
-              <button onClick={toggleBlock} className="flex-1 py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold">{blocked ? t("cr.unblock") : t("cr.block")}</button>
+              <button onClick={toggleBlock} className="flex-1 py-2.5 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold">{blocked ? t("cr.unblock") : t("cr.block")}</button>
             </div>
           </div>
         </div>
@@ -2039,7 +2039,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
               { v: "7 дней", l: t("cr.d7") },
               { v: "90 дней", l: t("cr.d90") },
             ].map(o => (
-              <button key={o.v} onClick={() => setDisappear(o.v)} className={`w-full text-left px-3 py-3 text-sm hover:bg-white/5 rounded-lg flex items-center justify-between ${disappearTimer === o.v ? "text-[#fe2c55]" : "text-white"}`}>
+              <button key={o.v} onClick={() => setDisappear(o.v)} className={`w-full text-left px-3 py-3 text-sm hover:bg-white/5 rounded-lg flex items-center justify-between ${disappearTimer === o.v ? "text-[#FF5A3C]" : "text-white"}`}>
                 <span>{o.l}</span>
                 {disappearTimer === o.v && <Icon name="Check" size={16} />}
               </button>
@@ -2062,7 +2062,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                 { v: "purple", l: t("cr.themePurple") },
                 { v: "green", l: t("cr.themeGreen") },
               ].map(t => (
-                <button key={t.v} onClick={() => applyTheme(t.v)} className={`flex flex-col items-center gap-2 p-2 rounded-xl border-2 ${chatTheme === t.v ? "border-[#fe2c55]" : "border-transparent"}`}>
+                <button key={t.v} onClick={() => applyTheme(t.v)} className={`flex flex-col items-center gap-2 p-2 rounded-xl border-2 ${chatTheme === t.v ? "border-[#FF5A3C]" : "border-transparent"}`}>
                   <div className="w-full h-16 rounded-lg" style={{ backgroundColor: themeBg[t.v] }} />
                   <span className="text-white/70 text-xs">{t.l}</span>
                 </button>
@@ -2123,7 +2123,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
               <button onClick={() => clearChat(false)} className="w-full py-3 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/15">
                 {t("cr.clearMe")}
               </button>
-              <button onClick={() => clearChat(true)} className="w-full py-3 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold hover:opacity-90">
+              <button onClick={() => clearChat(true)} className="w-full py-3 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold hover:opacity-90">
                 {t("cr.clearAll")}
               </button>
               <button onClick={() => setConfirmClear(false)} className="w-full py-2.5 rounded-xl text-white/60 text-sm">
@@ -2139,13 +2139,13 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
         <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center px-6" onClick={() => setConfirmDeleteChat(false)}>
           <div className="bg-[#1a1a1a] rounded-2xl p-5 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2 mb-2">
-              <Icon name="Trash2" size={18} className="text-[#fe2c55]" />
+              <Icon name="Trash2" size={18} className="text-[#FF5A3C]" />
               <p className="text-white text-base font-semibold">{t("cr.deleteChatQ")}</p>
             </div>
             <p className="text-white/50 text-sm mb-5">{t("cr.deleteChatText", { name: displayName })}</p>
             <div className="flex gap-2">
               <button onClick={() => setConfirmDeleteChat(false)} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm">{t("cr.cancel")}</button>
-              <button onClick={deleteChat} className="flex-1 py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold">{t("cr.delete")}</button>
+              <button onClick={deleteChat} className="flex-1 py-2.5 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold">{t("cr.delete")}</button>
             </div>
           </div>
         </div>
@@ -2209,7 +2209,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                           <p className="text-white font-semibold text-sm truncate">{u.name}</p>
                           <p className="text-white/40 text-xs truncate">{u.handle ? `@${u.handle}` : (u.phone || "")}</p>
                         </div>
-                        <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${selected ? "bg-[#fe2c55] border-[#fe2c55]" : "border-white/30"}`}>
+                        <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${selected ? "bg-[#FF5A3C] border-[#FF5A3C]" : "border-white/30"}`}>
                           {selected && <Icon name="Check" size={12} className="text-white" />}
                         </div>
                       </button>
@@ -2221,7 +2221,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                 <button
                   onClick={handleAddMembers}
                   disabled={selectedNewMembers.length === 0 || addingMembers}
-                  className="w-full py-3.5 rounded-xl bg-[#fe2c55] text-white font-bold text-base disabled:opacity-40"
+                  className="w-full py-3.5 rounded-xl bg-[#FF5A3C] text-white font-bold text-base disabled:opacity-40"
                 >
                   {addingMembers ? t("cr.adding") : `${t("cr.add")}${selectedNewMembers.length > 0 ? ` (${selectedNewMembers.length})` : ""}`}
                 </button>
@@ -2253,7 +2253,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
             )}
             {videoNoteRecording && (
               <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/50 px-3 py-1 rounded-full">
-                <div className="w-2 h-2 rounded-full bg-[#fe2c55] animate-pulse" />
+                <div className="w-2 h-2 rounded-full bg-[#FF5A3C] animate-pulse" />
                 <span className="text-white text-xs">
                   {String(Math.floor(videoNoteSecs / 60)).padStart(2, "0")}:{String(videoNoteSecs % 60).padStart(2, "0")}
                 </span>
@@ -2271,7 +2271,7 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                   <span className="text-white/50 text-xs">{t("cr.again")}</span>
                 </button>
                 <button onClick={sendVideoNote} className="flex flex-col items-center gap-1.5">
-                  <div className="w-16 h-16 rounded-full bg-[#fe2c55] flex items-center justify-center shadow-[0_0_20px_rgba(254,44,85,0.4)]">
+                  <div className="w-16 h-16 rounded-full bg-[#FF5A3C] flex items-center justify-center shadow-[0_0_20px_rgba(254,44,85,0.4)]">
                     <Icon name="Send" size={26} className="text-white" />
                   </div>
                   <span className="text-white/70 text-xs">{t("cr.send")}</span>
@@ -2288,13 +2288,13 @@ const ChatRoom = ({ chat, onBack, onDeleted }: ChatRoomProps) => {
                 </button>
                 <button
                   onClick={videoNoteRecording ? stopVideoNote : startVideoNote}
-                  className={`w-18 h-18 rounded-full border-4 border-white flex items-center justify-center transition-all ${videoNoteRecording ? "bg-[#fe2c55]" : "bg-transparent"}`}
+                  className={`w-18 h-18 rounded-full border-4 border-white flex items-center justify-center transition-all ${videoNoteRecording ? "bg-[#FF5A3C]" : "bg-transparent"}`}
                   style={{ width: 68, height: 68 }}
                 >
                   {videoNoteRecording ? (
                     <div className="w-6 h-6 rounded-sm bg-white" />
                   ) : (
-                    <div className="w-14 h-14 rounded-full bg-[#fe2c55]" />
+                    <div className="w-14 h-14 rounded-full bg-[#FF5A3C]" />
                   )}
                 </button>
                 <div className="w-12 h-12" />

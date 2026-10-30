@@ -14,7 +14,7 @@ const ChallengeBanner = () => {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-left bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] active:scale-[0.99] transition-transform"
+        className="w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-left bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] active:scale-[0.99] transition-transform"
       >
         <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
           <Icon name="Trophy" size={20} className="text-white" />

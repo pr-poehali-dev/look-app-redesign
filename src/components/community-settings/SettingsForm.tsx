@@ -57,7 +57,7 @@ const SettingsForm = ({
         {displayImg ? (
           <img loading="lazy" decoding="async" src={displayImg} className="w-full h-full object-cover" alt={name} />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-[#fe2c55]/30 to-[#8b5cf6]/30" />
+          <div className="w-full h-full bg-gradient-to-br from-[#FF5A3C]/30 to-[#8b5cf6]/30" />
         )}
         {isOwner && (
           <button
@@ -105,7 +105,7 @@ const SettingsForm = ({
               onClick={() => isOwner && setType(t)}
               disabled={!isOwner}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-60 ${
-                type === t ? "bg-[#fe2c55] text-white" : "bg-white/8 text-white/50"
+                type === t ? "bg-[#FF5A3C] text-white" : "bg-white/8 text-white/50"
               }`}
             >
               <Icon name={t === "open" ? "Globe" : "Lock"} size={14} />
@@ -138,7 +138,7 @@ const SettingsForm = ({
         <div className="flex gap-2">
           <button
             onClick={onShowInvite}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-bold"
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#FF5A3C] text-white text-sm font-bold"
           >
             <Icon name="UserPlus" size={16} />
             Выбрать друзей
@@ -189,8 +189,8 @@ const SettingsForm = ({
       <div className="flex flex-col gap-1.5 mt-2">
         <label className="text-white/50 text-xs font-semibold uppercase tracking-wide">Статистика</label>
         <div className="bg-[#111] rounded-xl border border-white/10 p-3 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#fe2c55]/20 flex items-center justify-center">
-            <Icon name="Users" size={18} className="text-[#fe2c55]" />
+          <div className="w-10 h-10 rounded-full bg-[#FF5A3C]/20 flex items-center justify-center">
+            <Icon name="Users" size={18} className="text-[#FF5A3C]" />
           </div>
           <div>
             <div className="text-white font-bold text-sm">{community.members}</div>

@@ -283,7 +283,7 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
       {showInfo && <ChannelInfo channel={channel} onClose={() => setShowInfo(false)} onChanged={onChanged} />}
       <div className="flex items-center gap-3 px-3 pt-14 pb-3 border-b border-white/8">
         <button onClick={onBack}><Icon name="ChevronLeft" size={24} className="text-white" /></button>
-        <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center flex-shrink-0">
+        <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-[#FF5A3C] to-[#8b5cf6] flex items-center justify-center flex-shrink-0">
           {channel.img ? <img loading="lazy" decoding="async" src={channel.img} className="w-full h-full object-cover" alt="" /> : <Icon name="Megaphone" size={18} className="text-white" />}
         </div>
         <button onClick={() => setShowInfo(true)} className="flex-1 min-w-0 text-left">
@@ -293,14 +293,14 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
         {!canPost && (
           <button
             onClick={toggleSub}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold ${channel.joined ? "bg-white/10 text-white/70" : "bg-[#fe2c55] text-white"}`}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold ${channel.joined ? "bg-white/10 text-white/70" : "bg-[#FF5A3C] text-white"}`}
           >
             {channel.joined ? "Отписаться" : "Подписаться"}
           </button>
         )}
         {canPost && (
           <button onClick={deleteChannel} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0" title="Удалить канал">
-            <Icon name="Trash2" size={17} className="text-[#fe2c55]" />
+            <Icon name="Trash2" size={17} className="text-[#FF5A3C]" />
           </button>
         )}
         {canPost && (
@@ -319,7 +319,7 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
 
       {pinned && (
         <button onClick={() => scrollToPost(pinned.message_id)} className="flex items-center gap-2 px-4 py-2 bg-white/5 border-b border-white/8 text-left">
-          <Icon name="Pin" size={14} className="text-[#fe2c55] flex-shrink-0" />
+          <Icon name="Pin" size={14} className="text-[#FF5A3C] flex-shrink-0" />
           <span className="text-white/70 text-xs truncate">
             {pinned.type === "image" ? "Фото" : pinned.type === "video" ? "Видео" : pinned.type === "poll" ? "Опрос" : pinned.content}
           </span>
@@ -354,7 +354,7 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
                 <span className="flex items-center gap-1"><Icon name="Eye" size={12} />{st?.views ?? 0}</span>
                 <span className="flex items-center gap-3">
                   {canPost && (
-                    <button onClick={() => togglePin(post)} className={pinned?.message_id === post.id ? "text-[#fe2c55]" : "text-white/40"} title="Закрепить">
+                    <button onClick={() => togglePin(post)} className={pinned?.message_id === post.id ? "text-[#FF5A3C]" : "text-white/40"} title="Закрепить">
                       <Icon name="Pin" size={13} />
                     </button>
                   )}
@@ -366,7 +366,7 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
                   <button
                     key={emoji}
                     onClick={() => react(post, emoji)}
-                    className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${st?.my_reaction === emoji ? "bg-[#fe2c55]/30 border border-[#fe2c55]" : "bg-white/10 border border-transparent"}`}
+                    className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${st?.my_reaction === emoji ? "bg-[#FF5A3C]/30 border border-[#FF5A3C]" : "bg-white/10 border border-transparent"}`}
                   >
                     <span>{emoji}</span><span className="text-white/80">{n}</span>
                   </button>
@@ -415,7 +415,7 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
           <button
             onClick={() => publish(text, "text")}
             disabled={!text.trim() || sending}
-            className="w-10 h-10 rounded-full bg-[#fe2c55] flex items-center justify-center flex-shrink-0 disabled:opacity-40"
+            className="w-10 h-10 rounded-full bg-[#FF5A3C] flex items-center justify-center flex-shrink-0 disabled:opacity-40"
           >
             <Icon name="Send" size={17} className="text-white" />
           </button>
@@ -448,7 +448,7 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
           {!canInteract ? (
             <div className="flex items-center justify-between gap-3 px-4 pb-24 pt-3 border-t border-white/8">
               <p className="text-white/50 text-sm">Комментировать могут только подписчики</p>
-              <button onClick={toggleSub} className="px-3 py-1.5 rounded-full bg-[#fe2c55] text-white text-xs font-bold flex-shrink-0">Подписаться</button>
+              <button onClick={toggleSub} className="px-3 py-1.5 rounded-full bg-[#FF5A3C] text-white text-xs font-bold flex-shrink-0">Подписаться</button>
             </div>
           ) : (
           <div className="flex items-center gap-2 px-3 pb-24 pt-3 border-t border-white/8">
@@ -459,7 +459,7 @@ const ChannelView = ({ channel, onBack, onChanged, onDeleted }: Props) => {
               placeholder="Написать комментарий..."
               className="flex-1 bg-[#1a1a1a] rounded-full px-4 py-2.5 text-white text-base outline-none placeholder-white/30"
             />
-            <button onClick={sendComment} disabled={!commentText.trim()} className="w-10 h-10 rounded-full bg-[#fe2c55] flex items-center justify-center disabled:opacity-40">
+            <button onClick={sendComment} disabled={!commentText.trim()} className="w-10 h-10 rounded-full bg-[#FF5A3C] flex items-center justify-center disabled:opacity-40">
               <Icon name="Send" size={17} className="text-white" />
             </button>
           </div>

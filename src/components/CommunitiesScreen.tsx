@@ -245,7 +245,7 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-1.5 bg-[#fe2c55] hover:bg-[#e0264c] active:scale-95 transition-all cursor-pointer px-3 py-1.5 rounded-full"
+          className="flex items-center gap-1.5 bg-[#FF5A3C] hover:bg-[#e0264c] active:scale-95 transition-all cursor-pointer px-3 py-1.5 rounded-full"
         >
           <Icon name="Plus" size={14} className="text-white" />
           <span className="text-white text-xs font-bold">Создать</span>
@@ -290,7 +290,7 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
                 key={t}
                 type="button"
                 onClick={() => setNewCategory(t)}
-                className={`px-3 py-1 rounded-full text-xs font-semibold border cursor-pointer ${newCategory === t ? "bg-[#fe2c55] border-[#fe2c55] text-white" : "bg-zinc-800 border-white/10 text-white/70"}`}
+                className={`px-3 py-1 rounded-full text-xs font-semibold border cursor-pointer ${newCategory === t ? "bg-[#FF5A3C] border-[#FF5A3C] text-white" : "bg-zinc-800 border-white/10 text-white/70"}`}
               >
                 {t}
               </button>
@@ -301,7 +301,7 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
               <button
                 key={t}
                 onClick={() => setNewType(t)}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer border ${newType === t ? "bg-[#fe2c55] text-white border-[#fe2c55]" : "bg-white/8 text-white/50 border-white/15 hover:bg-white/15"}`}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer border ${newType === t ? "bg-[#FF5A3C] text-white border-[#FF5A3C]" : "bg-white/8 text-white/50 border-white/15 hover:bg-white/15"}`}
               >
                 <Icon name={t === "open" ? "Globe" : "Lock"} size={14} />
                 {t === "open" ? "Открытое" : "Закрытое"}
@@ -311,7 +311,7 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
           <button
             onClick={handleCreate}
             disabled={!newName.trim() || creating}
-            className="py-2.5 rounded-xl bg-[#fe2c55] hover:bg-[#e0264c] active:scale-[0.99] transition-all cursor-pointer text-white font-bold text-sm disabled:opacity-40 disabled:hover:bg-[#fe2c55]"
+            className="py-2.5 rounded-xl bg-[#FF5A3C] hover:bg-[#e0264c] active:scale-[0.99] transition-all cursor-pointer text-white font-bold text-sm disabled:opacity-40 disabled:hover:bg-[#FF5A3C]"
           >
             {creating ? "Создаём..." : "Создать"}
           </button>
@@ -321,7 +321,7 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
       <div className="flex-1 overflow-y-scroll px-4 flex flex-col gap-3 pb-28" style={{ scrollbarWidth: "none" }}>
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-[#FF5A3C] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filtered.map(com => (
           <div key={com.id} className="bg-[#111] rounded-2xl overflow-hidden border border-white/8">
@@ -332,7 +332,7 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
               {com.img ? (
                 <img loading="lazy" decoding="async" src={com.img} className="w-full h-full object-cover opacity-70" alt={com.name} />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-[#fe2c55]/30 to-[#8b5cf6]/30" />
+                <div className="w-full h-full bg-gradient-to-br from-[#FF5A3C]/30 to-[#8b5cf6]/30" />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
               <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full">
@@ -345,7 +345,7 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
                   <span className="text-white text-[10px] font-bold">Админ</span>
                 </div>
               ) : com.joined ? (
-                <div className="absolute top-2 left-2 bg-[#fe2c55] px-2 py-0.5 rounded-full">
+                <div className="absolute top-2 left-2 bg-[#FF5A3C] px-2 py-0.5 rounded-full">
                   <span className="text-white text-[10px] font-bold">Участник</span>
                 </div>
               ) : null}
@@ -367,14 +367,14 @@ const CommunitiesScreen = ({ onBack, initialCommunityId, onInitialConsumed }: Pr
                 {com.is_admin ? (
                   <button
                     onClick={() => openCommunityChat(com)}
-                    className="flex-1 py-2 rounded-xl text-sm font-bold bg-[#fe2c55] text-white"
+                    className="flex-1 py-2 rounded-xl text-sm font-bold bg-[#FF5A3C] text-white"
                   >
                     Открыть чат
                   </button>
                 ) : (
                   <button
                     onClick={() => handleJoin(com)}
-                    className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${com.joined ? "bg-white/10 text-white/60" : "bg-[#fe2c55] text-white"}`}
+                    className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${com.joined ? "bg-white/10 text-white/60" : "bg-[#FF5A3C] text-white"}`}
                   >
                     {com.joined ? "Выйти" : com.type === "closed" ? "Подать заявку" : "Вступить"}
                   </button>

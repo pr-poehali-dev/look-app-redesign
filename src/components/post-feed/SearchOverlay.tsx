@@ -396,7 +396,7 @@ const SearchOverlay = ({ posts, onClose, onOpenPost, initialQuery = "" }: Props)
                     </div>
                     <div className="p-2.5">
                       <p className="text-white text-[12px] leading-snug line-clamp-2 mb-1">{p.title}</p>
-                      <span className="text-[#fe2c55] text-sm font-bold">{p.price.toLocaleString("ru-RU")} ₽</span>
+                      <span className="text-[#FF5A3C] text-sm font-bold">{p.price.toLocaleString("ru-RU")} ₽</span>
                     </div>
                   </a>
                 ))}
@@ -433,7 +433,7 @@ const SearchOverlay = ({ posts, onClose, onOpenPost, initialQuery = "" }: Props)
 
             <div>
               <div className="flex items-center gap-1.5 mb-3">
-                <Icon name="TrendingUp" size={14} className="text-[#fe2c55]" />
+                <Icon name="TrendingUp" size={14} className="text-[#FF5A3C]" />
                 <span className="text-white/50 text-xs font-semibold uppercase tracking-wide">В тренде</span>
               </div>
               <div className="flex flex-col gap-0.5">
@@ -443,9 +443,9 @@ const SearchOverlay = ({ posts, onClose, onOpenPost, initialQuery = "" }: Props)
                     onClick={() => setQuery(tag)}
                     className="flex items-center gap-3 py-2.5 active:bg-white/5 rounded-xl px-1"
                   >
-                    <span className={`text-sm font-bold w-5 text-center ${i < 3 ? "text-[#fe2c55]" : "text-white/30"}`}>{i + 1}</span>
+                    <span className={`text-sm font-bold w-5 text-center ${i < 3 ? "text-[#FF5A3C]" : "text-white/30"}`}>{i + 1}</span>
                     <span className="text-white text-sm flex-1 text-left">{popularQueries.includes(tag) ? tag : `#${tag}`}</span>
-                    <Icon name="Flame" size={14} className={i < 3 ? "text-[#fe2c55]" : "text-white/20"} />
+                    <Icon name="Flame" size={14} className={i < 3 ? "text-[#FF5A3C]" : "text-white/20"} />
                   </button>
                 ))}
                 {trendList.length === 0 && (

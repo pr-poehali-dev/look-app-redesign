@@ -69,7 +69,7 @@ const AddToBoardSheet = ({ itemType, itemId, image, title, onSaved, onClose }: P
             <button
               onClick={handleCreateAndAdd}
               disabled={!newTitle.trim()}
-              className="px-3 py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold disabled:opacity-50"
+              className="px-3 py-2.5 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold disabled:opacity-50"
             >
               Готово
             </button>
@@ -109,7 +109,7 @@ const AddToBoardSheet = ({ itemType, itemId, image, title, onSaved, onClose }: P
                     {!b.is_public && <Icon name="Lock" size={11} className="text-white/40" />}
                     {b.title}
                   </span>
-                  {added && <Icon name="Check" size={18} className="text-[#fe2c55]" />}
+                  {added && <Icon name="Check" size={18} className="text-[#FF5A3C]" />}
                 </button>
               );
             })}

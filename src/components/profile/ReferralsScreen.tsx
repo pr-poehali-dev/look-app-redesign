@@ -41,7 +41,7 @@ const ReferralsScreen = ({ onBack }: { onBack: () => void }) => {
           </div>
           <div className="bg-gray-50 rounded-2xl p-4">
             <p className="text-gray-400 text-xs mb-1">Заработано</p>
-            <p className="text-[#fe2c55] text-xl font-bold">{totalEarned.toLocaleString("ru-RU")} ₽</p>
+            <p className="text-[#FF5A3C] text-xl font-bold">{totalEarned.toLocaleString("ru-RU")} ₽</p>
           </div>
         </div>
 
@@ -75,7 +75,7 @@ const ReferralsScreen = ({ onBack }: { onBack: () => void }) => {
                     <span className="text-gray-500 text-xs">{r.clicks} переходов</span>
                     <span className="text-gray-500 text-xs">{r.orders_count} покупок</span>
                   </div>
-                  <span className="text-[#fe2c55] text-xs font-bold">{r.earned.toLocaleString("ru-RU")} ₽ заработано</span>
+                  <span className="text-[#FF5A3C] text-xs font-bold">{r.earned.toLocaleString("ru-RU")} ₽ заработано</span>
                 </div>
                 <button
                   onClick={() => copyLink(r.product_id, r.referral_code)}

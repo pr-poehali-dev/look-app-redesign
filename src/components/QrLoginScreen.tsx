@@ -107,13 +107,13 @@ const QrLoginScreen = ({ onBack }: Props) => {
           <div className="bg-white rounded-3xl p-6 flex flex-col items-center gap-4 w-full max-w-sm">
             <div className="relative">
               {status === "waiting" && code && (
-                <div className="p-3 bg-white rounded-2xl border-4 border-[#fe2c55]/20">
+                <div className="p-3 bg-white rounded-2xl border-4 border-[#FF5A3C]/20">
                   <QRCodeSVG value={qrUrl} size={220} level="M" includeMargin={false} />
                 </div>
               )}
               {status === "loading" && (
                 <div className="w-[260px] h-[260px] flex items-center justify-center">
-                  <div className="w-10 h-10 border-4 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
+                  <div className="w-10 h-10 border-4 border-[#FF5A3C] border-t-transparent rounded-full animate-spin" />
                 </div>
               )}
               {status === "approved" && (
@@ -148,7 +148,7 @@ const QrLoginScreen = ({ onBack }: Props) => {
             {(status === "expired" || status === "rejected" || status === "error") && (
               <button
                 onClick={createSession}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold text-sm"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white font-bold text-sm"
               >Создать новый код</button>
             )}
           </div>

@@ -110,7 +110,7 @@ const CircleHub = ({ communityId, name, isMember, isAdmin, onClose }: Props) => 
             {isMember && (
               <div className="flex gap-2">
                 <input value={newBoard} onChange={(e) => setNewBoard(e.target.value)} placeholder="Новая доска кружка" className="flex-1 bg-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none placeholder-white/40" />
-                <button onClick={createBoard} disabled={!newBoard.trim()} className="px-4 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold disabled:opacity-50">Создать</button>
+                <button onClick={createBoard} disabled={!newBoard.trim()} className="px-4 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold disabled:opacity-50">Создать</button>
               </div>
             )}
             {boards.length === 0 ? (
@@ -134,7 +134,7 @@ const CircleHub = ({ communityId, name, isMember, isAdmin, onClose }: Props) => 
         {tab === "challenge" && (
           <div className="flex flex-col gap-3">
             {challenge ? (
-              <div className="rounded-3xl p-5 bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6]">
+              <div className="rounded-3xl p-5 bg-gradient-to-br from-[#FF5A3C] to-[#8b5cf6]">
                 <p className="text-white/80 text-xs font-semibold uppercase mb-1">Осталось {left} {daysWord(left)} · участвуют {challenge.participants}</p>
                 <h3 className="text-white font-bold text-xl mb-1">{challenge.title}</h3>
                 <p className="text-white/90 text-sm mb-3">{challenge.description}</p>
@@ -152,7 +152,7 @@ const CircleHub = ({ communityId, name, isMember, isAdmin, onClose }: Props) => 
                 <p className="text-white font-semibold text-sm">Запустить челлендж кружка</p>
                 <input value={chTitle} onChange={(e) => setChTitle(e.target.value)} placeholder="Название" className="bg-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none placeholder-white/40" />
                 <textarea value={chDesc} onChange={(e) => setChDesc(e.target.value)} rows={2} placeholder="Что нужно сделать" className="bg-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none placeholder-white/40" />
-                <button onClick={createChallenge} disabled={!chTitle.trim()} className="py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold disabled:opacity-50">Запустить на 7 дней</button>
+                <button onClick={createChallenge} disabled={!chTitle.trim()} className="py-2.5 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold disabled:opacity-50">Запустить на 7 дней</button>
               </div>
             )}
           </div>

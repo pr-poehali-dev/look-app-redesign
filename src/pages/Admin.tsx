@@ -65,7 +65,7 @@ export default function Admin() {
       {/* Sidebar */}
       <aside className={`${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 fixed md:static z-40 w-64 h-screen bg-zinc-900 border-r border-white/10 flex flex-col transition-transform`}>
         <div className="px-5 py-5 border-b border-white/10 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF5A3C] to-[#8b5cf6] flex items-center justify-center">
             <Icon name="Shield" size={18} className="text-white" />
           </div>
           <div>
@@ -79,7 +79,7 @@ export default function Admin() {
               key={s.id}
               onClick={() => { setSection(s.id); setSidebarOpen(false); }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
-                section === s.id ? "bg-[#fe2c55] text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
+                section === s.id ? "bg-[#FF5A3C] text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
               }`}
             >
               <Icon name={s.icon} size={18} />
@@ -170,7 +170,7 @@ function Login({ onLogin }: { onLogin: (token: string) => void }) {
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
         <form onSubmit={submitForgot} className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 space-y-4">
           <div className="flex flex-col items-center gap-3 mb-2">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#FF5A3C] to-[#8b5cf6] flex items-center justify-center">
               <Icon name="KeyRound" size={26} className="text-white" />
             </div>
             <div className="text-center">
@@ -199,11 +199,11 @@ function Login({ onLogin }: { onLogin: (token: string) => void }) {
                 type="email"
                 value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)}
                 placeholder="Email администратора"
-                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-[#fe2c55]"
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-[#FF5A3C]"
               />
               <button
                 type="submit" disabled={forgotLoading || !forgotEmail.trim()}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold disabled:opacity-50"
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white font-bold disabled:opacity-50"
               >
                 {forgotLoading ? "Отправляем..." : "Отправить инструкцию"}
               </button>
@@ -225,7 +225,7 @@ function Login({ onLogin }: { onLogin: (token: string) => void }) {
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
       <form onSubmit={submit} className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 space-y-4">
         <div className="flex flex-col items-center gap-3 mb-2">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#FF5A3C] to-[#8b5cf6] flex items-center justify-center">
             <Icon name="Shield" size={26} className="text-white" />
           </div>
           <div className="text-center">
@@ -238,18 +238,18 @@ function Login({ onLogin }: { onLogin: (token: string) => void }) {
           type="email"
           value={login} onChange={(e) => setLogin(e.target.value)}
           placeholder="support@look.com.ru"
-          className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-[#fe2c55]"
+          className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-[#FF5A3C]"
         />
         <input
           type="password"
           value={password} onChange={(e) => setPassword(e.target.value)}
           placeholder="Пароль"
-          className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-[#fe2c55]"
+          className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-[#FF5A3C]"
         />
-        {err && <p className="text-[#fe2c55] text-sm text-center">{err}</p>}
+        {err && <p className="text-[#FF5A3C] text-sm text-center">{err}</p>}
         <button
           type="submit" disabled={loading || !login || !password}
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold disabled:opacity-50"
+          className="w-full py-3 rounded-xl bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white font-bold disabled:opacity-50"
         >
           {loading ? "Входим..." : "Войти"}
         </button>
@@ -302,7 +302,7 @@ function Dashboard({ token }: { token: string }) {
     api("stats", {}, token).then(setStats).catch(e => setErr(e.message));
   }, [token]);
 
-  if (err) return <p className="text-[#fe2c55]">{err}</p>;
+  if (err) return <p className="text-[#FF5A3C]">{err}</p>;
   if (!stats) return <p className="text-white/50">Загрузка...</p>;
 
   return (
@@ -395,15 +395,15 @@ function Users({ token }: { token: string }) {
         {!loading && users.length === 0 && <p className="p-4 text-white/50 text-sm">Никого не найдено</p>}
         <div className="divide-y divide-white/5">
           {users.map((u) => (
-            <div key={u.id} className={`flex items-center gap-3 p-3 ${u.banned ? "bg-[#fe2c55]/5" : ""}`}>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center text-white font-bold overflow-hidden flex-shrink-0">
+            <div key={u.id} className={`flex items-center gap-3 p-3 ${u.banned ? "bg-[#FF5A3C]/5" : ""}`}>
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF5A3C] to-[#8b5cf6] flex items-center justify-center text-white font-bold overflow-hidden flex-shrink-0">
                 {u.avatar ? <img loading="lazy" decoding="async" src={u.avatar} alt="" className="w-full h-full object-cover" /> : (u.name?.[0] || "?")}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate flex items-center gap-1.5">
                   {u.name} <span className="text-white/40 text-xs">@{u.handle}</span>
                   {u.is_verified && <Icon name="BadgeCheck" size={13} className="text-[#61d4f0]" />}
-                  {u.banned && <span className="px-1.5 py-0.5 rounded bg-[#fe2c55]/20 text-[#fe2c55] text-[10px] font-semibold">Заблокирован</span>}
+                  {u.banned && <span className="px-1.5 py-0.5 rounded bg-[#FF5A3C]/20 text-[#FF5A3C] text-[10px] font-semibold">Заблокирован</span>}
                 </p>
                 <p className="text-white/50 text-xs truncate flex items-center gap-1">
                   <span title={u.email_verified ? "Email подтверждён" : "Email не подтверждён"} className="flex-shrink-0">
@@ -426,7 +426,7 @@ function Users({ token }: { token: string }) {
               >
                 <Icon name={u.banned ? "LockOpen" : "Ban"} size={16} />
               </button>
-              <button onClick={() => del(u.id)} className="p-2 text-[#fe2c55] hover:bg-[#fe2c55]/10 rounded-lg flex-shrink-0">
+              <button onClick={() => del(u.id)} className="p-2 text-[#FF5A3C] hover:bg-[#FF5A3C]/10 rounded-lg flex-shrink-0">
                 <Icon name="Trash2" size={16} />
               </button>
             </div>
@@ -715,7 +715,7 @@ function Videos({ token, mediaType = "video" }: { token: string; mediaType?: "vi
   const Chip = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
     <button
       onClick={onClick}
-      className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${active ? "bg-[#fe2c55] text-white" : "bg-zinc-900 border border-white/10 text-white/60 hover:text-white hover:bg-white/5"}`}
+      className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${active ? "bg-[#FF5A3C] text-white" : "bg-zinc-900 border border-white/10 text-white/60 hover:text-white hover:bg-white/5"}`}
     >
       {children}
     </button>
@@ -752,7 +752,7 @@ function Videos({ token, mediaType = "video" }: { token: string; mediaType?: "vi
                 </button>
                 <button
                   onClick={deleteBroken}
-                  className="px-3 py-2 rounded-lg bg-[#fe2c55] text-white text-sm font-semibold hover:opacity-90"
+                  className="px-3 py-2 rounded-lg bg-[#FF5A3C] text-white text-sm font-semibold hover:opacity-90"
                 >
                   Удалить все
                 </button>
@@ -769,7 +769,7 @@ function Videos({ token, mediaType = "video" }: { token: string; mediaType?: "vi
           {migProgress && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs text-white/70">
-                <span>Перенесено: <b className="text-emerald-400">{migProgress.migrated}</b> · Не удалось: <b className="text-[#fe2c55]">{migProgress.failed}</b> · Осталось: <b>{migProgress.remaining}</b></span>
+                <span>Перенесено: <b className="text-emerald-400">{migProgress.migrated}</b> · Не удалось: <b className="text-[#FF5A3C]">{migProgress.failed}</b> · Осталось: <b>{migProgress.remaining}</b></span>
                 {migrating && <span className="flex items-center gap-1"><Icon name="Loader2" size={12} className="animate-spin" /> в процессе</span>}
               </div>
               <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
@@ -796,7 +796,7 @@ function Videos({ token, mediaType = "video" }: { token: string; mediaType?: "vi
         </button>
         <button
           onClick={() => { setSelectMode((s) => !s); clearSel(); }}
-          className={`px-4 rounded-xl text-sm font-medium ${selectMode ? "bg-[#fe2c55] text-white" : "bg-zinc-900 border border-white/10 hover:bg-white/5"}`}
+          className={`px-4 rounded-xl text-sm font-medium ${selectMode ? "bg-[#FF5A3C] text-white" : "bg-zinc-900 border border-white/10 hover:bg-white/5"}`}
         >
           {selectMode ? "Готово" : "Выбрать"}
         </button>
@@ -826,13 +826,13 @@ function Videos({ token, mediaType = "video" }: { token: string; mediaType?: "vi
           return (
             <div
               key={v.id}
-              className={`bg-zinc-900 border rounded-xl overflow-hidden relative ${isSel ? "border-[#fe2c55] ring-2 ring-[#fe2c55]/40" : "border-white/10"} ${v.hidden ? "opacity-50" : ""}`}
+              className={`bg-zinc-900 border rounded-xl overflow-hidden relative ${isSel ? "border-[#FF5A3C] ring-2 ring-[#FF5A3C]/40" : "border-white/10"} ${v.hidden ? "opacity-50" : ""}`}
               onClick={selectMode ? () => toggleSel(v.id) : undefined}
               style={selectMode ? { cursor: "pointer" } : undefined}
             >
               {selectMode && (
                 <div className="absolute top-2 left-2 z-10 w-6 h-6 rounded-md flex items-center justify-center"
-                  style={{ background: isSel ? "#fe2c55" : "rgba(0,0,0,0.7)", border: isSel ? "none" : "1.5px solid rgba(255,255,255,0.4)" }}>
+                  style={{ background: isSel ? "#FF5A3C" : "rgba(0,0,0,0.7)", border: isSel ? "none" : "1.5px solid rgba(255,255,255,0.4)" }}>
                   {isSel && <Icon name="Check" size={14} className="text-white" />}
                 </div>
               )}
@@ -849,7 +849,7 @@ function Videos({ token, mediaType = "video" }: { token: string; mediaType?: "vi
                     <button onClick={() => hide(v.id, !!v.hidden)} className="flex-1 py-1 rounded bg-white/5 hover:bg-white/10 text-[11px]">
                       {v.hidden ? "Показать" : "Скрыть"}
                     </button>
-                    <button onClick={() => del(v.id)} className="px-2 py-1 rounded bg-[#fe2c55]/20 hover:bg-[#fe2c55]/30 text-[#fe2c55]">
+                    <button onClick={() => del(v.id)} className="px-2 py-1 rounded bg-[#FF5A3C]/20 hover:bg-[#FF5A3C]/30 text-[#FF5A3C]">
                       <Icon name="Trash2" size={12} />
                     </button>
                   </div>
@@ -868,7 +868,7 @@ function Videos({ token, mediaType = "video" }: { token: string; mediaType?: "vi
           <div className="w-px h-6 bg-white/10" />
           <button onClick={() => bulk("hide")} disabled={!selected.size} className="px-3 py-1.5 rounded-lg bg-orange-500/20 text-orange-300 text-xs font-medium disabled:opacity-40">Скрыть</button>
           <button onClick={() => bulk("show")} disabled={!selected.size} className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs font-medium disabled:opacity-40">Показать</button>
-          <button onClick={() => bulk("delete")} disabled={!selected.size} className="px-3 py-1.5 rounded-lg bg-[#fe2c55] text-white text-xs font-semibold disabled:opacity-40">Удалить</button>
+          <button onClick={() => bulk("delete")} disabled={!selected.size} className="px-3 py-1.5 rounded-lg bg-[#FF5A3C] text-white text-xs font-semibold disabled:opacity-40">Удалить</button>
         </div>
       )}
     </div>
@@ -900,7 +900,7 @@ function Comments({ token }: { token: string }) {
         {loading && <p className="p-4 text-white/50 text-sm">Загрузка...</p>}
         {rows.map((c) => (
           <div key={c.id} className="p-3 flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex-shrink-0 flex items-center justify-center text-white text-xs font-bold">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF5A3C] to-[#8b5cf6] flex-shrink-0 flex items-center justify-center text-white text-xs font-bold">
               {c.author_name?.[0] || "?"}
             </div>
             <div className="flex-1 min-w-0">
@@ -908,7 +908,7 @@ function Comments({ token }: { token: string }) {
               <p className="text-sm text-white/80 break-words">{c.text}</p>
               <p className="text-[11px] text-white/40 mt-1">{c.target_type} #{c.target_id} · {c.created_at?.slice(0, 16)}</p>
             </div>
-            <button onClick={() => del(c.id)} className="p-2 text-[#fe2c55] hover:bg-[#fe2c55]/10 rounded-lg">
+            <button onClick={() => del(c.id)} className="p-2 text-[#FF5A3C] hover:bg-[#FF5A3C]/10 rounded-lg">
               <Icon name="Trash2" size={16} />
             </button>
           </div>
@@ -985,7 +985,7 @@ function Products({ token }: { token: string }) {
         <h2 className="text-2xl font-bold hidden md:block">Товары</h2>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white text-sm font-semibold"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white text-sm font-semibold"
         >
           <Icon name="Plus" size={16} />
           Партнёрский товар
@@ -998,7 +998,7 @@ function Products({ token }: { token: string }) {
             key={t.id}
             onClick={() => setStatusTab(t.id)}
             className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${
-              statusTab === t.id ? "bg-[#fe2c55] text-white" : "bg-white/5 text-white/60 hover:bg-white/10"
+              statusTab === t.id ? "bg-[#FF5A3C] text-white" : "bg-white/5 text-white/60 hover:bg-white/10"
             }`}
           >
             {t.label}
@@ -1036,7 +1036,7 @@ function Products({ token }: { token: string }) {
                 />
                 <button onClick={() => moderate(p.id, "active")} className="px-2.5 py-1 rounded-lg bg-green-500/20 text-green-400 text-xs font-semibold">Одобрить</button>
                 <button onClick={() => moderate(p.id, "blocked")} className="px-2.5 py-1 rounded-lg bg-red-500/20 text-red-400 text-xs font-semibold">Заблокировать</button>
-                <button onClick={() => del(p.id)} className="p-1.5 text-[#fe2c55] hover:bg-[#fe2c55]/10 rounded-lg">
+                <button onClick={() => del(p.id)} className="p-1.5 text-[#FF5A3C] hover:bg-[#FF5A3C]/10 rounded-lg">
                   <Icon name="Trash2" size={14} />
                 </button>
               </div>
@@ -1171,7 +1171,7 @@ function CreatePartnerProductModal({ token, onClose, onCreated }: { token: strin
           <button
             onClick={submit}
             disabled={!title.trim() || !price || saving}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold disabled:opacity-40"
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white font-bold disabled:opacity-40"
           >
             {saving ? "Создаём..." : "Создать товар"}
           </button>
@@ -1219,7 +1219,7 @@ function Chats({ token }: { token: string }) {
         <div className="bg-zinc-900 border border-white/10 rounded-2xl divide-y divide-white/5 max-h-[70vh] overflow-y-auto">
           {chats.map((c) => (
             <button key={c.id} onClick={() => openChat(c)} className={`w-full p-3 flex items-center gap-3 hover:bg-white/5 text-left ${active?.id === c.id ? "bg-white/5" : ""}`}>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF5A3C] to-[#8b5cf6] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                 {(c.name || c.id)?.[0]}
               </div>
               <div className="flex-1 min-w-0">
@@ -1234,7 +1234,7 @@ function Chats({ token }: { token: string }) {
             <>
               <div className="flex items-center justify-between mb-3">
                 <p className="font-semibold text-sm truncate">{active.name || active.id}</p>
-                <button onClick={() => delChat(active.id)} className="px-2 py-1 rounded bg-[#fe2c55]/20 text-[#fe2c55] text-xs">Удалить чат</button>
+                <button onClick={() => delChat(active.id)} className="px-2 py-1 rounded bg-[#FF5A3C]/20 text-[#FF5A3C] text-xs">Удалить чат</button>
               </div>
               <div className="space-y-2">
                 {msgs.map((m) => (
@@ -1243,7 +1243,7 @@ function Chats({ token }: { token: string }) {
                       <p className="text-xs text-white/40">{m.user_name} · {m.created_at?.slice(11, 16)}</p>
                       <p className="text-sm break-words">{m.content}</p>
                     </div>
-                    <button onClick={() => delMsg(m.id)} className="opacity-0 group-hover:opacity-100 text-[#fe2c55] p-1">
+                    <button onClick={() => delMsg(m.id)} className="opacity-0 group-hover:opacity-100 text-[#FF5A3C] p-1">
                       <Icon name="X" size={14} />
                     </button>
                   </div>
@@ -1284,7 +1284,7 @@ function Streams({ token }: { token: string }) {
             {s.status === "active" && (
               <button onClick={() => stop(s.id)} className="px-2 py-1 rounded bg-orange-500/20 text-orange-400 text-xs">Остановить</button>
             )}
-            <button onClick={() => del(s.id)} className="p-2 text-[#fe2c55] hover:bg-[#fe2c55]/10 rounded-lg">
+            <button onClick={() => del(s.id)} className="p-2 text-[#FF5A3C] hover:bg-[#FF5A3C]/10 rounded-lg">
               <Icon name="Trash2" size={16} />
             </button>
           </div>
@@ -1364,9 +1364,9 @@ function Compliance({ token }: { token: string }) {
           <p className="text-white/50 text-xs">Рекламных публикаций</p>
           <p className="text-2xl font-bold">{ads.length}</p>
         </div>
-        <div className={`bg-zinc-900 border rounded-2xl p-4 ${noErid ? "border-[#fe2c55]/50" : "border-white/10"}`}>
+        <div className={`bg-zinc-900 border rounded-2xl p-4 ${noErid ? "border-[#FF5A3C]/50" : "border-white/10"}`}>
           <p className="text-white/50 text-xs">Без ERID</p>
-          <p className={`text-2xl font-bold ${noErid ? "text-[#fe2c55]" : ""}`}>{noErid}</p>
+          <p className={`text-2xl font-bold ${noErid ? "text-[#FF5A3C]" : ""}`}>{noErid}</p>
         </div>
         <div className="bg-zinc-900 border border-white/10 rounded-2xl p-4">
           <p className="text-white/50 text-xs">Дали согласие</p>
@@ -1380,7 +1380,7 @@ function Compliance({ token }: { token: string }) {
           {visibleNoErid > 0 && (
             <button
               onClick={hideNoErid}
-              className="px-3 py-1.5 rounded-lg bg-[#fe2c55] text-white text-xs font-medium"
+              className="px-3 py-1.5 rounded-lg bg-[#FF5A3C] text-white text-xs font-medium"
             >
               Скрыть без ERID ({visibleNoErid})
             </button>
@@ -1405,7 +1405,7 @@ function Compliance({ token }: { token: string }) {
                   <p className="text-xs text-white/40 truncate">{a.description || "—"}</p>
                 </div>
                 {a.hidden && <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0 bg-orange-500/20 text-orange-300">Скрыто</span>}
-                <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 break-all ${a.ad_erid ? "bg-emerald-500/20 text-emerald-300" : "bg-[#fe2c55]/20 text-[#fe2c55]"}`}>
+                <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 break-all ${a.ad_erid ? "bg-emerald-500/20 text-emerald-300" : "bg-[#FF5A3C]/20 text-[#FF5A3C]"}`}>
                   {a.ad_erid ? `erid: ${a.ad_erid}` : "нет ERID"}
                 </span>
               </div>
@@ -1495,7 +1495,7 @@ function SearchStats({ token }: { token: string }) {
             <button
               key={d}
               onClick={() => setDays(d)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${days === d ? "bg-[#fe2c55] text-white" : "text-white/60 hover:text-white"}`}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${days === d ? "bg-[#FF5A3C] text-white" : "text-white/60 hover:text-white"}`}
             >
               {d === 7 ? "7 дней" : "30 дней"}
             </button>
@@ -1540,7 +1540,7 @@ function StopWords({ token }: { token: string }) {
           placeholder="Слово или фраза"
           className="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none"
         />
-        <button onClick={add} className="px-4 py-2 rounded-lg bg-[#fe2c55] text-white text-sm font-medium">Добавить</button>
+        <button onClick={add} className="px-4 py-2 rounded-lg bg-[#FF5A3C] text-white text-sm font-medium">Добавить</button>
       </div>
       <div className="flex flex-wrap gap-2">
         {words.map((w) => (
@@ -1589,7 +1589,7 @@ function Reports({ token }: { token: string }) {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${filter === f ? "bg-[#fe2c55] text-white" : "text-white/60 hover:text-white"}`}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${filter === f ? "bg-[#FF5A3C] text-white" : "text-white/60 hover:text-white"}`}
             >
               {f === "open" ? `Новые${openCount ? ` (${openCount})` : ""}` : f === "resolved" ? "Закрытые" : "Все"}
             </button>
@@ -1613,8 +1613,8 @@ function Reports({ token }: { token: string }) {
           return (
             <div key={r.id} className="bg-zinc-900 border border-white/10 rounded-2xl p-4 space-y-3">
               <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-[#fe2c55]/20 flex items-center justify-center">
-                  <Icon name="Flag" size={20} className="text-[#fe2c55]" />
+                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-[#FF5A3C]/20 flex items-center justify-center">
+                  <Icon name="Flag" size={20} className="text-[#FF5A3C]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -1659,23 +1659,23 @@ function Reports({ token }: { token: string }) {
                       <button onClick={() => doAction(r.id, "hide_video", "скрыть видео")} className="px-3 py-1.5 rounded-lg bg-orange-500/20 text-orange-300 text-xs font-medium hover:bg-orange-500/30">
                         Скрыть видео
                       </button>
-                      <button onClick={() => doAction(r.id, "delete_video", "удалить видео")} className="px-3 py-1.5 rounded-lg bg-[#fe2c55]/20 text-[#fe2c55] text-xs font-medium hover:bg-[#fe2c55]/30">
+                      <button onClick={() => doAction(r.id, "delete_video", "удалить видео")} className="px-3 py-1.5 rounded-lg bg-[#FF5A3C]/20 text-[#FF5A3C] text-xs font-medium hover:bg-[#FF5A3C]/30">
                         Удалить видео
                       </button>
                     </>
                   )}
                   {r.target_type === "comment" && (
-                    <button onClick={() => doAction(r.id, "delete_comment", "удалить комментарий")} className="px-3 py-1.5 rounded-lg bg-[#fe2c55]/20 text-[#fe2c55] text-xs font-medium hover:bg-[#fe2c55]/30">
+                    <button onClick={() => doAction(r.id, "delete_comment", "удалить комментарий")} className="px-3 py-1.5 rounded-lg bg-[#FF5A3C]/20 text-[#FF5A3C] text-xs font-medium hover:bg-[#FF5A3C]/30">
                       Удалить комментарий
                     </button>
                   )}
                   {r.target_type === "user" && (
-                    <button onClick={() => doAction(r.id, "delete_user", "удалить пользователя")} className="px-3 py-1.5 rounded-lg bg-[#fe2c55]/20 text-[#fe2c55] text-xs font-medium hover:bg-[#fe2c55]/30">
+                    <button onClick={() => doAction(r.id, "delete_user", "удалить пользователя")} className="px-3 py-1.5 rounded-lg bg-[#FF5A3C]/20 text-[#FF5A3C] text-xs font-medium hover:bg-[#FF5A3C]/30">
                       Удалить пользователя
                     </button>
                   )}
                   {r.target_type === "message" && (
-                    <button onClick={() => doAction(r.id, "delete_message", "удалить сообщение")} className="px-3 py-1.5 rounded-lg bg-[#fe2c55]/20 text-[#fe2c55] text-xs font-medium hover:bg-[#fe2c55]/30">
+                    <button onClick={() => doAction(r.id, "delete_message", "удалить сообщение")} className="px-3 py-1.5 rounded-lg bg-[#FF5A3C]/20 text-[#FF5A3C] text-xs font-medium hover:bg-[#FF5A3C]/30">
                       Удалить сообщение
                     </button>
                   )}
@@ -1691,7 +1691,7 @@ function Reports({ token }: { token: string }) {
               {r.status === "resolved" && (
                 <div className="flex items-center justify-between text-xs text-white/40">
                   <span>Закрыто: {r.resolved_at?.slice(0, 16)} {r.resolved_note ? `· ${r.resolved_note}` : ""}</span>
-                  <button onClick={() => remove(r.id)} className="text-white/40 hover:text-[#fe2c55]">
+                  <button onClick={() => remove(r.id)} className="text-white/40 hover:text-[#FF5A3C]">
                     <Icon name="Trash2" size={14} />
                   </button>
                 </div>
@@ -1735,7 +1735,7 @@ function Broadcast({ token }: { token: string }) {
         />
         <div className="flex items-center justify-between">
           <p className="text-xs text-white/40">Аудитория: все пользователи</p>
-          <button onClick={send} disabled={!text.trim()} className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-semibold text-sm disabled:opacity-50">
+          <button onClick={send} disabled={!text.trim()} className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white font-semibold text-sm disabled:opacity-50">
             {sent ? "Сохранено ✓" : "Отправить"}
           </button>
         </div>
@@ -1845,7 +1845,7 @@ function MobileApiKeys({ token }: { token: string }) {
         <button
           onClick={create}
           disabled={busy}
-          className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-semibold text-sm disabled:opacity-50 flex items-center gap-2"
+          className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white font-semibold text-sm disabled:opacity-50 flex items-center gap-2"
         >
           <Icon name="KeyRound" size={16} />
           Создать ключ
@@ -1978,7 +1978,7 @@ function MobileApiAccess({ token }: { token: string }) {
             <button
               key={o.v}
               onClick={() => changeDefault(o.v)}
-              className={`px-3 py-2 rounded-lg text-sm font-semibold ${newDefault === o.v ? "bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white" : "bg-white/5 text-white/60 hover:bg-white/10"}`}
+              className={`px-3 py-2 rounded-lg text-sm font-semibold ${newDefault === o.v ? "bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white" : "bg-white/5 text-white/60 hover:bg-white/10"}`}
             >
               {o.l}
             </button>
@@ -2061,7 +2061,7 @@ function DocEditor({ token, settingKey, title }: { token: string; settingKey: "p
         <button
           onClick={save}
           disabled={saving || loading}
-          className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-semibold text-sm disabled:opacity-50 flex items-center gap-2"
+          className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white font-semibold text-sm disabled:opacity-50 flex items-center gap-2"
         >
           {saving ? <Icon name="Loader2" size={16} className="animate-spin" /> : <Icon name="Save" size={16} />}
           {saved ? "Сохранено ✓" : "Сохранить"}
@@ -2296,7 +2296,7 @@ function SupportAdmin() {
         <button
           onClick={() => setCategoryFilter("all")}
           className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
-            categoryFilter === "all" ? "bg-[#fe2c55] text-white" : "bg-white/5 text-white/70 hover:bg-white/10"
+            categoryFilter === "all" ? "bg-[#FF5A3C] text-white" : "bg-white/5 text-white/70 hover:bg-white/10"
           }`}
         >
           Все ({tickets.length})
@@ -2310,7 +2310,7 @@ function SupportAdmin() {
               key={id}
               onClick={() => setCategoryFilter(id)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
-                active ? "bg-[#fe2c55] text-white" : "bg-white/5 text-white/70 hover:bg-white/10"
+                active ? "bg-[#FF5A3C] text-white" : "bg-white/5 text-white/70 hover:bg-white/10"
               }`}
             >
               <Icon name={meta.icon} size={12} />
@@ -2426,7 +2426,7 @@ function SupportAdmin() {
               {selected.user_email && (
                 <a
                   href={`mailto:${selected.user_email}?subject=Re:%20${encodeURIComponent(selected.subject)}`}
-                  className="block w-full py-3 rounded-xl bg-[#fe2c55] text-white font-bold text-sm text-center"
+                  className="block w-full py-3 rounded-xl bg-[#FF5A3C] text-white font-bold text-sm text-center"
                 >
                   Ответить на email
                 </a>

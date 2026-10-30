@@ -29,7 +29,7 @@ const ArticleCard = ({ a, onOpen }: { a: Article; onOpen: () => void }) => {
       </button>
       <div className="flex items-center gap-5 px-3 pb-3 pt-1">
         <button onClick={user ? likes.toggle : needAuth} className="flex items-center gap-1.5 active:scale-90 transition-transform">
-          <Icon name="Heart" size={22} className={likes.liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"} />
+          <Icon name="Heart" size={22} className={likes.liked ? "text-[#FF5A3C] fill-[#FF5A3C]" : "text-white"} />
           <span className="text-white text-xs font-semibold">{likes.count}</span>
         </button>
         <button onClick={onOpen} className="flex items-center gap-1.5 active:scale-90 transition-transform">
@@ -41,7 +41,7 @@ const ArticleCard = ({ a, onOpen }: { a: Article; onOpen: () => void }) => {
             <Icon name="ShareArrow" size={22} className="text-white" />
           </button>
           <button onClick={user ? save.toggle : needAuth} className="active:scale-90 transition-transform">
-            <Icon name="Bookmark" size={22} className={save.saved ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"} />
+            <Icon name="Bookmark" size={22} className={save.saved ? "text-[#FF5A3C] fill-[#FF5A3C]" : "text-white"} />
           </button>
         </div>
       </div>

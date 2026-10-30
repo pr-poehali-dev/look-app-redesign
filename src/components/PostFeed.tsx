@@ -349,7 +349,7 @@ const PostFeed = () => {
           title="Только идеи и подборки"
           aria-label="Только идеи и подборки"
           aria-pressed={ideasOnly}
-          className={`h-8 px-2.5 rounded-full flex items-center gap-1 flex-shrink-0 text-[11px] font-semibold ${ideasOnly ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white/70"}`}
+          className={`h-8 px-2.5 rounded-full flex items-center gap-1 flex-shrink-0 text-[11px] font-semibold ${ideasOnly ? "bg-[#FF5A3C] text-white" : "bg-white/10 text-white/70"}`}
         >
           <Icon name="Lightbulb" size={14} />
           Идеи
@@ -494,7 +494,7 @@ const PostFeed = () => {
             {!loading && <div className="px-3 pb-2"><ChallengeBanner /></div>}
             {loading ? (
               <div className="flex items-center justify-center py-20">
-                <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-[#FF5A3C] border-t-transparent rounded-full animate-spin" />
               </div>
             ) : (
               categoryPosts.slice(0, shown).map((post) => (

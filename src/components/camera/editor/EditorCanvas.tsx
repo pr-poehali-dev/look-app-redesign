@@ -210,7 +210,7 @@ const EditorCanvas = ({
                   <button
                     key={a}
                     onClick={() => updateLayer(l.id, { animation: a })}
-                    className={`px-2.5 py-1 rounded-full text-[11px] flex-shrink-0 ${(l.animation || "none") === a ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white/70"}`}
+                    className={`px-2.5 py-1 rounded-full text-[11px] flex-shrink-0 ${(l.animation || "none") === a ? "bg-[#FF5A3C] text-white" : "bg-white/10 text-white/70"}`}
                   >
                     {{ none: "Без", fadein: "Плавно", slideup: "Снизу", pop: "Появл.", bounce: "Прыжок", pulse: "Пульс" }[a]}
                   </button>

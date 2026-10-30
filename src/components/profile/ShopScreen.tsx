@@ -201,7 +201,7 @@ const ShopScreen = ({ onBack }: { onBack: () => void }) => {
           <button
             onClick={save}
             disabled={!editing.title.trim() || !editing.price || saving}
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold disabled:opacity-40"
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white font-bold disabled:opacity-40"
           >
             {saving ? "Сохраняем..." : "Сохранить"}
           </button>
@@ -221,7 +221,7 @@ const ShopScreen = ({ onBack }: { onBack: () => void }) => {
       <div className="px-4 py-4">
         <button
           onClick={openCreate}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold mb-4"
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white font-bold mb-4"
         >
           <Icon name="Plus" size={18} />
           Добавить товар

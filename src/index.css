@@ -140,17 +140,23 @@
 
 /* === UI Theme switch (Look home) === */
 :root {
-  --look-bg: #14723f; /* насыщенный зелёный фон сайта */
-  --look-sidebar-bg: #0f5c32;
-  --look-fg: #ffffff;
-  --look-accent: #1f6b3a; /* тёмно-зелёный акцент */
+  --look-bg: #121212;
+  --look-sidebar-bg: #1E1E1C;
+  --look-fg: #F2F1EE;
+  --look-muted: #9C9B95;
+  --look-border: #33322F;
+  --look-accent: #FF6B4A;
+  --look-accent-soft: #3A241E;
   --look-accent-fg: #ffffff;
 }
 html.theme-light {
-  --look-bg: #d4f3de; /* светло-зелёный фон сайта */
-  --look-sidebar-bg: #c0e9cd;
-  --look-fg: #0d2a18;
-  --look-accent: #1f6b3a;
+  --look-bg: #FAFAF8;
+  --look-sidebar-bg: #FFFFFF;
+  --look-fg: #1A1A18;
+  --look-muted: #6B6B66;
+  --look-border: #E8E6E1;
+  --look-accent: #FF5A3C;
+  --look-accent-soft: #FFE9E3;
   --look-accent-fg: #ffffff;
 }
 html,
@@ -623,8 +629,8 @@ html.theme-light .action-count-text {
 }
 
 /* Иконки на красных/розовых/зелёных акцентных кнопках */
-html.theme-light .bg-\[\#fe2c55\] svg,
-html.theme-light .bg-\[\#fe2c55\] .text-white,
+html.theme-light .bg-\[\#FF5A3C\] svg,
+html.theme-light .bg-\[\#FF5A3C\] .text-white,
 html.theme-light .bg-red-500 svg,
 html.theme-light .bg-green-500 svg,
 html.theme-light .bg-blue-500 svg,
@@ -1004,8 +1010,8 @@ html.theme-light [style*="--look-accent"] svg {
   html .media-overlay-text .desktop-actions-col .action-icon-circle svg * {
     stroke: var(--look-fg) !important;
   }
-  html .media-overlay-text .desktop-actions-col .text-\[\#fe2c55\] {
-    color: #fe2c55 !important;
+  html .media-overlay-text .desktop-actions-col .text-\[\#FF5A3C\] {
+    color: #FF5A3C !important;
   }
 }
 
@@ -1031,7 +1037,7 @@ html.theme-light [style*="--look-accent"] svg {
   background-color: #000 !important;
 }
 .nv-red {
-  background-color: #fe2c55 !important;
+  background-color: #FF5A3C !important;
   color: #fff !important;
 }
 .nv-red:hover {
@@ -1058,8 +1064,8 @@ html.theme-light .nv-tag {
 }
 .nv-icon-active,
 .nv-icon-active * {
-  color: #fe2c55 !important;
-  stroke: #fe2c55 !important;
+  color: #FF5A3C !important;
+  stroke: #FF5A3C !important;
 }
 
 .story-video::-webkit-media-controls,

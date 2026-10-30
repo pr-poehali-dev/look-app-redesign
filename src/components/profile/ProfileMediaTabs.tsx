@@ -115,7 +115,7 @@ const ProfileMediaTabs = ({ tab, setTab, stories, setMediaViewer, setCategoryEdi
                     </div>
                   </div>
                   {item.is_repost && (
-                    <div className="absolute top-1 right-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#fe2c55]">
+                    <div className="absolute top-1 right-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#FF5A3C]">
                       <Icon name="Repeat2" size={10} className="text-white" />
                       <span className="text-white text-[8px] font-semibold">Репост</span>
                     </div>
@@ -202,7 +202,7 @@ const ProfileMediaTabs = ({ tab, setTab, stories, setMediaViewer, setCategoryEdi
                       </div>
                     </div>
                   )}
-                  <div className="absolute top-1 right-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#fe2c55]">
+                  <div className="absolute top-1 right-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#FF5A3C]">
                     <Icon name="Repeat2" size={10} className="text-white" />
                     <span className="text-white text-[8px] font-semibold">Репост</span>
                   </div>

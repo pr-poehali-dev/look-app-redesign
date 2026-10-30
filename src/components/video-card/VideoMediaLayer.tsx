@@ -128,7 +128,7 @@ const VideoMediaLayer = ({
                   setVolume(val);
                   setMuted(val === 0);
                 }}
-                className="volume-slider w-24 h-1 cursor-pointer accent-[#fe2c55]"
+                className="volume-slider w-24 h-1 cursor-pointer accent-[#FF5A3C]"
                 title="Громкость"
               />
             )}
@@ -146,7 +146,7 @@ const VideoMediaLayer = ({
               {/* буферизация (сколько загрузилось) */}
               <div className="absolute left-0 h-1 rounded-full bg-white/50" style={{ width: `${Math.min(100, buffered)}%` }} />
               {/* воспроизведено */}
-              <div className="absolute left-0 h-1 rounded-full bg-[#fe2c55]" style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }} />
+              <div className="absolute left-0 h-1 rounded-full bg-[#FF5A3C]" style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }} />
               <input
                 type="range"
                 min={0}

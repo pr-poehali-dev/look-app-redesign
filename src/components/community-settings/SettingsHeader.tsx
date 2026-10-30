@@ -20,7 +20,7 @@ const SettingsHeader = ({ isOwner, saving, onBack, onSave }: Props) => {
         <button
           onClick={onSave}
           disabled={saving}
-          className="bg-[#fe2c55] px-4 py-1.5 rounded-full text-white text-xs font-bold disabled:opacity-40"
+          className="bg-[#FF5A3C] px-4 py-1.5 rounded-full text-white text-xs font-bold disabled:opacity-40"
         >
           {saving ? "Сохраняем..." : "Сохранить"}
         </button>

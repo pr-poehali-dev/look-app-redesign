@@ -56,7 +56,7 @@ export const Reader = ({ id, onBack, onEdit }: { id: number; onBack: () => void;
                 <span>{a.read_minutes} мин · {a.views} просм.</span>
               </div>
               {a.author_handle && !isSelf && (
-                <button onClick={() => (user ? toggleFollow() : promptAuth())} className={`px-4 py-1.5 rounded-full text-xs font-semibold ${following ? "bg-gray-100 text-black" : "bg-[#fe2c55] text-white"}`}>
+                <button onClick={() => (user ? toggleFollow() : promptAuth())} className={`px-4 py-1.5 rounded-full text-xs font-semibold ${following ? "bg-gray-100 text-black" : "bg-[#FF5A3C] text-white"}`}>
                   {following ? "Вы подписаны" : "Подписаться"}
                 </button>
               )}

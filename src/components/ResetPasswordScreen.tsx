@@ -57,7 +57,7 @@ const ResetPasswordScreen = ({ token, onDone }: Props) => {
   return (
     <div className="fixed inset-0 bg-black flex flex-col" style={{ maxWidth: 480, margin: "0 auto" }}>
       <div className="flex-1 flex flex-col items-center justify-center px-8 gap-2">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center mb-2">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#FF5A3C] to-[#8b5cf6] flex items-center justify-center mb-2">
           <Icon name="KeyRound" size={28} className="text-white" />
         </div>
         <h1 className="text-white font-black text-3xl">Новый пароль</h1>
@@ -78,7 +78,7 @@ const ResetPasswordScreen = ({ token, onDone }: Props) => {
             </div>
             <button
               onClick={onDone}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold text-base"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white font-bold text-base"
             >Вернуться ко входу</button>
           </>
         ) : done ? (
@@ -92,7 +92,7 @@ const ResetPasswordScreen = ({ token, onDone }: Props) => {
             </div>
             <button
               onClick={onDone}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold text-base"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white font-bold text-base"
             >Войти</button>
           </>
         ) : (
@@ -134,7 +134,7 @@ const ResetPasswordScreen = ({ token, onDone }: Props) => {
             <button
               onClick={handleSubmit}
               disabled={!password || !confirm || loading}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold text-base disabled:opacity-40"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white font-bold text-base disabled:opacity-40"
             >
               {loading ? "Сохранение..." : "Сохранить пароль"}
             </button>

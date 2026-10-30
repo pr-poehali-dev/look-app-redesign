@@ -50,7 +50,7 @@ const BirthDateInput = ({ value, onChange, className }: Props) => {
         }}
         className={className}
       />
-      {invalid && <p className="text-[11px] text-[#fe2c55]">Проверьте дату: например, 25.03.1998</p>}
+      {invalid && <p className="text-[11px] text-[#FF5A3C]">Проверьте дату: например, 25.03.1998</p>}
     </div>
   );
 };

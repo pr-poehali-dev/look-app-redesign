@@ -67,13 +67,13 @@ const VideoCommentsSheet = ({ user, commentCount, allComments, setShowComments, 
                   onClick={(e) => { e.stopPropagation(); toggleCommentLike(c.id); }}
                   className="p-1 flex flex-col items-center gap-0.5"
                 >
-                  <Icon name="Heart" size={14} className={c.liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white/40"} />
+                  <Icon name="Heart" size={14} className={c.liked ? "text-[#FF5A3C] fill-[#FF5A3C]" : "text-white/40"} />
                   {c.likes > 0 && <span className="text-white/30 text-[10px]">{c.likes}</span>}
                 </button>
                 <ReportButton
                   targetType="comment"
                   targetId={c.id}
-                  className="p-1 text-white/40 hover:text-[#fe2c55]"
+                  className="p-1 text-white/40 hover:text-[#FF5A3C]"
                 />
               </div>
             </div>
@@ -108,7 +108,7 @@ const VideoCommentsSheet = ({ user, commentCount, allComments, setShowComments, 
             <button
               onClick={handleSendComment}
               disabled={!commentText.trim()}
-              className="w-9 h-9 rounded-full bg-[#fe2c55] flex items-center justify-center disabled:opacity-40"
+              className="w-9 h-9 rounded-full bg-[#FF5A3C] flex items-center justify-center disabled:opacity-40"
             >
               <Icon name="Send" size={16} className="text-white" />
             </button>

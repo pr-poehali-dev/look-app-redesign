@@ -25,7 +25,7 @@ const MasonryFeed = ({ posts, loading, topPad = 0 }: { posts: Post[]; loading: b
         {!loading && <div className="mb-2"><ChallengeBanner /></div>}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-[#FF5A3C] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-2">

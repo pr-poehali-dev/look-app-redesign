@@ -40,7 +40,7 @@ const ChatRoomEmojiPanel = ({
           <button
             key={t.id}
             onClick={() => setEmojiTab(t.id)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${emojiTab === t.id ? "bg-[#fe2c55] text-white" : "bg-white/8 text-white/60 hover:bg-white/15"}`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${emojiTab === t.id ? "bg-[#FF5A3C] text-white" : "bg-white/8 text-white/60 hover:bg-white/15"}`}
           >
             <Icon name={t.icon} size={15} />
             {t.label}
@@ -55,7 +55,7 @@ const ChatRoomEmojiPanel = ({
               <button
                 key={c.id}
                 onClick={() => setEmojiCat(c.id)}
-                className={`w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg transition-colors ${emojiCat === c.id ? "bg-white/15 text-[#fe2c55]" : "text-white/50 hover:bg-white/10"}`}
+                className={`w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg transition-colors ${emojiCat === c.id ? "bg-white/15 text-[#FF5A3C]" : "text-white/50 hover:bg-white/10"}`}
               >
                 <Icon name={c.icon} size={18} />
               </button>
@@ -114,7 +114,7 @@ const ChatRoomEmojiPanel = ({
                 <button
                   key={s}
                   onClick={() => setGifQuery(q)}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${active ? "bg-[#fe2c55] text-white" : "bg-white/8 text-white/70 hover:bg-white/15"}`}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${active ? "bg-[#FF5A3C] text-white" : "bg-white/8 text-white/70 hover:bg-white/15"}`}
                 >
                   {s}
                 </button>

@@ -134,7 +134,7 @@ const PostCard = ({ post }: { post: Post }) => {
               {isSelf ? null : !following ? (
                 <button
                   onClick={toggleFollow}
-                  className="ml-1 px-2 py-0.5 rounded-full bg-[#fe2c55] text-white text-[11px] font-semibold leading-none active:scale-95 transition-transform"
+                  className="ml-1 px-2 py-0.5 rounded-full bg-[#FF5A3C] text-white text-[11px] font-semibold leading-none active:scale-95 transition-transform"
                 >
                   Подписаться
                 </button>
@@ -175,7 +175,7 @@ const PostCard = ({ post }: { post: Post }) => {
             <ol className="mt-1.5 flex flex-col gap-1">
               {post.cardPoints.map((pt, i) => (
                 <li key={i} className="flex items-start gap-2 text-white/85 text-[13px] leading-snug">
-                  <span className="w-5 h-5 rounded-full bg-[#fe2c55] text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-px">{i + 1}</span>
+                  <span className="w-5 h-5 rounded-full bg-[#FF5A3C] text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-px">{i + 1}</span>
                   <span>{pt}</span>
                 </li>
               ))}
@@ -191,7 +191,7 @@ const PostCard = ({ post }: { post: Post }) => {
             <Icon
               name="Heart"
               size={26}
-              className={liked ? "text-[#fe2c55] fill-[#fe2c55] anim-like" : "action-icon-glyph transition-all duration-150"}
+              className={liked ? "text-[#FF5A3C] fill-[#FF5A3C] anim-like" : "action-icon-glyph transition-all duration-150"}
             />
           </button>
           <button onClick={() => setShowComments(true)} className="flex items-center justify-center active:scale-90 transition-transform">
@@ -336,9 +336,9 @@ const PostCard = ({ post }: { post: Post }) => {
                 <Icon
                   name={item.icon}
                   size={20}
-                  className={item.icon === "Flag" ? "text-[#fe2c55]" : item.active ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"}
+                  className={item.icon === "Flag" ? "text-[#FF5A3C]" : item.active ? "text-[#FF5A3C] fill-[#FF5A3C]" : "text-white"}
                 />
-                <span className={`text-sm font-medium ${item.icon === "Flag" ? "text-[#fe2c55]" : "text-white"}`}>{item.label}</span>
+                <span className={`text-sm font-medium ${item.icon === "Flag" ? "text-[#FF5A3C]" : "text-white"}`}>{item.label}</span>
               </button>
             ))}
           </div>
@@ -385,7 +385,7 @@ const PostCard = ({ post }: { post: Post }) => {
                     onClick={(e) => { e.stopPropagation(); toggleCommentLike(c.id); }}
                     className="flex-shrink-0 mt-1 p-1 flex flex-col items-center gap-0.5"
                   >
-                    <Icon name="Heart" size={14} className={c.liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white/40"} />
+                    <Icon name="Heart" size={14} className={c.liked ? "text-[#FF5A3C] fill-[#FF5A3C]" : "text-white/40"} />
                     {c.likes > 0 && <span className="text-white/30 text-[10px]">{c.likes}</span>}
                   </button>
                 </div>
@@ -406,7 +406,7 @@ const PostCard = ({ post }: { post: Post }) => {
                     onClick={promptAuth}
                     className="w-full rounded-full bg-white/10 px-4 py-2.5 text-center text-sm text-white/60"
                   >
-                    <span className="font-bold text-[#fe2c55]">Войти</span>, чтобы прокомментировать
+                    <span className="font-bold text-[#FF5A3C]">Войти</span>, чтобы прокомментировать
                   </button>
                 </div>
               ) : (
@@ -423,7 +423,7 @@ const PostCard = ({ post }: { post: Post }) => {
                     onKeyDown={e => e.key === "Enter" && handleSendComment()}
                   />
                 </div>
-                <button onClick={handleSendComment} className="w-9 h-9 rounded-full bg-[#fe2c55] flex items-center justify-center flex-shrink-0">
+                <button onClick={handleSendComment} className="w-9 h-9 rounded-full bg-[#FF5A3C] flex items-center justify-center flex-shrink-0">
                   <Icon name="Send" size={16} className="text-white" />
                 </button>
               </div>
@@ -508,13 +508,13 @@ const PostCard = ({ post }: { post: Post }) => {
                       <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setDetailProduct(p)}>
                         <p className="text-white text-sm font-semibold truncate">{p.title}</p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[#fe2c55] font-bold text-sm">{p.price.toLocaleString("ru-RU")} ₽</span>
+                          <span className="text-[#FF5A3C] font-bold text-sm">{p.price.toLocaleString("ru-RU")} ₽</span>
                           {p.old_price && p.old_price > p.price && (
                             <span className="text-white/40 text-xs line-through">{p.old_price.toLocaleString("ru-RU")} ₽</span>
                           )}
                         </div>
                         {p.promo_code && (
-                          <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#fe2c55]/20 text-[#fe2c55] text-[10px] font-bold">
+                          <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#FF5A3C]/20 text-[#FF5A3C] text-[10px] font-bold">
                             Промокод: {p.promo_code}
                           </span>
                         )}
@@ -522,7 +522,7 @@ const PostCard = ({ post }: { post: Post }) => {
                       {hasProductLink(p) && (
                         <button
                           onClick={() => handleGoToProduct(p)}
-                          className="flex-shrink-0 px-3 py-1.5 rounded-full bg-[#fe2c55] text-white text-xs font-bold active:scale-95 transition-transform whitespace-nowrap"
+                          className="flex-shrink-0 px-3 py-1.5 rounded-full bg-[#FF5A3C] text-white text-xs font-bold active:scale-95 transition-transform whitespace-nowrap"
                         >
                           Перейти
                         </button>

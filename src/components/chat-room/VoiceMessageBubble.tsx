@@ -36,7 +36,7 @@ const VoiceMessageBubble = ({ isMe, mediaUrl, duration, time, transcript, transc
 
   return (
     <div className={`flex flex-col max-w-[75%] ${isMe ? "items-end" : "items-start"}`}>
-      <div className={`flex items-center gap-2 px-4 py-3 rounded-2xl ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
+      <div className={`flex items-center gap-2 px-4 py-3 rounded-2xl ${isMe ? "bg-[#FF5A3C] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
         {mediaUrl && (
           <audio
             ref={audioRef}
@@ -82,7 +82,7 @@ const VoiceMessageBubble = ({ isMe, mediaUrl, duration, time, transcript, transc
       )}
 
       {transcript && (
-        <div className={`mt-1 flex items-start gap-1.5 px-3 py-2 rounded-xl max-w-full ${isMe ? "bg-[#fe2c55]/15" : "bg-white/5"}`}>
+        <div className={`mt-1 flex items-start gap-1.5 px-3 py-2 rounded-xl max-w-full ${isMe ? "bg-[#FF5A3C]/15" : "bg-white/5"}`}>
           <p className="text-white/70 text-xs leading-snug italic flex-1">{transcript}</p>
           {onCloseTranscript && (
             <button onClick={onCloseTranscript} className="flex-shrink-0 text-white/40 hover:text-white/70">

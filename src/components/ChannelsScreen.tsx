@@ -100,7 +100,7 @@ const ChannelsScreen = ({ onBack, initialChannelId, onInitialConsumed }: Props) 
 
   const Row = ({ c }: { c: Channel }) => (
     <button onClick={() => setOpenId(c.id)} className="w-full flex items-center gap-3 p-3 rounded-2xl bg-[#111] border border-white/8 text-left active:scale-[0.99] transition-transform">
-      <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center flex-shrink-0">
+      <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-[#FF5A3C] to-[#8b5cf6] flex items-center justify-center flex-shrink-0">
         {c.img ? <img loading="lazy" decoding="async" src={c.img} className="w-full h-full object-cover" alt="" /> : <Icon name="Megaphone" size={20} className="text-white" />}
       </div>
       <div className="flex-1 min-w-0">
@@ -125,7 +125,7 @@ const ChannelsScreen = ({ onBack, initialChannelId, onInitialConsumed }: Props) 
           <button onClick={onBack}><Icon name="ChevronLeft" size={24} className="text-white" /></button>
           <h2 className="text-white font-bold text-xl">Каналы</h2>
         </div>
-        <button onClick={() => setShowCreate(true)} className="flex items-center gap-1.5 bg-[#fe2c55] hover:bg-[#e0264c] active:scale-95 transition-all px-3 py-1.5 rounded-full">
+        <button onClick={() => setShowCreate(true)} className="flex items-center gap-1.5 bg-[#FF5A3C] hover:bg-[#e0264c] active:scale-95 transition-all px-3 py-1.5 rounded-full">
           <Icon name="Plus" size={14} className="text-white" />
           <span className="text-white text-xs font-bold">Создать канал</span>
         </button>
@@ -151,14 +151,14 @@ const ChannelsScreen = ({ onBack, initialChannelId, onInitialConsumed }: Props) 
               <button
                 key={t}
                 onClick={() => setType(t)}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold border ${type === t ? "bg-[#fe2c55] text-white border-[#fe2c55]" : "bg-white/8 text-white/50 border-white/15"}`}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold border ${type === t ? "bg-[#FF5A3C] text-white border-[#FF5A3C]" : "bg-white/8 text-white/50 border-white/15"}`}
               >
                 <Icon name={t === "open" ? "Globe" : "Lock"} size={14} />
                 {t === "open" ? "Публичный" : "Закрытый"}
               </button>
             ))}
           </div>
-          <button onClick={create} disabled={!name.trim() || creating} className="py-2.5 rounded-xl bg-[#fe2c55] text-white font-bold text-sm disabled:opacity-40">
+          <button onClick={create} disabled={!name.trim() || creating} className="py-2.5 rounded-xl bg-[#FF5A3C] text-white font-bold text-sm disabled:opacity-40">
             {creating ? "Создаём..." : "Создать"}
           </button>
         </div>
@@ -167,7 +167,7 @@ const ChannelsScreen = ({ onBack, initialChannelId, onInitialConsumed }: Props) 
       <div className="flex-1 overflow-y-auto px-4 flex flex-col gap-2 pb-28" style={{ scrollbarWidth: "none" }}>
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-[#FF5A3C] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center py-16 gap-2">

@@ -95,7 +95,7 @@ const PollMessage = ({ pollId, communityId, isMe, time }: Props) => {
 
   if (loading) {
     return (
-      <div className={`px-4 py-3 rounded-2xl max-w-[85%] w-[280px] ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
+      <div className={`px-4 py-3 rounded-2xl max-w-[85%] w-[280px] ${isMe ? "bg-[#FF5A3C] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
         <div className="text-white/60 text-xs">Загрузка опроса...</div>
       </div>
     );
@@ -103,7 +103,7 @@ const PollMessage = ({ pollId, communityId, isMe, time }: Props) => {
 
   if (!poll) {
     return (
-      <div className={`px-4 py-3 rounded-2xl max-w-[85%] w-[280px] ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
+      <div className={`px-4 py-3 rounded-2xl max-w-[85%] w-[280px] ${isMe ? "bg-[#FF5A3C] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
         <div className="text-white/70 text-xs">Опрос недоступен</div>
         <div className="text-white/40 text-[10px] mt-1 text-right">{time}</div>
       </div>
@@ -113,7 +113,7 @@ const PollMessage = ({ pollId, communityId, isMe, time }: Props) => {
   const total = poll.total_votes || 0;
 
   return (
-    <div className={`rounded-2xl max-w-[85%] w-[300px] overflow-hidden ${isMe ? "bg-[#fe2c55] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
+    <div className={`rounded-2xl max-w-[85%] w-[300px] overflow-hidden ${isMe ? "bg-[#FF5A3C] rounded-br-sm" : "bg-[#1e1e1e] rounded-bl-sm"}`}>
       <div className="px-4 pt-3 pb-2">
         <div className="flex items-center gap-1.5 mb-1">
           <Icon name="BarChart3" size={14} className="text-white/70" />
@@ -142,7 +142,7 @@ const PollMessage = ({ pollId, communityId, isMe, time }: Props) => {
               />
               <div className="relative flex items-center gap-2 px-3 py-2">
                 <div className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${checked ? "border-white bg-white" : "border-white/40"}`}>
-                  {checked && <Icon name="Check" size={10} className={isMe ? "text-[#fe2c55]" : "text-black"} />}
+                  {checked && <Icon name="Check" size={10} className={isMe ? "text-[#FF5A3C]" : "text-black"} />}
                 </div>
                 <div className="text-white text-xs flex-1 truncate">{opt.text}</div>
                 <div className="text-white/70 text-[10px] flex-shrink-0">{pct}%</div>

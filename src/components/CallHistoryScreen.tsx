@@ -129,7 +129,7 @@ const CallHistoryScreen = ({ onBack, onCall }: Props) => {
             const isMissed = c.status === "missed" && !isOut;
             return (
               <div key={c.id} className="flex items-center gap-3 px-4 py-3 active:bg-white/5">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#fe2c55]/40 to-[#8b5cf6]/40 flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#FF5A3C]/40 to-[#8b5cf6]/40 flex items-center justify-center flex-shrink-0">
                   <span className="text-white font-semibold text-lg">{peerName.charAt(0).toUpperCase()}</span>
                 </div>
                 <div className="flex-1 min-w-0">

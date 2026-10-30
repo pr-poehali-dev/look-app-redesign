@@ -15,7 +15,7 @@ const IncomingCallModal = ({ incomingCall, onDecline, onAccept }: IncomingCallMo
     <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
     <div className="relative w-full max-w-sm bg-zinc-900 rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
       <div className="px-6 pt-8 pb-6 flex flex-col items-center gap-4">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#fe2c55]/50 to-[#8b5cf6]/50 border-2 border-white/10 flex items-center justify-center">
+        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#FF5A3C]/50 to-[#8b5cf6]/50 border-2 border-white/10 flex items-center justify-center">
           <span className="text-white font-bold text-3xl">
             {incomingCall.callerName.charAt(0).toUpperCase()}
           </span>

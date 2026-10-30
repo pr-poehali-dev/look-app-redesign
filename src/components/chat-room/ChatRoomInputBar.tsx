@@ -82,11 +82,11 @@ const ChatRoomInputBar = ({
 
         {recording ? (
           <div className="flex-1 flex items-center gap-3 bg-[#1a1a1a] rounded-3xl px-4 py-3">
-            <div className="w-2 h-2 rounded-full bg-[#fe2c55] animate-pulse" />
+            <div className="w-2 h-2 rounded-full bg-[#FF5A3C] animate-pulse" />
             <span className="text-white/60 text-sm flex-1">
               {String(Math.floor(recSecs / 60)).padStart(2, "0")}:{String(recSecs % 60).padStart(2, "0")}
             </span>
-            <button onPointerUp={stopVoice} className="text-[#fe2c55]">
+            <button onPointerUp={stopVoice} className="text-[#FF5A3C]">
               <Icon name="Send" size={20} />
             </button>
           </div>
@@ -101,7 +101,7 @@ const ChatRoomInputBar = ({
               className="flex-1 bg-transparent text-white text-base outline-none resize-none placeholder-white/30 max-h-32 leading-snug"
               style={{ scrollbarWidth: "none" }}
             />
-            <button onClick={() => setShowEmoji((v) => !v)} className={`flex-shrink-0 mb-0.5 transition-colors ${showEmoji ? "text-[#fe2c55]" : "text-white/40"}`}>
+            <button onClick={() => setShowEmoji((v) => !v)} className={`flex-shrink-0 mb-0.5 transition-colors ${showEmoji ? "text-[#FF5A3C]" : "text-white/40"}`}>
               <Icon name="Smile" size={20} />
             </button>
           </div>
@@ -111,7 +111,7 @@ const ChatRoomInputBar = ({
           <button
             onClick={handleSend}
             disabled={sending}
-            className="w-10 h-10 rounded-full bg-[#fe2c55] flex items-center justify-center flex-shrink-0 shadow-[0_0_16px_rgba(254,44,85,0.4)] disabled:opacity-50"
+            className="w-10 h-10 rounded-full bg-[#FF5A3C] flex items-center justify-center flex-shrink-0 shadow-[0_0_16px_rgba(254,44,85,0.4)] disabled:opacity-50"
           >
             <Icon name="Send" size={17} className="text-white" />
           </button>

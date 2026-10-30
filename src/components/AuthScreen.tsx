@@ -132,11 +132,11 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
           <>
             <div className="flex flex-col gap-2">
               <label className="flex items-start gap-2.5 cursor-pointer">
-                <input type="checkbox" checked={age14} onChange={e => { setAge14(e.target.checked); if (!e.target.checked) setAge18(false); }} className="mt-0.5 w-4 h-4 accent-[#fe2c55] flex-shrink-0" />
-                <span className="text-xs text-gray-600 leading-snug">Мне есть 14 лет <span className="text-[#fe2c55]">*</span></span>
+                <input type="checkbox" checked={age14} onChange={e => { setAge14(e.target.checked); if (!e.target.checked) setAge18(false); }} className="mt-0.5 w-4 h-4 accent-[#FF5A3C] flex-shrink-0" />
+                <span className="text-xs text-gray-600 leading-snug">Мне есть 14 лет <span className="text-[#FF5A3C]">*</span></span>
               </label>
               <label className="flex items-start gap-2.5 cursor-pointer">
-                <input type="checkbox" checked={age18} disabled={!age14} onChange={e => setAge18(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#fe2c55] flex-shrink-0" />
+                <input type="checkbox" checked={age18} disabled={!age14} onChange={e => setAge18(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#FF5A3C] flex-shrink-0" />
                 <span className="text-xs text-gray-600 leading-snug">Мне есть 18 лет (откроет контент 18+)</span>
               </label>
             </div>
@@ -144,7 +144,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
         )}
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email <span className="text-[#fe2c55]">*</span></label>
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email <span className="text-[#FF5A3C]">*</span></label>
           <input
             value={email}
             autoComplete="off"
@@ -154,12 +154,12 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
             className="w-full px-4 py-3 rounded-xl bg-gray-100 text-black text-sm outline-none focus:ring-2 focus:ring-[#8b5cf6]/30"
           />
           {mode === "register" && email.length > 0 && !emailValid && (
-            <p className="text-[11px] text-[#fe2c55]">Введите корректный email, например example@mail.com</p>
+            <p className="text-[11px] text-[#FF5A3C]">Введите корректный email, например example@mail.com</p>
           )}
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Пароль <span className="text-[#fe2c55]">*</span></label>
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Пароль <span className="text-[#FF5A3C]">*</span></label>
           <div className="flex items-center bg-gray-100 rounded-xl px-4">
             <input
               value={password}
@@ -202,7 +202,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
               type="checkbox"
               checked={consent}
               onChange={e => setConsent(e.target.checked)}
-              className="mt-0.5 w-4 h-4 accent-[#fe2c55] flex-shrink-0"
+              className="mt-0.5 w-4 h-4 accent-[#FF5A3C] flex-shrink-0"
             />
             <span className="text-xs text-gray-500 leading-snug">
               Принимаю{" "}
@@ -284,7 +284,7 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
                 <button
                   onClick={handleForgot}
                   disabled={!forgotEmail.trim() || forgotLoading}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold text-base disabled:opacity-40 transition-opacity"
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white font-bold text-base disabled:opacity-40 transition-opacity"
                 >
                   {forgotLoading ? "Отправка..." : "Отправить ссылку"}
                 </button>

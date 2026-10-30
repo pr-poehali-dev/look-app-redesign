@@ -320,7 +320,7 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
           </button>
           <button
             onClick={() => setTab("channels")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] hover:opacity-90 active:scale-95 transition-all cursor-pointer text-white text-sm font-medium"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] hover:opacity-90 active:scale-95 transition-all cursor-pointer text-white text-sm font-medium"
           >
             <Icon name="Megaphone" size={15} className="text-white" />
             {t("ms.channels")}
@@ -377,7 +377,7 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
             <div className="px-3 pb-1 text-white/40 text-[11px] font-semibold uppercase tracking-wide">{t("ms.newChat")}</div>
             {searchLoading && peopleFiltered.length === 0 ? (
               <div className="flex items-center justify-center py-4">
-                <div className="w-5 h-5 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-[#FF5A3C] border-t-transparent rounded-full animate-spin" />
               </div>
             ) : (
               peopleFiltered.slice(0, 20).map(u => (
@@ -410,7 +410,7 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
       <div className="flex-1 overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-8 h-8 border-2 border-[#fe2c55] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-[#FF5A3C] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           filtered.map((chat) => (
@@ -468,7 +468,7 @@ const MessagesScreen = ({ initialCommunityId, initialKind, onCommunityConsumed, 
                     <span className="text-white/50 text-xs truncate">{chat.lastMsg || t("ms.noMessages")}</span>
                   )}
                   {chat.unread > 0 && (
-                    <span className="ml-2 min-w-[18px] h-[18px] rounded-full bg-[#fe2c55] text-white text-[10px] font-bold flex items-center justify-center px-1 flex-shrink-0">
+                    <span className="ml-2 min-w-[18px] h-[18px] rounded-full bg-[#FF5A3C] text-white text-[10px] font-bold flex items-center justify-center px-1 flex-shrink-0">
                       {chat.unread > 99 ? "99+" : chat.unread}
                     </span>
                   )}

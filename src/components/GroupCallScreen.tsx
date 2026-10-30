@@ -407,7 +407,7 @@ const AudioBubble = ({ name, muted, stream, onElement, speaking: speakingProp }:
     <div className="flex flex-col items-center gap-2 w-20">
       {stream && <audio ref={audioRef} autoPlay playsInline className="hidden" />}
       <div
-        className={`relative w-16 h-16 rounded-full bg-gradient-to-br from-[#fe2c55]/30 to-[#8b5cf6]/30 flex items-center justify-center transition-all duration-150 ${speaking ? "ring-[3px] ring-[#22c55e] scale-105 shadow-[0_0_20px_rgba(34,197,94,0.6)]" : "border border-white/10"}`}
+        className={`relative w-16 h-16 rounded-full bg-gradient-to-br from-[#FF5A3C]/30 to-[#8b5cf6]/30 flex items-center justify-center transition-all duration-150 ${speaking ? "ring-[3px] ring-[#22c55e] scale-105 shadow-[0_0_20px_rgba(34,197,94,0.6)]" : "border border-white/10"}`}
       >
         <span className="text-white font-bold text-xl">{name.charAt(0).toUpperCase()}</span>
         {muted && (

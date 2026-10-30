@@ -150,7 +150,7 @@ const EditorToolbar = ({
           <div className="flex gap-2 overflow-x-auto">
             {TEMPLATES.map((t) => (
               <button key={t.id} onClick={() => applyTemplate(t.id)} className="flex flex-col items-center gap-1 flex-shrink-0">
-                <div className="w-14 h-20 rounded-lg bg-gradient-to-br from-[#fe2c55]/40 to-[#8b5cf6]/40 border border-white/10 flex items-center justify-center text-white text-xs">{t.name}</div>
+                <div className="w-14 h-20 rounded-lg bg-gradient-to-br from-[#FF5A3C]/40 to-[#8b5cf6]/40 border border-white/10 flex items-center justify-center text-white text-xs">{t.name}</div>
               </button>
             ))}
           </div>
@@ -164,7 +164,7 @@ const EditorToolbar = ({
               {clips.map((c, i) => (
                 <div key={c.id} className="flex items-center gap-1 flex-shrink-0">
                   {i > 0 && <TransitionPicker clip={c} updateClip={updateClip} />}
-                  <div className={`relative w-16 h-24 rounded-lg overflow-hidden border-2 ${i === activeIdx ? "border-[#fe2c55]" : "border-white/10"}`}>
+                  <div className={`relative w-16 h-24 rounded-lg overflow-hidden border-2 ${i === activeIdx ? "border-[#FF5A3C]" : "border-white/10"}`}>
                     <button onClick={() => setActiveIdx(i)} className="w-full h-full">
                       {c.type === "image"
                         ? <img loading="lazy" decoding="async" src={c.url} className="w-full h-full object-cover" alt="" />
@@ -195,7 +195,7 @@ const EditorToolbar = ({
               <label className="text-white/60 text-xs flex justify-between"><span>Скорость</span><span>{speed}x</span></label>
               <div className="flex gap-1.5 mt-1">
                 {[0.5, 1, 1.5, 2].map((s) => (
-                  <button key={s} onClick={() => setSpeed(s)} className={`flex-1 py-1.5 rounded-lg text-xs ${speed === s ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white/70"}`}>{s}x</button>
+                  <button key={s} onClick={() => setSpeed(s)} className={`flex-1 py-1.5 rounded-lg text-xs ${speed === s ? "bg-[#FF5A3C] text-white" : "bg-white/10 text-white/70"}`}>{s}x</button>
                 ))}
               </div>
             </div>
@@ -203,7 +203,7 @@ const EditorToolbar = ({
               <label className="text-white/60 text-xs block mb-1">Формат экспорта</label>
               <div className="flex gap-1.5">
                 {EXPORT_FORMATS.map((f) => (
-                  <button key={f.id} onClick={() => setExportFormat(f.id)} className={`flex-1 py-1.5 rounded-lg text-[11px] flex flex-col items-center ${exportFormat === f.id ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white/70"}`}>
+                  <button key={f.id} onClick={() => setExportFormat(f.id)} className={`flex-1 py-1.5 rounded-lg text-[11px] flex flex-col items-center ${exportFormat === f.id ? "bg-[#FF5A3C] text-white" : "bg-white/10 text-white/70"}`}>
                     <span className="font-semibold">{f.id}</span>
                     <span className="opacity-80 text-[9px]">{f.label}</span>
                   </button>
@@ -214,7 +214,7 @@ const EditorToolbar = ({
               <label className="text-white/60 text-xs block mb-1">Качество экспорта</label>
               <div className="flex gap-1.5">
                 {EXPORT_QUALITIES.map((q) => (
-                  <button key={q.id} onClick={() => setExportQuality(q.id)} className={`flex-1 py-1.5 rounded-lg text-[11px] flex flex-col items-center ${exportQuality === q.id ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white/70"}`}>
+                  <button key={q.id} onClick={() => setExportQuality(q.id)} className={`flex-1 py-1.5 rounded-lg text-[11px] flex flex-col items-center ${exportQuality === q.id ? "bg-[#FF5A3C] text-white" : "bg-white/10 text-white/70"}`}>
                     <span className="font-semibold">{q.label}</span>
                     <span className="opacity-80 text-[9px]">{q.hint}</span>
                   </button>
@@ -228,7 +228,7 @@ const EditorToolbar = ({
             <div className="flex gap-2">
               <button onClick={() => setRotation((r) => r - 90)} className="flex-1 py-2 rounded-lg bg-white/10 text-white text-sm flex items-center justify-center gap-1"><Icon name="RotateCcw" size={14} /> −90°</button>
               <button onClick={() => setRotation((r) => r + 90)} className="flex-1 py-2 rounded-lg bg-white/10 text-white text-sm flex items-center justify-center gap-1"><Icon name="RotateCw" size={14} /> +90°</button>
-              <button onClick={() => setFlipH((v) => !v)} className={`flex-1 py-2 rounded-lg text-sm flex items-center justify-center gap-1 ${flipH ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white"}`}><Icon name="FlipHorizontal" size={14} /> Зеркало</button>
+              <button onClick={() => setFlipH((v) => !v)} className={`flex-1 py-2 rounded-lg text-sm flex items-center justify-center gap-1 ${flipH ? "bg-[#FF5A3C] text-white" : "bg-white/10 text-white"}`}><Icon name="FlipHorizontal" size={14} /> Зеркало</button>
             </div>
             <div>
               <label className="text-white/60 text-xs">Поворот: {rotation}°</label>
@@ -240,7 +240,7 @@ const EditorToolbar = ({
           <div className="flex gap-2 overflow-x-auto">
             {FILTERS.map((f) => (
               <button key={f.id} onClick={() => setFilter(f.id)} className={`flex-shrink-0 flex flex-col items-center gap-1 ${filter === f.id ? "opacity-100" : "opacity-70"}`}>
-                <div className="w-14 h-20 rounded-lg overflow-hidden bg-black border-2" style={{ borderColor: filter === f.id ? "#fe2c55" : "transparent" }}>
+                <div className="w-14 h-20 rounded-lg overflow-hidden bg-black border-2" style={{ borderColor: filter === f.id ? "#FF5A3C" : "transparent" }}>
                   {active && (active.type === "image"
                     ? <img loading="lazy" decoding="async" src={active.url} className="w-full h-full object-cover" style={{ filter: f.css }} alt="" />
                     : <video src={active.url} className="w-full h-full object-cover" style={{ filter: f.css }} muted />)}
@@ -269,7 +269,7 @@ const EditorToolbar = ({
         )}
         {tab === "text" && (
           <div className="space-y-2">
-            <button onClick={addText} className="px-3 py-1.5 rounded-lg bg-[#fe2c55] text-white text-sm flex items-center gap-1"><Icon name="Plus" size={12} /> Новый текст</button>
+            <button onClick={addText} className="px-3 py-1.5 rounded-lg bg-[#FF5A3C] text-white text-sm flex items-center gap-1"><Icon name="Plus" size={12} /> Новый текст</button>
             {activeLayerId !== null && (() => {
               const l = layers.find((x) => x.id === activeLayerId);
               if (!l || l.type !== "text") return null;
@@ -282,13 +282,13 @@ const EditorToolbar = ({
                   </div>
                   <div className="flex gap-1 overflow-x-auto">
                     {TEXT_COLORS.map((c) => (
-                      <button key={c} onClick={() => updateLayer(l.id, { color: c })} className="w-6 h-6 rounded-full border-2 flex-shrink-0" style={{ background: c, borderColor: l.color === c ? "#fe2c55" : "rgba(255,255,255,0.3)" }} />
+                      <button key={c} onClick={() => updateLayer(l.id, { color: c })} className="w-6 h-6 rounded-full border-2 flex-shrink-0" style={{ background: c, borderColor: l.color === c ? "#FF5A3C" : "rgba(255,255,255,0.3)" }} />
                     ))}
                   </div>
                   <div className="flex gap-1 overflow-x-auto">
                     <span className="text-white/60 text-xs self-center">Фон:</span>
                     {BG_COLORS.map((c) => (
-                      <button key={c} onClick={() => updateLayer(l.id, { bg: c })} className="w-6 h-6 rounded border-2 flex-shrink-0 flex items-center justify-center" style={{ background: c === "transparent" ? "transparent" : c, borderColor: l.bg === c ? "#fe2c55" : "rgba(255,255,255,0.3)" }}>
+                      <button key={c} onClick={() => updateLayer(l.id, { bg: c })} className="w-6 h-6 rounded border-2 flex-shrink-0 flex items-center justify-center" style={{ background: c === "transparent" ? "transparent" : c, borderColor: l.bg === c ? "#FF5A3C" : "rgba(255,255,255,0.3)" }}>
                         {c === "transparent" && <Icon name="Slash" size={12} className="text-white" />}
                       </button>
                     ))}
@@ -307,12 +307,12 @@ const EditorToolbar = ({
         )}
         {tab === "music" && (
           <div className="space-y-2">
-            <button onClick={() => musicInputRef.current?.click()} className="px-3 py-1.5 rounded-lg bg-[#fe2c55] text-white text-sm flex items-center gap-1">
+            <button onClick={() => musicInputRef.current?.click()} className="px-3 py-1.5 rounded-lg bg-[#FF5A3C] text-white text-sm flex items-center gap-1">
               <Icon name="Upload" size={12} /> Загрузить трек
             </button>
             {musicName && (
               <div className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2">
-                <Icon name="Music" size={14} className="text-[#fe2c55]" />
+                <Icon name="Music" size={14} className="text-[#FF5A3C]" />
                 <span className="text-white text-sm flex-1 truncate">{musicName}</span>
                 <button onClick={() => { setMusicFile(null); setMusicName(""); if (audioRef.current) audioRef.current.pause(); }} className="text-red-400">
                   <Icon name="X" size={14} />
@@ -334,7 +334,7 @@ const EditorToolbar = ({
         )}
         {tab === "pip" && (
           <div className="space-y-2">
-            <button onClick={() => pipInputRef.current?.click()} className="px-3 py-1.5 rounded-lg bg-[#fe2c55] text-white text-sm flex items-center gap-1">
+            <button onClick={() => pipInputRef.current?.click()} className="px-3 py-1.5 rounded-lg bg-[#FF5A3C] text-white text-sm flex items-center gap-1">
               <Icon name="PictureInPicture2" size={14} /> Добавить видео/фото
             </button>
             <p className="text-white/40 text-xs">Наложи второй ролик или фото поверх основного — как окошко «картинка-в-картинке». Перемести и измени размер прямо на холсте.</p>
@@ -344,7 +344,7 @@ const EditorToolbar = ({
           <div className="space-y-2">
             {!watermarkUrl ? (
               <>
-                <button onClick={() => watermarkInputRef.current?.click()} className="px-3 py-1.5 rounded-lg bg-[#fe2c55] text-white text-sm flex items-center gap-1">
+                <button onClick={() => watermarkInputRef.current?.click()} className="px-3 py-1.5 rounded-lg bg-[#FF5A3C] text-white text-sm flex items-center gap-1">
                   <Icon name="Stamp" size={14} /> Загрузить логотип
                 </button>
                 <p className="text-white/40 text-xs">Добавь картинку своего лого — она будет наложена на весь ролик.</p>
@@ -360,7 +360,7 @@ const EditorToolbar = ({
                   <label className="text-white/60 text-xs block mb-1">Позиция</label>
                   <div className="flex gap-1.5 flex-wrap">
                     {WATERMARK_POSITIONS.map((p) => (
-                      <button key={p.id} onClick={() => setWatermarkPosition(p.id)} className={`px-2 py-1 rounded text-[11px] ${watermarkPosition === p.id ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white/70"}`}>{p.label}</button>
+                      <button key={p.id} onClick={() => setWatermarkPosition(p.id)} className={`px-2 py-1 rounded text-[11px] ${watermarkPosition === p.id ? "bg-[#FF5A3C] text-white" : "bg-white/10 text-white/70"}`}>{p.label}</button>
                     ))}
                   </div>
                 </div>
@@ -378,7 +378,7 @@ const EditorToolbar = ({
         )}
         {tab === "subtitles" && (
           <div className="space-y-2">
-            <button onClick={addSubtitle} className="px-3 py-1.5 rounded-lg bg-[#fe2c55] text-white text-sm flex items-center gap-1">
+            <button onClick={addSubtitle} className="px-3 py-1.5 rounded-lg bg-[#FF5A3C] text-white text-sm flex items-center gap-1">
               <Icon name="Captions" size={14} /> Добавить субтитр
             </button>
             {subtitles.length === 0 && <p className="text-white/40 text-xs">Субтитры показываются внизу экрана в заданный промежуток времени.</p>}
@@ -456,7 +456,7 @@ const EditorToolbar = ({
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex-1 min-w-[64px] flex flex-col items-center gap-0.5 py-2.5 ${tab === t.id ? "text-[#fe2c55]" : "text-white/60"}`}
+            className={`flex-1 min-w-[64px] flex flex-col items-center gap-0.5 py-2.5 ${tab === t.id ? "text-[#FF5A3C]" : "text-white/60"}`}
           >
             <Icon name={t.icon} size={18} />
             <span className="text-[10px] font-semibold whitespace-nowrap">{t.label}</span>
@@ -539,7 +539,7 @@ const TransitionPicker = ({ clip, updateClip }: { clip: Clip; updateClip: (id: n
     <div className="relative flex-shrink-0">
       <button
         onClick={() => setOpen((v) => !v)}
-        className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${current.id !== "none" ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white/60"}`}
+        className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${current.id !== "none" ? "bg-[#FF5A3C] text-white" : "bg-white/10 text-white/60"}`}
         title={current.label}
       >
         <Icon name={current.icon} size={13} />
@@ -552,7 +552,7 @@ const TransitionPicker = ({ clip, updateClip }: { clip: Clip; updateClip: (id: n
               <button
                 key={t.id}
                 onClick={() => { updateClip(clip.id, { transition: t.id as TransitionType }); setOpen(false); }}
-                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] text-left ${current.id === t.id ? "bg-[#fe2c55] text-white" : "text-white/70 hover:bg-white/10"}`}
+                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] text-left ${current.id === t.id ? "bg-[#FF5A3C] text-white" : "text-white/70 hover:bg-white/10"}`}
               >
                 <Icon name={t.icon} size={12} />
                 {t.label}
@@ -597,13 +597,13 @@ const TrimControls = ({ active, updateClip }: { active: Clip; updateClip: (id: n
         <label className="text-white/40 text-[10px]">Старт</label>
         <input type="range" min={0} max={dur} step={0.1} value={start}
           onChange={(e) => { const v = Math.min(Number(e.target.value), end - 0.5); updateClip(active.id, { trimStart: Math.max(0, v) }); }}
-          className="w-full accent-[#fe2c55]" />
+          className="w-full accent-[#FF5A3C]" />
       </div>
       <div>
         <label className="text-white/40 text-[10px]">Финал</label>
         <input type="range" min={0} max={dur} step={0.1} value={end}
           onChange={(e) => { const v = Math.max(Number(e.target.value), start + 0.5); updateClip(active.id, { trimEnd: Math.min(dur, v) }); }}
-          className="w-full accent-[#fe2c55]" />
+          className="w-full accent-[#FF5A3C]" />
       </div>
       <p className="text-white/40 text-[11px]">Длительность: {fmtTime(end - start)} из {fmtTime(dur)}</p>
     </div>

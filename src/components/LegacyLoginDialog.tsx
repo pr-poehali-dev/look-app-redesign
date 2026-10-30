@@ -138,7 +138,7 @@ const LegacyLoginDialog = ({ initialEmail = "", onClose }: Props) => {
             <button
               onClick={requestCode}
               disabled={!email.trim() || loading}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold text-base disabled:opacity-40"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white font-bold text-base disabled:opacity-40"
             >
               {loading ? "Отправка..." : "Получить код"}
             </button>
@@ -175,7 +175,7 @@ const LegacyLoginDialog = ({ initialEmail = "", onClose }: Props) => {
             <button
               onClick={verifyCode}
               disabled={code.length !== 6 || loading}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white font-bold text-base disabled:opacity-40"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white font-bold text-base disabled:opacity-40"
             >
               {loading ? "Проверка..." : "Войти"}
             </button>

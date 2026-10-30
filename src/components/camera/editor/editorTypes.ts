@@ -188,9 +188,9 @@ export const FONTS = [
   { id: "rounded", label: "Round", css: "'Comic Sans MS', cursive" },
 ];
 
-export const TEXT_COLORS = ["#ffffff", "#000000", "#fe2c55", "#61d4f0", "#f9ce34", "#34d399", "#a78bfa", "#fb923c"];
+export const TEXT_COLORS = ["#ffffff", "#000000", "#FF5A3C", "#61d4f0", "#f9ce34", "#34d399", "#a78bfa", "#fb923c"];
 
-export const BG_COLORS = ["transparent", "rgba(0,0,0,0.5)", "rgba(255,255,255,0.5)", "#fe2c55", "#000000", "#ffffff"];
+export const BG_COLORS = ["transparent", "rgba(0,0,0,0.5)", "rgba(255,255,255,0.5)", "#FF5A3C", "#000000", "#ffffff"];
 
 export const STICKERS = ["❤️", "🔥", "✨", "🎉", "😍", "🥰", "😂", "🤩", "👀", "👍", "💯", "⭐", "🌈", "🎵", "🎶", "🌸", "🍕", "🍔", "🍩", "🍓", "🌹", "🌟", "💫", "⚡", "🎁", "🏆", "💎", "🍀", "🦋", "🐶", "🐱", "🦄"];
 

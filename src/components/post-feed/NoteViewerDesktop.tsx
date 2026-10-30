@@ -40,7 +40,7 @@ const CommentRow = ({
       <div className="flex items-center gap-4 mt-1 text-[12px] nv-muted">
         <span>{c.time}</span>
         <button onClick={() => onLike(c.id)} className="flex items-center gap-1">
-          <Icon name="Heart" size={13} className={c.liked ? "nv-icon-active fill-[#fe2c55]" : "nv-icon"} />
+          <Icon name="Heart" size={13} className={c.liked ? "nv-icon-active fill-[#FF5A3C]" : "nv-icon"} />
           {c.likes > 0 && <span>{c.likes}</span>}
         </button>
         <button onClick={() => onReply(c)}>Ответить</button>
@@ -206,7 +206,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
                           size={18}
                           className={item.icon === "Flag" || item.active ? "nv-icon-active" : "nv-icon"}
                         />
-                        <span className={`text-sm font-medium ${item.icon === "Flag" ? "text-[#fe2c55]" : ""}`}>{item.label}</span>
+                        <span className={`text-sm font-medium ${item.icon === "Flag" ? "text-[#FF5A3C]" : ""}`}>{item.label}</span>
                       </button>
                     ))}
                   </div>
@@ -276,13 +276,13 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
                 className="flex-1 min-w-0 h-10 px-4 rounded-full nv-soft text-sm placeholder:opacity-60 outline-none disabled:opacity-60"
               />
               {text.trim() ? (
-                <button onClick={submit} className="text-[#fe2c55] text-sm font-semibold flex-shrink-0">
+                <button onClick={submit} className="text-[#FF5A3C] text-sm font-semibold flex-shrink-0">
                   Отправить
                 </button>
               ) : (
                 <div className="flex items-center gap-4 flex-shrink-0">
                   <button onClick={toggleLike} className="flex items-center gap-1.5 active:scale-90 transition-transform">
-                    <Icon name="Heart" size={26} className={liked ? "nv-icon-active fill-[#fe2c55]" : "nv-icon"} />
+                    <Icon name="Heart" size={26} className={liked ? "nv-icon-active fill-[#FF5A3C]" : "nv-icon"} />
                     <span className="text-sm">{formatLikes(likes)}</span>
                   </button>
                   <button onClick={() => inputRef.current?.focus()} className="flex items-center gap-1.5 active:scale-90 transition-transform">

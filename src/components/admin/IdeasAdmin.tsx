@@ -67,10 +67,16 @@ const IdeasAdmin = ({ token }: { token: string }) => {
     load();
   };
 
+  const delChallenge = async (c: ChallengeRow) => {
+    if (!confirm(`Удалить челлендж «${c.title}»? Участия и выданные за него бейджи тоже удалятся.`)) return;
+    await call("challenge_delete", { id: c.id }, token).catch((e) => setErr((e as Error).message));
+    load();
+  };
+
   return (
     <div className="space-y-8">
       <h2 className="text-2xl font-bold hidden md:block">Идеи и подборки</h2>
-      {err && <p className="text-[#fe2c55] text-sm">{err}</p>}
+      {err && <p className="text-[#FF5A3C] text-sm">{err}</p>}
 
       {m && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -99,7 +105,7 @@ const IdeasAdmin = ({ token }: { token: string }) => {
           <input className={`${inputCls} md:col-span-2`} placeholder="Название" value={tf.title} onChange={(e) => setTf({ ...tf, title: e.target.value })} />
           <input className={inputCls} placeholder="Иконка (Sparkles)" value={tf.icon} onChange={(e) => setTf({ ...tf, icon: e.target.value })} />
           <input className={inputCls} type="color" value={tf.color} onChange={(e) => setTf({ ...tf, color: e.target.value })} />
-          <button onClick={saveTopic} className="bg-[#fe2c55] rounded-lg text-sm font-semibold py-2">Сохранить</button>
+          <button onClick={saveTopic} className="bg-[#FF5A3C] rounded-lg text-sm font-semibold py-2">Сохранить</button>
         </div>
       </section>
 
@@ -115,6 +121,7 @@ const IdeasAdmin = ({ token }: { token: string }) => {
               <button onClick={() => toggleChallenge(c)} className={`px-3 py-1 rounded-full text-xs font-semibold ${c.is_active ? "bg-emerald-500/20 text-emerald-400" : "bg-white/10 text-white/50"}`}>
                 {c.is_active ? "Идёт" : "Скрыт"}
               </button>
+              <button onClick={() => delChallenge(c)} aria-label="Удалить челлендж" title="Удалить"><Icon name="Trash2" size={15} className="text-white/40" /></button>
             </div>
           ))}
         </div>
@@ -127,7 +134,7 @@ const IdeasAdmin = ({ token }: { token: string }) => {
             <input className={inputCls} placeholder="Название бейджа" value={cf.badge_title} onChange={(e) => setCf({ ...cf, badge_title: e.target.value })} />
             <input className={inputCls} type="number" min={1} max={60} placeholder="Дней" value={cf.days} onChange={(e) => setCf({ ...cf, days: Number(e.target.value) || 7 })} />
           </div>
-          <button onClick={saveChallenge} disabled={!cf.title.trim()} className="bg-[#fe2c55] rounded-lg text-sm font-semibold py-2 disabled:opacity-50">Запустить челлендж</button>
+          <button onClick={saveChallenge} disabled={!cf.title.trim()} className="bg-[#FF5A3C] rounded-lg text-sm font-semibold py-2 disabled:opacity-50">Запустить челлендж</button>
         </div>
       </section>
     </div>

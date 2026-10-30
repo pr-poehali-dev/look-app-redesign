@@ -54,7 +54,7 @@ const BoardsScreen = ({ onBack, initialBoardId }: { onBack: () => void; initialB
       <div className="px-4 pt-3">
         <button
           onClick={() => setCreating("collab")}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white text-sm font-semibold"
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white text-sm font-semibold"
         >
           <Icon name="Users" size={16} />Создать коллективную доску
         </button>
@@ -92,7 +92,7 @@ const BoardsScreen = ({ onBack, initialBoardId }: { onBack: () => void; initialB
             <button
               onClick={handleCreate}
               disabled={!newTitle.trim() || saving}
-              className="flex-1 py-2 rounded-xl bg-gradient-to-r from-[#fe2c55] to-[#8b5cf6] text-white text-sm font-semibold disabled:opacity-50"
+              className="flex-1 py-2 rounded-xl bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white text-sm font-semibold disabled:opacity-50"
             >
               {saving ? "Создаём..." : "Создать"}
             </button>

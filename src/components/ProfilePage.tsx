@@ -263,7 +263,7 @@ const ProfilePage = () => {
           }}
           title={t("pr.scanQr")}
           aria-label={t("pr.scanQr")}
-          className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gradient-to-br from-[#fe2c55] to-[#8b5cf6] flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+          className="w-12 md:w-10 py-2.5 md:py-2 rounded-xl bg-gradient-to-br from-[#FF5A3C] to-[#8b5cf6] flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer"
         >
           <Icon name="ScanLine" size={18} className="text-white pointer-events-none" />
         </button>

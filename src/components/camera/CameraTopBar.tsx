@@ -52,7 +52,7 @@ const CameraTopBar = ({
         </button>
 
         {recording && (
-          <div className="flex items-center gap-1.5 bg-[#fe2c55] px-3 py-1 rounded-full">
+          <div className="flex items-center gap-1.5 bg-[#FF5A3C] px-3 py-1 rounded-full">
             <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
             <span className="text-white text-sm font-bold font-mono">{formatTime(recordSeconds)}</span>
           </div>
@@ -72,7 +72,7 @@ const CameraTopBar = ({
           <button
             onClick={onToggleMusicPanel}
             className={`w-10 h-10 rounded-full backdrop-blur-sm flex items-center justify-center border transition-all ${
-              selectedTrack ? "bg-[#fe2c55]/80 border-[#fe2c55]" : "bg-black/40 border-transparent"
+              selectedTrack ? "bg-[#FF5A3C]/80 border-[#FF5A3C]" : "bg-black/40 border-transparent"
             }`}
           >
             <Icon name="Music" size={18} className="text-white" />

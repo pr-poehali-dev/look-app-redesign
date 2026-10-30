@@ -41,14 +41,14 @@ const BoardInviteLink = () => {
   return createPortal(
     <div className="fixed inset-0 z-[10002] bg-black/60 flex items-center justify-center px-6">
       <div className="sheet-theme rounded-3xl p-6 w-full max-w-sm text-center">
-        <div className="w-14 h-14 rounded-full bg-[#fe2c55]/20 flex items-center justify-center mx-auto mb-3">
-          <Icon name="Users" size={26} className="text-[#fe2c55]" />
+        <div className="w-14 h-14 rounded-full bg-[#FF5A3C]/20 flex items-center justify-center mx-auto mb-3">
+          <Icon name="Users" size={26} className="text-[#FF5A3C]" />
         </div>
         <p className="text-white font-bold text-lg mb-1">Вас приглашают в общую доску</p>
         <p className="text-white/50 text-sm mb-5">Вместе собирайте идеи и добавляйте публикации</p>
         <div className="flex gap-2">
           <button onClick={close} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm font-semibold">Не сейчас</button>
-          <button onClick={accept} disabled={busy} className="flex-1 py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold disabled:opacity-50">
+          <button onClick={accept} disabled={busy} className="flex-1 py-2.5 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold disabled:opacity-50">
             {busy ? "Входим..." : "Принять"}
           </button>
         </div>

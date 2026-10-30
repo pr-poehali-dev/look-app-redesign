@@ -61,7 +61,7 @@ const BoardMembersSheet = ({ boardId, members, isOwner, onChanged, onClose }: Pr
             <div className="flex gap-1.5">
               {(["editor", "member"] as const).map((r) => (
                 <button key={r} onClick={() => setRole(r)}
-                  className={`flex-1 py-2 rounded-lg text-xs font-semibold border ${role === r ? "bg-[#fe2c55] border-[#fe2c55] text-white" : "bg-white/10 border-white/15 text-white/70"}`}>
+                  className={`flex-1 py-2 rounded-lg text-xs font-semibold border ${role === r ? "bg-[#FF5A3C] border-[#FF5A3C] text-white" : "bg-white/10 border-white/15 text-white/70"}`}>
                   {r === "editor" ? "Может добавлять" : "Только смотрит"}
                 </button>
               ))}
@@ -69,7 +69,7 @@ const BoardMembersSheet = ({ boardId, members, isOwner, onChanged, onClose }: Pr
             <div className="flex gap-2">
               <input value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="Ник, например @anna"
                 className="flex-1 bg-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none placeholder-white/40" />
-              <button onClick={inviteByHandle} disabled={busy || !handle.trim()} className="px-3 rounded-xl bg-[#fe2c55] text-white text-sm font-semibold disabled:opacity-50">Добавить</button>
+              <button onClick={inviteByHandle} disabled={busy || !handle.trim()} className="px-3 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold disabled:opacity-50">Добавить</button>
             </div>
             <button onClick={inviteByLink} disabled={busy} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/10 text-white text-sm font-semibold">
               <Icon name="Link" size={15} />Скопировать ссылку-приглашение

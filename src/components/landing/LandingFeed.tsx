@@ -270,7 +270,7 @@ const LandingFeed = ({ category, initialVideoId, onLocked, onLogin }: LandingFee
                 <div className="absolute inset-x-4 bottom-3 flex items-center gap-3 text-[11px] font-semibold text-white">
                   <span>{fmt(isActive ? time.cur : 0)}</span>
                   <div className="relative h-1 flex-1 rounded-full bg-white/30">
-                    <div className="h-full rounded-full bg-[#fe2c55]" style={{ width: `${pct}%` }} />
+                    <div className="h-full rounded-full bg-[#FF5A3C]" style={{ width: `${pct}%` }} />
                     <div
                       className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-white"
                       style={{ left: `calc(${pct}% - 6px)` }}

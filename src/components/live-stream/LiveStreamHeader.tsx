@@ -15,7 +15,7 @@ const LiveStreamHeader = ({ isLive, viewers, seconds, flipping, formatTime, onFl
     <div className="relative z-20 flex items-center justify-between px-4 pt-12 pb-3">
       <div className="flex items-center gap-2">
         {isLive && (
-          <div className="flex items-center gap-1.5 bg-[#fe2c55] px-2.5 py-1 rounded-md">
+          <div className="flex items-center gap-1.5 bg-[#FF5A3C] px-2.5 py-1 rounded-md">
             <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
             <span className="text-white text-xs font-bold tracking-wide">LIVE</span>
           </div>

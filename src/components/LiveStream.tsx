@@ -10,7 +10,7 @@ const STREAMS_API = "https://functions.poehali.dev/54ce632b-903a-4de7-8f5f-e81fa
 const SIGNAL_API = "https://functions.poehali.dev/86962a84-c16a-4104-9fd1-3bb76958389c";
 
 const FAKE_VIEWERS = [
-  { id: 1, name: "max_pro", text: "🔥🔥🔥 огонь!", color: "#fe2c55" },
+  { id: 1, name: "max_pro", text: "🔥🔥🔥 огонь!", color: "#FF5A3C" },
   { id: 2, name: "anya_smile", text: "Привет из Москвы!", color: "#61d4f0" },
   { id: 3, name: "user_777", text: "давно ждал этот стрим", color: "#a78bfa" },
   { id: 4, name: "kofe_lav", text: "❤️❤️❤️", color: "#fb923c" },
@@ -18,7 +18,7 @@ const FAKE_VIEWERS = [
   { id: 6, name: "night_owl", text: "красота 😍", color: "#f472b6" },
   { id: 7, name: "denis_k", text: "сколько уже идёт?", color: "#fbbf24" },
   { id: 8, name: "masha99", text: "не могу оторваться", color: "#61d4f0" },
-  { id: 9, name: "pro_gamer_x", text: "лайк поставил 👍", color: "#fe2c55" },
+  { id: 9, name: "pro_gamer_x", text: "лайк поставил 👍", color: "#FF5A3C" },
   { id: 10, name: "sun_rise", text: "топ контент!", color: "#a78bfa" },
 ];
 void FAKE_VIEWERS;
@@ -366,7 +366,7 @@ const LiveStream = ({ onClose }: { onClose: () => void }) => {
       broadcastToViewers("live_chat", {
         name: user.name,
         text,
-        color: "#fe2c55",
+        color: "#FF5A3C",
         author: true,
       }).catch(() => {});
     }

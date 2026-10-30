@@ -21,7 +21,7 @@ interface LiveChannel {
 }
 
 const FAKE_CHAT = [
-  { name: "alex99", text: "просто невероятно!", color: "#fe2c55" },
+  { name: "alex99", text: "просто невероятно!", color: "#FF5A3C" },
   { name: "lisa_m", text: "❤️❤️❤️", color: "#f472b6" },
   { name: "go_live", text: "уже час тут сижу", color: "#61d4f0" },
   { name: "fire_boy", text: "🔥🔥🔥", color: "#fb923c" },
@@ -149,7 +149,7 @@ const WatchStream = ({ channel, onBack }: { channel: LiveChannel; onBack: () => 
                   id: Date.now() + Math.random(),
                   name: (p.author ? "★ " : "") + (p.name || "Зритель"),
                   text: p.text as string,
-                  color: p.author ? "#fe2c55" : (p.color || "#61d4f0"),
+                  color: p.author ? "#FF5A3C" : (p.color || "#61d4f0"),
                 }]);
               }
             }
@@ -210,7 +210,7 @@ const WatchStream = ({ channel, onBack }: { channel: LiveChannel; onBack: () => 
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-black/30 pointer-events-none" />
         {connecting && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60">
-            <div className="w-12 h-12 rounded-full border-2 border-white/20 border-t-[#fe2c55] animate-spin" />
+            <div className="w-12 h-12 rounded-full border-2 border-white/20 border-t-[#FF5A3C] animate-spin" />
             <p className="text-white/70 text-sm">Подключение к трансляции...</p>
           </div>
         )}
@@ -227,7 +227,7 @@ const WatchStream = ({ channel, onBack }: { channel: LiveChannel; onBack: () => 
       {/* Top bar */}
       <div className="relative z-20 flex items-center justify-between px-4 pt-12 pb-2">
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 bg-[#fe2c55] px-2.5 py-1 rounded-md">
+          <div className="flex items-center gap-1.5 bg-[#FF5A3C] px-2.5 py-1 rounded-md">
             <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
             <span className="text-white text-xs font-bold">LIVE</span>
           </div>
@@ -243,7 +243,7 @@ const WatchStream = ({ channel, onBack }: { channel: LiveChannel; onBack: () => 
 
       {/* Author info */}
       <div className="relative z-20 px-4 pb-2 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#fe2c55]">
+        <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#FF5A3C]">
           <img loading="lazy" decoding="async" src={channel.thumb} alt={channel.name} className="w-full h-full object-cover" />
         </div>
         <div className="flex-1 min-w-0">
@@ -255,7 +255,7 @@ const WatchStream = ({ channel, onBack }: { channel: LiveChannel; onBack: () => 
         </div>
         <button
           onClick={() => setFollowing((v) => !v)}
-          className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${following ? "bg-white/20 text-white" : "bg-[#fe2c55] text-white"}`}
+          className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${following ? "bg-white/20 text-white" : "bg-[#FF5A3C] text-white"}`}
         >
           {following ? "Подписан" : "Подписаться"}
         </button>
@@ -299,7 +299,7 @@ const WatchStream = ({ channel, onBack }: { channel: LiveChannel; onBack: () => 
           </button>
           <button onClick={() => setLiked((v) => !v)}
             className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 flex items-center justify-center">
-            <Icon name="Heart" size={20} className={liked ? "text-[#fe2c55] fill-[#fe2c55]" : "text-white"} />
+            <Icon name="Heart" size={20} className={liked ? "text-[#FF5A3C] fill-[#FF5A3C]" : "text-white"} />
           </button>
         </div>
       </div>
@@ -374,9 +374,9 @@ const LiveList = () => {
               {loading ? "Загрузка..." : `${channels.length} ${channels.length === 1 ? "трансляция" : channels.length < 5 ? "трансляции" : "трансляций"} сейчас`}
             </p>
           </div>
-          <div className="flex items-center gap-1.5 bg-[#fe2c55]/20 border border-[#fe2c55]/40 px-3 py-1.5 rounded-full">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#fe2c55] animate-pulse" />
-            <span className="text-[#fe2c55] text-xs font-bold">ТРАНСЛЯЦИЯ</span>
+          <div className="flex items-center gap-1.5 bg-[#FF5A3C]/20 border border-[#FF5A3C]/40 px-3 py-1.5 rounded-full">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#FF5A3C] animate-pulse" />
+            <span className="text-[#FF5A3C] text-xs font-bold">ТРАНСЛЯЦИЯ</span>
           </div>
         </div>
       </div>
@@ -394,7 +394,7 @@ const LiveList = () => {
             style={{ touchAction: "manipulation" }}
             className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
               activeCategory === cat
-                ? "bg-[#fe2c55] text-white border-[#fe2c55]"
+                ? "bg-[#FF5A3C] text-white border-[#FF5A3C]"
                 : "bg-white/10 text-white/70 border-white/10 hover:bg-white/20"
             }`}
           >
@@ -415,7 +415,7 @@ const LiveList = () => {
           <img loading="lazy" decoding="async" src={filtered[0].thumb} className="w-full h-full object-cover rounded-2xl" alt="" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
           <div className="absolute top-3 left-3 flex items-center gap-2">
-            <div className="flex items-center gap-1.5 bg-[#fe2c55] px-2 py-0.5 rounded-md">
+            <div className="flex items-center gap-1.5 bg-[#FF5A3C] px-2 py-0.5 rounded-md">
               <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
               <span className="text-white text-xs font-bold">LIVE</span>
             </div>
@@ -456,7 +456,7 @@ const LiveList = () => {
               <div className="relative w-20 h-14 rounded-xl overflow-hidden flex-shrink-0">
                 <img loading="lazy" decoding="async" src={ch.thumb} className="w-full h-full object-cover rounded-xl" alt={ch.name} />
                 <div className="absolute inset-0 bg-black/20" />
-                <div className="absolute bottom-1 left-1 flex items-center gap-1 bg-[#fe2c55] px-1.5 py-0.5 rounded">
+                <div className="absolute bottom-1 left-1 flex items-center gap-1 bg-[#FF5A3C] px-1.5 py-0.5 rounded">
                   <div className="w-1 h-1 rounded-full bg-white animate-pulse" />
                   <span className="text-white text-[9px] font-bold">LIVE</span>
                 </div>

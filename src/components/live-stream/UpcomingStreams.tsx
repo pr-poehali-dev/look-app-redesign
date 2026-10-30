@@ -115,7 +115,7 @@ const UpcomingStreams = () => {
     <div className="px-4 mb-4">
       <div className="flex items-center justify-between mb-3">
         <p className="text-white/40 text-xs font-semibold uppercase tracking-widest">Ближайшие трансляции</p>
-        <button onClick={() => setShowForm((v) => !v)} className="text-[#fe2c55] text-xs font-semibold flex items-center gap-1">
+        <button onClick={() => setShowForm((v) => !v)} className="text-[#FF5A3C] text-xs font-semibold flex items-center gap-1">
           <Icon name={showForm ? "X" : "CalendarPlus"} size={14} />
           {showForm ? "Закрыть" : "Анонсировать"}
         </button>
@@ -141,7 +141,7 @@ const UpcomingStreams = () => {
               <button
                 key={c}
                 onClick={() => setCategory(c)}
-                className={`flex-shrink-0 px-3 py-1 rounded-full text-xs border ${category === c ? "bg-[#fe2c55] border-[#fe2c55] text-white" : "border-white/15 text-white/60"}`}
+                className={`flex-shrink-0 px-3 py-1 rounded-full text-xs border ${category === c ? "bg-[#FF5A3C] border-[#FF5A3C] text-white" : "border-white/15 text-white/60"}`}
               >
                 {c}
               </button>
@@ -150,7 +150,7 @@ const UpcomingStreams = () => {
           <button
             onClick={submit}
             disabled={!title.trim() || !when || saving}
-            className="w-full py-2.5 rounded-xl bg-[#fe2c55] text-white text-sm font-bold disabled:opacity-40"
+            className="w-full py-2.5 rounded-xl bg-[#FF5A3C] text-white text-sm font-bold disabled:opacity-40"
           >
             {saving ? "Сохраняем..." : "Анонсировать трансляцию"}
           </button>
@@ -164,8 +164,8 @@ const UpcomingStreams = () => {
         <div className="flex flex-col gap-2">
           {list.map((s) => (
             <div key={s.id} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-3">
-              <div className="w-11 h-11 rounded-xl bg-[#fe2c55]/15 flex items-center justify-center flex-shrink-0">
-                <Icon name="CalendarClock" size={20} className="text-[#fe2c55]" />
+              <div className="w-11 h-11 rounded-xl bg-[#FF5A3C]/15 flex items-center justify-center flex-shrink-0">
+                <Icon name="CalendarClock" size={20} className="text-[#FF5A3C]" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-white text-sm font-semibold truncate">{s.title}</p>
@@ -179,7 +179,7 @@ const UpcomingStreams = () => {
               ) : (
                 <button
                   onClick={() => remind(s)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold ${s.reminded ? "bg-white/15 text-white" : "bg-[#fe2c55] text-white"}`}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold ${s.reminded ? "bg-white/15 text-white" : "bg-[#FF5A3C] text-white"}`}
                 >
                   {s.reminded ? "Ждёте" : "Напомнить"}
                 </button>

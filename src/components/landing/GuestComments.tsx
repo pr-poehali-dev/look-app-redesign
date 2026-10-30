@@ -62,7 +62,7 @@ const GuestComments = ({ videoId, initialCount = 0, onClose, onLogin }: GuestCom
             onClick={onLogin}
             className="w-full rounded-full bg-white/10 px-4 py-2.5 text-center text-sm text-white/60"
           >
-            <span className="font-bold text-[#fe2c55]">Войти</span>, чтобы прокомментировать
+            <span className="font-bold text-[#FF5A3C]">Войти</span>, чтобы прокомментировать
           </button>
         </div>
       </div>
