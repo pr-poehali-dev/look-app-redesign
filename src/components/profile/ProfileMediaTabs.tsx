@@ -22,9 +22,10 @@ interface ProfileMediaTabsProps {
   myArticlesLoading: boolean;
   onOpenBoard: (id: number) => void;
   onOpenBoards: () => void;
+  onOpenGuide: () => void;
 }
 
-const ProfileMediaTabs = ({ tab, setTab, stories, setMediaViewer, setCategoryEditId, setShowArticles, myArticles, myArticlesLoading, onOpenBoard, onOpenBoards }: ProfileMediaTabsProps) => {
+const ProfileMediaTabs = ({ tab, setTab, stories, setMediaViewer, setCategoryEditId, setShowArticles, myArticles, myArticlesLoading, onOpenBoard, onOpenBoards, onOpenGuide }: ProfileMediaTabsProps) => {
   return (
     <>
       {/* Tabs */}
@@ -71,10 +72,16 @@ const ProfileMediaTabs = ({ tab, setTab, stories, setMediaViewer, setCategoryEdi
         </button>
       </div>
       <div className="flex gap-2 px-3 py-2 overflow-x-auto border-b border-gray-200" style={{ scrollbarWidth: "none" }}>
-        {([["boards", "Доски", "Layers"], ["circles", "Кружки", "Users"], ["challenges", "Челленджи", "Trophy"]] as const).map(([id, label, icon]) => (
+        {([
+          { id: "boards", label: "Доски", icon: "Layers", action: () => setTab("boards") },
+          { id: "circles", label: "Кружки", icon: "Users", action: () => setTab("circles") },
+          { id: "challenges", label: "Челленджи", icon: "Trophy", action: () => setTab("challenges") },
+          { id: "articles-open", label: "Статьи", icon: "FileText", action: () => setShowArticles(true) },
+          { id: "guide", label: "Инструкция", icon: "BookOpen", action: onOpenGuide },
+        ] as const).map(({ id, label, icon, action }) => (
           <button
             key={id}
-            onClick={() => setTab(id)}
+            onClick={action}
             className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold ${tab === id ? "bg-[#8b5cf6] text-white" : "bg-gray-100 text-gray-600"}`}
           >
             <Icon name={icon} size={13} />{label}

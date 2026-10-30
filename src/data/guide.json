@@ -6,7 +6,7 @@
     {
       "icon": "UserRound",
       "title": "Регистрация и профиль",
-      "image": "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/abbaf9af-4cb6-4b4a-83b9-3e2d8a4bb87b.jpg",
+      "image": "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/a7c22a11-dc93-46f7-99da-bdf5c7292bf9.jpg",
       "points": [
         "Смотреть видеоленту на «Главной» можно без аккаунта. Чтобы ставить лайки, писать комментарии, подписываться и публиковать, войдите или зарегистрируйтесь.",
         "Откройте вкладку «Профиль» внизу экрана и нажмите на аватар, чтобы добавить фото, имя и описание.",
@@ -19,7 +19,7 @@
     {
       "icon": "Plus",
       "title": "Публикация постов",
-      "image": "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/76582a9c-d845-48bb-aab5-bec4b2f37703.jpg",
+      "image": "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/ce24ef6a-5f46-4758-b911-2b5523ae8aeb.jpg",
       "points": [
         "Нажмите большую кнопку «+» («Создать») по центру нижнего меню.",
         "Выберите фото или видео из галереи или снимите на камеру. Можно добавить несколько файлов.",
@@ -34,7 +34,7 @@
     {
       "icon": "Wand2",
       "title": "Редактор: фильтры, музыка, текст",
-      "image": "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/37e2e382-b648-45a2-a818-7b770c5b3a69.jpg",
+      "image": "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/9c50b49a-dd8d-4441-a9c7-b33114dca1a6.jpg",
       "points": [
         "После выбора файла открывается редактор. Внизу вкладки: «Шабл.», «Клипы», «Обрезка», «Кадр», «Фильтр», «Цвет», «Текст», «Стикеры», «Музыка», «Звуки», «Субтитры», «Лого».",
         "«Шабл.» применяет готовое оформление одним нажатием. «Фильтр» и «Цвет» меняют яркость, контраст и насыщенность.",
@@ -46,7 +46,7 @@
     {
       "icon": "Compass",
       "title": "Лента, поиск и подписки",
-      "image": "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/e5edf196-6f3d-4cfd-828c-39194f9c5d73.jpg",
+      "image": "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/be55541a-cabd-45aa-b6fa-f5bea9de36c3.jpg",
       "points": [
         "«Главная» показывает видеоленту: листайте вверх, чтобы перейти к следующему видео.",
         "«Лента» показывает фото и посты. Вкладки сверху: «Подписки», «Рекомендации», «Тренды», «Статьи», «Рядом».",
@@ -83,7 +83,7 @@
     {
       "icon": "ListChecks",
       "title": "Статьи и туториалы",
-      "image": "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/131b0899-9cfd-4c17-bfb4-d81fa56b6bcf.jpg",
+      "image": "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/3f75525a-e63f-4e97-889c-44696a639ea6.jpg",
       "points": [
         "Туториалы и статьи видны в «Ленте» среди обычных постов и на вкладке «Статьи».",
         "Откройте туториал: он идёт по шагам с картинками. Отмечайте выполненные шаги галочкой.",
@@ -95,7 +95,7 @@
     {
       "icon": "MessageCircle",
       "title": "Чаты и звонки",
-      "image": "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/d6b9d934-42cc-4b77-8fb5-3754f605b305.jpg",
+      "image": "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/a3e4d205-7182-4bd2-871e-6cbd652a1c53.jpg",
       "points": [
         "Вкладка «Чаты» открывает ваши переписки. Начать новую можно из профиля человека.",
         "В чате можно отправлять текст, фото, голосовые и видеосообщения.",
@@ -108,7 +108,7 @@
     {
       "icon": "ShoppingBag",
       "title": "Товары в постах",
-      "image": "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/c6461c14-00fc-4b5c-8b65-a562754d4cdf.jpg",
+      "image": "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/73658151-cb19-4bc4-8835-96b138d7e549.jpg",
       "points": [
         "Если в посте есть товары, на нём появляется кнопка «Товары в кадре» или «Перейти».",
         "Нажмите «Перейти», чтобы открыть сайт продавца и посмотреть товар или оформить заказ там. Покупка в самом приложении не происходит.",
@@ -119,7 +119,7 @@
     {
       "icon": "LifeBuoy",
       "title": "Поддержка",
-      "image": "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/748f09fd-27ea-4f0c-b73d-d7d060f9649a.jpg",
+      "image": "https://cdn.poehali.dev/projects/82eb0b6d-91ae-4d3d-a0a1-a53fb8c6e823/files/e88baafa-5e41-4916-816e-3c4d39516727.jpg",
       "points": [
         "Поддержка находится в «Профиле»: нажмите «Настройки» и выберите пункт «Поддержка». На компьютере она есть и в боковом меню.",
         "Сначала выберите категорию обращения: «Баг / ошибка», «Оплата», «Аккаунт», «Идея», «Предложение», «Жалоба на контент», «Исправить дату рождения» или «Другое».",

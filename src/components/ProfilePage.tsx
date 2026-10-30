@@ -283,32 +283,6 @@ const ProfilePage = () => {
         </button>
       </div>
 
-      {/* Доски + Статьи + Инструкция */}
-      <div className="grid grid-cols-3 gap-1.5 px-4 pb-4 md:px-3 md:pb-3">
-        <button
-          onClick={() => setShowBoards(true)}
-          className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
-        >
-          <Icon name="Layers" size={15} />
-          {t("pr.boards")}
-        </button>
-        <button
-          onClick={() => setShowArticles(true)}
-          className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
-        >
-          <Icon name="FileText" size={15} />
-          {t("pr.articles")}
-        </button>
-        <button
-          onClick={() => setShowGuide(true)}
-          className="flex flex-col items-center justify-center gap-1 py-2.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all cursor-pointer text-black font-semibold text-[10px] md:text-[11px]"
-        >
-          <Icon name="BookOpen" size={15} />
-          {t("pr.guide")}
-        </button>
-      </div>
-
-
       <ProfileStoriesRow
         stories={stories}
         addMedia={addMedia}
@@ -336,6 +310,7 @@ const ProfilePage = () => {
         myArticlesLoading={myArticlesLoading}
         onOpenBoard={(id) => { setOpenBoardId(id); setShowBoards(true); }}
         onOpenBoards={() => { setOpenBoardId(null); setShowBoards(true); }}
+        onOpenGuide={() => setShowGuide(true)}
       />
 
       <div className="pb-28" />
