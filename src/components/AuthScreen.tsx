@@ -13,11 +13,8 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
   const { login, register } = useAuth();
   const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [showGuide, setShowGuide] = useState(false);
-  const [name, setName] = useState("");
-  const [handle, setHandle] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
+      const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
   const [age14, setAge14] = useState(false);
   const [age18, setAge18] = useState(false);
   const [consent, setConsent] = useState(false);
@@ -56,33 +53,17 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
     if (mode === "login") {
       err = await login(email.trim(), password);
     } else {
-      err = await register(name.trim(), handle.trim(), email.trim(), password, phone.trim(), age18, consent);
+      err = await register("", "", email.trim(), password, "", age18, consent);
     }
     if (err) setError(err);
     setLoading(false);
   };
 
-  const formatPhone = (raw: string): string => {
-    let d = raw.replace(/\D/g, "");
-    if (d.startsWith("8")) d = "7" + d.slice(1);
-    if (!d.startsWith("7")) d = "7" + d;
-    d = d.slice(0, 11);
-    const rest = d.slice(1);
-    let out = "+7";
-    if (rest.length > 0) out += " " + rest.slice(0, 3);
-    if (rest.length >= 3) out += " " + rest.slice(3, 6);
-    if (rest.length >= 6) out += "-" + rest.slice(6, 8);
-    if (rest.length >= 8) out += "-" + rest.slice(8, 10);
-    return out;
-  };
-
-  const phoneDigits = phone.replace(/\D/g, "");
-  const phoneValid = phoneDigits.length === 0 || phoneDigits.length === 11;
   const emailRe = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
   const emailValid = emailRe.test(email.trim());
   const isValid = mode === "login"
     ? email.trim() && password
-    : name.trim() && handle.trim() && emailValid && password.length >= 6 && phoneValid && age14 && consent;
+    : emailValid && password.length >= 6 && age14 && consent;
 
   if (showGuide) {
     return (
@@ -137,53 +118,13 @@ const AuthScreen = ({ initialMode = "login", onBack }: AuthScreenProps = {}) => 
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "login" ? "bg-white text-black shadow-sm" : "text-gray-400"}`}
           >Войти</button>
           <button
-            onClick={() => { setMode("register"); setError(""); setName(""); setHandle(""); setEmail(""); setPhone(""); setPassword(""); setAge14(false); setAge18(false); setConsent(false); setShowPassword(false); }}
+            onClick={() => { setMode("register"); setError(""); setEmail(""); setPassword(""); setAge14(false); setAge18(false); setConsent(false); setShowPassword(false); }}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "register" ? "bg-white text-black shadow-sm" : "text-gray-400"}`}
           >Регистрация</button>
         </div>
 
         {mode === "register" && (
           <>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Имя <span className="text-[#fe2c55]">*</span></label>
-              <input
-                value={name}
-                autoComplete="off"
-                onChange={e => setName(e.target.value)}
-                placeholder="Как тебя зовут?"
-                className="w-full px-4 py-3 rounded-xl bg-gray-100 text-black text-sm outline-none focus:ring-2 focus:ring-[#8b5cf6]/30"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Никнейм <span className="text-[#fe2c55]">*</span></label>
-              <div className="flex items-center bg-gray-100 rounded-xl px-4">
-                <span className="text-gray-400 text-sm">@</span>
-                <input
-                  value={handle}
-                  autoComplete="off"
-                  onChange={e => setHandle(e.target.value.replace(/[^a-z0-9_.]/gi, ""))}
-                  placeholder="nickname"
-                  className="flex-1 py-3 bg-transparent text-black text-sm outline-none ml-1"
-                />
-              </div>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Номер телефона <span className="text-gray-400 normal-case font-normal">(необязательно)</span></label>
-              <input
-                value={phone}
-                autoComplete="off"
-                onChange={e => setPhone(formatPhone(e.target.value))}
-                type="tel"
-                inputMode="tel"
-                placeholder="+7 9XX XXX-XX-XX"
-                className="w-full px-4 py-3 rounded-xl bg-gray-100 text-black text-sm outline-none focus:ring-2 focus:ring-[#8b5cf6]/30"
-              />
-              {phone.length > 0 && !phoneValid ? (
-                <p className="text-[11px] text-[#fe2c55]">Введите номер в формате +7 9XX XXX-XX-XX</p>
-              ) : (
-                <p className="text-[11px] text-gray-400">По номеру тебя смогут найти друзья из контактов</p>
-              )}
-            </div>
             <div className="flex flex-col gap-2">
               <label className="flex items-start gap-2.5 cursor-pointer">
                 <input type="checkbox" checked={age14} onChange={e => { setAge14(e.target.checked); if (!e.target.checked) setAge18(false); }} className="mt-0.5 w-4 h-4 accent-[#fe2c55] flex-shrink-0" />

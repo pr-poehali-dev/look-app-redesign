@@ -128,7 +128,7 @@ const MediaDeepLink = () => {
         )}
         {ageBlocked && (
           <p className="text-white/70 text-sm text-center pt-40 px-8">
-            Контент 18+. Войдите в аккаунт и подтвердите дату рождения, чтобы посмотреть
+            Контент 18+. Войдите в аккаунт и подтвердите возраст, чтобы посмотреть
           </p>
         )}
         {failed && <p className="text-white/70 text-sm text-center pt-40">Публикация недоступна или удалена</p>}

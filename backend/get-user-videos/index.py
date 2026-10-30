@@ -83,8 +83,12 @@ def handler(event: dict, context) -> dict:
             phone = ''.join(ch for ch in phone_raw if ch.isdigit() or ch == '+')
             if phone and not phone.startswith('+'):
                 phone = '+' + phone.lstrip('+')
-            if not all([name, handle, email, password]):
+            if not all([email, password]):
                 return err('Заполни все поля')
+            if not handle:
+                handle = 'user_' + secrets.token_hex(4)
+            if not name:
+                name = email.split('@')[0][:40] or handle
             if not body.get('consent'):
                 return err('Нужно принять условия и дать согласие на обработку персональных данных')
             if not body.get('age14'):

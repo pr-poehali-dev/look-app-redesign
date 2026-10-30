@@ -1110,7 +1110,7 @@ const DeleteAccountScreen = ({ onBack }: { onBack: () => void }) => {
         <div className="bg-white rounded-2xl p-4 flex flex-col gap-2">
           <p className="text-black text-sm font-semibold">Что будет удалено безвозвратно</p>
           <ul className="text-gray-600 text-sm list-disc pl-5 flex flex-col gap-1">
-            <li>Профиль, email, телефон, дата рождения</li>
+            <li>Профиль, email, телефон (если указан), отметка о возрасте</li>
             <li>Все ваши публикации, фото и видео</li>
             <li>Комментарии, лайки, подписки, коллекции</li>
             <li>Сообщения, товары, статьи и заказы</li>

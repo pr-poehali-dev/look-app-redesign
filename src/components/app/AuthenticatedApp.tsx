@@ -6,6 +6,7 @@ import { UserMediaProvider } from "@/context/UserMediaContext";
 import { UnreadProvider } from "@/context/UnreadContext";
 import { useAuth } from "@/context/AuthContext";
 import AgeGate from "@/components/AgeGate";
+import ProfileSetupGate from "@/components/ProfileSetupGate";
 import IncomingCallModal from "./IncomingCallModal";
 import type { IncomingCall } from "./useIncomingCall";
 
@@ -32,6 +33,7 @@ const AuthenticatedApp = ({ user, token, activeCall, incomingCall, onEndCall, on
     <UnreadProvider>
     <ThumbnailWorker />
     <AgeGate />
+    <ProfileSetupGate />
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<><Index /><ArticleDeepLink /><MediaDeepLink /></>} />
