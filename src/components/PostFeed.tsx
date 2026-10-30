@@ -240,11 +240,16 @@ const PostFeed = () => {
   const activeCategory = FEED_CATEGORIES.find(c => c.id === categoryId);
   const categoryPosts = useMemo(() => {
     const season = scope === "recommend" && seasonId ? getSeasonalTopics(new Date()).find(t => t.id === seasonId) : null;
-    const base = season ? scopedPosts.filter(p => matchesTopic(p, season)) : scopedPosts;
+    const matched = season ? scopedPosts.filter(p => matchesTopic(p, season)) : scopedPosts;
+    const base = season && matched.length === 0 ? scopedPosts : matched;
     if (!activeCategory || activeCategory.id === "recommend") return base;
     if (activeCategory.id === "videos") return base.filter(p => p.isVideo);
     return base.filter(p => activeCategory.match.includes((p.category || "").toLowerCase()));
   }, [scopedPosts, activeCategory, scope, seasonId]);
+  const seasonEmpty = scope === "recommend" && !!seasonId && (() => {
+    const t = getSeasonalTopics(new Date()).find(x => x.id === seasonId);
+    return !!t && scopedPosts.every(p => !matchesTopic(p, t));
+  })();
   const headerH = scope === "articles" ? 156 : 200;
 
   const seenHandles = new Set<string>();
@@ -451,7 +456,7 @@ const PostFeed = () => {
         </div>
       ) : viewMode === "masonry" ? (
         <div className="absolute inset-0">
-          <MasonryFeed posts={categoryPosts} loading={loading} topPad={headerH} header={scope === "recommend" ? <SeasonalStrip posts={scopedPosts} activeId={seasonId} onChange={setSeasonId} /> : undefined} />
+          <MasonryFeed posts={categoryPosts} loading={loading} topPad={headerH} header={scope === "recommend" ? <SeasonalStrip posts={scopedPosts} activeId={seasonId} onChange={setSeasonId} empty={seasonEmpty} /> : undefined} />
         </div>
       ) : (
         /* Posts — прокрутка с привязкой, под фиксированной панелью сторис */

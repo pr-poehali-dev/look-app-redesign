@@ -12,9 +12,10 @@ interface Props {
   posts: Post[];
   activeId: string | null;
   onChange: (id: string | null) => void;
+  empty?: boolean;
 }
 
-const SeasonalStrip = ({ posts, activeId, onChange }: Props) => {
+const SeasonalStrip = ({ posts, activeId, onChange, empty }: Props) => {
   const [topics, setTopics] = useState<SeasonalTopic[]>([]);
   useEffect(() => { setTopics(getSeasonalTopics(new Date())); }, []);
   const withCounts = topics.map((t) => ({ t, n: posts.filter((p) => matchesTopic(p, t)).length }));
@@ -40,6 +41,7 @@ const SeasonalStrip = ({ posts, activeId, onChange }: Props) => {
           </button>
         ))}
       </div>
+      {empty && <p className="text-white/50 text-xs px-1 mt-2">По этой теме пока нет постов, показываю похожие идеи</p>}
     </div>
   );
 };
