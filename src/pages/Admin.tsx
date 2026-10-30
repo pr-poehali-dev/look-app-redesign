@@ -120,7 +120,7 @@ export default function Admin() {
           {section === "compliance" && <Compliance token={token!} />}
           {section === "broadcast" && <Broadcast token={token!} />}
           {section === "email_stats" && <EmailStats />}
-          {section === "support" && <SupportAdmin token={token} />}
+          {section === "support" && <SupportAdmin />}
           {section === "mobile_api" && <MobileApiAccess token={token!} />}
           {section === "privacy" && <DocEditor token={token!} settingKey="privacy_policy" title="Политика конфиденциальности" />}
           {section === "terms" && <DocEditor token={token!} settingKey="terms_of_use" title="Условия использования" />}
@@ -1324,104 +1324,11 @@ const downloadCsv = (name: string, rows: (string | number)[][]) => {
   URL.revokeObjectURL(url);
 };
 
-interface NoBirthUser { id: string; name: string; handle: string; email: string; avatar?: string | null; created_at?: string }
-
-function NoBirthList({ token, onChanged }: { token: string; onChanged: () => void }) {
-  const [users, setUsers] = useState<NoBirthUser[]>([]);
-  const [total, setTotal] = useState(0);
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [text, setText] = useState("");
-  const [err, setErr] = useState("");
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const d = await api("users_no_birth", { limit: 100 }, token);
-      setUsers(d.users || []);
-      setTotal(d.total || 0);
-    } finally { setLoading(false); }
-  }, [token]);
-
-  useEffect(() => { if (open) load(); }, [open, load]);
-
-  const save = async (u: NoBirthUser) => {
-    const d = text.replace(/\D/g, "");
-    if (d.length !== 8) { setErr("Введите дату цифрами: ДД.ММ.ГГГГ"); return; }
-    try {
-      await api("user_set_birth", { user_id: u.id, birth_date: `${d.slice(4)}-${d.slice(2, 4)}-${d.slice(0, 2)}` }, token);
-      setEditId(null);
-      setText("");
-      setErr("");
-      await load();
-      onChanged();
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Не удалось сохранить");
-    }
-  };
-
-  const fmt = (v: string) => (v.length <= 2 ? v : v.length <= 4 ? `${v.slice(0, 2)}.${v.slice(2)}` : `${v.slice(0, 2)}.${v.slice(2, 4)}.${v.slice(4)}`);
-
-  return (
-    <div className="bg-zinc-900 border border-white/10 rounded-2xl p-4 space-y-3">
-      <button onClick={() => setOpen((v) => !v)} className="w-full flex items-center justify-between gap-3">
-        <h3 className="font-semibold">Пользователи без даты рождения</h3>
-        <Icon name={open ? "ChevronUp" : "ChevronDown"} size={18} className="text-white/50" />
-      </button>
-      {open && (
-        <>
-          <p className="text-white/50 text-xs">
-            Эти пользователи увидят окно «Укажите дату рождения» при входе. Если человек написал в поддержку, дату можно поставить здесь вручную.
-          </p>
-          {loading && <p className="text-white/50 text-sm">Загрузка...</p>}
-          {!loading && users.length === 0 && <p className="text-emerald-400 text-sm">У всех пользователей дата указана</p>}
-          <div className="divide-y divide-white/5">
-            {users.map((u) => (
-              <div key={u.id} className="py-2.5">
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{u.name} <span className="text-white/40 text-xs">@{u.handle}</span></p>
-                    <p className="text-white/40 text-xs truncate">{u.email} · регистрация {u.created_at ? new Date(u.created_at).toLocaleDateString("ru-RU") : "—"}</p>
-                  </div>
-                  <button
-                    onClick={() => { setEditId(editId === u.id ? null : u.id); setText(""); setErr(""); }}
-                    className="px-3 py-1.5 rounded-lg bg-cyan-500/15 text-cyan-300 text-xs font-semibold flex-shrink-0"
-                  >
-                    Указать
-                  </button>
-                </div>
-                {editId === u.id && (
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <input
-                      value={text}
-                      inputMode="numeric"
-                      maxLength={10}
-                      autoFocus
-                      placeholder="ДД.ММ.ГГГГ"
-                      onChange={(e) => setText(fmt(e.target.value.replace(/\D/g, "").slice(0, 8)))}
-                      className="w-36 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm outline-none"
-                    />
-                    <button onClick={() => save(u)} className="px-3 py-1.5 rounded-lg bg-cyan-500 text-black text-xs font-bold">Сохранить</button>
-                    {err && <span className="text-[#fe2c55] text-xs">{err}</span>}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          {total > users.length && <p className="text-white/40 text-xs">Показаны первые {users.length} из {total}</p>}
-        </>
-      )}
-    </div>
-  );
-}
-
 function Compliance({ token }: { token: string }) {
   const [ads, setAds] = useState<AdRow[]>([]);
   const [ages, setAges] = useState<{ age_rating: string; c: number }[]>([]);
   const [removals, setRemovals] = useState<RemovalRow[]>([]);
   const [withConsent, setWithConsent] = useState(0);
-  const [noBirth, setNoBirth] = useState(0);
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(() => {
@@ -1429,7 +1336,7 @@ function Compliance({ token }: { token: string }) {
     api("compliance_report", {}, token)
       .then((d) => {
         setAds(d.ads || []); setAges(d.ages || []); setRemovals(d.removals || []);
-        setWithConsent(d.with_consent || 0); setNoBirth(d.no_birth || 0);
+        setWithConsent(d.with_consent || 0);
       })
       .finally(() => setLoading(false));
   }, [token]);
@@ -1463,13 +1370,7 @@ function Compliance({ token }: { token: string }) {
           <p className="text-white/50 text-xs">Дали согласие</p>
           <p className="text-2xl font-bold">{withConsent}</p>
         </div>
-        <div className="bg-zinc-900 border border-white/10 rounded-2xl p-4">
-          <p className="text-white/50 text-xs">Без даты рождения</p>
-          <p className="text-2xl font-bold">{noBirth}</p>
-        </div>
       </div>
-
-      <NoBirthList token={token} onChanged={load} />
 
       <div className="bg-zinc-900 border border-white/10 rounded-2xl p-4 space-y-3">
         <div className="flex items-center justify-between gap-3">
@@ -2319,33 +2220,14 @@ const CATEGORY_META: Record<string, { label: string; icon: string; color: string
   idea: { label: "Идея", icon: "Lightbulb", color: "bg-yellow-500/20 text-yellow-400" },
   suggestion: { label: "Предложение", icon: "MessageSquarePlus", color: "bg-purple-500/20 text-purple-400" },
   content: { label: "Контент", icon: "Flag", color: "bg-orange-500/20 text-orange-400" },
-  birthdate: { label: "Дата рождения", icon: "CalendarClock", color: "bg-cyan-500/20 text-cyan-400" },
   other: { label: "Другое", icon: "HelpCircle", color: "bg-white/10 text-white/70" },
 };
 
-function SupportAdmin({ token }: { token: string }) {
+function SupportAdmin() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Ticket | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [birthInput, setBirthInput] = useState("");
-  const [birthMsg, setBirthMsg] = useState("");
-
-  const applyBirth = async (t: Ticket) => {
-    setBirthMsg("");
-    const digits = birthInput.replace(/\D/g, "");
-    if (digits.length !== 8) { setBirthMsg("Введите дату в формате ДД.ММ.ГГГГ"); return; }
-    const iso = `${digits.slice(4)}-${digits.slice(2, 4)}-${digits.slice(0, 2)}`;
-    try {
-      await api("user_set_birth", { user_id: t.user_id, birth_date: iso }, token);
-      setBirthMsg("Дата обновлена, пользователь получил уведомление");
-      setBirthInput("");
-      updateStatus(t.id, "done");
-    } catch (e) {
-      setBirthMsg(e instanceof Error ? e.message : "Не удалось обновить");
-    }
-  };
-
   const load = async () => {
     setLoading(true);
     try {
@@ -2506,29 +2388,6 @@ function SupportAdmin({ token }: { token: string }) {
                 <p className="text-white/40 text-xs font-semibold uppercase mb-2">Сообщение</p>
                 <p className="bg-white/5 rounded-xl p-3 text-sm whitespace-pre-wrap">{selected.message}</p>
               </div>
-
-              {selected.category === "birthdate" && selected.user_id && (
-                <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-3">
-                  <p className="text-cyan-300 text-xs font-semibold uppercase mb-2">Исправить дату рождения</p>
-                  <div className="flex gap-2">
-                    <input
-                      value={birthInput}
-                      inputMode="numeric"
-                      maxLength={10}
-                      placeholder="ДД.ММ.ГГГГ"
-                      onChange={(e) => {
-                        const d = e.target.value.replace(/\D/g, "").slice(0, 8);
-                        setBirthInput(d.length <= 2 ? d : d.length <= 4 ? `${d.slice(0, 2)}.${d.slice(2)}` : `${d.slice(0, 2)}.${d.slice(2, 4)}.${d.slice(4)}`);
-                      }}
-                      className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none"
-                    />
-                    <button onClick={() => applyBirth(selected)} className="px-4 py-2 rounded-lg bg-cyan-500 text-black text-sm font-bold">
-                      Применить
-                    </button>
-                  </div>
-                  {birthMsg && <p className="text-xs mt-2 text-white/70">{birthMsg}</p>}
-                </div>
-              )}
 
               {selected.attachment_url && (
                 <div>
