@@ -71,6 +71,7 @@ def send_push(user_ids, title, message, path='/', extra=None):
                     vapid_private_key=vv,
                     vapid_claims={'sub': CONTACT},
                     ttl=3600,
+                    headers={'Urgency': 'high'},
                     timeout=3)
                 return endpoint, 1
             except WebPushException as e:
