@@ -101,7 +101,7 @@ const BoardDetailScreen = ({ boardId, onBack }: { boardId: number; onBack: () =>
       {items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-4 px-8 text-center">
           <div className="w-20 h-20 rounded-full bg-[#FFE9E3] flex items-center justify-center"><Icon name="LayoutGrid" size={36} className="text-[#FF5A3C]" /></div>
-          <p className="text-gray-500 text-sm">Здесь пока пусто. Добавь первый пост{isOwner || board.is_collab ? " — или позови друзей" : ""}</p>
+          <p className="text-gray-500 text-sm">{isOwner || board.is_collab ? "Здесь пока пусто. Добавь первый пост — или позови друзей" : "Здесь пока пусто. Добавь первый пост"}</p>
           {isOwner && (
             <button onClick={() => setShowMembers(true)} className="h-10 px-6 rounded-full bg-[#FFE9E3] text-[#FF5A3C] text-sm font-semibold">Пригласить</button>
           )}

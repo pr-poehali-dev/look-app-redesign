@@ -210,7 +210,7 @@ const PollsPanel = ({ communityId, isAdmin, onClose }: Props) => {
           {loading && <div className="text-white/40 text-sm text-center">Загрузка...</div>}
           {!loading && polls.length === 0 && (
             <div className="text-white/40 text-sm text-center py-8">
-              Опросов ещё нет{isAdmin ? ". Создай первый!" : ""}
+              {isAdmin ? "Опросов ещё нет. Создай первый!" : "Опросов ещё нет"}
             </div>
           )}
           {polls.map((poll) => {
