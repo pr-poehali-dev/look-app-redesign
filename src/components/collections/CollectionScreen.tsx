@@ -41,7 +41,7 @@ const CollectionScreen = ({ collectionId, onBack }: Props) => {
 
   const moveToBoard = async (boardId: number, boardTitle: string) => {
     if (!moving || !user?.id) return;
-    await addItemToBoard(boardId, { itemType: moving.is_video ? "video" : "post", itemId: moving.item_id, image: moving.image || "", title: moving.title || "" }, user.id);
+    await addItemToBoard(boardId, { itemType: moving.is_video ? "video" : "post", itemId: moving.item_id, image: moving.image || "", title: moving.title || "", sourceHandle: moving.handle || undefined }, user.id);
     toast.success(`В доске «${boardTitle}» 📌`);
     setMoving(null);
   };

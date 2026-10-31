@@ -634,6 +634,7 @@ const PostCard = ({ post }: { post: Post }) => {
           itemId={post.id}
           image={post.image}
           title={post.cardTitle || post.caption}
+          sourceHandle={post.handle}
           onSaved={() => { setBoardSaved(true); setTimeout(() => setBoardSaved(false), 700); }}
           onClose={() => setShowAddToBoard(false)}
         />

@@ -7,10 +7,13 @@ import { addItemToBoard } from "@/hooks/useBoards";
 import BoardMembersSheet from "./BoardMembersSheet";
 import { topicTitle } from "@/lib/topics";
 import { toast } from "sonner";
+import BoardSortableGrid from "./BoardSortableGrid";
+import BoardItemTile, { isVideoItem } from "./BoardItemTile";
+import type { BoardItem } from "@/hooks/useBoards";
 
 const BoardDetailScreen = ({ boardId, onBack }: { boardId: number; onBack: () => void }) => {
   const { user } = useAuth();
-  const { board, items, myRole, members, loading, error, refresh, removeItem } = useBoard(boardId);
+  const { board, items, myRole, members, loading, error, refresh, removeItem, pinItem, reorder } = useBoard(boardId);
   const { userVideos } = useUserMedia();
   const [opened, setOpened] = useState<{ image: string; isVideo: boolean } | null>(null);
   const [showMembers, setShowMembers] = useState(false);
@@ -18,6 +21,14 @@ const BoardDetailScreen = ({ boardId, onBack }: { boardId: number; onBack: () =>
   const isOwner = myRole === "owner";
   const canAdd = myRole === "owner" || myRole === "editor";
   const existing = new Set(items.map((i) => `${i.item_type}:${i.item_id}`));
+  const pinned = items.filter((i) => i.pinned);
+  const rest = items.filter((i) => !i.pinned);
+  const openItem = (it: BoardItem) => it.image && setOpened({ image: it.image, isVideo: isVideoItem(it) });
+  const togglePin = async (it: BoardItem) => {
+    const ok = await pinItem(it.id, !it.pinned);
+    if (!ok) toast.error("Можно закрепить не больше четырёх");
+  };
+  const canRemoveItem = (it: BoardItem) => isOwner || (myRole === "editor" && it.added_by === user?.id);
 
   const addMine = async (m: (typeof userVideos)[number]) => {
     if (!user?.id) return;
@@ -107,41 +118,30 @@ const BoardDetailScreen = ({ boardId, onBack }: { boardId: number; onBack: () =>
           )}
         </div>
       ) : (
-        <div className="columns-2 gap-3 px-4 pb-28">
-          {items.map((item) => {
-            const isVideo = item.item_type === "video" || /\.(mp4|mov|webm)(\?|$)/i.test(item.image || "");
-            const who = item.added_by_handle || "";
-            return (
-              <div key={item.id} className="mb-3 break-inside-avoid rounded-2xl overflow-hidden bg-gray-50 relative group anim-card-in">
-                <button onClick={() => item.image && setOpened({ image: item.image, isVideo })} className="w-full block">
-                  {isVideo ? (
-                    <video src={item.image || undefined} className="w-full h-auto object-cover block" muted playsInline preload="metadata" />
-                  ) : (
-                    item.image && <img src={item.image} alt={item.title || ""} className="w-full h-auto object-cover block" loading="lazy" />
-                  )}
-                </button>
-                {who && (
-                  <span className="absolute top-2 left-2 w-4 h-4 rounded-full bg-[#FFE9E3] text-[#FF5A3C] text-[8px] font-bold flex items-center justify-center border border-white" title={`@${who}`}>
-                    {who[0].toUpperCase()}
-                  </span>
-                )}
-                {item.title && (
-                  <div className="absolute inset-x-0 bottom-0 bg-black/55 backdrop-blur-sm px-2.5 py-1.5 pointer-events-none">
-                    <p className="text-white text-[12px] font-semibold leading-snug line-clamp-2">{item.title}</p>
+        <>
+          {pinned.length > 0 && (
+            <div className="pb-3">
+              <p className="px-4 pb-2 text-gray-500 text-xs font-semibold flex items-center gap-1.5"><Icon name="Pin" size={12} />Закреплённые</p>
+              <div className="flex gap-3 px-4 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+                {pinned.map((item) => (
+                  <div key={item.id} className="flex-shrink-0 w-[44%]">
+                    <BoardItemTile item={item} canRemove={canRemoveItem(item)} canPin={isOwner} onOpen={openItem} onRemove={removeItem} onPin={togglePin} />
                   </div>
-                )}
-                {(isOwner || (myRole === "editor" && item.added_by === user?.id)) && (
-                  <button
-                    onClick={() => removeItem(item.id)}
-                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Icon name="X" size={14} className="text-white" />
-                  </button>
-                )}
+                ))}
               </div>
-            );
-          })}
-        </div>
+            </div>
+          )}
+          <BoardSortableGrid
+            items={rest}
+            sortable={isOwner}
+            canRemove={canRemoveItem}
+            canPin={isOwner}
+            onOpen={openItem}
+            onRemove={removeItem}
+            onPin={togglePin}
+            onReorder={(ids) => reorder([...pinned.map((p) => p.id), ...ids])}
+          />
+        </>
       )}
 
       {canAdd && (

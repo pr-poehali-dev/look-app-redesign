@@ -43,7 +43,7 @@ const SaveToCollectionSheet = ({ payload, saved, onSavedToCollection, onRemove, 
   const addToBoard = async (id: number, title: string) => {
     if (!user?.id || addedBoards.includes(id)) return;
     setAddedBoards((p) => [...p, id]);
-    await addItemToBoard(id, { itemType: payload.itemType === "video" ? "video" : "post", itemId: payload.itemId, image: payload.image, title: payload.title }, user.id);
+    await addItemToBoard(id, { itemType: payload.itemType === "video" ? "video" : "post", itemId: payload.itemId, image: payload.image, title: payload.title, sourceHandle: payload.handle }, user.id);
     trackEvent("board_saved", user.id);
     toast.success(`В доске «${title}» 📌`);
   };

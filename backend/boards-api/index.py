@@ -49,7 +49,7 @@ def _with_counts(cur, schema, boards):
     counts = {r[0]: r[1] for r in cur.fetchall()}
     cur.execute(
         f"SELECT board_id, image FROM ("
-        f"SELECT board_id, image, ROW_NUMBER() OVER (PARTITION BY board_id ORDER BY added_at DESC) AS rn "
+        f"SELECT board_id, image, ROW_NUMBER() OVER (PARTITION BY board_id ORDER BY pinned DESC, sort_order ASC, added_at DESC) AS rn "
         f"FROM {schema}.board_items WHERE board_id = ANY(%s) AND image IS NOT NULL AND image <> '') t WHERE rn <= 4", (ids,))
     collages = {}
     for r in cur.fetchall():
@@ -121,14 +121,16 @@ def handler(event: dict, context) -> dict:
             if not board['is_public'] and not my_role:
                 return _resp(403, {'error': 'private board'})
             cur.execute(
-                f"SELECT bi.id, bi.item_type, bi.item_id, bi.image, bi.title, bi.added_at, bi.added_by, au.handle "
+                f"SELECT bi.id, bi.item_type, bi.item_id, bi.image, bi.title, bi.added_at, bi.added_by, au.handle, "
+                f"bi.pinned, bi.sort_order, bi.source_handle "
                 f"FROM {schema}.board_items bi LEFT JOIN {schema}.app_users au ON au.id::text = bi.added_by "
-                f"WHERE bi.board_id = %s ORDER BY bi.added_at DESC",
+                f"WHERE bi.board_id = %s ORDER BY bi.sort_order ASC, bi.added_at DESC",
                 (board_id,)
             )
             items = [{
                 'id': r[0], 'item_type': r[1], 'item_id': r[2], 'image': r[3], 'title': r[4],
                 'added_at': r[5].isoformat() if r[5] else None, 'added_by': r[6], 'added_by_handle': r[7],
+                'pinned': bool(r[8]), 'sort_order': r[9], 'source_handle': r[10],
             } for r in cur.fetchall()]
             members = []
             if board['is_collab']:
@@ -234,6 +236,7 @@ def handler(event: dict, context) -> dict:
             item_id = str(body.get('item_id') or '').strip()[:100]
             image = (body.get('image') or '').strip()
             title = (body.get('title') or '').strip()[:200]
+            source_handle = (body.get('source_handle') or '').strip().lstrip('@')[:100] or None
             if not board_id or not item_type or not item_id:
                 return _resp(400, {'error': 'board_id, item_type and item_id required'})
             cur.execute(f"SELECT owner_user_id FROM {schema}.boards WHERE id = %s", (board_id,))
@@ -243,9 +246,11 @@ def handler(event: dict, context) -> dict:
             if _role(cur, schema, int(board_id), user_id, row[0]) not in ('owner', 'editor'):
                 return _resp(403, {'error': 'no rights'})
             cur.execute(
-                f"INSERT INTO {schema}.board_items (board_id, item_type, item_id, image, title, added_by) "
-                f"VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT (board_id, item_type, item_id) DO NOTHING",
-                (board_id, item_type, item_id, image, title, user_id)
+                f"INSERT INTO {schema}.board_items (board_id, item_type, item_id, image, title, added_by, source_handle, sort_order) "
+                f"VALUES (%s, %s, %s, %s, %s, %s, %s, "
+                f"COALESCE((SELECT MIN(sort_order) FROM {schema}.board_items WHERE board_id = %s), 0) - 1) "
+                f"ON CONFLICT (board_id, item_type, item_id) DO NOTHING",
+                (board_id, item_type, item_id, image, title, user_id, source_handle, board_id)
             )
             conn.commit()
             return _resp(200, {'ok': True})
@@ -260,6 +265,7 @@ def handler(event: dict, context) -> dict:
             item_id = str(body.get('item_id') or '').strip()[:100]
             image = (body.get('image') or '').strip()
             title = (body.get('title') or '').strip()[:200]
+            source_handle = (body.get('source_handle') or '').strip().lstrip('@')[:100] or None
             if not board_ids or not item_type or not item_id:
                 return _resp(400, {'error': 'board_ids, item_type and item_id required'})
             added = 0
@@ -269,9 +275,11 @@ def handler(event: dict, context) -> dict:
                 if not row or _role(cur, schema, bid, user_id, row[0]) not in ('owner', 'editor'):
                     continue
                 cur.execute(
-                    f"INSERT INTO {schema}.board_items (board_id, item_type, item_id, image, title, added_by) "
-                    f"VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT (board_id, item_type, item_id) DO NOTHING",
-                    (bid, item_type, item_id, image, title, user_id)
+                    f"INSERT INTO {schema}.board_items (board_id, item_type, item_id, image, title, added_by, source_handle, sort_order) "
+                    f"VALUES (%s, %s, %s, %s, %s, %s, %s, "
+                    f"COALESCE((SELECT MIN(sort_order) FROM {schema}.board_items WHERE board_id = %s), 0) - 1) "
+                    f"ON CONFLICT (board_id, item_type, item_id) DO NOTHING",
+                    (bid, item_type, item_id, image, title, user_id, source_handle, bid)
                 )
                 added += 1
             conn.commit()
@@ -431,6 +439,53 @@ def handler(event: dict, context) -> dict:
                 f"SELECT {BOARD_FIELDS} FROM {schema}.boards WHERE topic = %s AND is_public = TRUE ORDER BY id DESC LIMIT 12", (slug,))
             boards = _with_counts(cur, schema, [_row_to_board(r) for r in cur.fetchall()])
             return _resp(200, {'top': top, 'boards': boards})
+
+        # --- Закрепить / открепить элемент (до 4 закреплённых, влияют на обложку) ---
+        if method == 'POST' and action == 'pin_item':
+            if not user_id:
+                return _resp(401, {'error': 'X-User-Id required'})
+            body = json.loads(event.get('body') or '{}')
+            item_row_id = body.get('id')
+            pinned = bool(body.get('pinned', True))
+            if not item_row_id:
+                return _resp(400, {'error': 'id required'})
+            cur.execute(
+                f"SELECT b.owner_user_id, bi.board_id FROM {schema}.board_items bi "
+                f"JOIN {schema}.boards b ON b.id = bi.board_id WHERE bi.id = %s", (item_row_id,))
+            row = cur.fetchone()
+            if not row:
+                return _resp(404, {'error': 'not found'})
+            if _role(cur, schema, row[1], user_id, row[0]) != 'owner':
+                return _resp(403, {'error': 'only owner'})
+            if pinned:
+                cur.execute(f"SELECT COUNT(*) FROM {schema}.board_items WHERE board_id = %s AND pinned = TRUE AND id <> %s",
+                            (row[1], item_row_id))
+                if cur.fetchone()[0] >= 4:
+                    return _resp(400, {'error': 'max 4 pinned'})
+            cur.execute(f"UPDATE {schema}.board_items SET pinned = %s WHERE id = %s", (pinned, item_row_id))
+            conn.commit()
+            return _resp(200, {'ok': True})
+
+        # --- Ручной порядок элементов (владелец) ---
+        if method == 'POST' and action == 'reorder':
+            if not user_id:
+                return _resp(401, {'error': 'X-User-Id required'})
+            body = json.loads(event.get('body') or '{}')
+            board_id = body.get('board_id')
+            order = [int(x) for x in (body.get('order') or [])][:500]
+            if not board_id or not order:
+                return _resp(400, {'error': 'board_id and order required'})
+            cur.execute(f"SELECT owner_user_id FROM {schema}.boards WHERE id = %s", (board_id,))
+            row = cur.fetchone()
+            if not row:
+                return _resp(404, {'error': 'not found'})
+            if _role(cur, schema, int(board_id), user_id, row[0]) != 'owner':
+                return _resp(403, {'error': 'only owner'})
+            for pos, iid in enumerate(order):
+                cur.execute(f"UPDATE {schema}.board_items SET sort_order = %s WHERE id = %s AND board_id = %s",
+                            (pos, iid, board_id))
+            conn.commit()
+            return _resp(200, {'ok': True})
 
         # --- Удалить элемент из доски ---
         if method == 'DELETE' and action == 'remove_item':

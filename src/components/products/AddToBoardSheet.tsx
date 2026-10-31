@@ -12,11 +12,12 @@ interface Props {
   itemId: string | number;
   image: string;
   title?: string;
+  sourceHandle?: string;
   onSaved?: () => void;
   onClose: () => void;
 }
 
-const AddToBoardSheet = ({ itemType, itemId, image, title, onSaved, onClose }: Props) => {
+const AddToBoardSheet = ({ itemType, itemId, image, title, sourceHandle, onSaved, onClose }: Props) => {
   const { user } = useAuth();
   const { boards: allBoards, loading, create } = useMyBoards();
   const boards = allBoards.filter((b) => b.my_role !== "member");
@@ -28,7 +29,7 @@ const AddToBoardSheet = ({ itemType, itemId, image, title, onSaved, onClose }: P
   const handleAdd = async (boardId: number) => {
     if (!user?.id) { toast.error("Войди в аккаунт"); return; }
     setAddedIds((prev) => [...prev, boardId]);
-    await addItemToBoard(boardId, { itemType, itemId, image, title }, user.id);
+    await addItemToBoard(boardId, { itemType, itemId, image, title, sourceHandle }, user.id);
     toast.success("Добавлено на доску");
     trackEvent("board_saved", user.id);
     onSaved?.();

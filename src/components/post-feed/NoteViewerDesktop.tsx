@@ -368,6 +368,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
           itemId={post.id}
           image={post.image}
           title={post.caption}
+          sourceHandle={post.handle}
           onClose={() => setShowAddToBoard(false)}
         />
       )}

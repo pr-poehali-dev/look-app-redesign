@@ -551,6 +551,7 @@ const VideoCard = ({ video, isActive, preloadLevel = isActive ? "full" : "meta" 
           itemId={video.dbId ?? video.id}
           image={video.image}
           title={video.description}
+          sourceHandle={video.handle}
           onClose={() => setShowAddToBoard(false)}
         />
       )}

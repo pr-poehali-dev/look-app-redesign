@@ -35,6 +35,9 @@ export interface BoardItem {
   added_at?: string;
   added_by?: string | null;
   added_by_handle?: string | null;
+  pinned?: boolean;
+  sort_order?: number;
+  source_handle?: string | null;
 }
 
 const parseBody = async (res: Response) => {
@@ -154,12 +157,39 @@ export const useBoard = (boardId?: number | null) => {
     }).catch(() => {});
   }, [user?.id]);
 
-  return { board, items, myRole, members, loading, error, refresh, removeItem };
+  const pinItem = useCallback(async (itemRowId: number, pinned: boolean) => {
+    if (!user?.id) return false;
+    const res = await fetch(`${BOARDS_URL}?action=pin_item`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-User-Id": user.id },
+      body: JSON.stringify({ id: itemRowId, pinned }),
+    });
+    if (!res.ok) return false;
+    setItems((prev) => prev.map((i) => i.id === itemRowId ? { ...i, pinned } : i));
+    return true;
+  }, [user?.id]);
+
+  const reorder = useCallback(async (orderedIds: number[]) => {
+    if (!user?.id || !boardId) return;
+    setItems((prev) => {
+      const map = new Map(prev.map((i) => [i.id, i]));
+      const next = orderedIds.map((id) => map.get(id)).filter(Boolean) as BoardItem[];
+      const rest = prev.filter((i) => !orderedIds.includes(i.id));
+      return [...next, ...rest];
+    });
+    await fetch(`${BOARDS_URL}?action=reorder`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-User-Id": user.id },
+      body: JSON.stringify({ board_id: boardId, order: orderedIds }),
+    }).catch(() => {});
+  }, [user?.id, boardId]);
+
+  return { board, items, myRole, members, loading, error, refresh, removeItem, pinItem, reorder };
 };
 
 export const addItemToBoard = async (
   boardId: number,
-  item: { itemType: "post" | "video"; itemId: string | number; image?: string; title?: string },
+  item: { itemType: "post" | "video"; itemId: string | number; image?: string; title?: string; sourceHandle?: string },
   userId: string,
 ) => {
   await fetch(`${BOARDS_URL}?action=add_item`, {
@@ -171,13 +201,14 @@ export const addItemToBoard = async (
       item_id: String(item.itemId),
       image: item.image || "",
       title: item.title || "",
+      source_handle: item.sourceHandle || "",
     }),
   }).catch(() => {});
 };
 
 export const addItemToBoards = async (
   boardIds: number[],
-  item: { itemType: "post" | "video"; itemId: string | number; image?: string; title?: string },
+  item: { itemType: "post" | "video"; itemId: string | number; image?: string; title?: string; sourceHandle?: string },
   userId: string,
 ) => {
   const res = await fetch(`${BOARDS_URL}?action=add_item_multi`, {
@@ -189,6 +220,7 @@ export const addItemToBoards = async (
       item_id: String(item.itemId),
       image: item.image || "",
       title: item.title || "",
+      source_handle: item.sourceHandle || "",
     }),
   }).catch(() => null);
   if (!res) return 0;
