@@ -6,10 +6,11 @@ import { useUserMedia } from "@/context/UserMediaContext";
 import { useUserArticles } from "@/hooks/useArticles";
 import { categoryLabel } from "./videoCategories";
 import ProfileExtraTabs from "./ProfileExtraTabs";
+import CollectionsTab from "@/components/collections/CollectionsTab";
 
 type UserMedia = ReturnType<typeof useUserMedia>;
 
-export type ProfileTab = "videos" | "posts" | "articles" | "reposts" | "boards" | "circles" | "challenges";
+export type ProfileTab = "videos" | "posts" | "articles" | "reposts" | "collections" | "boards" | "circles" | "challenges";
 export type MediaViewerState = { tab: "video" | "image" | "text"; id: number; onlyReposts?: boolean } | null;
 
 interface ProfileMediaTabsProps {
@@ -31,6 +32,7 @@ const ProfileMediaTabs = ({ tab, setTab, stories, setMediaViewer, setCategoryEdi
     <>
       <div className="relative flex border-b border-gray-200">
         {([
+          { id: "collections", label: "Коллекции" },
           { id: "videos", label: "Лента" },
           { id: "boards", label: "Доски" },
           { id: "circles", label: "Кружки" },
@@ -41,7 +43,7 @@ const ProfileMediaTabs = ({ tab, setTab, stories, setMediaViewer, setCategoryEdi
             <button
               key={id}
               onClick={() => setTab(id)}
-              className={`flex-1 py-3 text-[13px] font-semibold transition-colors duration-200 ${active ? "text-black" : "text-gray-400"}`}
+              className={`flex-1 py-3 text-[12px] font-semibold transition-colors duration-200 ${active ? "text-black" : "text-gray-400"}`}
             >
               {label}
             </button>
@@ -50,7 +52,7 @@ const ProfileMediaTabs = ({ tab, setTab, stories, setMediaViewer, setCategoryEdi
         <span
           className="absolute bottom-0 h-[3px] w-9 rounded-full bg-[#FF5A3C] transition-all duration-200"
           style={{
-            left: `calc(${["videos", "posts", "articles", "reposts"].includes(tab) ? 0 : tab === "boards" ? 1 : tab === "circles" ? 2 : 3} * 25% + 12.5% - 18px)`,
+            left: `calc(${tab === "collections" ? 0 : ["videos", "posts", "articles", "reposts"].includes(tab) ? 1 : tab === "boards" ? 2 : tab === "circles" ? 3 : 4} * 20% + 10% - 18px)`,
             transitionTimingFunction: "cubic-bezier(0.2,0,0,1)",
           }}
         />
@@ -81,7 +83,9 @@ const ProfileMediaTabs = ({ tab, setTab, stories, setMediaViewer, setCategoryEdi
         </div>
       )}
 
-      {tab === "boards" || tab === "circles" || tab === "challenges" ? (
+      {tab === "collections" ? (
+        <CollectionsTab />
+      ) : tab === "boards" || tab === "circles" || tab === "challenges" ? (
         <ProfileExtraTabs tab={tab} onOpenBoard={onOpenBoard} onOpenBoards={onOpenBoards} />
       ) : tab === "videos" ? (
         (() => {

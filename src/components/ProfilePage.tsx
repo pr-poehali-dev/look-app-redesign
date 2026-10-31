@@ -231,7 +231,7 @@ const ProfilePage = () => {
       <div className="grid grid-cols-4 px-4 pb-3 md:px-3 border-b border-gray-200">
         {[
           { value: stories.filter((s) => !s.is_repost).length, label: "Посты", go: () => setTab("videos") },
-          { value: totalSaves, label: "Сохранения", go: () => setTab("boards") },
+          { value: totalSaves, label: "Сохранения", go: () => setTab("collections") },
           { value: myBoards.length, label: "Доски", go: () => setTab("boards") },
           { value: circlesCount, label: "Кружки", go: () => setTab("circles") },
         ].map((c) => (

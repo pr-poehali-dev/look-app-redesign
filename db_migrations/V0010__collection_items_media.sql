@@ -1,0 +1,2 @@
+ALTER TABLE t_p96441965_look_app_redesign.collection_items ADD COLUMN IF NOT EXISTS url TEXT;
+ALTER TABLE t_p96441965_look_app_redesign.collection_items ADD COLUMN IF NOT EXISTS is_video BOOLEAN NOT NULL DEFAULT FALSE;

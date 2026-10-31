@@ -14,6 +14,7 @@ import { useLikes } from "@/hooks/useLikes";
 import { useSavedItem } from "@/hooks/useSaved";
 import { recordWatch } from "@/hooks/useWatchHistory";
 import SaveToCollectionSheet from "./SaveToCollectionSheet";
+import { saveToCollection, type CollectionPayload } from "@/hooks/useCollections";
 import PlaceDetails from "./PlaceDetails";
 import { useFollowing } from "@/hooks/useFollowing";
 import { useMutedAuthor } from "@/hooks/useMutedAuthors";
@@ -60,10 +61,20 @@ const PostCard = ({ post }: { post: Post }) => {
   const needAuth = () => { promptAuth(); };
   const handleLike = () => { if (guest) return needAuth(); rawHandleLike(); };
   const toggleSaved = () => { if (guest) return needAuth(); rawToggleSaved(); };
-  const pickCollection = (folder: string) => {
-    saveTo(folder);
-    setShowCollections(false);
-    setSaveToast(`Сохранено в «${folder}»`);
+  const collectionPayload: CollectionPayload = {
+    itemType: "post",
+    itemId: post.id,
+    image: post.thumbnail || (post.isVideo ? "" : post.image),
+    title: post.cardTitle || post.caption,
+    handle: post.handle,
+    url: post.image,
+    isVideo: !!post.isVideo,
+  };
+  const quickSaveLater = async () => {
+    if (!user?.id) return;
+    saveTo("Общее");
+    const r = await saveToCollection(user.id, collectionPayload);
+    setSaveToast(`Сохранено в «${r.title || "Посмотреть позже"}»`);
     setTimeout(() => setSaveToast(""), 1800);
   };
   const onMediaTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
@@ -80,7 +91,7 @@ const PostCard = ({ post }: { post: Post }) => {
     if (t.clientX - s.x < -90 && Math.abs(t.clientY - s.y) < 40) {
       if (guest) return needAuth();
       if (saved) { setSaveToast("Уже в сохранённом"); setTimeout(() => setSaveToast(""), 1500); return; }
-      pickCollection("Общее");
+      quickSaveLater();
     }
   };
   const toggleFollow = () => { if (guest) return needAuth(); rawToggleFollow(); };
@@ -608,7 +619,13 @@ const PostCard = ({ post }: { post: Post }) => {
       {detailProduct && <ProductDetailSheet product={detailProduct} videoId={post.id} onClose={() => setDetailProduct(null)} />}
 
       {showCollections && (
-        <SaveToCollectionSheet saved={saved} onPick={pickCollection} onRemove={() => { rawToggleSaved(); setShowCollections(false); }} onClose={() => setShowCollections(false)} />
+        <SaveToCollectionSheet
+          payload={collectionPayload}
+          saved={saved}
+          onSavedToCollection={() => saveTo("Общее")}
+          onRemove={() => { rawToggleSaved(); setShowCollections(false); }}
+          onClose={() => setShowCollections(false)}
+        />
       )}
 
       {showAddToBoard && (

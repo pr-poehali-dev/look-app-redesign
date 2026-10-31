@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useMyBoards, addItemToBoard } from "@/hooks/useBoards";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/track";
+import { TOPICS } from "@/lib/topics";
 
 interface Props {
   itemType: "post" | "video";
@@ -22,6 +23,7 @@ const AddToBoardSheet = ({ itemType, itemId, image, title, onSaved, onClose }: P
   const [addedIds, setAddedIds] = useState<number[]>([]);
   const [creating, setCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+  const [newTopic, setNewTopic] = useState("");
 
   const handleAdd = async (boardId: number) => {
     if (!user?.id) { toast.error("Войди в аккаунт"); return; }
@@ -33,9 +35,10 @@ const AddToBoardSheet = ({ itemType, itemId, image, title, onSaved, onClose }: P
   };
 
   const handleCreateAndAdd = async () => {
-    if (!newTitle.trim() || !user?.id) return;
-    const id = await create(newTitle, "", true);
+    if (!newTitle.trim() || !newTopic || !user?.id) return;
+    const id = await create(newTitle.trim().slice(0, 30), "", false, { topic: newTopic });
     setNewTitle("");
+    setNewTopic("");
     setCreating(false);
     if (id) handleAdd(id);
   };
@@ -57,22 +60,35 @@ const AddToBoardSheet = ({ itemType, itemId, image, title, onSaved, onClose }: P
         </div>
 
         {creating ? (
-          <div className="flex items-center gap-2 mb-3">
-            <input
-              autoFocus
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleCreateAndAdd()}
-              placeholder="Название доски"
-              className="flex-1 bg-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none placeholder-white/40"
-            />
-            <button
-              onClick={handleCreateAndAdd}
-              disabled={!newTitle.trim()}
-              className="px-3 py-2.5 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold disabled:opacity-50"
-            >
-              Готово
-            </button>
+          <div className="flex flex-col gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <input
+                autoFocus
+                value={newTitle}
+                maxLength={30}
+                onChange={(e) => setNewTitle(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleCreateAndAdd()}
+                placeholder="Название доски (до 30 символов)"
+                className="flex-1 bg-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none placeholder-white/40"
+              />
+              <button
+                onClick={handleCreateAndAdd}
+                disabled={!newTitle.trim() || !newTopic}
+                className="px-3 py-2.5 rounded-xl bg-[#FF5A3C] text-white text-sm font-semibold disabled:opacity-50"
+              >
+                Готово
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {TOPICS.map((t) => (
+                <button
+                  key={t.slug}
+                  type="button"
+                  onClick={() => setNewTopic(newTopic === t.slug ? "" : t.slug)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${newTopic === t.slug ? "bg-[#FF5A3C] border-[#FF5A3C] text-white" : "bg-white/10 border-white/15 text-white/70"}`}
+                >{t.title}</button>
+              ))}
+            </div>
           </div>
         ) : (
           <button

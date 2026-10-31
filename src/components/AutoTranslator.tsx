@@ -19,6 +19,10 @@ const loaders: Record<string, () => Promise<{ default: Dict }>> = {
 type Rule = [RegExp, string, string];
 
 const RULES: Rule[] = [
+  [/^Сохранено в «(.+)»$/, "Saved to “$1”", "已保存到“$1”"],
+  [/^В доске «(.+)» 📌$/, "On board “$1” 📌", "已加入灵感板“$1” 📌"],
+  [/^(\d+) видео · (\d+) не просмотрено$/, "$1 videos · $2 unwatched", "$1 个视频 · $2 个未观看"],
+  [/^Коллекция (\d+)$/, "Collection $1", "收藏夹 $1"],
   [/^(\d+) (?:пост|поста|постов)$/, "$1 posts", "$1 个帖子"],
   [/^(\d+) полезных$/, "$1 helpful", "$1 条有用"],
   [/^полезных: (\d+)$/, "helpful: $1", "有用：$1"],

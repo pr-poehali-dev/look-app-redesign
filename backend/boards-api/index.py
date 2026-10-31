@@ -149,12 +149,14 @@ def handler(event: dict, context) -> dict:
             if not user_id:
                 return _resp(401, {'error': 'X-User-Id required'})
             body = json.loads(event.get('body') or '{}')
-            title = (body.get('title') or '').strip()[:200]
+            title = (body.get('title') or '').strip()[:30]
             if not title:
                 return _resp(400, {'error': 'title required'})
             description = (body.get('description') or '').strip()[:2000]
-            is_public = bool(body.get('is_public', True))
+            is_public = bool(body.get('is_public', False))
             topic = (body.get('topic') or '').strip()[:40] or None
+            if not topic and not (body.get('community_id') or '').strip():
+                return _resp(400, {'error': 'topic required'})
             is_collab = bool(body.get('is_collab', False))
             community_id = (body.get('community_id') or '').strip()[:100] or None
             if community_id:
@@ -188,7 +190,7 @@ def handler(event: dict, context) -> dict:
                 return _resp(403, {'error': 'not your board'})
             fields, values = [], []
             if 'title' in body:
-                fields.append("title = %s"); values.append((body.get('title') or '').strip()[:200])
+                fields.append("title = %s"); values.append((body.get('title') or '').strip()[:30])
             if 'description' in body:
                 fields.append("description = %s"); values.append((body.get('description') or '').strip()[:2000])
             if 'is_public' in body:

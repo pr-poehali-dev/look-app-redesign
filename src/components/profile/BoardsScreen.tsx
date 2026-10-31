@@ -19,7 +19,7 @@ const BoardsScreen = ({ onBack, initialBoardId }: { onBack: () => void; initialB
   const [openedId, setOpenedId] = useState<number | null>(initialBoardId ?? null);
   const [creating, setCreating] = useState<null | "own" | "collab">(null);
   const [newTitle, setNewTitle] = useState("");
-  const [newIsPublic, setNewIsPublic] = useState(true);
+  const [newIsPublic, setNewIsPublic] = useState(false);
   const [newTopic, setNewTopic] = useState("");
   const [filterTopic, setFilterTopic] = useState("");
   const [saving, setSaving] = useState(false);
@@ -28,13 +28,13 @@ const BoardsScreen = ({ onBack, initialBoardId }: { onBack: () => void; initialB
     return <BoardDetailScreen boardId={openedId} onBack={() => setOpenedId(null)} />;
   }
 
-  const reset = () => { setCreating(null); setNewTitle(""); setNewIsPublic(true); setNewTopic(""); };
+  const reset = () => { setCreating(null); setNewTitle(""); setNewIsPublic(false); setNewTopic(""); };
 
   const handleCreate = async () => {
-    if (!newTitle.trim() || saving || !creating) return;
+    if (!newTitle.trim() || !newTopic || saving || !creating) return;
     setSaving(true);
     const isCollab = creating === "collab";
-    const id = await create(newTitle, "", newIsPublic, { topic: newTopic, isCollab });
+    const id = await create(newTitle.trim().slice(0, 30), "", isCollab ? true : newIsPublic, { topic: newTopic, isCollab });
     setSaving(false);
     reset();
     if (isCollab && id) setOpenedId(id);
@@ -66,9 +66,10 @@ const BoardsScreen = ({ onBack, initialBoardId }: { onBack: () => void; initialB
           <input
             autoFocus
             value={newTitle}
+            maxLength={30}
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-            placeholder="Название доски"
+            placeholder="Название доски (до 30 символов)"
             className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-200 text-black text-sm outline-none"
           />
           <div className="flex flex-wrap gap-1.5">
@@ -83,15 +84,19 @@ const BoardsScreen = ({ onBack, initialBoardId }: { onBack: () => void; initialB
               </button>
             ))}
           </div>
-          <button onClick={() => setNewIsPublic((v) => !v)} className="flex items-center gap-2 text-sm text-gray-600 text-left">
-            <Icon name={newIsPublic ? "Globe" : "Lock"} size={15} />
-            {newIsPublic ? "Публичная — видят все" : "Только для себя"}
-          </button>
+          {creating === "collab" ? (
+            <p className="flex items-center gap-2 text-sm text-gray-600"><Icon name="Globe" size={15} />Коллективная доска всегда публичная</p>
+          ) : (
+            <button onClick={() => setNewIsPublic((v) => !v)} className="flex items-center gap-2 text-sm text-gray-600 text-left">
+              <Icon name={newIsPublic ? "Globe" : "Lock"} size={15} />
+              {newIsPublic ? "Публичная — видят все" : "Только для себя"}
+            </button>
+          )}
           <div className="flex gap-2">
             <button onClick={reset} className="flex-1 py-2 rounded-xl bg-gray-100 text-black text-sm font-semibold">Отмена</button>
             <button
               onClick={handleCreate}
-              disabled={!newTitle.trim() || saving}
+              disabled={!newTitle.trim() || !newTopic || saving}
               className="flex-1 py-2 rounded-xl bg-gradient-to-r from-[#FF5A3C] to-[#8b5cf6] text-white text-sm font-semibold disabled:opacity-50"
             >
               {saving ? "Создаём..." : "Создать"}
