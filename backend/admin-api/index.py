@@ -222,7 +222,7 @@ def handler(event: dict, context) -> dict:
         conn = _conn()
         try:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-                _q(cur, "SELECT key, value FROM {S}.app_settings WHERE key IN ('privacy_policy', 'terms_of_use')")
+                _q(cur, "SELECT key, value FROM {S}.app_settings WHERE key LIKE 'privacy_policy%%' OR key LIKE 'terms_of_use%%'")
                 rows = cur.fetchall()
                 settings = {r['key']: r['value'] for r in rows}
             return {'statusCode': 200, 'headers': _cors(),

@@ -362,6 +362,8 @@ const NotificationsScreen = ({ onBack }: { onBack: () => void }) => {
 const ADMIN_API_URL = "https://functions.poehali.dev/c578b52c-b9b6-47b3-9bcf-b6ab8405c4d7";
 
 const LegalScreen = ({ onBack, title, settingKey, fallback }: { onBack: () => void; title: string; settingKey: "privacy_policy" | "terms_of_use"; fallback: string }) => {
+  const { i18n } = useTranslation();
+  const lang = (i18n.language || "ru").slice(0, 2);
   const [text, setText] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
@@ -376,7 +378,8 @@ const LegalScreen = ({ onBack, title, settingKey, fallback }: { onBack: () => vo
         });
         const raw = await res.json();
         const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-        const value = data?.settings?.[settingKey];
+        const localized = lang !== "ru" ? (data?.settings?.[`${settingKey}_${lang}`] || data?.settings?.[`${settingKey}_en`]) : "";
+        const value = localized || data?.settings?.[settingKey];
         if (!cancelled) setText(value || fallback);
       } catch {
         if (!cancelled) setText(fallback);
@@ -385,7 +388,7 @@ const LegalScreen = ({ onBack, title, settingKey, fallback }: { onBack: () => vo
       }
     })();
     return () => { cancelled = true; };
-  }, [settingKey, fallback]);
+  }, [settingKey, fallback, lang]);
 
   return (
     <div className="h-full bg-white overflow-y-scroll" style={{ scrollbarWidth: "none" }}>
