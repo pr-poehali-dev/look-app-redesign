@@ -21,6 +21,9 @@ interface Metrics {
   cards_total: number; cards_share: number;
   challenge_entries: number; badges_total: number;
   ideas_filter_on: number; ideas_filter_users: number;
+  boards_median: number; boards_public: number; boards_public_share: number;
+  collections_custom: number; collection_items_total: number; collection_items_unwatched: number;
+  collection_unwatched_share: number; collection_openers: number; collection_repeat_users: number; collection_repeat_share: number;
 }
 interface TopicRow { slug: string; title: string; icon: string; color: string; sort_order: number }
 interface ChallengeRow { id: number; title: string; description: string; criteria: string; topic: string | null; badge_title: string; ends_at: string; is_active: boolean; entries: number }
@@ -79,13 +82,24 @@ const IdeasAdmin = ({ token }: { token: string }) => {
       {err && <p className="text-[#FF5A3C] text-sm">{err}</p>}
 
       {m && (
+        <>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Stat label="Досок на пользователя" value={m.boards_per_user} hint={`всего досок: ${m.boards_total}, авторов: ${m.board_owners}`} />
           <Stat label="Доля постов-карточек" value={`${m.cards_share}%`} hint={`карточек: ${m.cards_total}`} />
           <Stat label="Сохранений в доски" value={m.board_items_total} hint={`за неделю: ${m.board_items_week}`} />
           <Stat label="Участий в челленджах" value={m.challenge_entries} hint={`бейджей выдано: ${m.badges_total}`} />
           <Stat label="Включений «Только идеи»" value={m.ideas_filter_on} hint={`людей: ${m.ideas_filter_users}`} />
+          <Stat label="Медиана досок на человека" value={m.boards_median} hint="цель: 2 и больше через месяц" />
+          <Stat label="Доля публичных досок" value={`${m.boards_public_share}%`} hint={`публичных: ${m.boards_public}`} />
         </div>
+        <p className="text-white/50 text-sm font-semibold mt-6 mb-2">Коллекции «Посмотреть позже»</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Stat label="Вернулись в коллекцию за 7 дней" value={`${m.collection_repeat_share}%`} hint={`людей: ${m.collection_repeat_users} из ${m.collection_openers}`} />
+          <Stat label="Не просмотрено" value={`${m.collection_unwatched_share}%`} hint={`${m.collection_items_unwatched} из ${m.collection_items_total}`} />
+          <Stat label="Сохранено в коллекции" value={m.collection_items_total} />
+          <Stat label="Своих коллекций" value={m.collections_custom} hint="кроме «Посмотреть позже»" />
+        </div>
+        </>
       )}
 
       <section>

@@ -407,6 +407,27 @@ def _route(cur, conn, action: str, body: dict) -> dict:
         res['ideas_filter_on'] = cur.fetchone()['c']
         _q(cur, "SELECT COUNT(DISTINCT user_id) AS c FROM {S}.feature_events WHERE event = 'ideas_filter_on' AND user_id IS NOT NULL")
         res['ideas_filter_users'] = cur.fetchone()['c']
+        _q(cur, "SELECT COALESCE(percentile_cont(0.5) WITHIN GROUP (ORDER BY n), 0) AS m FROM (SELECT (SELECT COUNT(*) FROM {S}.boards b WHERE b.owner_user_id = u.id) AS n FROM {S}.app_users u) t")
+        res['boards_median'] = float(cur.fetchone()['m'])
+        _q(cur, "SELECT COUNT(*) FILTER (WHERE is_public) AS pub, COUNT(*) AS total FROM {S}.boards")
+        r = cur.fetchone()
+        res['boards_public'] = r['pub']
+        res['boards_public_share'] = round(r['pub'] * 100.0 / r['total'], 1) if r['total'] else 0
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.collections WHERE is_system = FALSE")
+        res['collections_custom'] = cur.fetchone()['c']
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.collection_items")
+        res['collection_items_total'] = cur.fetchone()['c']
+        _q(cur, "SELECT COUNT(*) AS c FROM {S}.collection_items WHERE NOT watched")
+        unwatched = cur.fetchone()['c']
+        res['collection_items_unwatched'] = unwatched
+        res['collection_unwatched_share'] = round(unwatched * 100.0 / res['collection_items_total'], 1) if res['collection_items_total'] else 0
+        _q(cur, "SELECT COUNT(DISTINCT user_id) AS c FROM {S}.collection_opens")
+        openers = cur.fetchone()['c']
+        res['collection_openers'] = openers
+        _q(cur, "SELECT COUNT(*) AS c FROM (SELECT user_id FROM {S}.collection_opens GROUP BY user_id HAVING COUNT(DISTINCT DATE(opened_at)) >= 2 AND MAX(opened_at) - MIN(opened_at) <= INTERVAL '7 days') t")
+        repeat = cur.fetchone()['c']
+        res['collection_repeat_users'] = repeat
+        res['collection_repeat_share'] = round(repeat * 100.0 / openers, 1) if openers else 0
         return {'statusCode': 200, 'headers': _cors(), 'body': json.dumps(res, default=str)}
 
     if action == 'topics_admin_list':
