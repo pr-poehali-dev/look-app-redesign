@@ -260,7 +260,7 @@ def _route(cur, conn, action: str, body: dict) -> dict:
     if action == 'settings_save':
         key = (body.get('key') or '').strip()
         value = body.get('value') or ''
-        allowed_keys = {'privacy_policy', 'terms_of_use'}
+        allowed_keys = {'privacy_policy', 'terms_of_use', 'privacy_policy_en', 'terms_of_use_en', 'privacy_policy_zh', 'terms_of_use_zh'}
         if key not in allowed_keys:
             return {'statusCode': 400, 'headers': _cors(),
                     'body': json.dumps({'error': 'invalid key'})}

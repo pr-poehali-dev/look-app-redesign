@@ -2020,17 +2020,32 @@ function MobileApiAccess({ token }: { token: string }) {
   );
 }
 
+const DOC_LANGS: { code: "ru" | "en" | "zh"; label: string }[] = [
+  { code: "ru", label: "Русский" },
+  { code: "en", label: "English" },
+  { code: "zh", label: "中文" },
+];
+
 function DocEditor({ token, settingKey, title }: { token: string; settingKey: "privacy_policy" | "terms_of_use"; title: string }) {
-  const [value, setValue] = useState("");
+  const [lang, setLang] = useState<"ru" | "en" | "zh">("ru");
+  const [values, setValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  const fullKey = lang === "ru" ? settingKey : `${settingKey}_${lang}`;
+  const value = values[fullKey] || "";
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const d = await api("settings_get", {}, token);
-      setValue(d.settings?.[settingKey] || "");
+      const s = d.settings || {};
+      setValues({
+        [settingKey]: s[settingKey] || "",
+        [`${settingKey}_en`]: s[`${settingKey}_en`] || "",
+        [`${settingKey}_zh`]: s[`${settingKey}_zh`] || "",
+      });
     } catch (e) {
       alert("Ошибка загрузки: " + (e instanceof Error ? e.message : "неизвестная"));
     } finally {
@@ -2044,7 +2059,7 @@ function DocEditor({ token, settingKey, title }: { token: string; settingKey: "p
     setSaving(true);
     setSaved(false);
     try {
-      await api("settings_save", { key: settingKey, value }, token);
+      await api("settings_save", { key: fullKey, value }, token);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
@@ -2067,15 +2082,24 @@ function DocEditor({ token, settingKey, title }: { token: string; settingKey: "p
           {saved ? "Сохранено ✓" : "Сохранить"}
         </button>
       </div>
+      <div className="flex gap-2">
+        {DOC_LANGS.map((l) => (
+          <button
+            key={l.code}
+            onClick={() => setLang(l.code)}
+            className={`px-3 py-1.5 rounded-full text-sm font-semibold border ${lang === l.code ? "bg-white text-black border-white" : "bg-white/5 text-white/70 border-white/10"}`}
+          >{l.label}</button>
+        ))}
+      </div>
       <p className="text-xs text-white/40">
-        Этот текст увидят пользователи в приложении в разделе «{title}». Поддерживается обычный текст и переносы строк.
+        Этот текст увидят пользователи с выбранным языком приложения. Если версия на языке пуста, показывается русская.
       </p>
       {loading ? (
         <p className="text-white/50">Загрузка...</p>
       ) : (
         <textarea
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => setValues((v) => ({ ...v, [fullKey]: e.target.value }))}
           rows={24}
           placeholder={`Введите текст «${title.toLowerCase()}»…`}
           className="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-white/10 text-white placeholder:text-white/30 text-sm resize-y min-h-[400px] font-mono"
