@@ -257,7 +257,7 @@ const NoteViewerDesktop = ({ post, onClose }: { post: Post; onClose: () => void 
 
             <div className="mt-5 pt-4 border-t nv-border">
               <div className="flex items-center gap-3">
-                <p className="text-[13px] nv-muted">Комментарии: {commentCount}{helpfulCount > 0 ? ` · полезных: ${helpfulCount}` : ""}</p>
+                <p className="text-[13px] nv-muted">{`Комментарии: ${commentCount}${helpfulCount > 0 ? ` · полезных: ${helpfulCount}` : ""}`}</p>
                 <button
                   onClick={() => {
                     onClose();

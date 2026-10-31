@@ -19,6 +19,12 @@ const loaders: Record<string, () => Promise<{ default: Dict }>> = {
 type Rule = [RegExp, string, string];
 
 const RULES: Rule[] = [
+  [/^(\d+) (?:пост|поста|постов)$/, "$1 posts", "$1 个帖子"],
+  [/^(\d+) полезных$/, "$1 helpful", "$1 条有用"],
+  [/^полезных: (\d+)$/, "helpful: $1", "有用：$1"],
+  [/^Комментарии: (\d+)$/, "Comments: $1", "评论：$1"],
+  [/^Лучшее за неделю$/, "Best of the week", "本周最佳"],
+  [/^Лучшее за месяц$/, "Best of the month", "本月最佳"],
   [/^Заблокировать (.+)\? Пользователь не сможет войти в приложение\.$/, "Block $1? The user will not be able to log in to the app.", "屏蔽 $1？该用户将无法登录应用。"],
   [/^Удалить (\d+) битых записей со ссылками на short-video\.ru\? Это действие необратимо\.$/, "Delete $1 broken records with links to short-video.ru? This cannot be undone.", "删除 $1 条指向 short-video.ru 的失效记录？此操作不可撤销。"],
   [/^Удалено: (\d+)$/, "Deleted: $1", "已删除：$1"],
@@ -94,11 +100,21 @@ const RULES: Rule[] = [
 
 const fill = (tpl: string, m: RegExpMatchArray) => tpl.replace(/\$(\d)/g, (_, n) => m[Number(n)] ?? "");
 
-const lookup = (raw: string): string | null => {
+function lookup(raw: string): string | null {
   const t = raw.trim();
   if (!t) return null;
   const hit = dict[t] || dict[t.replace(/\u2011/g, "-")];
   if (hit) return raw.replace(t, hit);
+  if (t.includes(" · ")) {
+    const parts = t.split(" · ");
+    let changed = false;
+    const out = parts.map((part) => {
+      const r = lookup(part);
+      if (r && r !== part) { changed = true; return r; }
+      return part;
+    });
+    if (changed) return raw.replace(t, out.join(" · "));
+  }
   const tag = t.match(/^(\+?\s*)#(\S+)$/);
   if (tag && dict[tag[2]]) return raw.replace(t, `${tag[1]}#${dict[tag[2]].replace(/\s+/g, "")}`);
   for (const [re, en, zh] of RULES) {
@@ -106,7 +122,7 @@ const lookup = (raw: string): string | null => {
     if (m) return raw.replace(t, fill(active === "zh" ? zh : en, m));
   }
   return null;
-};
+}
 
 const applyToNode = (node: Text, raw: string): boolean => {
   const res = lookup(raw);

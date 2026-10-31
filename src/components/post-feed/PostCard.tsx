@@ -410,7 +410,7 @@ const PostCard = ({ post }: { post: Post }) => {
           <div className="sheet-theme rounded-t-3xl flex flex-col max-h-[70%] md:rounded-t-none md:rounded-l-3xl md:max-h-none md:h-full md:w-[400px] md:ml-auto md:shadow-2xl animate-in slide-in-from-bottom md:slide-in-from-right duration-300" onPointerDown={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/10">
               <span className="text-white font-bold text-base">
-                {commentCount} комментариев{helpfulCount > 0 ? ` · ${helpfulCount} полезных` : ""}
+                {`${commentCount} комментариев${helpfulCount > 0 ? ` · ${helpfulCount} полезных` : ""}`}
               </span>
               <button onPointerDown={() => setShowComments(false)}>
                 <Icon name="X" size={20} className="text-white/60" />

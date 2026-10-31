@@ -137,7 +137,7 @@ const BoardsScreen = ({ onBack, initialBoardId }: { onBack: () => void; initialB
               </div>
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-3 pt-8 pb-2.5 pointer-events-none">
                 <p className="text-white text-sm font-bold truncate">{b.title}</p>
-                <p className="text-white/70 text-[11px]">{b.items_count ?? 0} {postsWord(b.items_count ?? 0)}{b.topic ? ` · ${topicTitle(b.topic)}` : ""}</p>
+                <p className="text-white/70 text-[11px]">{`${b.items_count ?? 0} ${postsWord(b.items_count ?? 0)}${b.topic ? ` · ${topicTitle(b.topic)}` : ""}`}</p>
               </div>
               {b.my_role === "owner" && (
                 <button

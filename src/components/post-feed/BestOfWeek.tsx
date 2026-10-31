@@ -28,7 +28,7 @@ const BestOfWeek = ({ posts }: { posts: Post[] }) => {
     <div className="mb-3">
       <div className="flex items-center gap-1.5 px-1 mb-2">
         <Icon name="Trophy" size={15} className="text-[#FF5A3C]" />
-        <span className="text-white text-sm font-bold">Лучшее за {days === 7 ? "неделю" : "месяц"}</span>
+        <span className="text-white text-sm font-bold">{days === 7 ? "Лучшее за неделю" : "Лучшее за месяц"}</span>
         <span className="text-white/40 text-[11px]">по сохранениям</span>
       </div>
       <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>

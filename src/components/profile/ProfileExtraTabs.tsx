@@ -42,7 +42,7 @@ const ProfileExtraTabs = ({ tab, onOpenBoard, onOpenBoards }: Props) => {
                   {!b.is_public && <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/45 flex items-center justify-center"><Icon name="Lock" size={11} className="text-white" /></span>}
                 </div>
                 <p className="text-black text-[13px] font-semibold mt-2 truncate">{b.title}</p>
-                <p className="text-gray-500 text-[11px]">{b.items_count ?? 0} постов{b.topic ? ` · ${topicTitle(b.topic)}` : ""}</p>
+                <p className="text-gray-500 text-[11px]">{`${b.items_count ?? 0} постов${b.topic ? ` · ${topicTitle(b.topic)}` : ""}`}</p>
               </button>
             ))}
           </div>
