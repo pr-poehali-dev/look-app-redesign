@@ -36,7 +36,7 @@ const VideoActionButtons = ({
   return (
     <>
       {/* Right side actions — мобайл (внутри видео) */}
-      <div className={`absolute right-2 ${guest ? "bottom-[58px]" : "bottom-24"} flex flex-col items-center gap-3 z-30 md:hidden`}>
+      <div className={`absolute right-2 ${guest ? "bottom-[58px]" : "bottom-24"} flex flex-col items-center gap-4 z-30 md:hidden`}>
         {/* Like */}
         <button
           onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); toggleLike(); }}
@@ -45,14 +45,14 @@ const VideoActionButtons = ({
           style={{ touchAction: "manipulation" }}
           title="Нравится"
         >
-          <div className="action-icon-mobile-bg w-8 h-8 rounded-full flex items-center justify-center">
+          <div className="action-icon-mobile-bg w-11 h-11 rounded-full flex items-center justify-center">
             <Icon
               name="Heart"
-              size={22}
+              size={28}
               className={liked ? "text-[#FF5A3C] fill-[#FF5A3C]" : "action-icon-glyph"}
             />
           </div>
-          <span className="action-count-text action-count-mobile-bg px-1 text-white text-[11px] font-semibold">{formatCount(likeCount)}</span>
+          <span className="action-count-text action-count-mobile-bg px-1 text-white text-xs font-bold">{formatCount(likeCount)}</span>
         </button>
 
         {/* Comment */}
@@ -63,10 +63,10 @@ const VideoActionButtons = ({
           style={{ touchAction: "manipulation" }}
           title="Комментарии"
         >
-          <div className="action-icon-mobile-bg w-8 h-8 rounded-full flex items-center justify-center">
-            <Icon name="MessageSquare" size={22} className="action-icon-glyph" />
+          <div className="action-icon-mobile-bg w-11 h-11 rounded-full flex items-center justify-center">
+            <Icon name="MessageSquare" size={28} className="action-icon-glyph" />
           </div>
-          <span className="action-count-text action-count-mobile-bg px-1 text-white text-[11px] font-semibold">{formatCount(commentCount)}</span>
+          <span className="action-count-text action-count-mobile-bg px-1 text-white text-xs font-bold">{formatCount(commentCount)}</span>
         </button>
 
         {/* Send / Share */}
@@ -77,10 +77,10 @@ const VideoActionButtons = ({
           style={{ touchAction: "manipulation" }}
           title="Поделиться"
         >
-          <div className="action-icon-mobile-bg w-8 h-8 rounded-full flex items-center justify-center">
-            <Icon name="ShareArrow" size={22} className="action-icon-glyph" />
+          <div className="action-icon-mobile-bg w-11 h-11 rounded-full flex items-center justify-center">
+            <Icon name="ShareArrow" size={28} className="action-icon-glyph" />
           </div>
-          <span className="action-count-text action-count-mobile-bg px-1 text-white text-[11px] font-semibold">{video.shares}</span>
+          <span className="action-count-text action-count-mobile-bg px-1 text-white text-xs font-bold">{video.shares}</span>
         </button>
 
         {/* Ещё (в т.ч. сохранение в коллекцию) */}
@@ -91,8 +91,8 @@ const VideoActionButtons = ({
           style={{ touchAction: "manipulation" }}
           title="Ещё действия"
         >
-          <div className="action-icon-mobile-bg w-8 h-8 rounded-full flex items-center justify-center">
-            <span className="action-count-text text-white text-[11px] font-bold leading-none">Ещё</span>
+          <div className="action-icon-mobile-bg w-11 h-11 rounded-full flex items-center justify-center">
+            <span className="action-count-text text-white text-xs font-bold leading-none">Ещё</span>
           </div>
         </button>
       </div>
