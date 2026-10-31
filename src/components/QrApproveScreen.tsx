@@ -19,26 +19,41 @@ const QrApproveScreen = ({ code, onDone }: Props) => {
     if (!token) return;
   }, [token]);
 
+  const callApprove = async () => {
+    const res = await fetch(AUTH_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "qr_approve", code, token }),
+    });
+    const text = await res.text();
+    let raw: { body?: unknown; status?: string; error?: string } = {};
+    try { raw = JSON.parse(text); } catch { /* not json */ }
+    const data = (typeof raw.body === "string" ? JSON.parse(raw.body) : raw) as { status?: string; error?: string };
+    return { httpStatus: res.status, data };
+  };
+
   const approve = async () => {
     if (!token) return;
     setState("approving");
-    try {
-      const res = await fetch(AUTH_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "qr_approve", code, token }),
-      });
-      const raw = await res.json();
-      const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
-      if (data.status === "approved") {
-        setState("approved");
-        setTimeout(onDone, 1500);
-      } else {
-        setErrorMsg(data.error || "Не удалось подтвердить вход");
+    let lastNetworkError = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const { httpStatus, data } = await callApprove();
+        if (data.status === "approved") {
+          setState("approved");
+          setTimeout(onDone, 1500);
+          return;
+        }
+        setErrorMsg(data.error || `Не удалось подтвердить вход (код ${httpStatus})`);
         setState("error");
+        return;
+      } catch {
+        lastNetworkError = true;
+        await new Promise((r) => setTimeout(r, 800));
       }
-    } catch {
-      setErrorMsg("Сеть недоступна");
+    }
+    if (lastNetworkError) {
+      setErrorMsg("Нет связи с сервером. Проверьте интернет на телефоне, отключите VPN и попробуйте ещё раз.");
       setState("error");
     }
   };
